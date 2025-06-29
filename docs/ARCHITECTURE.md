@@ -69,17 +69,32 @@ User Login → Credential Validation → Token Generation → Role-Based Redirec
 #### 3.2 Application Structure
 ```
 src/
-├── components/           # Reusable UI components
-│   ├── common/          # Generic components (Button, Modal, etc.)
-│   ├── forms/           # Form components
-│   └── layout/          # Layout components (Navbar, Sidebar)
-├── pages/               # Route-based page components
-├── services/            # API service layer
-├── hooks/               # Custom React hooks
-├── contexts/            # React contexts for state management
-├── utils/               # Utility functions and helpers
-├── types/               # TypeScript type definitions
-└── constants/           # Application constants
+├── App.tsx                 # Main application component and router setup
+├── main.tsx                # Application entry point
+├── assets/                 # Static assets (images, fonts, etc.)
+├── components/             # Reusable UI components
+│   ├── common/             # Generic components (Button, Modal, Card, etc.)
+│   ├── features/           # Components specific to application features
+│   │   └── users/          # Components for user management feature
+│   ├── forms/              # Form components (e.g., LoginForm)
+│   ├── guards/             # Route protection components (AdminRoute, etc.)
+│   ├── icons/              # SVG icon components
+│   ├── layout/             # Layout components (Header, Sidebar, etc.)
+│   └── navigation/         # Navigation components (UserMenu, etc.)
+├── contexts/               # React contexts for state management (e.g., AuthContext)
+├── hooks/                  # Custom React hooks
+│   └── dashboard/          # Hooks specific to the dashboard feature
+├── pages/                  # Route-based page components
+│   ├── auth/               # Authentication pages (Login, Unauthorized)
+│   ├── dashboard/          # Dashboard pages and their components
+│   └── users/              # User management pages (Create, Edit, Profile)
+├── services/               # API service layer (api.client, auth.service, etc.)
+├── styles/                 # Global styles, variables, and component styles
+│   ├── components/         # CSS for specific components
+│   ├── pages/              # CSS for specific pages
+│   └── tokens/             # Design tokens (colors, spacing, etc.)
+├── types/                  # TypeScript type definitions
+└── utils/                  # Utility functions and helpers
 ```
 
 #### 3.3 State Management Strategy
