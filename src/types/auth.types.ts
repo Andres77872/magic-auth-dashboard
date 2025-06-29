@@ -98,7 +98,10 @@ export const AuthActionType = {
 
 export type AuthActionType = typeof AuthActionType[keyof typeof AuthActionType];
 
-export interface AuthAction {
-  type: AuthActionType;
-  payload?: unknown;
-} 
+export type AuthAction = 
+  | { type: typeof AuthActionType.LOGIN_START }
+  | { type: typeof AuthActionType.LOGIN_SUCCESS; payload: LoginResponse }
+  | { type: typeof AuthActionType.LOGIN_FAILURE; payload: { error: string } }
+  | { type: typeof AuthActionType.LOGOUT }
+  | { type: typeof AuthActionType.VALIDATE_TOKEN; payload: { valid: boolean; user?: User; project?: Project } }
+  | { type: typeof AuthActionType.CLEAR_ERROR }; 
