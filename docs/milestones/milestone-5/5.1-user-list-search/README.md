@@ -12,41 +12,41 @@ This milestone lays the foundation for all user management workflows by providin
 ## 📋 Tasks Checklist
 
 ### Step 1: Page & Route Setup
-- [x] Create the main `UserListPage.tsx` component.
-- [x] Add the `/dashboard/users` route in `App.tsx` to render the page.
-- [x] Update the main navigation to link to the new User Management page.
-- [x] Protect the route using the `AdminRoute` guard.
+- [ ] Create the main `UserListPage.tsx` component.
+- [ ] Add the `/dashboard/users` route in `App.tsx` to render the page.
+- [ ] Update the main navigation to link to the new User Management page.
+- [ ] Protect the route using the `AdminRoute` guard.
 
 ### Step 2: User Data Hook (`useUsers`)
-- [x] Create a new `useUsers.ts` hook for fetching and managing user data.
-- [x] Implement state for users, pagination, loading, and errors.
-- [x] Implement a `fetchUsers` function that calls `userService.getUsers`.
-- [x] Handle query parameters for pagination, search, sorting, and filtering.
+- [ ] Create a new `useUsers.ts` hook for fetching and managing user data.
+- [ ] Implement state for users, pagination, loading, and errors.
+- [ ] Implement a `fetchUsers` function that calls `userService.getUsers`.
+- [ ] Handle query parameters for pagination, search, sorting, and filtering.
 
 ### Step 3: User Table Component
-- [x] Create a reusable `UserTable.tsx` component using the generic `Table` component.
-- [x] Define table columns: Username, Email, User Type, Status, Created At, Actions.
-- [x] Render user data from the `useUsers` hook.
-- [x] Implement loading and empty states for the table.
+- [ ] Create a reusable `UserTable.tsx` component using the generic `Table` component.
+- [ ] Define table columns: Username, Email, User Type, Status, Created At, Actions.
+- [ ] Render user data from the `useUsers` hook.
+- [ ] Implement loading and empty states for the table.
 
 ### Step 4: Search & Filtering
-- [x] Create a `UserFilter.tsx` component with input fields.
-- [x] Add a text input for searching by username or email (with debouncing).
-- [x] Add a `Select` component to filter by `UserType` (ROOT, ADMIN, CONSUMER).
-- [x] Add a `Select` component to filter by user status (Active, Inactive).
-- [x] Connect filter components to the `useUsers` hook to refetch data.
+- [ ] Create a `UserFilter.tsx` component with input fields.
+- [ ] Add a text input for searching by username or email (with debouncing).
+- [ ] Add a `Select` component to filter by `UserType` (ROOT, ADMIN, CONSUMER).
+- [ ] Add a `Select` component to filter by user status (Active, Inactive).
+- [ ] Connect filter components to the `useUsers` hook to refetch data.
 
 ### Step 5: Pagination & Sorting
-- [x] Implement a `Pagination` component to work with the `UserTable`.
-- [x] Connect the pagination component to the `useUsers` hook to handle page changes.
-- [x] Enable server-side sorting on the `UserTable` columns.
-- [x] Update the `useUsers` hook to pass sorting parameters to the API.
+- [ ] Implement a `Pagination` component to work with the `UserTable`.
+- [ ] Connect the pagination component to the `useUsers` hook to handle page changes.
+- [ ] Enable server-side sorting on the `UserTable` columns.
+- [ ] Update the `useUsers` hook to pass sorting parameters to the API.
 
 ### Step 6: User Actions Menu
-- [x] Create a `UserActionsMenu.tsx` component for each row in the table.
-- [x] Use a dropdown/popover for the actions menu (Edit, Delete, Change Status, etc.).
-- [x] Conditionally enable/disable actions based on the current user's permissions and the target user's type (e.g., an ADMIN cannot delete a ROOT user).
-- [x] Add stubs for actions that will be implemented in the next milestone.
+- [ ] Create a `UserActionsMenu.tsx` component for each row in the table.
+- [ ] Use a dropdown/popover for the actions menu (Edit, Delete, Change Status, etc.).
+- [ ] Conditionally enable/disable actions based on the current user's permissions and the target user's type (e.g., an ADMIN cannot delete a ROOT user).
+- [ ] Add stubs for actions that will be implemented in the next milestone.
 
 ---
 
