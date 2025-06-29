@@ -1,6 +1,10 @@
 /* Import design system variables */
 @import './variables.css';
 
+/* Import component styles */
+@import './components/dashboard-layout.css';
+@import './components/dashboard-overview.css';
+
 /* === CSS RESET === */
 
 *,

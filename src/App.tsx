@@ -14,37 +14,8 @@ import './styles/pages/unauthorized.css';
 import './styles/pages/login.css';
 
 // Import pages
-import { LoginPage, UnauthorizedPage } from '@/pages/auth';
-
-// Placeholder components for future milestones
-const DashboardPage = () => (
-  <div className="container" style={{ padding: 'var(--spacing-8)' }}>
-    <h1>Dashboard</h1>
-    <p>Dashboard implementation will be added in Phase 3</p>
-    <div style={{ 
-      background: 'var(--color-gray-100)', 
-      padding: 'var(--spacing-6)',
-      borderRadius: 'var(--border-radius-lg)',
-      marginTop: 'var(--spacing-6)'
-    }}>
-      <h2 style={{ color: 'var(--color-gray-800)', marginBottom: 'var(--spacing-4)' }}>
-        ✅ Milestone 2.3 Complete - Login Page Implementation
-      </h2>
-      <ul style={{ color: 'var(--color-gray-700)', lineHeight: 'var(--line-height-relaxed)' }}>
-        <li>✅ Professional login form with real-time validation</li>
-        <li>✅ Responsive two-column layout with branding</li>
-        <li>✅ Authentication flow integration</li>
-        <li>✅ "Admin/Root Only" branding and messaging</li>
-        <li>✅ Error handling and loading states</li>
-        <li>✅ Accessibility-compliant form design</li>
-        <li>✅ Password toggle and remember me functionality</li>
-      </ul>
-      <p style={{ color: 'var(--color-success)', fontWeight: 'bold', marginTop: 'var(--spacing-4)' }}>
-        🎉 Phase 2 Complete: Authentication system is fully functional!
-      </p>
-    </div>
-  </div>
-);
+import { LoginPage, UnauthorizedPage, DashboardOverview } from '@/pages';
+import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
   <div className="container" style={{ padding: 'var(--spacing-8)' }}>
@@ -84,7 +55,9 @@ function App(): React.JSX.Element {
                 path={ROUTES.DASHBOARD}
                 element={
                   <AdminRoute>
-                    <DashboardPage />
+                    <DashboardLayout>
+                      <DashboardOverview />
+                    </DashboardLayout>
                   </AdminRoute>
                 }
               />
