@@ -1,0 +1,712 @@
+---
+description: magic auth api openai.json definition
+globs: 
+alwaysApply: false
+---
+# 3-Tier Authentication API Reference with Examples
+
+## System Overview
+**Base URL:** `http://localhost:8000`  
+**Authentication:** Bearer token in Authorization header  
+**User Types:** ROOT (super admin) → ADMIN (project manager) → CONSUMER (end user)
+
+---
+
+## 🔐 Authentication Endpoints
+
+### POST `/auth/login`
+**Description:** Authenticate user and return session token  
+
+**Request:**
+```json
+{
+  "username": "john_doe",
+  "password": "secure_password123",
+  "project_hash": "proj_abc123xyz"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "session_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "user_hash": "usr_def456abc",
+    "username": "john_doe", 
+    "email": "john@example.com",
+    "user_type": "consumer",
+    "created_at": "2024-01-15T10:30:00Z"
+  },
+  "project": {
+    "project_hash": "proj_abc123xyz",
+    "project_name": "My Project",
+    "project_description": "Sample project"
+  },
+  "accessible_projects": [
+    {
+      "project_hash": "proj_abc123xyz",
+      "project_name": "My Project",
+      "project_description": "Sample project"
+    }
+  ],
+  "expires_at": "2024-01-18T10:30:00Z"
+}
+```
+
+### POST `/auth/register`
+**Description:** Register new user with group assignment  
+
+**Request:**
+```json
+{
+  "username": "jane_smith",
+  "password": "strong_password456",
+  "email": "jane@example.com",
+  "project_hash": "proj_abc123xyz"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "user": {
+    "user_hash": "usr_ghi789def",
+    "username": "jane_smith",
+    "email": "jane@example.com",
+    "user_type": "consumer",
+    "created_at": "2024-01-15T11:00:00Z"
+  },
+  "project": {
+    "project_hash": "proj_abc123xyz",
+    "project_name": "My Project"
+  }
+}
+```
+
+### GET `/auth/validate` 🔒
+**Description:** Validate session token and return user info  
+**Headers:** `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Session is valid",
+  "valid": true,
+  "user": {
+    "user_hash": "usr_def456abc",
+    "username": "john_doe",
+    "email": "john@example.com",
+    "user_type": "consumer"
+  },
+  "project": {
+    "project_hash": "proj_abc123xyz",
+    "project_name": "My Project"
+  },
+  "session": {
+    "session_id": "sess_xyz789abc",
+    "expires_at": "2024-01-18T10:30:00Z"
+  }
+}
+```
+
+### POST `/auth/check-availability`
+**Description:** Check username/email availability  
+
+**Request:**
+```json
+{
+  "username": "new_user",
+  "email": "newuser@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Availability checked",
+  "username_available": true,
+  "email_available": false
+}
+```
+
+---
+
+## 👑 User Type Management (ROOT/ADMIN access)
+
+### POST `/user-types/root` 🔒
+**Description:** Create root user (ROOT only)  
+
+**Request:**
+```json
+{
+  "username": "root_admin",
+  "password": "super_secure_pass",
+  "email": "admin@company.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Root user created successfully",
+  "user": {
+    "user_hash": "usr_root123abc",
+    "username": "root_admin",
+    "email": "admin@company.com",
+    "user_type": "root",
+    "created_at": "2024-01-15T12:00:00Z"
+  }
+}
+```
+
+### POST `/user-types/admin` 🔒
+**Description:** Create admin user (ROOT only)  
+
+**Request:**
+```json
+{
+  "username": "project_admin",
+  "password": "admin_password",
+  "email": "padmin@company.com",
+  "assigned_project_ids": [1, 2, 3]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Admin user created and assigned to 3 projects",
+  "user": {
+    "user_hash": "usr_admin456def",
+    "username": "project_admin",
+    "email": "padmin@company.com",
+    "user_type": "admin",
+    "assigned_projects": [
+      {"project_id": 1, "project_name": "Project Alpha"},
+      {"project_id": 2, "project_name": "Project Beta"},
+      {"project_id": 3, "project_name": "Project Gamma"}
+    ]
+  }
+}
+```
+
+### GET `/user-types/users/admin` 🔒
+**Description:** List admin users  
+**Params:** `?limit=10&offset=0`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Admin users retrieved",
+  "users": [
+    {
+      "user_hash": "usr_admin456def",
+      "username": "project_admin", 
+      "email": "padmin@company.com",
+      "user_type": "admin",
+      "created_at": "2024-01-15T12:30:00Z"
+    }
+  ],
+  "pagination": {
+    "limit": 10,
+    "offset": 0,
+    "total": 1,
+    "has_more": false
+  }
+}
+```
+
+---
+
+## 👤 User Management
+
+### GET `/users/profile` 🔒
+**Description:** Get current user's profile  
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Profile retrieved successfully",
+  "user": {
+    "user_hash": "usr_def456abc",
+    "username": "john_doe",
+    "email": "john@example.com",
+    "user_type": "consumer",
+    "created_at": "2024-01-15T10:30:00Z"
+  },
+  "accessible_projects": [
+    {
+      "project_hash": "proj_abc123xyz", 
+      "project_name": "My Project",
+      "project_description": "Sample project"
+    }
+  ],
+  "current_project": {
+    "project_hash": "proj_abc123xyz",
+    "project_name": "My Project"
+  }
+}
+```
+
+### PUT `/users/profile` 🔒
+**Description:** Update user profile  
+
+**Request:**
+```json
+{
+  "username": "john_doe_updated",
+  "email": "john.doe@newemail.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "user": {
+    "user_hash": "usr_def456abc",
+    "username": "john_doe_updated",
+    "email": "john.doe@newemail.com",
+    "user_type": "consumer",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+---
+
+## 📁 Project Management
+
+### GET `/projects` 🔒
+**Description:** List accessible projects  
+**Params:** `?limit=5&search=alpha`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Projects retrieved successfully",
+  "projects": [
+    {
+      "project_hash": "proj_abc123xyz",
+      "project_name": "Project Alpha",
+      "project_description": "Main development project",
+      "access_level": "full_access",
+      "access_through": "user_group"
+    }
+  ],
+  "pagination": {
+    "limit": 5,
+    "offset": 0,
+    "total": 1,
+    "has_more": false
+  },
+  "user_access_level": "consumer"
+}
+```
+
+### POST `/projects` 🔒
+**Description:** Create new project  
+
+**Request:**
+```json
+{
+  "project_name": "New Project Beta",
+  "project_description": "Secondary development project"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Project created successfully",
+  "project": {
+    "project_hash": "proj_beta789xyz",
+    "project_name": "New Project Beta",
+    "project_description": "Secondary development project",
+    "created_at": "2024-01-15T13:00:00Z"
+  }
+}
+```
+
+---
+
+## 👥 Admin - User Groups
+
+### GET `/admin/user-groups` 🔒
+**Description:** List all user groups (admin only)  
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User groups retrieved",
+  "user_groups": [
+    {
+      "group_hash": "grp_users123abc",
+      "group_name": "Developers",
+      "description": "Development team members",
+      "member_count": 5,
+      "created_at": "2024-01-10T09:00:00Z"
+    },
+    {
+      "group_hash": "grp_users456def",
+      "group_name": "QA Team", 
+      "description": "Quality assurance team",
+      "member_count": 3,
+      "created_at": "2024-01-12T14:00:00Z"
+    }
+  ],
+  "pagination": {
+    "limit": 50,
+    "offset": 0,
+    "total": 2,
+    "has_more": false
+  }
+}
+```
+
+### POST `/admin/user-groups` 🔒
+**Description:** Create user group  
+
+**Request:**
+```json
+{
+  "group_name": "Marketing Team",
+  "description": "Marketing and content team"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User group created successfully",
+  "user_group": {
+    "group_hash": "grp_marketing789xyz",
+    "group_name": "Marketing Team",
+    "description": "Marketing and content team",
+    "member_count": 0,
+    "created_at": "2024-01-15T13:30:00Z"
+  }
+}
+```
+
+### POST `/admin/user-groups/{group_hash}/members` 🔒
+**Description:** Assign user to group  
+
+**Request:**
+```json
+{
+  "user_hash": "usr_def456abc"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User assigned to group successfully",
+  "assignment": {
+    "user_hash": "usr_def456abc",
+    "group_hash": "grp_users123abc",
+    "assigned_at": "2024-01-15T14:00:00Z"
+  }
+}
+```
+
+---
+
+## 🛡️ RBAC Management
+
+### GET `/rbac/projects/{project_hash}/permissions` 🔒
+**Description:** List project permissions  
+**Path:** `/rbac/projects/proj_abc123xyz/permissions`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Permissions retrieved successfully",
+  "project": {
+    "project_hash": "proj_abc123xyz",
+    "project_name": "My Project"
+  },
+  "permissions": [
+    {
+      "id": 1,
+      "permission_name": "read_documents",
+      "category": "documents",
+      "description": "Read access to documents",
+      "created_at": "2024-01-10T10:00:00Z"
+    },
+    {
+      "id": 2, 
+      "permission_name": "write_documents",
+      "category": "documents",
+      "description": "Write access to documents",
+      "created_at": "2024-01-10T10:05:00Z"
+    }
+  ],
+  "pagination": {
+    "limit": 50,
+    "offset": 0,
+    "total": 2,
+    "has_more": false
+  }
+}
+```
+
+### POST `/rbac/projects/{project_hash}/permissions` 🔒
+**Description:** Create project permission  
+
+**Request:**
+```json
+{
+  "permission_name": "delete_documents",
+  "category": "documents", 
+  "description": "Delete access to documents"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Permission created successfully",
+  "permission": {
+    "id": 3,
+    "permission_name": "delete_documents",
+    "category": "documents",
+    "description": "Delete access to documents",
+    "created_at": "2024-01-15T15:00:00Z"
+  }
+}
+```
+
+### POST `/rbac/users/{user_hash}/projects/{project_hash}/roles` 🔒
+**Description:** Assign user to role  
+
+**Request:**
+```json
+{
+  "role_id": 2
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User assigned to role successfully",
+  "assignment": {
+    "user_hash": "usr_def456abc",
+    "project_hash": "proj_abc123xyz",
+    "role_id": 2,
+    "role_name": "Editor",
+    "assigned_at": "2024-01-15T15:30:00Z"
+  }
+}
+```
+
+### GET `/rbac/users/{user_hash}/projects/{project_hash}/permissions` 🔒
+**Description:** Get user's effective permissions  
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User permissions retrieved",
+  "user": {
+    "user_hash": "usr_def456abc",
+    "username": "john_doe"
+  },
+  "project": {
+    "project_hash": "proj_abc123xyz",
+    "project_name": "My Project"
+  },
+  "effective_permissions": [
+    {
+      "permission_name": "read_documents",
+      "category": "documents",
+      "granted_through": "Editor role"
+    },
+    {
+      "permission_name": "write_documents", 
+      "category": "documents",
+      "granted_through": "Editor role"
+    }
+  ],
+  "summary": {
+    "total_permissions": 2,
+    "roles_count": 1,
+    "access_level": "editor"
+  }
+}
+```
+
+### GET `/rbac/users/{user_hash}/projects/{project_hash}/check/read_documents` 🔒
+**Description:** Check specific permission  
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Permission check completed",
+  "user": {
+    "user_hash": "usr_def456abc",
+    "username": "john_doe"
+  },
+  "project": {
+    "project_hash": "proj_abc123xyz",
+    "project_name": "My Project"
+  },
+  "permission_check": {
+    "permission_name": "read_documents",
+    "has_permission": true,
+    "granted_through": "Editor role",
+    "checked_at": "2024-01-15T16:00:00Z"
+  }
+}
+```
+
+---
+
+## 🔧 System Information
+
+### GET `/system/info`
+**Description:** Get system information  
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "System information retrieved",
+  "system": {
+    "version": "2.1.0",
+    "environment": "production",
+    "database_status": "connected",
+    "cache_status": "active"
+  },
+  "statistics": {
+    "total_users": 150,
+    "total_projects": 25,
+    "active_sessions": 45,
+    "root_users": 2,
+    "admin_users": 8,
+    "consumer_users": 140
+  },
+  "features": [
+    "3-tier-user-types",
+    "multi-project-admin",
+    "rbac-system",
+    "session-management",
+    "audit-logging"
+  ]
+}
+```
+
+### GET `/system/health`
+**Description:** Comprehensive health check  
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "System health check completed",
+  "status": "healthy",
+  "timestamp": "2024-01-15T16:30:00Z",
+  "components": {
+    "database": {
+      "status": "healthy",
+      "response_time_ms": 12,
+      "connection_pool": "8/20 connections"
+    },
+    "cache": {
+      "status": "healthy", 
+      "response_time_ms": 2,
+      "memory_usage": "45%"
+    },
+    "authentication": {
+      "status": "healthy",
+      "active_sessions": 45
+    }
+  }
+}
+```
+
+---
+
+## Error Response Examples
+
+### Authentication Error (401)
+```json
+{
+  "success": false,
+  "message": "Invalid credentials",
+  "error_code": "AUTH_FAILED"
+}
+```
+
+### Permission Error (403)
+```json
+{
+  "success": false,
+  "message": "Insufficient permissions for this operation",
+  "error_code": "PERMISSION_DENIED",
+  "required_access_level": "admin"
+}
+```
+
+### Validation Error (422)
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "detail": [
+    {
+      "loc": ["body", "username"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    }
+  ]
+}
+```
+
+### Resource Not Found (404)
+```json
+{
+  "success": false,
+  "message": "Project not found",
+  "error_code": "RESOURCE_NOT_FOUND"
+}
+```
+
+---
+
+## Common Request Headers
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+Accept: application/json
+```
+
+## Authentication Note
+🔒 = Requires Bearer token in `Authorization: Bearer <token>` header
+
+## User Type Access Levels
+- **ROOT**: Full system access, can manage other root users
+- **ADMIN**: Multi-project management, user/group administration  
+- **CONSUMER**: RBAC-based project access through groups
