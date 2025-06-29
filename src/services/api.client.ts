@@ -1,4 +1,5 @@
 import { API_CONFIG, HTTP_STATUS, STORAGE_KEYS } from '@/utils/constants';
+import { encodeFormData, prepareMagicAuthData } from '@/utils/form-data';
 import type { ApiResponse } from '@/types/api.types';
 import { HttpMethod } from '@/types/api.types';
 
@@ -18,7 +19,7 @@ class ApiClient {
   constructor(baseURL: string = API_CONFIG.BASE_URL) {
     this.baseURL = baseURL;
     this.defaultHeaders = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': 'application/json',
     };
   }
@@ -104,9 +105,10 @@ class ApiClient {
           signal: AbortSignal.timeout(API_CONFIG.TIMEOUT),
         };
 
-        // Add body for non-GET requests
+        // Add body for non-GET requests - NOW USING FORM DATA ✅
         if (config.body && config.method !== HttpMethod.GET) {
-          requestInit.body = JSON.stringify(config.body);
+          const preparedData = prepareMagicAuthData(config.body as Record<string, unknown>);
+          requestInit.body = encodeFormData(preparedData);
         }
 
         const response = await fetch(url, requestInit);
