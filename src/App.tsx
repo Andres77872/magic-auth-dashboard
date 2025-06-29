@@ -17,6 +17,9 @@ import './styles/components/user-management.css';
 
 // Import pages
 import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage } from '@/pages';
+import { UserCreatePage } from '@/pages/users/UserCreatePage';
+import { UserEditPage } from '@/pages/users/UserEditPage';
+import { UserProfilePage } from '@/pages/users/UserProfilePage';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
@@ -95,6 +98,39 @@ function App(): React.JSX.Element {
                   <AdminRoute>
                     <DashboardLayout>
                       <UserListPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={ROUTES.USERS_CREATE}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <UserCreatePage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={`${ROUTES.USERS_EDIT}/:userHash`}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <UserEditPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={`${ROUTES.USERS_PROFILE}/:userHash`}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <UserProfilePage />
                     </DashboardLayout>
                   </AdminRoute>
                 }

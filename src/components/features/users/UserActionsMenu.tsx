@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePermissions } from '@/hooks';
+import { ROUTES } from '@/utils/routes';
 import type { User } from '@/types/auth.types';
 
 interface UserActionsMenuProps {
@@ -9,6 +11,7 @@ interface UserActionsMenuProps {
 export function UserActionsMenu({ user }: UserActionsMenuProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const { canCreateUser, canCreateAdmin } = usePermissions();
 
   // Close menu when clicking outside
@@ -40,32 +43,30 @@ export function UserActionsMenu({ user }: UserActionsMenuProps): React.JSX.Eleme
   };
 
   const handleEditUser = () => {
-    console.log('Edit user:', user.user_hash);
-    // TODO: Implement edit user functionality in next milestone
+    navigate(`${ROUTES.USERS_EDIT}/${user.user_hash}`);
     setIsOpen(false);
   };
 
   const handleDeleteUser = () => {
     console.log('Delete user:', user.user_hash);
-    // TODO: Implement delete user functionality in next milestone
+    // TODO: Implement delete user functionality in future milestone
     setIsOpen(false);
   };
 
   const handleChangeStatus = () => {
     console.log('Change status for user:', user.user_hash);
-    // TODO: Implement status change functionality in next milestone
+    // TODO: Implement status change functionality in future milestone
     setIsOpen(false);
   };
 
   const handleResetPassword = () => {
     console.log('Reset password for user:', user.user_hash);
-    // TODO: Implement password reset functionality in next milestone
+    // TODO: Implement password reset functionality in future milestone
     setIsOpen(false);
   };
 
   const handleViewDetails = () => {
-    console.log('View details for user:', user.user_hash);
-    // TODO: Implement view details functionality in next milestone
+    navigate(`${ROUTES.USERS_PROFILE}/${user.user_hash}`);
     setIsOpen(false);
   };
 
