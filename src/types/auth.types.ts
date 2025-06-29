@@ -48,6 +48,22 @@ export interface User {
   updated_at?: string;
 }
 
+// User Profile Response Interface
+export interface UserProfileResponse {
+  success: boolean;
+  message: string | null;
+  user: User;
+  permissions: string[];
+  groups: any[]; // Update with proper type when available
+  accessible_projects: any[]; // Update with proper type when available
+  statistics: {
+    total_groups: number;
+    total_accessible_projects: number;
+    total_permissions: number;
+    account_age_days: number;
+  };
+}
+
 export interface Project {
   project_hash: string;
   project_name: string;

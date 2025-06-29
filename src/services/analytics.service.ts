@@ -23,16 +23,16 @@ export class AnalyticsService {
     
     const params: Record<string, any> = {
       limit,
-      ...(cursor && { cursor }),
-      ...(filters.type && { type: filters.type }),
-      ...(filters.userType && { user_type: filters.userType }),
-      ...(filters.severity && { severity: filters.severity }),
-      ...(filters.search && { search: filters.search }),
-      ...(filters.dateRange && {
-        start_date: filters.dateRange.start,
-        end_date: filters.dateRange.end,
-      }),
     };
+
+    // Only add parameters if they have defined values
+    if (cursor) params.cursor = cursor;
+    if (filters.type) params.type = filters.type;
+    if (filters.userType) params.user_type = filters.userType;
+    if (filters.severity) params.severity = filters.severity;
+    if (filters.search) params.search = filters.search;
+    if (filters.dateRange?.start) params.start_date = filters.dateRange.start;
+    if (filters.dateRange?.end) params.end_date = filters.dateRange.end;
 
     try {
       const response = await apiClient.get<any>('/analytics/activity', params);
@@ -56,8 +56,10 @@ export class AnalyticsService {
    */
   async getUserAnalytics(dateRange?: { start: string; end: string }): Promise<UserAnalyticsData> {
     const params: Record<string, string> = {};
-    if (dateRange) {
+    if (dateRange?.start) {
       params.start_date = dateRange.start;
+    }
+    if (dateRange?.end) {
       params.end_date = dateRange.end;
     }
 
@@ -105,8 +107,10 @@ export class AnalyticsService {
    */
   async getProjectAnalytics(dateRange?: { start: string; end: string }): Promise<ProjectAnalyticsData> {
     const params: Record<string, string> = {};
-    if (dateRange) {
+    if (dateRange?.start) {
       params.start_date = dateRange.start;
+    }
+    if (dateRange?.end) {
       params.end_date = dateRange.end;
     }
 
@@ -141,8 +145,10 @@ export class AnalyticsService {
     dateRange?: { start: string; end: string }
   ): Promise<ProjectAnalyticsData> {
     const params: Record<string, string> = {};
-    if (dateRange) {
+    if (dateRange?.start) {
       params.start_date = dateRange.start;
+    }
+    if (dateRange?.end) {
       params.end_date = dateRange.end;
     }
 
@@ -205,8 +211,10 @@ export class AnalyticsService {
     dateRange?: { start: string; end: string }
   ): Promise<ActivityResponse> {
     const params: Record<string, string> = {};
-    if (dateRange) {
+    if (dateRange?.start) {
       params.start_date = dateRange.start;
+    }
+    if (dateRange?.end) {
       params.end_date = dateRange.end;
     }
 

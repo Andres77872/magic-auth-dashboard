@@ -33,11 +33,39 @@ class ApiClient {
     
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, String(value));
+        // Only add parameter if value is not null, undefined, or empty string
+        if (value !== null && value !== undefined && (typeof value !== 'string' || value !== '')) {
+          url.searchParams.append(key, String(value));
+        }
       });
     }
     
     return url.toString();
+  }
+
+  private cleanRequestData(data: Record<string, unknown>): Record<string, unknown> {
+    const cleaned: Record<string, unknown> = {};
+    
+    Object.entries(data).forEach(([key, value]) => {
+      // Only include properties that are not undefined
+      if (value !== undefined) {
+        // Convert null to empty string if needed, or keep null
+        cleaned[key] = value === null ? '' : value;
+      }
+    });
+    
+    return cleaned;
+  }
+
+  // Public utility method to filter undefined values from params
+  static filterUndefinedValues(params: Record<string, any>): Record<string, any> {
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    return cleanParams;
   }
 
   private async sleep(ms: number): Promise<void> {
@@ -107,7 +135,8 @@ class ApiClient {
 
         // Add body for non-GET requests - NOW USING FORM DATA ✅
         if (config.body && config.method !== HttpMethod.GET) {
-          const preparedData = prepareMagicAuthData(config.body as Record<string, unknown>);
+          const cleanedData = this.cleanRequestData(config.body as Record<string, unknown>);
+          const preparedData = prepareMagicAuthData(cleanedData);
           requestInit.body = encodeFormData(preparedData);
         }
 

@@ -46,13 +46,29 @@ class UserService {
 
   // List users with filtering
   async getUsers(params: UserListParams = {}): Promise<UserListResponse> {
-    const response = await apiClient.get<UserListResponse>('/users', params as any);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    const response = await apiClient.get<UserListResponse>('/users', cleanParams);
     return response as UserListResponse;
   }
 
   // List admin users (ROOT only)
   async getAdminUsers(params: { limit?: number; offset?: number } = {}): Promise<AdminUserListResponse> {
-    const response = await apiClient.get<AdminUserListResponse>('/user-types/users/admin', params);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    const response = await apiClient.get<AdminUserListResponse>('/user-types/users/admin', cleanParams);
     return response as AdminUserListResponse;
   }
 

@@ -59,8 +59,8 @@ export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
 
       const response = await userService.getUsers(params);
       
-      if (response.success && response.data) {
-        setUsers(response.data);
+      if (response.success && response.users) {
+        setUsers(response.users);
         if (response.pagination) {
           setPagination(response.pagination);
         }
@@ -72,7 +72,7 @@ export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [limit, currentPage, filters, sortBy, sortOrder]);
+  }, [limit, currentPage, filters.search, filters.userType, filters.isActive, sortBy, sortOrder]);
 
   const setFilters = useCallback((newFilters: UseUsersFilters) => {
     setFiltersState(newFilters);

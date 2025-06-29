@@ -12,7 +12,15 @@ import type { ApiResponse, PaginationParams } from '@/types/api.types';
 class GroupService {
   // List user groups
   async getGroups(params: PaginationParams = {}): Promise<GroupListResponse> {
-    const response = await apiClient.get<GroupListResponse>('/admin/user-groups', params as any);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    const response = await apiClient.get<GroupListResponse>('/admin/user-groups', cleanParams);
     return response as GroupListResponse;
   }
 
@@ -43,9 +51,17 @@ class GroupService {
     groupHash: string,
     params: PaginationParams = {}
   ): Promise<ApiResponse<any[]>> {
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
     return await apiClient.get<any[]>(
       `/admin/user-groups/${groupHash}/members`, 
-      params as any
+      cleanParams
     );
   }
 

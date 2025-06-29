@@ -9,7 +9,15 @@ class AdminService {
 
   // Recent Activity
   async getRecentActivity(params: PaginationParams = {}): Promise<ApiResponse<any[]>> {
-    return await apiClient.get<any[]>('/admin/activity', params as any);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    return await apiClient.get<any[]>('/admin/activity', cleanParams);
   }
 
   // User Statistics

@@ -1,5 +1,5 @@
 import type { UserType, User } from './auth.types';
-import type { ApiResponse, PaginatedResponse } from './api.types';
+import type { ApiResponse, PaginationResponse } from './api.types';
 
 export interface CreateRootUserRequest {
   username: string;
@@ -87,12 +87,22 @@ export interface UserListParams {
   user_type?: UserType;
   project_hash?: string;
   is_active?: boolean;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
 }
 
-export interface AdminUserListResponse extends PaginatedResponse<User> {
+export interface AdminUserListResponse extends ApiResponse {
   users: User[];
+  pagination: PaginationResponse;
 }
 
-export interface UserListResponse extends PaginatedResponse<User> {
-  user_access_level: UserType;
+export interface UserListResponse extends ApiResponse {
+  users: User[];
+  pagination: PaginationResponse;
+  filters?: {
+    user_type?: string | null;
+    search?: string | null;
+    is_active?: boolean | null;
+  };
+  user_access_level?: UserType;
 } 

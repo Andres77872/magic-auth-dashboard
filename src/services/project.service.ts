@@ -11,7 +11,15 @@ import type { ApiResponse, PaginationParams } from '@/types/api.types';
 class ProjectService {
   // List projects
   async getProjects(params: ProjectListParams = {}): Promise<ProjectListResponse> {
-    const response = await apiClient.get<ProjectListResponse>('/projects', params as any);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    const response = await apiClient.get<ProjectListResponse>('/projects', cleanParams);
     return response as ProjectListResponse;
   }
 
@@ -42,7 +50,15 @@ class ProjectService {
     projectHash: string, 
     params: PaginationParams = {}
   ): Promise<ApiResponse<any[]>> {
-    return await apiClient.get<any[]>(`/projects/${projectHash}/members`, params as any);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    return await apiClient.get<any[]>(`/projects/${projectHash}/members`, cleanParams);
   }
 
   // Add member to project
@@ -66,7 +82,15 @@ class ProjectService {
     projectHash: string,
     params: PaginationParams = {}
   ): Promise<ApiResponse<any[]>> {
-    return await apiClient.get<any[]>(`/projects/${projectHash}/activity`, params as any);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    return await apiClient.get<any[]>(`/projects/${projectHash}/activity`, cleanParams);
   }
 
   // Get project statistics

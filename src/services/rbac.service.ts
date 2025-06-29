@@ -17,9 +17,17 @@ class RBACService {
     projectHash: string,
     params: PaginationParams = {}
   ): Promise<ProjectPermissionsResponse> {
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
     const response = await apiClient.get<ProjectPermissionsResponse>(
       `/rbac/projects/${projectHash}/permissions`,
-      params as any
+      cleanParams
     );
     return response as ProjectPermissionsResponse;
   }
@@ -59,9 +67,17 @@ class RBACService {
     projectHash: string,
     params: PaginationParams = {}
   ): Promise<ApiResponse<Role[]>> {
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
     return await apiClient.get<Role[]>(
       `/rbac/projects/${projectHash}/roles`,
-      params as any
+      cleanParams
     );
   }
 

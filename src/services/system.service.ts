@@ -20,7 +20,15 @@ class SystemService {
 
   // Admin Management (ROOT only)
   async getAdminUsers(params: PaginationParams = {}): Promise<ApiResponse<any[]>> {
-    return await apiClient.get<any[]>('/system/admins', params as any);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    return await apiClient.get<any[]>('/system/admins', cleanParams);
   }
 
   async createAdminUser(adminData: any): Promise<ApiResponse<any>> {
@@ -37,7 +45,15 @@ class SystemService {
 
   // Audit Logs
   async getAuditLogs(params: PaginationParams = {}): Promise<ApiResponse<any[]>> {
-    return await apiClient.get<any[]>('/system/audit-logs', params as any);
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    return await apiClient.get<any[]>('/system/audit-logs', cleanParams);
   }
 
   // System Settings
