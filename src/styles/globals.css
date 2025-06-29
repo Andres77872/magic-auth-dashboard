@@ -4,6 +4,7 @@
 /* Import component styles */
 @import './components/dashboard-layout.css';
 @import './components/dashboard-overview.css';
+@import './components/navigation.css';
 
 /* === CSS RESET === */
 

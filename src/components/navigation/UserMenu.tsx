@@ -1,55 +1,57 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useUserType } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
 
 export function UserMenu(): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
   const { getUserTypeLabel, getUserTypeBadgeColor } = useUserType();
   const navigate = useNavigate();
 
-  // Close dropdown when clicking outside
+  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setShowLogoutConfirm(false);
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Handle keyboard navigation
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === 'Escape') {
       setIsOpen(false);
+      setShowLogoutConfirm(false);
     }
   };
 
   const handleLogout = async () => {
-    setIsLoading(true);
     try {
       await logout();
       navigate(ROUTES.LOGIN);
     } catch (error) {
       console.error('Logout failed:', error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleProfileClick = () => {
-    setIsOpen(false);
-    navigate(ROUTES.PROFILE);
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const handleLogoutConfirm = () => {
+    setShowLogoutConfirm(false);
+    handleLogout();
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutConfirm(false);
   };
 
   if (!user) {
@@ -57,7 +59,8 @@ export function UserMenu(): React.JSX.Element {
   }
 
   return (
-    <div className="user-menu" ref={dropdownRef} onKeyDown={handleKeyDown}>
+    <div className="user-menu" ref={menuRef} onKeyDown={handleKeyDown}>
+      {/* User avatar/trigger */}
       <button
         type="button"
         className="user-menu-trigger"
@@ -67,22 +70,12 @@ export function UserMenu(): React.JSX.Element {
         aria-label="User menu"
       >
         <div className="user-avatar">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </div>
-        <div className="user-details">
-          <span className="user-name">{user.username}</span>
-          <span 
-            className="user-type-badge"
-            style={{ color: getUserTypeBadgeColor() }}
-          >
-            {getUserTypeLabel()}
+          <span className="avatar-text">
+            {user.username.charAt(0).toUpperCase()}
           </span>
         </div>
         <svg 
-          className={`dropdown-arrow ${isOpen ? 'open' : ''}`}
+          className={`chevron ${isOpen ? 'open' : ''}`}
           width="16" 
           height="16" 
           viewBox="0 0 24 24" 
@@ -94,67 +87,99 @@ export function UserMenu(): React.JSX.Element {
         </svg>
       </button>
 
+      {/* Dropdown menu */}
       {isOpen && (
         <div className="user-menu-dropdown" role="menu">
-          <div className="dropdown-header">
-            <div className="user-info">
-              <strong>{user.username}</strong>
-              <span className="user-email">{user.email}</span>
+          {/* User info header */}
+          <div className="user-menu-header">
+            <div className="user-info-detailed">
+              <div className="user-avatar-large">
+                <span className="avatar-text-large">
+                  {user.username.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="user-details">
+                <div className="user-name-large">{user.username}</div>
+                <div className="user-email">{user.email}</div>
+                <div 
+                  className="user-type-badge"
+                  style={{ color: getUserTypeBadgeColor() }}
+                >
+                  {getUserTypeLabel()}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="dropdown-divider" />
-
-          <div className="dropdown-items">
-            <button
-              type="button"
-              className="dropdown-item"
-              onClick={handleProfileClick}
+          {/* Menu items */}
+          <div className="user-menu-items">
+            <Link
+              to={ROUTES.PROFILE}
+              className="user-menu-item"
               role="menuitem"
+              onClick={() => setIsOpen(false)}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
-              <span>Profile Settings</span>
-            </button>
+              <span>Profile</span>
+            </Link>
 
             <button
               type="button"
-              className="dropdown-item"
-              onClick={() => {
-                setIsOpen(false);
-                navigate(ROUTES.DASHBOARD);
-              }}
+              className="user-menu-item"
               role="menuitem"
+              onClick={() => setIsOpen(false)}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="9"/>
-                <rect x="14" y="3" width="7" height="5"/>
-                <rect x="14" y="12" width="7" height="9"/>
-                <rect x="3" y="16" width="7" height="5"/>
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
               </svg>
-              <span>Dashboard</span>
+              <span>Settings</span>
             </button>
-          </div>
 
-          <div className="dropdown-divider" />
+            <hr className="user-menu-divider" />
 
-          <div className="dropdown-items">
             <button
               type="button"
-              className="dropdown-item logout-item"
-              onClick={handleLogout}
-              disabled={isLoading}
+              className="user-menu-item logout-item"
               role="menuitem"
+              onClick={handleLogoutClick}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16,17 21,12 16,7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
               </svg>
-              <span>{isLoading ? 'Signing out...' : 'Sign Out'}</span>
+              <span>Sign Out</span>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Logout confirmation modal */}
+      {showLogoutConfirm && (
+        <div className="logout-confirm-overlay">
+          <div className="logout-confirm-dialog" role="dialog" aria-labelledby="logout-title">
+            <h3 id="logout-title">Confirm Sign Out</h3>
+            <p>Are you sure you want to sign out of your account?</p>
+            <div className="logout-confirm-actions">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleLogoutCancel}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleLogoutConfirm}
+              >
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
       )}

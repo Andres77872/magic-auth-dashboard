@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth, useUserType } from '@/hooks';
-import { UserMenu } from '@/components/navigation';
+import { UserMenu, NotificationBell } from '@/components/navigation';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
@@ -93,6 +93,7 @@ export function Header({
             <span className="user-name">{user?.username}</span>
             <span className="user-type">{getUserTypeLabel()}</span>
           </div>
+          <NotificationBell />
           <UserMenu />
         </div>
       </div>
