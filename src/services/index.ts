@@ -7,6 +7,7 @@ export { groupService } from './group.service';
 export { rbacService } from './rbac.service';
 export { systemService } from './system.service';
 export { adminService } from './admin.service';
+export { analyticsService } from './analytics.service';
 
 // Also export defaults for convenience
 export { default as ApiClient } from './api.client';
