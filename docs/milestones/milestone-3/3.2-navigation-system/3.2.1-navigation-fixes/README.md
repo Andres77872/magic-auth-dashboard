@@ -283,7 +283,7 @@ Update `src/App.tsx` with placeholder routes:
 - [ ] No broken links in navigation
 - [ ] User experience improved
 
-**Next Step**: [Milestone 3.3: Common UI Components](../3.3-ui-components/README.md)
+**Next Step**: [Milestone 3.3: Common UI Components](../../3.3-ui-components/README.md)
 
 ### Key Deliverables
 - 🔄 **Navigation Fixes** - All links work correctly

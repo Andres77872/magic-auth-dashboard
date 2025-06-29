@@ -988,7 +988,7 @@ Create `src/styles/components/navigation.css`:
 6. **👤 User Avatars** - Dynamic avatar generation from username
 7. **🏷️ Access Level Indicators** - Visual display of user permission levels
 
-**Status**: ⚠️ MOSTLY COMPLETED - Critical gaps require [Milestone 3.2.1](../3.2.1-navigation-fixes/README.md)
+**Status**: ⚠️ MOSTLY COMPLETED - Critical gaps require [Milestone 3.2.1](3.2.1-navigation-fixes/README.md)
 
 ## 🚨 Critical Issues Identified
 
@@ -998,5 +998,5 @@ Create `src/styles/components/navigation.css`:
 2. **Missing Profile Route**: UserMenu profile link leads to 404 page (`/dashboard/profile` not implemented)
 3. **Broken Navigation Links**: Users, Projects, Groups, Permissions links cause 404 errors
 
-**Resolution**: [Milestone 3.2.1: Navigation System Fixes](../3.2.1-navigation-fixes/README.md) is required to complete the navigation system.
+**Resolution**: [Milestone 3.2.1: Navigation System Fixes](3.2.1-navigation-fixes/README.md) is required to complete the navigation system.
 </rewritten_file> 
