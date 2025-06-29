@@ -18,9 +18,12 @@ class AuthService {
       true // Skip auth for login
     );
     
-    if (response.success && (response as any).session_token) {
-      // Store token on successful login
-      apiClient.setAuthToken((response as any).session_token);
+    if (response.success && response.data) {
+      const loginData = response.data as LoginResponse;
+      if ('session_token' in loginData) {
+        // Store token on successful login
+        apiClient.setAuthToken(loginData.session_token);
+      }
     }
     
     return response as LoginResponse;

@@ -100,5 +100,5 @@ export type AuthActionType = typeof AuthActionType[keyof typeof AuthActionType];
 
 export interface AuthAction {
   type: AuthActionType;
-  payload?: any;
+  payload?: unknown;
 } 

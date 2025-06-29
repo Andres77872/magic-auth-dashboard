@@ -5,7 +5,7 @@ import { HttpMethod } from '@/types/api.types';
 interface RequestConfig {
   method: HttpMethod;
   headers?: Record<string, string>;
-  body?: any;
+  body?: unknown;
   params?: Record<string, string | number>;
   skipAuth?: boolean;
   retries?: number;
@@ -47,10 +47,10 @@ class ApiClient {
     const contentType = response.headers.get('content-type');
     
     if (!contentType?.includes('application/json')) {
-      throw new Error(`Unexpected response type: ${contentType}`);
+      throw new Error(`Unexpected response type: ${contentType || 'unknown'}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as ApiResponse<T>;
 
     if (!response.ok) {
       // Handle specific HTTP status codes
@@ -81,7 +81,7 @@ class ApiClient {
     config: RequestConfig
   ): Promise<ApiResponse<T>> {
     const maxRetries = config.retries ?? API_CONFIG.RETRY_ATTEMPTS;
-    let lastError: Error;
+    let lastError: Error | undefined;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
@@ -134,7 +134,10 @@ class ApiClient {
       }
     }
 
-    throw lastError!;
+    if (lastError) {
+      throw lastError;
+    }
+    throw new Error('Request failed after all retries');
   }
 
   // Public HTTP methods
@@ -145,7 +148,7 @@ class ApiClient {
     });
   }
 
-  async post<T>(endpoint: string, data?: any, skipAuth = false): Promise<ApiResponse<T>> {
+  async post<T>(endpoint: string, data?: unknown, skipAuth = false): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.POST,
       body: data,
@@ -153,7 +156,7 @@ class ApiClient {
     });
   }
 
-  async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+  async put<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.PUT,
       body: data,
@@ -166,7 +169,7 @@ class ApiClient {
     });
   }
 
-  async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+  async patch<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.PATCH,
       body: data,

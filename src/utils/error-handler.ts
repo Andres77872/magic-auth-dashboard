@@ -4,9 +4,9 @@ import { ERROR_MESSAGES } from './constants';
 export class ApiError extends Error {
   public status: number;
   public code?: string;
-  public details?: any;
+  public details?: unknown;
 
-  constructor(message: string, status = 500, code?: string, details?: any) {
+  constructor(message: string, status = 500, code?: string, details?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
@@ -15,32 +15,38 @@ export class ApiError extends Error {
   }
 }
 
-export function handleApiError(error: any): string {
+export function handleApiError(error: unknown): string {
   if (error instanceof ApiError) {
     return error.message;
   }
 
-  if (error.name === 'NetworkError' || error.message.includes('fetch')) {
-    return ERROR_MESSAGES.NETWORK_ERROR;
+  if (error instanceof Error) {
+    if (error.name === 'NetworkError' || error.message.includes('fetch')) {
+      return ERROR_MESSAGES.NETWORK_ERROR;
+    }
+
+    if (error.name === 'TimeoutError') {
+      return 'Request timed out. Please try again.';
+    }
+
+    return error.message;
   }
 
-  if (error.name === 'TimeoutError') {
-    return 'Request timed out. Please try again.';
-  }
-
-  return error.message || ERROR_MESSAGES.INTERNAL_ERROR;
+  return ERROR_MESSAGES.INTERNAL_ERROR;
 }
 
-export function isApiResponse<T>(response: any): response is ApiResponse<T> {
+export function isApiResponse<T>(response: unknown): response is ApiResponse<T> {
   return (
     typeof response === 'object' &&
     response !== null &&
-    typeof response.success === 'boolean' &&
-    typeof response.message === 'string'
+    'success' in response &&
+    typeof (response as Record<string, unknown>).success === 'boolean' &&
+    'message' in response &&
+    typeof (response as Record<string, unknown>).message === 'string'
   );
 }
 
-export function extractErrorMessage(response: ApiResponse<any>): string {
+export function extractErrorMessage(response: ApiResponse<unknown>): string {
   if (response.success) {
     return '';
   }

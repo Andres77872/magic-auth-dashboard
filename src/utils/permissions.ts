@@ -16,6 +16,8 @@ export const PERMISSIONS = {
   MANAGE_SYSTEM_SETTINGS: 'manage_system_settings',
 } as const;
 
+type PermissionName = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+
 // Permission Checker Utility
 export function hasPermission(
   userType: UserType,
@@ -27,7 +29,7 @@ export function hasPermission(
   
   if (userType === 'admin') {
     // ADMIN permissions (excluding system management)
-    const adminPermissions = [
+    const adminPermissions: PermissionName[] = [
       PERMISSIONS.CREATE_USER,
       PERMISSIONS.READ_USER,
       PERMISSIONS.UPDATE_USER,
@@ -35,7 +37,7 @@ export function hasPermission(
       PERMISSIONS.READ_PROJECT,
       PERMISSIONS.UPDATE_PROJECT,
     ];
-    return adminPermissions.includes(permission as any);
+    return adminPermissions.includes(permission as PermissionName);
   }
   
   return false; // CONSUMER has no admin permissions
