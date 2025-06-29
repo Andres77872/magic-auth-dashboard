@@ -5,4 +5,5 @@ export * from './user.types';
 export * from './project.types';
 export * from './rbac.types';
 export * from './system.types';
-export * from './group.types'; 
+export * from './group.types';
+export * from './dashboard.types'; 

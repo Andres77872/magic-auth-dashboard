@@ -1,54 +1,79 @@
 import React from 'react';
+import { 
+  WelcomeSection, 
+  StatisticsGrid, 
+  QuickActionsPanel, 
+  SystemHealthPanel 
+} from './components';
+import { useSystemStats, useSystemHealth, useUserType } from '@/hooks';
 
 export function DashboardOverview(): React.JSX.Element {
+  const { stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useSystemStats();
+  const { health, isLoading: healthLoading, error: healthError, refetch: refetchHealth } = useSystemHealth();
+  const { isRoot } = useUserType();
+
   return (
     <div className="dashboard-overview">
-      <div className="overview-header">
-        <h1>Dashboard Overview</h1>
-        <p>Welcome to the Magic Auth Admin Dashboard</p>
-      </div>
+      {/* Welcome Section */}
+      <section className="dashboard-section welcome-section-container">
+        <WelcomeSection />
+      </section>
 
-      <div className="overview-content">
-        <div className="milestone-status">
-          <h2>✅ Milestone 3.1 Complete - Main Layout Structure</h2>
-          <ul className="milestone-checklist">
-            <li>✅ Responsive dashboard layout with CSS Grid</li>
-            <li>✅ Professional header with logo and user menu</li>
-            <li>✅ Collapsible sidebar with navigation</li>
-            <li>✅ Automatic breadcrumb generation</li>
-            <li>✅ Mobile-friendly responsive design</li>
-            <li>✅ Accessibility-compliant components</li>
-            <li>✅ Integration with authentication system</li>
-            <li>✅ User type-based navigation filtering</li>
-          </ul>
-          <p className="milestone-success">
-            🎉 Phase 3.1 Complete: Main layout structure is fully functional!
-          </p>
-        </div>
+      {/* Statistics Grid */}
+      <section className="dashboard-section statistics-section">
+        <StatisticsGrid 
+          stats={stats}
+          isLoading={statsLoading}
+          error={statsError}
+        />
+      </section>
 
-        <div className="quick-stats">
-          <div className="stat-card">
-            <h3>Authentication</h3>
-            <p>✅ Login System</p>
-            <p>✅ Route Guards</p>
-            <p>✅ User Types</p>
+      {/* Quick Actions Panel */}
+      <section className="dashboard-section quick-actions-section">
+        <QuickActionsPanel />
+      </section>
+
+      {/* System Health Panel (ROOT only) */}
+      {isRoot && (
+        <section className="dashboard-section system-health-section">
+          <SystemHealthPanel
+            health={health}
+            isLoading={healthLoading}
+            error={healthError}
+            onRefresh={refetchHealth}
+          />
+        </section>
+      )}
+
+      {/* Error Recovery Section */}
+      {(statsError || healthError) && (
+        <section className="dashboard-section error-recovery-section">
+          <div className="error-recovery-panel">
+            <h3>Data Refresh Options</h3>
+            <p>Some dashboard data failed to load. You can manually refresh individual sections.</p>
+            <div className="recovery-actions">
+              {statsError && (
+                <button 
+                  onClick={refetchStats}
+                  className="btn btn-outline"
+                  disabled={statsLoading}
+                >
+                  {statsLoading ? 'Refreshing...' : 'Refresh Statistics'}
+                </button>
+              )}
+              {healthError && isRoot && (
+                <button 
+                  onClick={refetchHealth}
+                  className="btn btn-outline"
+                  disabled={healthLoading}
+                >
+                  {healthLoading ? 'Checking...' : 'Refresh Health Status'}
+                </button>
+              )}
+            </div>
           </div>
-          
-          <div className="stat-card">
-            <h3>Layout</h3>
-            <p>✅ Header</p>
-            <p>✅ Sidebar</p>
-            <p>✅ Navigation</p>
-          </div>
-          
-          <div className="stat-card">
-            <h3>Next Steps</h3>
-            <p>🔄 Dashboard Content</p>
-            <p>🔄 User Management</p>
-            <p>🔄 Project Management</p>
-          </div>
-        </div>
-      </div>
+        </section>
+      )}
     </div>
   );
 }
