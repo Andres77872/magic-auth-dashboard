@@ -11,8 +11,17 @@ This development plan outlines the step-by-step implementation of the Magic Auth
 - UI Framework: Custom components with raw CSS
 - Form Handling: Native HTML forms with custom validation
 
-**Current State:** ✅ **PHASE 1 COMPLETED** - Complete infrastructure, types, and API services (December 29, 2024)
+**Current State:** 🚨 **CRITICAL BUG DISCOVERED** - API client using JSON but API expects Form requests
 **Target State:** Full-featured admin dashboard
+
+## 🚨 CRITICAL ISSUE DISCOVERED
+**Bug Description:** The API client is sending JSON requests (`application/json`) but the actual API server only accepts Form data requests (`application/x-www-form-urlencoded` or `multipart/form-data`). This breaks all POST/PUT/PATCH operations.
+
+**Impact:** 
+- Login functionality completely broken
+- All create/update operations failing
+- Authentication system non-functional
+- Prevents progression to Phase 3
 
 ---
 
@@ -142,7 +151,166 @@ This development plan outlines the step-by-step implementation of the Magic Auth
 
 ---
 
+### 🚨 Phase 3.1: CRITICAL HOTFIX - API Request Format (IMMEDIATE)
+
+**Priority:** 🔴 **URGENT** - Blocking all functionality  
+**Duration:** 1-2 days  
+**Status:** ⚠️ **IN PROGRESS - CRITICAL BUG**
+
+#### Problem Statement
+The current API client implementation sends all requests as JSON (`Content-Type: application/json`), but the Magic Auth API server only accepts Form data requests. This causes all POST/PUT/PATCH operations to fail, making authentication and data manipulation impossible.
+
+#### Root Cause Analysis
+- **Current Implementation:** `apiClient` sends `JSON.stringify(data)` with `application/json` headers
+- **API Expectation:** Form data with `application/x-www-form-urlencoded` or `multipart/form-data`
+- **Documentation Gap:** API documentation shows JSON examples but server implementation differs
+
+#### Milestone 3.1.1: Fix API Client Request Format ⚠️ **CRITICAL**
+**Goal:** Convert API client to send Form data instead of JSON
+
+**Implementation Tasks:**
+- [ ] **URGENT:** Modify `src/services/api.client.ts`:
+  - [ ] Change default `Content-Type` from `application/json` to `application/x-www-form-urlencoded`
+  - [ ] Replace `JSON.stringify(data)` with `URLSearchParams` for form encoding
+  - [ ] Handle nested objects and arrays in form data
+  - [ ] Maintain backward compatibility for GET requests with query parameters
+  - [ ] Add support for `multipart/form-data` for file uploads (future-proof)
+
+- [ ] **URGENT:** Update request body handling:
+  ```typescript
+  // Current (BROKEN):
+  body: JSON.stringify(config.body)
+  
+  // New (FIXED):
+  body: new URLSearchParams(flattenFormData(config.body))
+  ```
+
+- [ ] **URGENT:** Test all authentication endpoints:
+  - [ ] `/auth/login` - Login functionality
+  - [ ] `/auth/register` - User registration  
+  - [ ] `/auth/check-availability` - Availability checking
+  - [ ] `/auth/validate` - Token validation (GET - no change needed)
+
+- [ ] **URGENT:** Verify all service methods work with form data:
+  - [ ] `authService.login()` - Primary authentication
+  - [ ] `userService.createRootUser()` - User creation
+  - [ ] `projectService.createProject()` - Project creation
+  - [ ] All other POST/PUT/PATCH operations
+
+#### Milestone 3.1.2: Form Data Utilities ⚠️ **CRITICAL**
+**Goal:** Create robust form data handling utilities
+
+**Implementation Tasks:**
+- [ ] Create `src/utils/form-data.ts`:
+  - [ ] `flattenFormData()` - Convert nested objects to flat form structure
+  - [ ] `encodeFormData()` - Handle special characters and encoding
+  - [ ] `arrayToFormData()` - Handle array values (e.g., `assigned_project_ids[]`)
+  - [ ] Type-safe form data conversion utilities
+
+- [ ] Handle edge cases:
+  - [ ] Empty values and null handling
+  - [ ] Boolean values (convert to strings)
+  - [ ] Array values with proper naming convention
+  - [ ] File uploads (prepare for future implementation)
+
+#### Milestone 3.1.3: Update Service Layer ⚠️ **CRITICAL**
+**Goal:** Ensure all services work with the new form data format
+
+**Implementation Tasks:**
+- [ ] **Test and fix authentication services:**
+  - [ ] `auth.service.ts` - All authentication endpoints
+  - [ ] Verify login flow works end-to-end
+  - [ ] Test user registration and validation
+
+- [ ] **Test and fix all other services:**
+  - [ ] `user.service.ts` - User management operations
+  - [ ] `project.service.ts` - Project operations  
+  - [ ] `group.service.ts` - Group management
+  - [ ] `rbac.service.ts` - Permission management
+  - [ ] `admin.service.ts` - Admin operations
+  - [ ] `system.service.ts` - System management
+
+#### Milestone 3.1.4: Validation and Testing ⚠️ **CRITICAL**
+**Goal:** Ensure complete functionality with new request format
+
+**Implementation Tasks:**
+- [ ] **Critical path testing:**
+  - [ ] Login flow completely functional
+  - [ ] User creation and management
+  - [ ] Error handling with form data
+  - [ ] Validation errors properly handled
+
+- [ ] **Update error handling:**
+  - [ ] Ensure API error responses are still parsed correctly
+  - [ ] Validate form data errors are handled properly
+  - [ ] Test network error scenarios
+
+- [ ] **Documentation updates:**
+  - [ ] Update API client documentation
+  - [ ] Add form data handling examples
+  - [ ] Update service usage examples
+
+#### Expected Code Changes
+
+**Current (Broken) API Client:**
+```typescript
+// src/services/api.client.ts
+private defaultHeaders: Record<string, string> = {
+  'Content-Type': 'application/json',     // ❌ BROKEN
+  'Accept': 'application/json',
+};
+
+// Body handling
+if (config.body && config.method !== HttpMethod.GET) {
+  requestInit.body = JSON.stringify(config.body);  // ❌ BROKEN
+}
+```
+
+**Fixed API Client:**
+```typescript
+// src/services/api.client.ts
+private defaultHeaders: Record<string, string> = {
+  'Content-Type': 'application/x-www-form-urlencoded',  // ✅ FIXED
+  'Accept': 'application/json',
+};
+
+// Body handling
+if (config.body && config.method !== HttpMethod.GET) {
+  requestInit.body = this.encodeFormData(config.body);  // ✅ FIXED
+}
+
+private encodeFormData(data: unknown): URLSearchParams {
+  const formData = new URLSearchParams();
+  const flatData = flattenObject(data);
+  
+  Object.entries(flatData).forEach(([key, value]) => {
+    if (value !== null && value !== undefined) {
+      formData.append(key, String(value));
+    }
+  });
+  
+  return formData;
+}
+```
+
+#### Risk Assessment
+- **Risk Level:** 🔴 **CRITICAL** - Blocking all development progress
+- **Complexity:** 🟡 **MEDIUM** - Straightforward but requires careful testing
+- **Testing Required:** 🔴 **EXTENSIVE** - All API endpoints must be verified
+- **Rollback Plan:** Git revert to current state if issues arise
+
+#### Success Criteria
+- [ ] ✅ Login functionality works completely
+- [ ] ✅ All POST/PUT/PATCH operations successful
+- [ ] ✅ Error handling maintains current behavior
+- [ ] ✅ All existing tests pass (when API server is available)
+- [ ] ✅ Form data encoding handles edge cases correctly
+
+---
+
 ### 🎨 Phase 3: Layout & Navigation (Week 3-4)
+
+**Note:** Phase 3 is BLOCKED until Phase 3.1 hotfix is completed
 
 #### Milestone 3.1: Main Layout Structure
 **Goal:** Create the main dashboard layout with header, sidebar, and content area
@@ -565,21 +733,21 @@ useGroups()    // Group management state
 useRBAC()      // RBAC state management
 ```
 
-### API Integration Pattern ✅ **IMPLEMENTED**
+### API Integration Pattern ⚠️ **CRITICAL BUG DISCOVERED**
 ```typescript
-// Service layer structure ✅ COMPLETED
+// Service layer structure ⚠️ IMPLEMENTED BUT BROKEN
 services/
-  ├── api.client.ts      // ✅ Native fetch wrapper with retry logic
-  ├── auth.service.ts    // ✅ Authentication endpoints  
-  ├── user.service.ts    // ✅ User management CRUD operations
-  ├── project.service.ts // ✅ Project management services
-  ├── admin.service.ts   // ✅ Admin dashboard operations
-  ├── rbac.service.ts    // ✅ RBAC endpoints
-  ├── group.service.ts   // ✅ Group management services
-  ├── system.service.ts  // ✅ System information endpoints
-  └── index.ts           // ✅ Centralized service exports
+  ├── api.client.ts      // ❌ BROKEN: Sends JSON but API expects form data
+  ├── auth.service.ts    // ❌ BROKEN: Login fails due to wrong content type
+  ├── user.service.ts    // ❌ BROKEN: User management CRUD operations fail
+  ├── project.service.ts // ❌ BROKEN: Project management services fail
+  ├── admin.service.ts   // ❌ BROKEN: Admin dashboard operations fail
+  ├── rbac.service.ts    // ❌ BROKEN: RBAC endpoints fail
+  ├── group.service.ts   // ❌ BROKEN: Group management services fail
+  ├── system.service.ts  // ❌ BROKEN: System information endpoints fail
+  └── index.ts           // ✅ Centralized service exports (structure OK)
 
-// Error handling utilities ✅ COMPLETED
+// Error handling utilities ✅ COMPLETED (no changes needed)
 utils/
   ├── constants.ts       // ✅ API configuration & constants
   ├── error-handler.ts   // ✅ Custom ApiError class & utilities
@@ -675,7 +843,10 @@ types/
 .button__icon--small { /* Element modifier */ }
 ```
 
-### Native Fetch API Implementation
+### Native Fetch API Implementation ⚠️ **CRITICAL BUG IDENTIFIED**
+
+**🚨 ISSUE:** Current implementation sends JSON but API expects Form data
+
 ```typescript
 // api.client.ts - Fetch wrapper with interceptors
 class ApiClient {
@@ -685,7 +856,7 @@ class ApiClient {
   constructor(baseURL: string) {
     this.baseURL = baseURL;
     this.defaultHeaders = {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json',  // ❌ BROKEN - API expects form data
     };
   }
 
@@ -726,7 +897,7 @@ class ApiClient {
   post<T>(endpoint: string, data: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(data),  // ❌ BROKEN - Should be form data
     });
   }
 
@@ -766,17 +937,20 @@ class ApiClient {
 |-------|----------|--------|------------------|
 | **Phase 1** | ✅ **Week 1** | ✅ **COMPLETED** | Infrastructure, fetch API client, CSS setup, TypeScript |
 | **Phase 2** | ✅ **Week 2** | ✅ **COMPLETED** | Authentication, route guards, login page |
-| Phase 3 | Week 3-4 | 🔄 **NEXT** | Layout, navigation, common components |
-| Phase 4 | Week 4-5 | ⏳ Planned | Dashboard overview with statistics |
-| Phase 5 | Week 5-7 | ⏳ Planned | Complete user management |
-| Phase 6 | Week 6-8 | ⏳ Planned | Project management features |
-| Phase 7 | Week 7-8 | ⏳ Planned | User group management |
-| Phase 8 | Week 8-10 | ⏳ Planned | RBAC and permissions system |
-| Phase 9 | Week 9-10 | ⏳ Planned | System management (ROOT features) |
-| Phase 10 | Week 10-12 | ⏳ Planned | Polish, optimization, testing |
+| **Phase 3.1** | 🚨 **1-2 Days** | 🔴 **CRITICAL HOTFIX** | Fix API request format (JSON → Form data) |
+| Phase 3 | Week 3-4 | ⏸️ **BLOCKED** | Layout, navigation, common components |
+| Phase 4 | Week 4-5 | ⏸️ **BLOCKED** | Dashboard overview with statistics |
+| Phase 5 | Week 5-7 | ⏸️ **BLOCKED** | Complete user management |
+| Phase 6 | Week 6-8 | ⏸️ **BLOCKED** | Project management features |
+| Phase 7 | Week 7-8 | ⏸️ **BLOCKED** | User group management |
+| Phase 8 | Week 8-10 | ⏸️ **BLOCKED** | RBAC and permissions system |
+| Phase 9 | Week 9-10 | ⏸️ **BLOCKED** | System management (ROOT features) |
+| Phase 10 | Week 10-12 | ⏸️ **BLOCKED** | Polish, optimization, testing |
 
+**🚨 CRITICAL ISSUE:** All phases blocked until Phase 3.1 hotfix is completed  
 **Original Estimated Duration: 12 weeks**  
-**Revised Timeline:** Phase 1 & 2 completed ahead of schedule (2 weeks total vs 4 weeks estimated)
+**Current Status:** Phase 1 & 2 completed, but critical bug discovered blocking all progress  
+**Required Action:** Immediate hotfix to convert API requests from JSON to Form data format
 
 ---
 
@@ -887,8 +1061,10 @@ src/
     └── pages/unauthorized.css        # Error page styling
 ```
 
-### 🚀 Ready for Phase 3: Layout & Navigation
-The authentication foundation is complete and ready for dashboard layout implementation, navigation systems, and common UI components.
+### 🚨 CRITICAL BUG BLOCKS PHASE 3: API Request Format Issue
+**Status:** ⚠️ **BLOCKING** - Authentication foundation appears complete but contains critical bug  
+**Issue:** API client sends JSON requests but server expects Form data, breaking all functionality  
+**Action Required:** Immediate hotfix (Phase 3.1) before proceeding to Phase 3
 
 ---
 
