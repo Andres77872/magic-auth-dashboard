@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { analyticsService } from '@/services/analytics.service';
 import type {
   Activity,
-  ActivityFilters,
   UseRecentActivityOptions,
   UseRecentActivityReturn,
 } from '@/types/analytics.types';
@@ -12,7 +11,6 @@ export function useRecentActivity(
 ): UseRecentActivityReturn {
   const {
     filters = {},
-    page = 1,
     limit = 10,
     autoRefresh = false,
     refreshInterval = 30000,

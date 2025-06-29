@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ChartConfig, ChartDataPoint } from '@/types/analytics.types';
+import type { ChartConfig } from '@/types/analytics.types';
 
 interface ChartProps {
   config: ChartConfig;
@@ -150,7 +150,6 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
       <div className="pie-chart">
         <svg width={size} height={size} className="chart-svg">
           {data.map((point, index) => {
-            const percentage = (point.value / total) * 100;
             const angle = (point.value / total) * 360;
             const startAngle = currentAngle;
             const endAngle = currentAngle + angle;

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { HealthComponent } from '@/types/dashboard.types';
+import type { HealthComponent } from '@/types/system.types';
 
 interface HealthIndicatorProps {
   title: string;
@@ -87,38 +87,38 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
       </div>
 
       <div className="health-details">
-        {component.responseTime !== undefined && (
+        {component.response_time_ms !== undefined && (
           <div className="health-metric">
             <span className="metric-label">Response Time:</span>
-            <span className="metric-value">{formatResponseTime(component.responseTime)}</span>
+            <span className="metric-value">{formatResponseTime(component.response_time_ms)}</span>
           </div>
         )}
 
-        {component.connectionPool && (
+        {component.connection_pool && (
           <div className="health-metric">
             <span className="metric-label">Connections:</span>
-            <span className="metric-value">{component.connectionPool}</span>
+            <span className="metric-value">{component.connection_pool}</span>
           </div>
         )}
 
-        {component.memoryUsage && (
+        {component.memory_usage && (
           <div className="health-metric">
             <span className="metric-label">Memory:</span>
-            <span className="metric-value">{component.memoryUsage}</span>
+            <span className="metric-value">{component.memory_usage}</span>
           </div>
         )}
 
-        {component.activeSessions !== undefined && (
+        {component.active_sessions !== undefined && (
           <div className="health-metric">
             <span className="metric-label">Active Sessions:</span>
-            <span className="metric-value">{component.activeSessions.toLocaleString()}</span>
+            <span className="metric-value">{component.active_sessions.toLocaleString()}</span>
           </div>
         )}
 
-        {component.additionalInfo && (
+        {component.additional_info && (
           <div className="health-metric">
             <span className="metric-label">Info:</span>
-            <span className="metric-value">{component.additionalInfo}</span>
+            <span className="metric-value">{component.additional_info}</span>
           </div>
         )}
       </div>

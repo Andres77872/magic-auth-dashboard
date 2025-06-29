@@ -13,6 +13,7 @@ export { default as Table } from './Table';
 export { default as Card } from './Card';
 export { default as Badge } from './Badge';
 export { default as Toast } from './Toast';
+export { default as Pagination } from './Pagination';
 
 // Export types
 export type { ButtonProps } from './Button';

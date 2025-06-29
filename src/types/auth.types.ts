@@ -43,6 +43,7 @@ export interface User {
   username: string;
   email: string;
   user_type: UserType;
+  is_active: boolean;
   created_at: string;
   updated_at?: string;
 }

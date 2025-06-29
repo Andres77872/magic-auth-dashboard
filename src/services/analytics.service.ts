@@ -7,7 +7,6 @@ import type {
   ExportOptions,
   ExportData
 } from '@/types/analytics.types';
-import type { PaginationParams } from '@/types/api.types';
 
 export class AnalyticsService {
   /**

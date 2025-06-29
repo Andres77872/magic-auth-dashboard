@@ -41,19 +41,19 @@ export function useSystemHealth(): UseSystemHealthReturn {
             database: {
               status: data.components?.database?.status === 'healthy' ? 'healthy' :
                       data.components?.database?.status === 'warning' ? 'warning' : 'critical',
-              responseTime: data.components?.database?.response_time_ms,
-              connectionPool: data.components?.database?.connection_pool,
+              response_time_ms: data.components?.database?.response_time_ms,
+              connection_pool: data.components?.database?.connection_pool,
             },
             cache: {
               status: data.components?.cache?.status === 'healthy' ? 'healthy' :
                       data.components?.cache?.status === 'warning' ? 'warning' : 'critical',
-              responseTime: data.components?.cache?.response_time_ms,
-              memoryUsage: data.components?.cache?.memory_usage,
+              response_time_ms: data.components?.cache?.response_time_ms,
+              memory_usage: data.components?.cache?.memory_usage,
             },
             authentication: {
               status: data.components?.authentication?.status === 'healthy' ? 'healthy' :
                       data.components?.authentication?.status === 'warning' ? 'warning' : 'critical',
-              activeSessions: data.components?.authentication?.active_sessions,
+              active_sessions: data.components?.authentication?.active_sessions,
             },
           },
         });

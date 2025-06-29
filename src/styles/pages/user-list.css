@@ -1,0 +1,98 @@
+/* User List Page Styles */
+.user-list-page {
+  padding: var(--spacing-6);
+  background: var(--color-background);
+  min-height: 100vh;
+}
+
+.user-list-page .page-header {
+  margin-bottom: var(--spacing-8);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--spacing-6);
+}
+
+.user-list-page .page-title-section h1 {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  margin: 0 0 var(--spacing-2) 0;
+}
+
+.user-list-page .page-title-section p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  margin: 0;
+}
+
+.user-list-page .page-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.user-list-page .filter-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-6);
+}
+
+.user-list-page .error-banner {
+  background: var(--color-error-background);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
+}
+
+.user-list-page .error-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+}
+
+.user-list-page .error-message {
+  color: var(--color-error);
+  font-weight: var(--font-weight-medium);
+  flex: 1;
+}
+
+.user-list-page .table-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.user-list-page .pagination-section {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-4) 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .user-list-page {
+    padding: var(--spacing-4);
+  }
+  
+  .user-list-page .page-header {
+    margin-bottom: var(--spacing-6);
+    padding-bottom: var(--spacing-4);
+  }
+  
+  .user-list-page .page-title-section h1 {
+    font-size: var(--font-size-xl);
+  }
+  
+  .user-list-page .filter-section {
+    padding: var(--spacing-4);
+  }
+  
+  .user-list-page .error-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-3);
+  }
+} 

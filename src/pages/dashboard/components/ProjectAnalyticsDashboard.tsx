@@ -8,7 +8,6 @@ export function ProjectAnalyticsDashboard(): React.JSX.Element {
   const [data, setData] = useState<ProjectAnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange>({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0],
@@ -65,8 +64,8 @@ export function ProjectAnalyticsDashboard(): React.JSX.Element {
   };
 
   const handleProjectClick = (projectId: string) => {
-    setSelectedProject(projectId);
     // TODO: Navigate to detailed project view or expand inline
+    console.log('Project clicked:', projectId);
   };
 
   if (error) {

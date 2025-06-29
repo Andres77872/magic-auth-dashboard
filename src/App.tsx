@@ -12,9 +12,11 @@ import './styles/globals.css';
 import './styles/components/route-guards.css';
 import './styles/pages/unauthorized.css';
 import './styles/pages/login.css';
+import './styles/pages/user-list.css';
+import './styles/components/user-management.css';
 
 // Import pages
-import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage } from '@/pages';
+import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage } from '@/pages';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
@@ -86,17 +88,13 @@ function App(): React.JSX.Element {
                 }
               />
 
-              {/* Placeholder dashboard routes */}
+              {/* User Management */}
               <Route
                 path={ROUTES.USERS}
                 element={
                   <AdminRoute>
                     <DashboardLayout>
-                      <ComingSoon 
-                        title="User Management"
-                        description="Manage system users, permissions, and access controls"
-                        feature="User management"
-                      />
+                      <UserListPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }

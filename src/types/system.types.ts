@@ -23,7 +23,7 @@ export interface SystemInfoResponse extends ApiResponse {
 }
 
 export interface HealthComponent {
-  status: 'healthy' | 'warning' | 'error';
+  status: 'healthy' | 'warning' | 'critical';
   response_time_ms?: number;
   additional_info?: string;
   connection_pool?: string;
