@@ -1,0 +1,50 @@
+/* Border Design Tokens */
+:root {
+  /* === BORDER RADIUS === */
+  
+  --border-radius-none: 0;
+  --border-radius-xs: 0.125rem;   /* 2px */
+  --border-radius-sm: 0.25rem;    /* 4px */
+  --border-radius-md: 0.375rem;   /* 6px */
+  --border-radius-lg: 0.5rem;     /* 8px */
+  --border-radius-xl: 0.75rem;    /* 12px */
+  --border-radius-2xl: 1rem;      /* 16px */
+  --border-radius-3xl: 1.5rem;    /* 24px */
+  --border-radius-full: 9999px;
+
+  /* === BORDER WIDTHS === */
+  
+  --border-width-0: 0;
+  --border-width-1: 1px;
+  --border-width-2: 2px;
+  --border-width-4: 4px;
+  --border-width-8: 8px;
+
+  /* === CONTEXTUAL BORDERS === */
+  
+  /* Input Borders */
+  --border-input: var(--border-width-1) solid var(--color-border);
+  --border-input-hover: var(--border-width-1) solid var(--color-border-strong);
+  --border-input-focus: var(--border-width-2) solid var(--color-primary-500);
+  --border-input-error: var(--border-width-1) solid var(--color-error);
+
+  /* Button Borders */
+  --border-button: var(--border-width-1) solid transparent;
+  --border-button-outline: var(--border-width-1) solid var(--color-primary-500);
+  --border-button-outline-hover: var(--border-width-1) solid var(--color-primary-600);
+
+  /* Card Borders */
+  --border-card: var(--border-width-1) solid var(--color-border);
+  --border-card-hover: var(--border-width-1) solid var(--color-border-strong);
+  
+  /* Divider Borders */
+  --border-divider: var(--border-width-1) solid var(--color-border);
+  --border-divider-strong: var(--border-width-1) solid var(--color-border-strong);
+
+  /* Component Border Radius */
+  --border-radius-button: var(--border-radius-md);
+  --border-radius-input: var(--border-radius-md);
+  --border-radius-card: var(--border-radius-lg);
+  --border-radius-modal: var(--border-radius-xl);
+  --border-radius-tooltip: var(--border-radius-md);
+} 

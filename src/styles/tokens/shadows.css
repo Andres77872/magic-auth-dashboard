@@ -1,0 +1,47 @@
+/* Shadow Design Tokens */
+:root {
+  /* === SHADOW SCALE === */
+  
+  --shadow-none: 0 0 #0000;
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+
+  /* === COLORED SHADOWS === */
+  
+  --shadow-primary: 0 4px 14px 0 rgb(59 130 246 / 0.15);
+  --shadow-success: 0 4px 14px 0 rgb(34 197 94 / 0.15);
+  --shadow-warning: 0 4px 14px 0 rgb(245 158 11 / 0.15);
+  --shadow-error: 0 4px 14px 0 rgb(239 68 68 / 0.15);
+
+  /* === CONTEXTUAL SHADOWS === */
+  
+  /* Card Shadows */
+  --shadow-card: var(--shadow-sm);
+  --shadow-card-hover: var(--shadow-md);
+  --shadow-card-elevated: var(--shadow-lg);
+
+  /* Button Shadows */
+  --shadow-button: var(--shadow-xs);
+  --shadow-button-hover: var(--shadow-sm);
+  --shadow-button-pressed: var(--shadow-inner);
+
+  /* Modal Shadows */
+  --shadow-modal: var(--shadow-2xl);
+  --shadow-modal-backdrop: 0 0 0 1px rgb(0 0 0 / 0.05);
+
+  /* Dropdown Shadows */
+  --shadow-dropdown: var(--shadow-lg);
+  --shadow-tooltip: var(--shadow-md);
+  --shadow-popover: var(--shadow-xl);
+
+  /* Focus Shadows */
+  --shadow-focus-primary: 0 0 0 3px rgb(59 130 246 / 0.1);
+  --shadow-focus-error: 0 0 0 3px rgb(239 68 68 / 0.1);
+  --shadow-focus-success: 0 0 0 3px rgb(34 197 94 / 0.1);
+  --shadow-focus-warning: 0 0 0 3px rgb(245 158 11 / 0.1);
+} 

@@ -92,48 +92,7 @@
   margin-bottom: var(--spacing-2);
 }
 
-/* Button styles (if not already defined) */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--spacing-2) var(--spacing-4);
-  border-radius: var(--border-radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  text-decoration: none;
-  transition: all var(--transition-fast);
-  border: var(--border-width-1) solid transparent;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background-color: var(--color-primary-500);
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-600);
-}
-
-.btn-secondary {
-  background-color: var(--color-gray-500);
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: var(--color-gray-600);
-}
-
-.btn-outline {
-  background-color: transparent;
-  color: var(--color-gray-700);
-  border-color: var(--color-gray-300);
-}
-
-.btn-outline:hover {
-  background-color: var(--color-gray-100);
-}
+/* Button styles are now centralized in globals.css */
 
 /* Responsive design */
 @media (max-width: 640px) {

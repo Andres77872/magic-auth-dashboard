@@ -1,0 +1,162 @@
+/* Color Design Tokens */
+:root {
+  /* === PRIMITIVE COLORS === */
+  
+  /* Blue Scale */
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+
+  /* Gray Scale */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* Green Scale */
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-200: #bbf7d0;
+  --color-green-300: #86efac;
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+  --color-green-800: #166534;
+  --color-green-900: #14532d;
+
+  /* Red Scale */
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-800: #991b1b;
+  --color-red-900: #7f1d1d;
+
+  /* Yellow Scale */
+  --color-yellow-50: #fefce8;
+  --color-yellow-100: #fef3c7;
+  --color-yellow-200: #fde68a;
+  --color-yellow-300: #fcd34d;
+  --color-yellow-400: #fbbf24;
+  --color-yellow-500: #f59e0b;
+  --color-yellow-600: #d97706;
+  --color-yellow-700: #b45309;
+  --color-yellow-800: #92400e;
+  --color-yellow-900: #78350f;
+
+  /* Cyan Scale */
+  --color-cyan-50: #ecfeff;
+  --color-cyan-100: #cffafe;
+  --color-cyan-200: #a5f3fc;
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-cyan-700: #0e7490;
+  --color-cyan-800: #155e75;
+  --color-cyan-900: #164e63;
+
+  /* === SEMANTIC COLORS === */
+  
+  /* Primary Brand Colors */
+  --color-primary-50: var(--color-blue-50);
+  --color-primary-100: var(--color-blue-100);
+  --color-primary-200: var(--color-blue-200);
+  --color-primary-300: var(--color-blue-300);
+  --color-primary-400: var(--color-blue-400);
+  --color-primary-500: var(--color-blue-500);
+  --color-primary-600: var(--color-blue-600);
+  --color-primary-700: var(--color-blue-700);
+  --color-primary-800: var(--color-blue-800);
+  --color-primary-900: var(--color-blue-900);
+
+  /* Success Colors */
+  --color-success: var(--color-green-500);
+  --color-success-light: var(--color-green-100);
+  --color-success-dark: var(--color-green-700);
+
+  /* Warning Colors */
+  --color-warning: var(--color-yellow-500);
+  --color-warning-light: var(--color-yellow-100);
+  --color-warning-dark: var(--color-yellow-700);
+
+  /* Error Colors */
+  --color-error: var(--color-red-500);
+  --color-error-light: var(--color-red-100);
+  --color-error-dark: var(--color-red-700);
+
+  /* Info Colors */
+  --color-info: var(--color-cyan-500);
+  --color-info-light: var(--color-cyan-100);
+  --color-info-dark: var(--color-cyan-700);
+
+  /* === COMPONENT COLORS === */
+  
+  /* Background Colors */
+  --color-background: white;
+  --color-background-subtle: var(--color-gray-50);
+  --color-background-muted: var(--color-gray-100);
+
+  /* Text Colors */
+  --color-text: var(--color-gray-900);
+  --color-text-muted: var(--color-gray-600);
+  --color-text-subtle: var(--color-gray-500);
+
+  /* Border Colors */
+  --color-border: var(--color-gray-200);
+  --color-border-muted: var(--color-gray-100);
+  --color-border-strong: var(--color-gray-300);
+
+  /* === STATE COLORS === */
+  
+  /* Hover States */
+  --color-hover-subtle: var(--color-gray-50);
+  --color-hover-muted: var(--color-gray-100);
+  
+  /* Focus States */
+  --color-focus-ring: rgba(59, 130, 246, 0.1);
+  
+  /* Active States */
+  --color-active: var(--color-primary-100);
+}
+
+/* === DARK MODE COLORS === */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Override semantic colors for dark mode */
+    --color-background: var(--color-gray-900);
+    --color-background-subtle: var(--color-gray-800);
+    --color-background-muted: var(--color-gray-700);
+    
+    --color-text: var(--color-gray-100);
+    --color-text-muted: var(--color-gray-300);
+    --color-text-subtle: var(--color-gray-400);
+    
+    --color-border: var(--color-gray-700);
+    --color-border-muted: var(--color-gray-800);
+    --color-border-strong: var(--color-gray-600);
+    
+    --color-hover-subtle: var(--color-gray-800);
+    --color-hover-muted: var(--color-gray-700);
+    
+    --color-active: var(--color-gray-800);
+  }
+} 

@@ -1,4 +1,13 @@
-/* Import design system variables */
+/* Import design system tokens */
+@import './tokens/colors.css';
+@import './tokens/spacing.css';
+@import './tokens/typography.css';
+@import './tokens/shadows.css';
+@import './tokens/borders.css';
+@import './tokens/transitions.css';
+@import './tokens/breakpoints.css';
+
+/* Import legacy variables for backwards compatibility */
 @import './variables.css';
 
 /* Import component styles */
@@ -260,8 +269,8 @@ select:focus {
 }
 
 .btn-danger:hover:not(:disabled) {
-  background-color: #dc2626;
-  border-color: #dc2626;
+  background-color: var(--color-error-dark);
+  border-color: var(--color-error-dark);
 }
 
 /* Button Sizes */

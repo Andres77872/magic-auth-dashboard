@@ -1,0 +1,97 @@
+/* Spacing Design Tokens */
+:root {
+  /* === BASE SPACING SCALE === */
+  /* Based on 4px unit system */
+  
+  --spacing-0: 0;
+  --spacing-0-5: 0.125rem; /* 2px */
+  --spacing-1: 0.25rem;    /* 4px */
+  --spacing-1-5: 0.375rem; /* 6px */
+  --spacing-2: 0.5rem;     /* 8px */
+  --spacing-2-5: 0.625rem; /* 10px */
+  --spacing-3: 0.75rem;    /* 12px */
+  --spacing-3-5: 0.875rem; /* 14px */
+  --spacing-4: 1rem;       /* 16px */
+  --spacing-5: 1.25rem;    /* 20px */
+  --spacing-6: 1.5rem;     /* 24px */
+  --spacing-7: 1.75rem;    /* 28px */
+  --spacing-8: 2rem;       /* 32px */
+  --spacing-9: 2.25rem;    /* 36px */
+  --spacing-10: 2.5rem;    /* 40px */
+  --spacing-11: 2.75rem;   /* 44px */
+  --spacing-12: 3rem;      /* 48px */
+  --spacing-14: 3.5rem;    /* 56px */
+  --spacing-16: 4rem;      /* 64px */
+  --spacing-20: 5rem;      /* 80px */
+  --spacing-24: 6rem;      /* 96px */
+  --spacing-28: 7rem;      /* 112px */
+  --spacing-32: 8rem;      /* 128px */
+  --spacing-36: 9rem;      /* 144px */
+  --spacing-40: 10rem;     /* 160px */
+  --spacing-44: 11rem;     /* 176px */
+  --spacing-48: 12rem;     /* 192px */
+  --spacing-52: 13rem;     /* 208px */
+  --spacing-56: 14rem;     /* 224px */
+  --spacing-60: 15rem;     /* 240px */
+  --spacing-64: 16rem;     /* 256px */
+  --spacing-72: 18rem;     /* 288px */
+  --spacing-80: 20rem;     /* 320px */
+  --spacing-96: 24rem;     /* 384px */
+
+  /* === COMPONENT SPACING === */
+  
+  /* Button Spacing */
+  --spacing-button-x-sm: var(--spacing-2) var(--spacing-3);
+  --spacing-button-sm: var(--spacing-2) var(--spacing-4);
+  --spacing-button-md: var(--spacing-3) var(--spacing-6);
+  --spacing-button-lg: var(--spacing-4) var(--spacing-8);
+  --spacing-button-xl: var(--spacing-5) var(--spacing-10);
+
+  /* Input Spacing */
+  --spacing-input-sm: var(--spacing-2) var(--spacing-3);
+  --spacing-input-md: var(--spacing-3) var(--spacing-4);
+  --spacing-input-lg: var(--spacing-4) var(--spacing-5);
+
+  /* Card Spacing */
+  --spacing-card-sm: var(--spacing-4);
+  --spacing-card-md: var(--spacing-6);
+  --spacing-card-lg: var(--spacing-8);
+  --spacing-card-xl: var(--spacing-12);
+
+  /* Section Spacing */
+  --spacing-section-sm: var(--spacing-8);
+  --spacing-section-md: var(--spacing-12);
+  --spacing-section-lg: var(--spacing-16);
+  --spacing-section-xl: var(--spacing-24);
+
+  /* === LAYOUT SPACING === */
+  
+  /* Container Spacing */
+  --spacing-container-sm: var(--spacing-4);
+  --spacing-container-md: var(--spacing-6);
+  --spacing-container-lg: var(--spacing-8);
+  --spacing-container-xl: var(--spacing-12);
+
+  /* Grid Gaps */
+  --spacing-grid-sm: var(--spacing-4);
+  --spacing-grid-md: var(--spacing-6);
+  --spacing-grid-lg: var(--spacing-8);
+  --spacing-grid-xl: var(--spacing-12);
+
+  /* Stack Spacing */
+  --spacing-stack-xs: var(--spacing-1);
+  --spacing-stack-sm: var(--spacing-2);
+  --spacing-stack-md: var(--spacing-4);
+  --spacing-stack-lg: var(--spacing-6);
+  --spacing-stack-xl: var(--spacing-8);
+  --spacing-stack-2xl: var(--spacing-12);
+
+  /* === RESPONSIVE SPACING === */
+  
+  /* Mobile-optimized spacing values */
+  --spacing-mobile-xs: var(--spacing-2);
+  --spacing-mobile-sm: var(--spacing-3);
+  --spacing-mobile-md: var(--spacing-4);
+  --spacing-mobile-lg: var(--spacing-6);
+  --spacing-mobile-xl: var(--spacing-8);
+} 

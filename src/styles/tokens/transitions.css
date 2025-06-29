@@ -1,0 +1,95 @@
+/* Transition Design Tokens */
+:root {
+  /* === TRANSITION DURATIONS === */
+  
+  --transition-duration-none: 0s;
+  --transition-duration-fast: 0.15s;
+  --transition-duration-normal: 0.3s;
+  --transition-duration-slow: 0.5s;
+  --transition-duration-slower: 0.75s;
+  --transition-duration-slowest: 1s;
+
+  /* === TRANSITION TIMING FUNCTIONS === */
+  
+  --transition-timing-linear: linear;
+  --transition-timing-ease: ease;
+  --transition-timing-ease-in: ease-in;
+  --transition-timing-ease-out: ease-out;
+  --transition-timing-ease-in-out: ease-in-out;
+  --transition-timing-cubic-bezier: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === COMMON TRANSITIONS === */
+  
+  --transition-fast: var(--transition-duration-fast) var(--transition-timing-ease-in-out);
+  --transition-normal: var(--transition-duration-normal) var(--transition-timing-ease-in-out);
+  --transition-slow: var(--transition-duration-slow) var(--transition-timing-ease-in-out);
+
+  /* === PROPERTY-SPECIFIC TRANSITIONS === */
+  
+  /* Colors */
+  --transition-colors: color var(--transition-fast), 
+                       background-color var(--transition-fast), 
+                       border-color var(--transition-fast);
+
+  /* Transform */
+  --transition-transform: transform var(--transition-fast);
+  --transition-transform-gpu: transform var(--transition-fast) var(--transition-timing-cubic-bezier);
+
+  /* Opacity */
+  --transition-opacity: opacity var(--transition-fast);
+
+  /* Shadow */
+  --transition-shadow: box-shadow var(--transition-fast);
+
+  /* All Properties */
+  --transition-all: all var(--transition-fast);
+  --transition-all-normal: all var(--transition-normal);
+
+  /* === CONTEXTUAL TRANSITIONS === */
+  
+  /* Interactive Elements */
+  --transition-interactive: var(--transition-colors), var(--transition-shadow), var(--transition-transform);
+  
+  /* Button Transitions */
+  --transition-button: var(--transition-colors), 
+                       var(--transition-shadow), 
+                       transform var(--transition-fast);
+
+  /* Input Transitions */
+  --transition-input: border-color var(--transition-fast), 
+                      box-shadow var(--transition-fast);
+
+  /* Modal Transitions */
+  --transition-modal-backdrop: opacity var(--transition-normal);
+  --transition-modal-content: opacity var(--transition-normal), 
+                              transform var(--transition-normal);
+
+  /* Navigation Transitions */
+  --transition-nav: background-color var(--transition-fast);
+
+  /* Card Transitions */
+  --transition-card: var(--transition-shadow), 
+                     transform var(--transition-fast);
+
+  /* === ANIMATION PREFERENCES === */
+  
+  /* Reduced Motion */
+  --transition-none: none;
+}
+
+/* === REDUCED MOTION SUPPORT === */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: var(--transition-none);
+    --transition-normal: var(--transition-none);
+    --transition-slow: var(--transition-none);
+    --transition-all: var(--transition-none);
+    --transition-interactive: var(--transition-none);
+    --transition-button: var(--transition-none);
+    --transition-input: var(--transition-none);
+    --transition-modal-backdrop: var(--transition-none);
+    --transition-modal-content: var(--transition-none);
+    --transition-nav: var(--transition-none);
+    --transition-card: var(--transition-none);
+  }
+} 
