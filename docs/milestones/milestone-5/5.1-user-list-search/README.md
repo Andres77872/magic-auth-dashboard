@@ -2,7 +2,7 @@
 
 ## Overview
 **Duration**: Day 1-4
-**Status**: 🚀 **IN PROGRESS**
+**Status**: ✅ **COMPLETED**
 **Goal**: Create a comprehensive user listing page with a searchable, filterable, and paginated data table to manage all system users.
 
 This milestone lays the foundation for all user management workflows by providing administrators with a powerful interface to view and find users.
@@ -12,41 +12,41 @@ This milestone lays the foundation for all user management workflows by providin
 ## 📋 Tasks Checklist
 
 ### Step 1: Page & Route Setup
-- [ ] Create the main `UserListPage.tsx` component.
-- [ ] Add the `/dashboard/users` route in `App.tsx` to render the page.
-- [ ] Update the main navigation to link to the new User Management page.
-- [ ] Protect the route using the `AdminRoute` guard.
+- [x] Create the main `UserListPage.tsx` component.
+- [x] Add the `/dashboard/users` route in `App.tsx` to render the page.
+- [x] Update the main navigation to link to the new User Management page.
+- [x] Protect the route using the `AdminRoute` guard.
 
 ### Step 2: User Data Hook (`useUsers`)
-- [ ] Create a new `useUsers.ts` hook for fetching and managing user data.
-- [ ] Implement state for users, pagination, loading, and errors.
-- [ ] Implement a `fetchUsers` function that calls `userService.getUsers`.
-- [ ] Handle query parameters for pagination, search, sorting, and filtering.
+- [x] Create a new `useUsers.ts` hook for fetching and managing user data.
+- [x] Implement state for users, pagination, loading, and errors.
+- [x] Implement a `fetchUsers` function that calls `userService.getUsers`.
+- [x] Handle query parameters for pagination, search, sorting, and filtering.
 
 ### Step 3: User Table Component
-- [ ] Create a reusable `UserTable.tsx` component using the generic `Table` component.
-- [ ] Define table columns: Username, Email, User Type, Status, Created At, Actions.
-- [ ] Render user data from the `useUsers` hook.
-- [ ] Implement loading and empty states for the table.
+- [x] Create a reusable `UserTable.tsx` component using the generic `Table` component.
+- [x] Define table columns: Username, Email, User Type, Status, Created At, Actions.
+- [x] Render user data from the `useUsers` hook.
+- [x] Implement loading and empty states for the table.
 
 ### Step 4: Search & Filtering
-- [ ] Create a `UserFilter.tsx` component with input fields.
-- [ ] Add a text input for searching by username or email (with debouncing).
-- [ ] Add a `Select` component to filter by `UserType` (ROOT, ADMIN, CONSUMER).
-- [ ] Add a `Select` component to filter by user status (Active, Inactive).
-- [ ] Connect filter components to the `useUsers` hook to refetch data.
+- [x] Create a `UserFilter.tsx` component with input fields.
+- [x] Add a text input for searching by username or email (with debouncing).
+- [x] Add a `Select` component to filter by `UserType` (ROOT, ADMIN, CONSUMER).
+- [x] Add a `Select` component to filter by user status (Active, Inactive).
+- [x] Connect filter components to the `useUsers` hook to refetch data.
 
 ### Step 5: Pagination & Sorting
-- [ ] Implement a `Pagination` component to work with the `UserTable`.
-- [ ] Connect the pagination component to the `useUsers` hook to handle page changes.
-- [ ] Enable server-side sorting on the `UserTable` columns.
-- [ ] Update the `useUsers` hook to pass sorting parameters to the API.
+- [x] Implement a `Pagination` component to work with the `UserTable`.
+- [x] Connect the pagination component to the `useUsers` hook to handle page changes.
+- [x] Enable server-side sorting on the `UserTable` columns.
+- [x] Update the `useUsers` hook to pass sorting parameters to the API.
 
 ### Step 6: User Actions Menu
-- [ ] Create a `UserActionsMenu.tsx` component for each row in the table.
-- [ ] Use a dropdown/popover for the actions menu (Edit, Delete, Change Status, etc.).
-- [ ] Conditionally enable/disable actions based on the current user's permissions and the target user's type (e.g., an ADMIN cannot delete a ROOT user).
-- [ ] Add stubs for actions that will be implemented in the next milestone.
+- [x] Create a `UserActionsMenu.tsx` component for each row in the table.
+- [x] Use a dropdown/popover for the actions menu (Edit, Delete, Change Status, etc.).
+- [x] Conditionally enable/disable actions based on the current user's permissions and the target user's type (e.g., an ADMIN cannot delete a ROOT user).
+- [x] Add stubs for actions that will be implemented in the next milestone.
 
 ---
 
@@ -91,11 +91,11 @@ This milestone lays the foundation for all user management workflows by providin
 ---
 
 ## ✅ Completion Criteria
-- [ ] `UserListPage.tsx` is created and accessible at `/dashboard/users`.
-- [ ] `useUsers` hook successfully fetches and manages user data from the API.
-- [ ] The `UserTable` correctly displays a list of users with their details.
-- [ ] Search and filter controls are functional and trigger API refetches.
-- [ ] Pagination controls allow navigation through the full user list.
-- [ ] Table columns are sortable, with requests made to the server.
-- [ ] A placeholder actions menu is present on each row, with permission checks in place.
-- [ ] The entire page is responsive and usable on mobile. 
+- [x] `UserListPage.tsx` is created and accessible at `/dashboard/users`.
+- [x] `useUsers` hook successfully fetches and manages user data from the API.
+- [x] The `UserTable` correctly displays a list of users with their details.
+- [x] Search and filter controls are functional and trigger API refetches.
+- [x] Pagination controls allow navigation through the full user list.
+- [x] Table columns are sortable, with requests made to the server.
+- [x] A placeholder actions menu is present on each row, with permission checks in place.
+- [x] The entire page is responsive and usable on mobile. 
