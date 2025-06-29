@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useReducer, useEffect } from 'react';
 import type { ReactNode, JSX } from 'react';
 import type { AuthState, AuthAction, User, UserType } from '@/types/auth.types';
 import { AuthActionType } from '@/types/auth.types';

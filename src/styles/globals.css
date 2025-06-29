@@ -5,6 +5,8 @@
 @import './components/dashboard-layout.css';
 @import './components/dashboard-overview.css';
 @import './components/navigation.css';
+@import './components/coming-soon.css';
+@import './components/profile.css';
 
 /* === CSS RESET === */
 

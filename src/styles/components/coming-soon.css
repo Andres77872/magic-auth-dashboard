@@ -1,0 +1,108 @@
+/* Coming Soon Component Styles */
+.coming-soon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: var(--spacing-8);
+}
+
+.coming-soon-content {
+  text-align: center;
+  max-width: 500px;
+  background: white;
+  padding: var(--spacing-12);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-gray-200);
+}
+
+.coming-soon-icon {
+  margin-bottom: var(--spacing-6);
+  color: var(--color-primary-500);
+}
+
+.coming-soon-content h1 {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-4);
+}
+
+.coming-soon-content .description {
+  font-size: var(--font-size-lg);
+  color: var(--color-gray-600);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--spacing-8);
+}
+
+.feature-info {
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-6);
+  margin-bottom: var(--spacing-8);
+}
+
+.feature-info h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-700);
+  margin-bottom: var(--spacing-3);
+}
+
+.feature-info p {
+  font-size: var(--font-size-base);
+  color: var(--color-primary-600);
+  margin: 0;
+  line-height: var(--line-height-relaxed);
+}
+
+.back-link {
+  margin-top: var(--spacing-6);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-6);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  border: var(--border-width-1) solid transparent;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--color-primary-500);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-600);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .coming-soon {
+    padding: var(--spacing-4);
+  }
+
+  .coming-soon-content {
+    padding: var(--spacing-8);
+  }
+
+  .coming-soon-content h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .coming-soon-content .description {
+    font-size: var(--font-size-base);
+  }
+} 

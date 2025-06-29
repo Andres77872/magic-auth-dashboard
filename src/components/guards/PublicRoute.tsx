@@ -4,12 +4,10 @@ import { ProtectedRoute } from './ProtectedRoute';
 
 interface PublicRouteProps {
   children: ReactNode;
-  redirectAuthenticated?: boolean;
 }
 
 export function PublicRoute({
   children,
-  redirectAuthenticated = true,
 }: PublicRouteProps): React.JSX.Element {
   return (
     <ProtectedRoute requireAuth={false}>

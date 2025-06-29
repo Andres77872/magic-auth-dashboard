@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts';
-import { ErrorBoundary } from '@/components/common';
+import { ErrorBoundary, ComingSoon } from '@/components/common';
 import {
   RootOnlyRoute,
   AdminRoute,
@@ -14,7 +14,7 @@ import './styles/pages/unauthorized.css';
 import './styles/pages/login.css';
 
 // Import pages
-import { LoginPage, UnauthorizedPage, DashboardOverview } from '@/pages';
+import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage } from '@/pages';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
@@ -57,6 +57,91 @@ function App(): React.JSX.Element {
                   <AdminRoute>
                     <DashboardLayout>
                       <DashboardOverview />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+
+              {/* Dashboard overview (same component, different route) */}
+              <Route
+                path={ROUTES.OVERVIEW}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <DashboardOverview />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+
+              {/* Profile route */}
+              <Route
+                path={ROUTES.PROFILE}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ProfilePage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+
+              {/* Placeholder dashboard routes */}
+              <Route
+                path={ROUTES.USERS}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ComingSoon 
+                        title="User Management"
+                        description="Manage system users, permissions, and access controls"
+                        feature="User management"
+                      />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path={ROUTES.PROJECTS}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ComingSoon 
+                        title="Project Management"
+                        description="Create and manage projects, assign users, and configure settings"
+                        feature="Project management"
+                      />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path={ROUTES.GROUPS}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ComingSoon 
+                        title="User Groups"
+                        description="Organize users into groups and manage group permissions"
+                        feature="User group management"
+                      />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+
+              <Route
+                path={ROUTES.PERMISSIONS}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ComingSoon 
+                        title="Permission Management"
+                        description="Configure roles, permissions, and access control policies"
+                        feature="Permission and role management"
+                      />
                     </DashboardLayout>
                   </AdminRoute>
                 }
