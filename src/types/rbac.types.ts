@@ -1,4 +1,4 @@
-import type { ApiResponse, PaginatedResponse } from './api.types';
+import type { ApiResponse } from './api.types';
 
 export interface Permission {
   id: number;

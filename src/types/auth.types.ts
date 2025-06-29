@@ -1,9 +1,11 @@
 // User Type Enumeration
-export enum UserType {
-  ROOT = 'root',
-  ADMIN = 'admin',
-  CONSUMER = 'consumer',
-}
+export const UserType = {
+  ROOT: 'root',
+  ADMIN: 'admin',
+  CONSUMER: 'consumer',
+} as const;
+
+export type UserType = typeof UserType[keyof typeof UserType];
 
 // Authentication Interfaces
 export interface LoginRequest {
@@ -85,14 +87,16 @@ export interface AuthState {
   error: string | null;
 }
 
-export enum AuthActionType {
-  LOGIN_START = 'LOGIN_START',
-  LOGIN_SUCCESS = 'LOGIN_SUCCESS',
-  LOGIN_FAILURE = 'LOGIN_FAILURE',
-  LOGOUT = 'LOGOUT',
-  VALIDATE_TOKEN = 'VALIDATE_TOKEN',
-  CLEAR_ERROR = 'CLEAR_ERROR',
-}
+export const AuthActionType = {
+  LOGIN_START: 'LOGIN_START',
+  LOGIN_SUCCESS: 'LOGIN_SUCCESS',
+  LOGIN_FAILURE: 'LOGIN_FAILURE',
+  LOGOUT: 'LOGOUT',
+  VALIDATE_TOKEN: 'VALIDATE_TOKEN',
+  CLEAR_ERROR: 'CLEAR_ERROR',
+} as const;
+
+export type AuthActionType = typeof AuthActionType[keyof typeof AuthActionType];
 
 export interface AuthAction {
   type: AuthActionType;

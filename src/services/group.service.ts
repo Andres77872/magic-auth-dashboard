@@ -1,0 +1,92 @@
+import { apiClient } from './api.client';
+import type {
+  UserGroup,
+  CreateGroupRequest,
+  CreateGroupResponse,
+  AssignUserToGroupRequest,
+  AssignUserToGroupResponse,
+  GroupListResponse
+} from '@/types/group.types';
+import type { ApiResponse, PaginationParams } from '@/types/api.types';
+
+class GroupService {
+  // List user groups
+  async getGroups(params: PaginationParams = {}): Promise<GroupListResponse> {
+    const response = await apiClient.get<GroupListResponse>('/admin/user-groups', params as any);
+    return response as GroupListResponse;
+  }
+
+  // Get group details
+  async getGroup(groupHash: string): Promise<ApiResponse<UserGroup>> {
+    return await apiClient.get<UserGroup>(`/admin/user-groups/${groupHash}`);
+  }
+
+  // Create new group
+  async createGroup(groupData: CreateGroupRequest): Promise<CreateGroupResponse> {
+    const response = await apiClient.post<CreateGroupResponse>('/admin/user-groups', groupData);
+    return response as CreateGroupResponse;
+  }
+
+  // Update group
+  async updateGroup(groupHash: string, data: Partial<CreateGroupRequest>): Promise<CreateGroupResponse> {
+    const response = await apiClient.put<CreateGroupResponse>(`/admin/user-groups/${groupHash}`, data);
+    return response as CreateGroupResponse;
+  }
+
+  // Delete group
+  async deleteGroup(groupHash: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(`/admin/user-groups/${groupHash}`);
+  }
+
+  // Get group members
+  async getGroupMembers(
+    groupHash: string,
+    params: PaginationParams = {}
+  ): Promise<ApiResponse<any[]>> {
+    return await apiClient.get<any[]>(
+      `/admin/user-groups/${groupHash}/members`, 
+      params as any
+    );
+  }
+
+  // Add user to group
+  async addMemberToGroup(
+    groupHash: string,
+    memberData: AssignUserToGroupRequest
+  ): Promise<AssignUserToGroupResponse> {
+    const response = await apiClient.post<AssignUserToGroupResponse>(
+      `/admin/user-groups/${groupHash}/members`,
+      memberData
+    );
+    return response as AssignUserToGroupResponse;
+  }
+
+  // Remove user from group
+  async removeMemberFromGroup(
+    groupHash: string,
+    userHash: string
+  ): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(
+      `/admin/user-groups/${groupHash}/members/${userHash}`
+    );
+  }
+
+  // Bulk add members to group
+  async bulkAddMembers(
+    groupHash: string,
+    userHashes: string[]
+  ): Promise<ApiResponse<{ added_count: number; errors: any[] }>> {
+    return await apiClient.post<{ added_count: number; errors: any[] }>(
+      `/admin/user-groups/${groupHash}/members/bulk`,
+      { user_hashes: userHashes }
+    );
+  }
+
+  // Get groups for a specific user
+  async getUserGroups(userHash: string): Promise<ApiResponse<UserGroup[]>> {
+    return await apiClient.get<UserGroup[]>(`/admin/users/${userHash}/groups`);
+  }
+}
+
+export const groupService = new GroupService();
+export default groupService; 
