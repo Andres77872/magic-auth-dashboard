@@ -2,7 +2,7 @@
 
 ## Overview
 **Duration**: Day 5-7
-**Status**: ✅ **COMPLETED**
+**Status**: 🟡 **IN PROGRESS**
 **Goal**: Implement the complete user lifecycle management, including creation, editing, and viewing of user profiles with detailed information.
 
 This milestone builds on the user list by adding the core CRUD operations for individual user management.
@@ -43,9 +43,9 @@ This milestone builds on the user list by adding the core CRUD operations for in
 - [x] Add a placeholder for the user's activity history.
 
 ### Step 6: User Actions Implementation
-- [ ] Implement the `handleDelete` function, which calls `userService.deleteUser` after showing a `ConfirmDialog`. (Deferred to future milestone)
-- [ ] Implement `handleToggleStatus` (Activate/Deactivate) which calls `userService.toggleUserStatus`. (Deferred to future milestone)
-- [ ] Implement `handleResetPassword`, which calls `userService.resetUserPassword` and shows the new password in a modal. (Deferred to future milestone)
+- [ ] Implement the `handleDelete` function, which calls `userService.deleteUser` after showing a `ConfirmDialog`. (**PENDING**)
+- [ ] Implement `handleToggleStatus` (Activate/Deactivate) which calls `userService.toggleUserStatus`. (**PENDING**)
+- [ ] Implement `handleResetPassword`, which calls `userService.resetUserPassword` and shows the new password in a modal. (**PENDING**)
 
 ---
 
@@ -67,7 +67,7 @@ This milestone builds on the user list by adding the core CRUD operations for in
 - Data is presented clearly in distinct sections using `Card` components.
 
 ### Step 6: Implementing Actions
-- Destructive actions (delete, status toggle, password reset) have been deferred to a future milestone to focus on core CRUD.
+- Destructive actions (delete, status toggle, password reset) are pending implementation.
 - Navigation for "View Profile" and "Edit User" is fully implemented.
 
 ---
@@ -77,5 +77,5 @@ This milestone builds on the user list by adding the core CRUD operations for in
 - [x] An "Edit User" page exists and allows authorized admins to update user information.
 - [x] A "User Profile" page exists for viewing detailed user information.
 - [x] All forms have complete and user-friendly validation.
-- [ ] Actions like delete, deactivate, and password reset are fully functional and secure. (Deferred)
+- [ ] Actions like delete, deactivate, and password reset are fully functional and secure. (**PENDING**)
 - [x] The UI/UX for creating and managing users is clean, responsive, and intuitive. 

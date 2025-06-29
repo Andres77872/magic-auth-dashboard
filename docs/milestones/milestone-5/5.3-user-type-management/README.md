@@ -2,7 +2,7 @@
 
 ## Overview
 **Duration**: Day 8-10
-**Status**: ✅ **COMPLETED**
+**Status**: 🟡 **IN PROGRESS**
 **Goal**: Implement advanced, ROOT-specific user management features, including management of other administrators, user type transitions, and bulk operations.
 
 This milestone provides top-level administrators with powerful tools for managing the user hierarchy and performing large-scale actions.
@@ -32,10 +32,10 @@ This milestone provides top-level administrators with powerful tools for managin
 ### Step 4: Bulk User Operations
 - [x] Add checkboxes to the `UserTable` to allow multi-selecting users.
 - [x] When users are selected, show a "Bulk Actions" button.
-- [x] Implement bulk actions:
-    - **Bulk Delete**: Deletes all selected users after a single confirmation.
-    - **Bulk Deactivate/Activate**: Toggles the status for all selected users.
-    - **Bulk Assign to Group**: Opens a modal to select a group to add all selected users to.
+- [ ] Implement bulk actions:
+    - [ ] **Bulk Delete**: Deletes all selected users after a single confirmation. (**PENDING**)
+    - [ ] **Bulk Deactivate/Activate**: Toggles the status for all selected users. (**PENDING**)
+    - [ ] **Bulk Assign to Group**: Opens a modal to select a group to add all selected users to. (**PENDING**)
 - [x] Use `Promise.all` or a dedicated bulk API endpoint to handle the operations efficiently.
 
 ---
@@ -65,19 +65,19 @@ This milestone provides top-level administrators with powerful tools for managin
 - **Assignment Display**: Visual representation of assigned projects with tags
 - **API Integration**: Uses existing `projectService.getProjects()` method
 
-### Step 4: Bulk Operations ✅
+### Step 4: Bulk Operations 🟡 **IN PROGRESS**
 **Files Modified:**
 - `src/components/features/users/UserTable.tsx` - Added comprehensive bulk operations
 
 **Key Features Implemented:**
-- **Multi-Selection**: Checkbox column with "Select All" functionality
-- **Bulk Actions Toolbar**: Appears when users are selected
-- **Permission-Based Operations**: ROOT users can only be operated on by other ROOT users
-- **Bulk Actions Available**:
-  - **Delete**: Multiple user deletion with confirmation
-  - **Activate/Deactivate**: Status changes for multiple users
-  - **Assign to Group**: Group assignment for selected users
-- **API Integration**: Uses `adminService.bulkUpdateUsers()` and `bulkDeleteUsers()`
+- [x] **Multi-Selection**: Checkbox column with "Select All" functionality
+- [x] **Bulk Actions Toolbar**: Appears when users are selected
+- [x] **Permission-Based Operations**: ROOT users can only be operated on by other ROOT users
+- [ ] **Bulk Actions Available**: (**WIRING PENDING**)
+  - [ ] **Delete**: Multiple user deletion with confirmation
+  - [ ] **Activate/Deactivate**: Status changes for multiple users
+  - [ ] **Assign to Group**: Group assignment for selected users
+- [x] **API Integration**: Uses `adminService.bulkUpdateUsers()` and `bulkDeleteUsers()`
 
 ---
 
@@ -85,8 +85,8 @@ This milestone provides top-level administrators with powerful tools for managin
 - [x] ROOT users have exclusive access to creating/managing other ROOT and ADMIN users.
 - [x] The workflow for changing a user's type is functional and secure.
 - [x] Admin project assignments can be updated by ROOT users.
-- [x] Bulk actions (delete, status change, group assignment) work correctly on multiple selected users.
-- [x] The UI remains performant and responsive during bulk operations.
+- [ ] Bulk actions (delete, status change, group assignment) work correctly on multiple selected users. (**PENDING**)
+- [ ] The UI remains performant and responsive during bulk operations.
 
 ## 🎯 Final Implementation Results
 
@@ -106,6 +106,6 @@ This milestone provides top-level administrators with powerful tools for managin
 - **Component Architecture**: Modular design with reusable components
 
 ### Performance Considerations
-- **Bulk API Usage**: Efficient bulk operations using dedicated endpoints
+- **Bulk API Usage**: Efficient bulk operations using dedicated endpoints (**PENDING WIRING**)
 - **Optimized Rendering**: Proper state management to avoid unnecessary re-renders
 - **Error Handling**: Comprehensive error states and user feedback 
