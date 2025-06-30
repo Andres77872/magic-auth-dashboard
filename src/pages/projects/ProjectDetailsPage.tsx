@@ -4,7 +4,7 @@ import { Card, LoadingSpinner, Button, Badge } from '@/components/common';
 import { ProjectOverviewTab, ProjectMembersTab, ProjectSettingsTab } from '@/components/features/projects';
 import { projectService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import type { ProjectDetails, ProjectDetailsResponse, ProjectStatistics, UserAccess } from '@/types/project.types';
+import type { ProjectDetails, ProjectStatistics, UserAccess } from '@/types/project.types';
 import './ProjectCreatePage.css'; // Reuse existing styles
 import './ProjectDetailsPage.css'; // Tab-specific styles
 

@@ -18,8 +18,8 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
   pagination,
   onPageChange,
   onSort,
-  sortBy,
-  sortOrder,
+  sortBy: _sortBy,
+  sortOrder: _sortOrder,
 }) => {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -31,10 +31,10 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
 
   const columns = [
     {
-      key: 'project_name',
+      key: 'project_name' as keyof ProjectDetails,
       header: 'Project Name',
       sortable: true,
-      render: (value: any, project: ProjectDetails) => (
+      render: (_value: any, project: ProjectDetails) => (
         <div className="project-name-cell">
           <div className="project-name">{project.project_name}</div>
           {project.project_description && (
@@ -44,50 +44,50 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       ),
     },
     {
-      key: 'member_count',
+      key: 'member_count' as keyof ProjectDetails,
       header: 'Members',
       sortable: true,
-      render: (value: any, project: ProjectDetails) => (
+      render: (_value: any, project: ProjectDetails) => (
         <span className="member-count">
           {project.member_count || 0}
         </span>
       ),
     },
     {
-      key: 'is_active',
+      key: 'is_active' as keyof ProjectDetails,
       header: 'Status',
       sortable: true,
-      render: (value: any, project: ProjectDetails) => (
+      render: (_value: any, project: ProjectDetails) => (
         <Badge variant={project.is_active ? 'success' : 'secondary'}>
           {project.is_active ? 'Active' : 'Inactive'}
         </Badge>
       ),
     },
     {
-      key: 'created_at',
+      key: 'created_at' as keyof ProjectDetails,
       header: 'Created',
       sortable: true,
-      render: (value: any, project: ProjectDetails) => (
+      render: (_value: any, project: ProjectDetails) => (
         <span className="created-date">
           {formatDate(project.created_at)}
         </span>
       ),
     },
     {
-      key: 'access_level',
+      key: 'access_level' as keyof ProjectDetails,
       header: 'Access Level',
       sortable: false,
-      render: (value: any, project: ProjectDetails) => (
+      render: (_value: any, project: ProjectDetails) => (
         <Badge variant="info">
           {project.access_level || 'Standard'}
         </Badge>
       ),
     },
     {
-      key: 'actions',
+      key: 'project_hash' as keyof ProjectDetails,
       header: 'Actions',
       sortable: false,
-      render: (value: any, project: ProjectDetails) => (
+      render: (_value: any, project: ProjectDetails) => (
         <ProjectActionsMenu project={project} />
       ),
     },
@@ -99,8 +99,6 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
         data={projects}
         columns={columns}
         onSort={onSort}
-        sortBy={sortBy}
-        sortOrder={sortOrder}
         emptyMessage="No projects found"
       />
       

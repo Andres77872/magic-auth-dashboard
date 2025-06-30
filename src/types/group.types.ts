@@ -4,7 +4,7 @@ export interface UserGroup {
   group_hash: string;
   group_name: string;
   description: string;
-  member_count: number;
+  member_count: number | null;
   created_at: string;
   updated_at?: string;
 }
@@ -38,6 +38,24 @@ export interface GroupFormData {
 export interface GroupFormErrors {
   group_name?: string;
   description?: string;
+}
+
+export interface GroupListParams {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+}
+
+export interface GroupDetailsResponse extends ApiResponse {
+  user_group: UserGroup;
+  members: any[];
+  accessible_projects: any[];
+  statistics: {
+    total_members: number;
+    total_projects: number;
+  };
 }
 
 export interface GroupListResponse extends ApiResponse {

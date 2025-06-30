@@ -20,6 +20,7 @@ import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPa
 import { UserCreatePage } from '@/pages/users/UserCreatePage';
 import { UserEditPage } from '@/pages/users/UserEditPage';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
+import { GroupListPage, GroupCreatePage, GroupEditPage, GroupDetailsPage } from '@/pages/groups';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
@@ -180,16 +181,46 @@ function App(): React.JSX.Element {
                 }
               />
 
+              {/* Group Management */}
               <Route
                 path={ROUTES.GROUPS}
                 element={
                   <AdminRoute>
                     <DashboardLayout>
-                      <ComingSoon 
-                        title="User Groups"
-                        description="Organize users into groups and manage group permissions"
-                        feature="User group management"
-                      />
+                      <GroupListPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={ROUTES.GROUPS_CREATE}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <GroupCreatePage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={`${ROUTES.GROUPS_EDIT}/:groupHash`}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <GroupEditPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={`${ROUTES.GROUPS}/:groupHash`}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <GroupDetailsPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }

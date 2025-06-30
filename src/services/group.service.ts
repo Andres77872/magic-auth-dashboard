@@ -5,7 +5,8 @@ import type {
   CreateGroupResponse,
   AssignUserToGroupRequest,
   AssignUserToGroupResponse,
-  GroupListResponse
+  GroupListResponse,
+  GroupDetailsResponse
 } from '@/types/group.types';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
 
@@ -25,8 +26,9 @@ class GroupService {
   }
 
   // Get group details
-  async getGroup(groupHash: string): Promise<ApiResponse<UserGroup>> {
-    return await apiClient.get<UserGroup>(`/admin/user-groups/${groupHash}`);
+  async getGroup(groupHash: string): Promise<GroupDetailsResponse> {
+    const response = await apiClient.get<GroupDetailsResponse>(`/admin/user-groups/${groupHash}`);
+    return response as GroupDetailsResponse;
   }
 
   // Create new group

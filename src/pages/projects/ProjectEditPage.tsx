@@ -4,7 +4,7 @@ import { Card, LoadingSpinner, Button } from '@/components/common';
 import { ProjectForm } from '@/components/features/projects';
 import { projectService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import type { ProjectDetails, ProjectFormData, ProjectDetailsResponse } from '@/types/project.types';
+import type { ProjectDetails, ProjectFormData } from '@/types/project.types';
 import './ProjectCreatePage.css'; // Reuse existing styles
 
 export const ProjectEditPage: React.FC = () => {

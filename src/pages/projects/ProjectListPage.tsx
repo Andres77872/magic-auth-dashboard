@@ -18,7 +18,6 @@ export const ProjectListPage: React.FC = () => {
     setPage,
     setSort,
     filters,
-    currentPage,
     sortBy,
     sortOrder,
   } = useProjects();
