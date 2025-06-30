@@ -91,7 +91,7 @@ export function UserForm({
       if (formData.username && formData.username !== initialData?.username) {
         await checkAvailability('username', formData.username);
       }
-      if (formData.email && formData.email !== initialData?.email) {
+      if (formData.email && formData.email.trim() && formData.email !== initialData?.email) {
         await checkAvailability('email', formData.email);
       }
     }, 500);
@@ -132,13 +132,13 @@ export function UserForm({
       newErrors.username = 'Username is already taken';
     }
 
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    } else if (mode === 'create' && emailAvailable === false) {
-      newErrors.email = 'Email is already taken';
+    // Email validation (now optional)
+    if (formData.email.trim()) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address';
+      } else if (mode === 'create' && emailAvailable === false) {
+        newErrors.email = 'Email is already taken';
+      }
     }
 
     // Password validation (required for create, optional for edit)
@@ -277,12 +277,11 @@ export function UserForm({
             {/* Email Field */}
             <div className="form-field">
               <Input
-                label="Email Address"
+                label="Email Address (Optional)"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 error={errors.email}
-                required
                 disabled={isLoading}
                 helperText={mode === 'create' ? 
                   (emailAvailable === true ? 'Email is available' : 

@@ -27,7 +27,7 @@ export interface LoginResponse {
 export interface RegisterRequest {
   username: string;
   password: string;
-  email: string;
+  email?: string; // Made optional as requested
   project_hash?: string; // Made optional for improved UX
 }
 
