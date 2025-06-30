@@ -43,7 +43,7 @@
 .input-control:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
 .input-error .input-control {
@@ -52,7 +52,7 @@
 
 .input-error .input-control:focus {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-error);
 }
 
 .input-control:disabled {
@@ -136,7 +136,7 @@
 .textarea-control:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
 .textarea-error .textarea-control {
@@ -145,7 +145,7 @@
 
 .textarea-error .textarea-control:focus {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-error);
 }
 
 .textarea-control:disabled {
@@ -196,7 +196,7 @@
 .select-trigger:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
 .select-error .select-trigger {
@@ -300,7 +300,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--color-modal-backdrop);
   display: flex;
   align-items: center;
   justify-content: center;

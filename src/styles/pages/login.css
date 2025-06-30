@@ -43,7 +43,7 @@
 
 .brand-content {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-index-base);
 }
 
 .brand-logo {
@@ -100,7 +100,7 @@
 /* Brand Footer */
 .brand-footer {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-index-base);
 }
 
 .user-types h3 {
@@ -241,7 +241,7 @@
 .form-input:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
 .form-input.input-error {
@@ -250,7 +250,7 @@
 
 .form-input.input-error:focus {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-error);
 }
 
 .form-input:disabled {
@@ -338,7 +338,7 @@
 }
 
 .checkbox-input:focus + .checkbox-checkmark {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
 .checkbox-text {

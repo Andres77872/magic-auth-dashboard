@@ -133,6 +133,16 @@
   
   /* Focus States */
   --color-focus-ring: rgba(59, 130, 246, 0.1);
+  --color-focus-ring-primary: rgba(59, 130, 246, 0.1);
+  --color-focus-ring-error: rgba(239, 68, 68, 0.1);
+  --color-focus-ring-success: rgba(34, 197, 94, 0.1);
+  --color-focus-ring-warning: rgba(245, 158, 11, 0.1);
+  
+  /* Modal and Overlay States */
+  --color-modal-backdrop: rgba(0, 0, 0, 0.5);
+  --color-overlay-light: rgba(255, 255, 255, 0.8);
+  --color-overlay-subtle: rgba(255, 255, 255, 0.2);
+  --color-overlay-muted: rgba(255, 255, 255, 0.3);
   
   /* Active States */
   --color-active: var(--color-primary-100);

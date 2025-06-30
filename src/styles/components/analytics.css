@@ -165,7 +165,7 @@
 .user-type-badge {
   font-size: var(--text-xs);
   font-weight: 600;
-  padding: 2px 6px;
+  padding: var(--spacing-0-5) var(--spacing-1-5);
   border-radius: var(--border-radius-sm);
   background: currentColor;
   color: white;
