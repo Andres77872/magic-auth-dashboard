@@ -41,8 +41,6 @@ export function UserTable({
   }, [users, canCreateUser, canCreateAdmin]);
 
   const selectedUserHashes = Array.from(selectedUsers);
-  const isAllOperableSelected = operableUsers.length > 0 && 
-    operableUsers.every(user => selectedUsers.has(user.user_hash));
   const isSomeSelected = selectedUsers.size > 0;
 
   const getUserTypeBadgeVariant = (userType: UserType) => {
@@ -68,13 +66,7 @@ export function UserTable({
     });
   };
 
-  const handleSelectAll = () => {
-    if (isAllOperableSelected) {
-      setSelectedUsers(new Set());
-    } else {
-      setSelectedUsers(new Set(operableUsers.map(user => user.user_hash)));
-    }
-  };
+
 
   const handleSelectUser = (userHash: string) => {
     const newSelected = new Set(selectedUsers);
@@ -155,18 +147,8 @@ export function UserTable({
   const columns: TableColumn<User>[] = [
     // Checkbox column
     {
-      key: 'select',
-      header: (
-        <div className="bulk-select-header">
-          <input
-            type="checkbox"
-            checked={isAllOperableSelected}
-            onChange={handleSelectAll}
-            disabled={isLoading || operableUsers.length === 0}
-            aria-label="Select all users"
-          />
-        </div>
-      ),
+      key: 'user_hash' as keyof User,
+      header: 'Select',
       sortable: false,
       width: '50px',
       render: (_, user) => (

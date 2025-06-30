@@ -1,712 +1,353 @@
 ---
-description: magic auth api openai.json definition
+description: 
 globs: 
 alwaysApply: false
 ---
-# 3-Tier Authentication API Reference with Examples
+Below is a concise, human-readable reference of every REST endpoint defined in the supplied OpenAPI document.  
+For each route you’ll find the HTTP method, a short description (summary + key points from the longer description) and the request parameters (path, query, and/or body-form fields).
 
-## System Overview
-**Base URL:** `http://localhost:8000`  
-**Authentication:** Bearer token in Authorization header  
-**User Types:** ROOT (super admin) → ADMIN (project manager) → CONSUMER (end user)
-
----
-
-## 🔐 Authentication Endpoints
-
-### POST `/auth/login`
-**Description:** Authenticate user and return session token  
-
-**Request:**
-```json
-{
-  "username": "john_doe",
-  "password": "secure_password123",
-  "project_hash": "proj_abc123xyz"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "session_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "user_hash": "usr_def456abc",
-    "username": "john_doe", 
-    "email": "john@example.com",
-    "user_type": "consumer",
-    "created_at": "2024-01-15T10:30:00Z"
-  },
-  "project": {
-    "project_hash": "proj_abc123xyz",
-    "project_name": "My Project",
-    "project_description": "Sample project"
-  },
-  "accessible_projects": [
-    {
-      "project_hash": "proj_abc123xyz",
-      "project_name": "My Project",
-      "project_description": "Sample project"
-    }
-  ],
-  "expires_at": "2024-01-18T10:30:00Z"
-}
-```
-
-### POST `/auth/register`
-**Description:** Register new user with group assignment  
-
-**Request:**
-```json
-{
-  "username": "jane_smith",
-  "password": "strong_password456",
-  "email": "jane@example.com",
-  "project_hash": "proj_abc123xyz"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "User registered successfully",
-  "user": {
-    "user_hash": "usr_ghi789def",
-    "username": "jane_smith",
-    "email": "jane@example.com",
-    "user_type": "consumer",
-    "created_at": "2024-01-15T11:00:00Z"
-  },
-  "project": {
-    "project_hash": "proj_abc123xyz",
-    "project_name": "My Project"
-  }
-}
-```
-
-### GET `/auth/validate` 🔒
-**Description:** Validate session token and return user info  
-**Headers:** `Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Session is valid",
-  "valid": true,
-  "user": {
-    "user_hash": "usr_def456abc",
-    "username": "john_doe",
-    "email": "john@example.com",
-    "user_type": "consumer"
-  },
-  "project": {
-    "project_hash": "proj_abc123xyz",
-    "project_name": "My Project"
-  },
-  "session": {
-    "session_id": "sess_xyz789abc",
-    "expires_at": "2024-01-18T10:30:00Z"
-  }
-}
-```
-
-### POST `/auth/check-availability`
-**Description:** Check username/email availability  
-
-**Request:**
-```json
-{
-  "username": "new_user",
-  "email": "newuser@example.com"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Availability checked",
-  "username_available": true,
-  "email_available": false
-}
-```
+> • “(req)” = required • Location is shown in parentheses → path | query | form-body  
+> • When a route accepts both Bearer-header and secure HTTP-only cookies, only the business parameters are listed.
 
 ---
 
-## 👑 User Type Management (ROOT/ADMIN access)
+# 3-Tier User-Type Multi-Project Auth API – Endpoint Reference
 
-### POST `/user-types/root` 🔒
-**Description:** Create root user (ROOT only)  
+## 1. Authentication
+### POST  /auth/login
+Authenticate user and start a session (sets HTTP-only cookie).  
+Params  
+• username (form, req) • password (form, req) • project_hash (form, optional – root may omit)
 
-**Request:**
-```json
-{
-  "username": "root_admin",
-  "password": "super_secure_pass",
-  "email": "admin@company.com"
-}
-```
+### POST  /auth/register
+Register a new user and auto-assign default group.  
+Params  
+• username (form, req) • password (form, req) • email (form, optional) • project_hash (form, req)
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Root user created successfully",
-  "user": {
-    "user_hash": "usr_root123abc",
-    "username": "root_admin",
-    "email": "admin@company.com",
-    "user_type": "root",
-    "created_at": "2024-01-15T12:00:00Z"
-  }
-}
-```
+### GET  /auth/validate
+Validate current session token and return user & group context.  
+Params – none
 
-### POST `/user-types/admin` 🔒
-**Description:** Create admin user (ROOT only)  
+### POST  /auth/logout
+Invalidate the current session & clear cookie.  
+Params – none
 
-**Request:**
-```json
-{
-  "username": "project_admin",
-  "password": "admin_password",
-  "email": "padmin@company.com",
-  "assigned_project_ids": [1, 2, 3]
-}
-```
+### POST  /auth/refresh
+Refresh JWT, extending the session.  
+Params – none
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Admin user created and assigned to 3 projects",
-  "user": {
-    "user_hash": "usr_admin456def",
-    "username": "project_admin",
-    "email": "padmin@company.com",
-    "user_type": "admin",
-    "assigned_projects": [
-      {"project_id": 1, "project_name": "Project Alpha"},
-      {"project_id": 2, "project_name": "Project Beta"},
-      {"project_id": 3, "project_name": "Project Gamma"}
-    ]
-  }
-}
-```
+### POST  /auth/switch-project
+Switch active project in an existing session.  
+Params  
+• project_hash (form, req)
 
-### GET `/user-types/users/admin` 🔒
-**Description:** List admin users  
-**Params:** `?limit=10&offset=0`
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Admin users retrieved",
-  "users": [
-    {
-      "user_hash": "usr_admin456def",
-      "username": "project_admin", 
-      "email": "padmin@company.com",
-      "user_type": "admin",
-      "created_at": "2024-01-15T12:30:00Z"
-    }
-  ],
-  "pagination": {
-    "limit": 10,
-    "offset": 0,
-    "total": 1,
-    "has_more": false
-  }
-}
-```
+### POST  /auth/check-availability
+Check if a username or e-mail is free globally.  
+Params  
+• username (form, optional) • email (form, optional)
 
 ---
 
-## 👤 User Management
+## 2. User Management
+### GET  /users/profile
+Return current user profile, groups & accessible projects.  
+Params – none
 
-### GET `/users/profile` 🔒
-**Description:** Get current user's profile  
+### PUT  /users/profile
+Update own username / email / password.  
+Params  
+• username (form, optional) • email (form, optional) • password (form, optional)
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Profile retrieved successfully",
-  "user": {
-    "user_hash": "usr_def456abc",
-    "username": "john_doe",
-    "email": "john@example.com",
-    "user_type": "consumer",
-    "created_at": "2024-01-15T10:30:00Z"
-  },
-  "accessible_projects": [
-    {
-      "project_hash": "proj_abc123xyz", 
-      "project_name": "My Project",
-      "project_description": "Sample project"
-    }
-  ],
-  "current_project": {
-    "project_hash": "proj_abc123xyz",
-    "project_name": "My Project"
-  }
-}
-```
+### GET  /users/access-summary
+Short access summary (groups, projects, permissions).  
+Params – none
 
-### PUT `/users/profile` 🔒
-**Description:** Update user profile  
+### GET  /users
+List users with filters (admin/root only).  
+Query params  
+• limit (default 50) • offset (default 0) • user_type • search • is_active
 
-**Request:**
-```json
-{
-  "username": "john_doe_updated",
-  "email": "john.doe@newemail.com"
-}
-```
+### GET  /users/{user_hash}
+Get details for a specific user (self or admin/root scope).  
+Path param • user_hash
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Profile updated successfully",
-  "user": {
-    "user_hash": "usr_def456abc",
-    "username": "john_doe_updated",
-    "email": "john.doe@newemail.com",
-    "user_type": "consumer",
-    "created_at": "2024-01-15T10:30:00Z"
-  }
-}
-```
+### PATCH  /users/{user_hash}/status
+Activate / deactivate a user (admin).  
+Path • user_hash Form • is_active (req)
+
+### POST  /users/{user_hash}/reset-password
+Admin reset => returns temporary password.  
+Path • user_hash
+
+### PATCH  /users/{user_hash}/type
+ROOT-only change of user-type (root, admin, consumer).  
+Path • user_hash Form • user_type (req)
 
 ---
 
-## 📁 Project Management
+## 3. User-Type Management
+### POST  /user-types/root
+Create a new root (super-admin).  
+Form • username (req) • password (req) • email (optional)
 
-### GET `/projects` 🔒
-**Description:** List accessible projects  
-**Params:** `?limit=5&search=alpha`
+### POST  /user-types/admin
+Create an admin for one / many projects.  
+Form • username (req) • password (req) • email (req) • assigned_project_id OR assigned_project_ids
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Projects retrieved successfully",
-  "projects": [
-    {
-      "project_hash": "proj_abc123xyz",
-      "project_name": "Project Alpha",
-      "project_description": "Main development project",
-      "access_level": "full_access",
-      "access_through": "user_group"
-    }
-  ],
-  "pagination": {
-    "limit": 5,
-    "offset": 0,
-    "total": 1,
-    "has_more": false
-  },
-  "user_access_level": "consumer"
-}
-```
+### GET  /user-types/{user_hash}/info
+Comprehensive type info for a user.  
+Path • user_hash
 
-### POST `/projects` 🔒
-**Description:** Create new project  
+### PUT  /user-types/{user_hash}/type
+ROOT-only promotion/demotion + project assignment.  
+Path • user_hash Form • user_type (req) • assigned_project_id (optional)
 
-**Request:**
-```json
-{
-  "project_name": "New Project Beta",
-  "project_description": "Secondary development project"
-}
-```
+### GET  /user-types/users/{user_type}
+List all users of a given type.  
+Path • user_type Query • limit • offset
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Project created successfully",
-  "project": {
-    "project_hash": "proj_beta789xyz",
-    "project_name": "New Project Beta",
-    "project_description": "Secondary development project",
-    "created_at": "2024-01-15T13:00:00Z"
-  }
-}
-```
+### PUT  /user-types/admin/{user_hash}/projects
+Overwrite the list of projects an admin manages.  
+Path • user_hash Form • assigned_project_ids (req)
+
+### GET  /user-types/admin/{user_hash}/projects
+Fetch all projects an admin currently manages.  
+Path • user_hash
+
+### POST  /user-types/admin/{user_hash}/projects/add
+Add an extra project to an admin.  
+Path • user_hash Form • project_id (req)
+
+### DELETE  /user-types/admin/{user_hash}/projects/{project_id}
+Remove admin from a specific project.  
+Path • user_hash • project_id
+
+### GET  /user-types/stats
+System-wide distribution of user types.  
+Params – none
 
 ---
 
-## 👥 Admin - User Groups
+## 4. Project Management
+### GET  /projects
+List projects visible to caller.  
+Query • limit (1-100, default 10) • offset • search
 
-### GET `/admin/user-groups` 🔒
-**Description:** List all user groups (admin only)  
+### POST  /projects
+Create a new project (admin/root).  
+Form • project_name (req) • project_description (optional)
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "User groups retrieved",
-  "user_groups": [
-    {
-      "group_hash": "grp_users123abc",
-      "group_name": "Developers",
-      "description": "Development team members",
-      "member_count": 5,
-      "created_at": "2024-01-10T09:00:00Z"
-    },
-    {
-      "group_hash": "grp_users456def",
-      "group_name": "QA Team", 
-      "description": "Quality assurance team",
-      "member_count": 3,
-      "created_at": "2024-01-12T14:00:00Z"
-    }
-  ],
-  "pagination": {
-    "limit": 50,
-    "offset": 0,
-    "total": 2,
-    "has_more": false
-  }
-}
-```
+### GET  /projects/{project_hash}
+Detailed project info with caller’s access context.  
+Path • project_hash
 
-### POST `/admin/user-groups` 🔒
-**Description:** Create user group  
+### PUT  /projects/{project_hash}
+Update project metadata (admin).  
+Path • project_hash Form • project_name • project_description
 
-**Request:**
-```json
-{
-  "group_name": "Marketing Team",
-  "description": "Marketing and content team"
-}
-```
+### DELETE  /projects/{project_hash}
+Delete / revoke access to a project (admin).  
+Path • project_hash
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "User group created successfully",
-  "user_group": {
-    "group_hash": "grp_marketing789xyz",
-    "group_name": "Marketing Team",
-    "description": "Marketing and content team",
-    "member_count": 0,
-    "created_at": "2024-01-15T13:30:00Z"
-  }
-}
-```
+### GET  /projects/{project_hash}/members
+List members of a project.  
+Path • project_hash Query • limit • offset • user_type
 
-### POST `/admin/user-groups/{group_hash}/members` 🔒
-**Description:** Assign user to group  
+### POST  /projects/{project_hash}/members
+Add a member to a project with role.  
+Path • project_hash Form • user_hash (req) • role (default consumer)
 
-**Request:**
-```json
-{
-  "user_hash": "usr_def456abc"
-}
-```
+### DELETE  /projects/{project_hash}/members/{user_hash}
+Remove member from project.  
+Path • project_hash • user_hash
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "User assigned to group successfully",
-  "assignment": {
-    "user_hash": "usr_def456abc",
-    "group_hash": "grp_users123abc",
-    "assigned_at": "2024-01-15T14:00:00Z"
-  }
-}
-```
+### GET  /projects/{project_hash}/activity
+Project activity feed (phase 2).  
+Path • project_hash Query • limit • offset • activity_type • days
+
+### GET  /projects/{project_hash}/stats
+Detailed stats (phase 2).  
+Path • project_hash
+
+### PATCH  /projects/{project_hash}/owner
+Transfer ownership (admin).  
+Path • project_hash Form • new_owner_hash (req)
+
+### PATCH  /projects/{project_hash}/archive
+Archive / unarchive a project.  
+Path • project_hash Form • archived (req, bool)
 
 ---
 
-## 🛡️ RBAC Management
+## 5. RBAC Management
+### GET  /rbac/projects/{project_hash}/permissions
+List permissions in project.  
+Path • project_hash Query • category • limit • offset
 
-### GET `/rbac/projects/{project_hash}/permissions` 🔒
-**Description:** List project permissions  
-**Path:** `/rbac/projects/proj_abc123xyz/permissions`
+### POST  /rbac/projects/{project_hash}/permissions
+Create a permission.  
+Path • project_hash Form • permission_name (req) • category (default general) • description
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Permissions retrieved successfully",
-  "project": {
-    "project_hash": "proj_abc123xyz",
-    "project_name": "My Project"
-  },
-  "permissions": [
-    {
-      "id": 1,
-      "permission_name": "read_documents",
-      "category": "documents",
-      "description": "Read access to documents",
-      "created_at": "2024-01-10T10:00:00Z"
-    },
-    {
-      "id": 2, 
-      "permission_name": "write_documents",
-      "category": "documents",
-      "description": "Write access to documents",
-      "created_at": "2024-01-10T10:05:00Z"
-    }
-  ],
-  "pagination": {
-    "limit": 50,
-    "offset": 0,
-    "total": 2,
-    "has_more": false
-  }
-}
-```
+### GET  /rbac/projects/{project_hash}/roles
+List roles in project.  
+Path • project_hash Query • limit • offset
 
-### POST `/rbac/projects/{project_hash}/permissions` 🔒
-**Description:** Create project permission  
+### POST  /rbac/projects/{project_hash}/roles
+Create role (permission group).  
+Path • project_hash Form • group_name (req) • priority (default 50) • description • permissions (list)
 
-**Request:**
-```json
-{
-  "permission_name": "delete_documents",
-  "category": "documents", 
-  "description": "Delete access to documents"
-}
-```
+### POST  /rbac/projects/{project_hash}/initialize
+Bootstrap default perms & roles for a project.  
+Path • project_hash Query • create_default_permissions (bool) • create_default_roles (bool)
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Permission created successfully",
-  "permission": {
-    "id": 3,
-    "permission_name": "delete_documents",
-    "category": "documents",
-    "description": "Delete access to documents",
-    "created_at": "2024-01-15T15:00:00Z"
-  }
-}
-```
+### GET  /rbac/projects/{project_hash}/summary
+Full RBAC summary.  
+Path • project_hash
 
-### POST `/rbac/users/{user_hash}/projects/{project_hash}/roles` 🔒
-**Description:** Assign user to role  
+### GET  /rbac/projects/{project_hash}/audit
+Audit log for RBAC actions.  
+Path • project_hash Query • limit • offset • action_type
 
-**Request:**
-```json
-{
-  "role_id": 2
-}
-```
+### POST  /rbac/users/{user_hash}/projects/{project_hash}/roles
+Assign user to role.  
+Path • user_hash • project_hash Form • role_id (req)
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "User assigned to role successfully",
-  "assignment": {
-    "user_hash": "usr_def456abc",
-    "project_hash": "proj_abc123xyz",
-    "role_id": 2,
-    "role_name": "Editor",
-    "assigned_at": "2024-01-15T15:30:00Z"
-  }
-}
-```
+### GET  /rbac/users/{user_hash}/projects/{project_hash}/roles
+List user’s roles in project.  
+Path • user_hash • project_hash
 
-### GET `/rbac/users/{user_hash}/projects/{project_hash}/permissions` 🔒
-**Description:** Get user's effective permissions  
+### DELETE  /rbac/users/{user_hash}/projects/{project_hash}/roles/{role_id}
+Remove user from role (phase 2).  
+Path • user_hash • project_hash • role_id
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "User permissions retrieved",
-  "user": {
-    "user_hash": "usr_def456abc",
-    "username": "john_doe"
-  },
-  "project": {
-    "project_hash": "proj_abc123xyz",
-    "project_name": "My Project"
-  },
-  "effective_permissions": [
-    {
-      "permission_name": "read_documents",
-      "category": "documents",
-      "granted_through": "Editor role"
-    },
-    {
-      "permission_name": "write_documents", 
-      "category": "documents",
-      "granted_through": "Editor role"
-    }
-  ],
-  "summary": {
-    "total_permissions": 2,
-    "roles_count": 1,
-    "access_level": "editor"
-  }
-}
-```
+### GET  /rbac/users/{user_hash}/projects/{project_hash}/permissions
+Effective permissions for a user in project.  
+Path • user_hash • project_hash
 
-### GET `/rbac/users/{user_hash}/projects/{project_hash}/check/read_documents` 🔒
-**Description:** Check specific permission  
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Permission check completed",
-  "user": {
-    "user_hash": "usr_def456abc",
-    "username": "john_doe"
-  },
-  "project": {
-    "project_hash": "proj_abc123xyz",
-    "project_name": "My Project"
-  },
-  "permission_check": {
-    "permission_name": "read_documents",
-    "has_permission": true,
-    "granted_through": "Editor role",
-    "checked_at": "2024-01-15T16:00:00Z"
-  }
-}
-```
+### GET  /rbac/users/{user_hash}/projects/{project_hash}/check/{permission_name}
+Check if user has specific permission.  
+Path • user_hash • project_hash • permission_name
 
 ---
 
-## 🔧 System Information
+## 6. Admin – User Groups
+### GET  /admin/user-groups
+List global user groups.  
+Query • limit • offset
 
-### GET `/system/info`
-**Description:** Get system information  
+### POST  /admin/user-groups
+Create a user group.  
+Form • group_name (req) • description
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "System information retrieved",
-  "system": {
-    "version": "2.1.0",
-    "environment": "production",
-    "database_status": "connected",
-    "cache_status": "active"
-  },
-  "statistics": {
-    "total_users": 150,
-    "total_projects": 25,
-    "active_sessions": 45,
-    "root_users": 2,
-    "admin_users": 8,
-    "consumer_users": 140
-  },
-  "features": [
-    "3-tier-user-types",
-    "multi-project-admin",
-    "rbac-system",
-    "session-management",
-    "audit-logging"
-  ]
-}
-```
+### GET  /admin/user-groups/{group_hash}
+Group details.  
+Path • group_hash
 
-### GET `/system/health`
-**Description:** Comprehensive health check  
+### PUT  /admin/user-groups/{group_hash}
+Update group.  
+Path • group_hash Form • group_name • description
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "System health check completed",
-  "status": "healthy",
-  "timestamp": "2024-01-15T16:30:00Z",
-  "components": {
-    "database": {
-      "status": "healthy",
-      "response_time_ms": 12,
-      "connection_pool": "8/20 connections"
-    },
-    "cache": {
-      "status": "healthy", 
-      "response_time_ms": 2,
-      "memory_usage": "45%"
-    },
-    "authentication": {
-      "status": "healthy",
-      "active_sessions": 45
-    }
-  }
-}
-```
+### DELETE  /admin/user-groups/{group_hash}
+Delete group.  
+Path • group_hash
+
+### POST  /admin/user-groups/{group_hash}/members
+Add user to group.  
+Path • group_hash Form • user_hash (req)
+
+### DELETE  /admin/user-groups/{group_hash}/members/{user_hash}
+Remove user from group.  
+Path • group_hash • user_hash
+
+### POST  /admin/user-groups/{group_hash}/projects
+Grant group access to project.  
+Path • group_hash Form • project_hash (req)
+
+### DELETE  /admin/user-groups/{group_hash}/projects/{project_hash}
+Revoke group’s project access.  
+Path • group_hash • project_hash
 
 ---
 
-## Error Response Examples
+## 7. Admin – Project Groups
+### GET  /admin/project-groups
+List permission-groups reusable across projects.  
+Query • limit • offset
 
-### Authentication Error (401)
-```json
-{
-  "success": false,
-  "message": "Invalid credentials",
-  "error_code": "AUTH_FAILED"
-}
-```
+### POST  /admin/project-groups
+Create project-group with permissions list.  
+Form • group_name (req) • permissions (list) • description
 
-### Permission Error (403)
-```json
-{
-  "success": false,
-  "message": "Insufficient permissions for this operation",
-  "error_code": "PERMISSION_DENIED",
-  "required_access_level": "admin"
-}
-```
+### GET  /admin/project-groups/{group_hash}
+Details of a project-group.  
+Path • group_hash
 
-### Validation Error (422)
-```json
-{
-  "success": false,
-  "message": "Validation failed",
-  "detail": [
-    {
-      "loc": ["body", "username"],
-      "msg": "field required",
-      "type": "value_error.missing"
-    }
-  ]
-}
-```
+### PUT  /admin/project-groups/{group_hash}
+Update project-group.  
+Path • group_hash Form • group_name • permissions • description
 
-### Resource Not Found (404)
-```json
-{
-  "success": false,
-  "message": "Project not found",
-  "error_code": "RESOURCE_NOT_FOUND"
-}
-```
+### DELETE  /admin/project-groups/{group_hash}
+Delete project-group.  
+Path • group_hash
+
+### POST  /admin/project-groups/{group_hash}/projects
+Assign a project to the group.  
+Path • group_hash Form • project_hash (req)
+
+### DELETE  /admin/project-groups/{group_hash}/projects/{project_hash}
+Remove project from group.  
+Path • group_hash • project_hash
 
 ---
 
-## Common Request Headers
-```
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-Content-Type: application/json
-Accept: application/json
-```
+## 8. Admin Dashboard  _(system stats & health)_
+• GET /admin/dashboard/stats – Overall counters  
+• GET /admin/activity – Activity feed (filters: limit, offset, activity_type, user_id, project_id, days)  
+• GET /admin/health – Deep health check  
+• GET /admin/activity/types – List of activity categories  
+• GET /admin/users/statistics – User growth & type breakdown (days)  
+• GET /admin/projects/statistics – Project metrics (days)  
+• GET /admin/system/overview – System-wide performance & health overview
 
-## Authentication Note
-🔒 = Requires Bearer token in `Authorization: Bearer <token>` header
+---
 
-## User Type Access Levels
-- **ROOT**: Full system access, can manage other root users
-- **ADMIN**: Multi-project management, user/group administration  
-- **CONSUMER**: RBAC-based project access through groups
+## 9. Analytics
+• GET /analytics/dashboard/stats (period_days)  
+• GET /analytics/users (period_days, user_type)  
+• GET /analytics/projects (period_days)  
+• GET /analytics/activity (period_days, activity_type)  
+• GET /analytics/summary
+
+---
+
+## 10. System Info & Cache
+• GET /system/info – system summary  
+• GET /system/health – comprehensive health  
+• GET /system/ping – lightweight ping  
+• GET /system/cache/stats – cache metrics  
+• POST /system/cache/clear – clear all cache  
+• POST /system/cache/invalidate/user/{user_hash}  
+• POST /system/cache/invalidate/project/{project_id}
+
+---
+
+## 11. Bulk Operations (Phase 2)
+• POST /admin/users/bulk-update – change many users  
+• POST /admin/users/bulk-delete – delete many users  
+• POST /admin/projects/{project_hash}/bulk-assign-roles  
+• POST /admin/user-groups/bulk-assign  
+• POST /rbac/projects/{project_hash}/bulk-assign _(RBAC)_
+
+---
+
+## 12. Low-Level Access Check
+### HEAD  /access
+Verifies JWT presence & permission for arbitrary resources (uses custom headers X-token-user / X-token-collection).  
+Params – none
+
+### GET  /ping  (root level)
+Simple service-alive check.  
+
+---
+
+**Tip:** All endpoints secured by `HTTPBearerOrCookie` accept either an Authorization Bearer header **or** the secure session cookie automatically issued by the authentication endpoints.

@@ -36,12 +36,20 @@ export function UserCreatePage(): React.JSX.Element {
           break;
         case 'consumer':
         default:
-          response = await userService.createConsumerUser({
+          // Create consumer user without project_hash (now optional)
+          const consumerData: any = {
             username: formData.username,
             password: formData.password,
             email: formData.email,
-            project_hash: '', // TODO: Get from current context
-          });
+          };
+          
+          // Only include project_hash if it's available from context
+          // TODO: Add logic to get project_hash from current context if needed
+          // if (currentProjectHash) {
+          //   consumerData.project_hash = currentProjectHash;
+          // }
+          
+          response = await userService.createConsumerUser(consumerData);
           break;
       }
 

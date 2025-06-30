@@ -40,7 +40,7 @@ export interface UserProfile {
   };
 }
 
-export interface UserProfileResponse extends ApiResponse {
+export interface UserProfileExtendedResponse extends ApiResponse {
   user: User;
   accessible_projects: Array<{
     project_hash: string;

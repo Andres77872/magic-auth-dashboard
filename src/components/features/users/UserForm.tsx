@@ -53,9 +53,22 @@ export function UserForm({
   
   // Project assignment modal
   const [showProjectModal, setShowProjectModal] = useState(false);
+  
+  // Email input ref for auto-focus
+  const emailInputRef = React.useRef<HTMLInputElement>(null);
 
   // Check if editing own account
   const isEditingSelf = mode === 'edit' && currentUser && initialData?.user_hash === currentUser.user_hash;
+
+  // Auto-focus email field on component mount for create mode
+  React.useEffect(() => {
+    if (mode === 'create' && emailInputRef.current) {
+      // Small delay to ensure component is fully rendered
+      setTimeout(() => {
+        emailInputRef.current?.focus();
+      }, 100);
+    }
+  }, [mode]);
 
   // Filter user type options based on permissions and prevent self-demotion
   const availableUserTypes = USER_TYPE_OPTIONS.filter(option => {
@@ -95,9 +108,9 @@ export function UserForm({
 
       if (response.success) {
         if (field === 'username') {
-          setUsernameAvailable(response.username_available === null ? undefined : response.username_available as boolean);
+          setUsernameAvailable(response.username_available === null ? undefined : Boolean(response.username_available));
         } else {
-          setEmailAvailable(response.email_available === null ? undefined : response.email_available as boolean);
+          setEmailAvailable(response.email_available === null ? undefined : Boolean(response.email_available));
         }
       }
     } catch (error) {
@@ -276,6 +289,7 @@ export function UserForm({
                    emailAvailable === false ? 'Email is taken' : 
                    'Checking availability...') : undefined
                 }
+                ref={emailInputRef}
               />
             </div>
 
@@ -287,7 +301,7 @@ export function UserForm({
                 value={formData.userType}
                 onChange={(value) => handleInputChange('userType', value)}
                 error={errors.userType}
-                disabled={isLoading || (mode === 'edit' && (currentUserType !== 'root' || isEditingSelf))}
+                disabled={isLoading || (mode === 'edit' && (currentUserType !== 'root' || isEditingSelf)) || undefined}
               />
               <p className="field-help-text">Select the user's access level</p>
               {isEditingSelf && currentUserType === 'root' && (

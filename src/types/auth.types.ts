@@ -28,7 +28,7 @@ export interface RegisterRequest {
   username: string;
   password: string;
   email: string;
-  project_hash: string;
+  project_hash?: string; // Made optional for improved UX
 }
 
 export interface RegisterResponse {
@@ -90,8 +90,8 @@ export interface AvailabilityRequest {
 export interface AvailabilityResponse {
   success: boolean;
   message: string;
-  username_available?: boolean;
-  email_available?: boolean;
+  username_available?: boolean | null;
+  email_available?: boolean | null;
 }
 
 export interface AuthState {

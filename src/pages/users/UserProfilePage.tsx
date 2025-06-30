@@ -28,7 +28,7 @@ export function UserProfilePage(): React.JSX.Element {
 
       const response = await userService.getUserByHash(hash);
 
-      if (response.success && response.user) {
+      if (response.success && (response as UserProfileResponse).user) {
         setProfileData(response as UserProfileResponse);
       } else {
         setError(response.message || 'Failed to fetch user data');
@@ -259,7 +259,7 @@ export function UserProfilePage(): React.JSX.Element {
           <Card title={`Assigned Projects (${accessible_projects.length})`} padding="large">
             {accessible_projects.length > 0 ? (
               <div className="projects-list">
-                {accessible_projects.map((project, index) => (
+                {accessible_projects.map((_, index) => (
                   <div key={index} className="project-item">
                     {/* Display project information when structure is known */}
                     <div className="project-placeholder">
@@ -283,7 +283,7 @@ export function UserProfilePage(): React.JSX.Element {
           <Card title={`User Groups (${groups.length})`} padding="large">
             {groups.length > 0 ? (
               <div className="groups-list">
-                {groups.map((group, index) => (
+                {groups.map((_, index) => (
                   <div key={index} className="group-item">
                     {/* Display group information when structure is known */}
                     <div className="group-placeholder">
