@@ -16,7 +16,7 @@ import './styles/pages/user-list.css';
 import './styles/components/user-management.css';
 
 // Import pages
-import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage } from '@/pages';
+import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectCreatePage } from '@/pages';
 import { UserCreatePage } from '@/pages/users/UserCreatePage';
 import { UserEditPage } from '@/pages/users/UserEditPage';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
@@ -141,11 +141,18 @@ function App(): React.JSX.Element {
                 element={
                   <AdminRoute>
                     <DashboardLayout>
-                      <ComingSoon 
-                        title="Project Management"
-                        description="Create and manage projects, assign users, and configure settings"
-                        feature="Project management"
-                      />
+                      <ProjectListPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={ROUTES.PROJECTS_CREATE}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ProjectCreatePage />
                     </DashboardLayout>
                   </AdminRoute>
                 }

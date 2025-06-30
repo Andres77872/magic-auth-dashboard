@@ -1,7 +1,8 @@
-export { default as useAuth } from './useAuth';
-export { default as usePermissions } from './usePermissions';
-export { default as useUserType } from './useUserType';
+export { useAuth } from './useAuth';
 export { useUsers } from './useUsers';
+export { useProjects } from './useProjects';
+export { useUserType } from './useUserType';
+export { usePermissions } from './usePermissions';
 
 // Dashboard hooks
 export { default as useSystemStats } from './dashboard/useSystemStats';
