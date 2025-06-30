@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/utils/routes';
 import { VALIDATION } from '@/utils/constants';
 import { LoadingSpinner } from '@/components/common';
+import { UserIcon, EyeIcon, LogoutIcon, ErrorIcon } from '@/components/icons';
 
 interface LoginFormData {
   username: string;
@@ -125,11 +126,7 @@ export function LoginForm(): React.JSX.Element {
       {(errors.general || state.error) && (
         <div className="error-alert" role="alert">
           <div className="error-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
+            <ErrorIcon size="medium" />
           </div>
           <span>{errors.general || state.error}</span>
         </div>
@@ -155,10 +152,7 @@ export function LoginForm(): React.JSX.Element {
             required
           />
           <div className="input-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
+            <UserIcon size="medium" />
           </div>
         </div>
         {errors.username && (
@@ -194,17 +188,7 @@ export function LoginForm(): React.JSX.Element {
             aria-label={showPassword ? 'Hide password' : 'Show password'}
             disabled={isSubmitting}
           >
-            {showPassword ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-            )}
+            <EyeIcon size="medium" isVisible={showPassword} />
           </button>
         </div>
         {errors.password && (
@@ -245,11 +229,7 @@ export function LoginForm(): React.JSX.Element {
         ) : (
           <>
             <span>Sign In</span>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16,17 21,12 16,7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
+            <LogoutIcon size="medium" />
           </>
         )}
       </button>

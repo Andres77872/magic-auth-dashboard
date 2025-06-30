@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronIcon } from '@/components/icons';
 
 interface PaginationProps {
   currentPage: number;
@@ -93,9 +94,7 @@ export function Pagination({
           disabled={currentPage === 1}
           aria-label="Previous page"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15,18 9,12 15,6"/>
-          </svg>
+          <ChevronIcon size="small" direction="left" />
           Previous
         </button>
 
@@ -127,9 +126,7 @@ export function Pagination({
           aria-label="Next page"
         >
           Next
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="9,18 15,12 9,6"/>
-          </svg>
+          <ChevronIcon size="small" direction="right" />
         </button>
       </div>
     </div>

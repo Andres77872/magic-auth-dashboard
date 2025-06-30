@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LoadingSpinner } from './LoadingSpinner';
+import { ChevronIcon } from '@/components/icons';
 
 export interface TableColumn<T> {
   key: keyof T;
@@ -63,17 +64,11 @@ export function Table<T extends Record<string, any>>({
     return (
       <span className={`table-sort-icon ${isActive ? 'table-sort-active' : ''}`}>
         {isActive && sortState.direction === 'asc' ? (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="18,15 12,9 6,15"/>
-          </svg>
+          <ChevronIcon size="small" direction="up" />
         ) : isActive && sortState.direction === 'desc' ? (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="6,9 12,15 18,9"/>
-          </svg>
+          <ChevronIcon size="small" direction="down" />
         ) : (
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.3">
-            <polyline points="18,15 12,9 6,15"/>
-          </svg>
+          <ChevronIcon size="small" direction="up" className="inactive-sort" />
         )}
       </span>
     );
