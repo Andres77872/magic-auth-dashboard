@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input } from '@/components/common';
 import { projectService } from '@/services';
 import type { ProjectDetails } from '@/types/project.types';
+import { SearchIcon, LoadingIcon, ErrorIcon, HealthIcon } from '@/components/icons';
 
 interface AssignProjectModalProps {
   isOpen: boolean;
@@ -127,12 +128,7 @@ export function AssignProjectModal({
               placeholder="Search projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="m21 21-4.35-4.35"/>
-                </svg>
-              }
+              leftIcon={<SearchIcon size="small" />}
               disabled={fetchingProjects}
             />
           </div>
@@ -156,22 +152,14 @@ export function AssignProjectModal({
           {fetchingProjects ? (
             <div className="loading-state">
               <div className="loading-spinner">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12c0 1.66-4.03 3-9 3s-9-1.34-9-3"/>
-                  <path d="M3 5c0-1.66 4.03-3 9-3s9 1.34 9 3"/>
-                  <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
-                </svg>
+                <LoadingIcon size="large" />
               </div>
               <p>Loading projects...</p>
             </div>
           ) : error ? (
             <div className="error-state">
               <div className="error-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" y1="9" x2="9" y2="15"/>
-                  <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
+                <ErrorIcon size="large" />
               </div>
               <p>{error}</p>
               <Button
@@ -185,9 +173,7 @@ export function AssignProjectModal({
           ) : filteredProjects.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                </svg>
+                <HealthIcon size="large" />
               </div>
               <p>
                 {searchTerm ? 'No projects match your search.' : 'No projects available.'}

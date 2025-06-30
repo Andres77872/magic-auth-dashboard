@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useUserType } from '@/hooks';
+import { ChevronIcon, UserIcon, SettingsIcon, LogoutIcon } from '@/components/icons';
 import { ROUTES } from '@/utils/routes';
 
 export function UserMenu(): React.JSX.Element {
@@ -74,17 +75,11 @@ export function UserMenu(): React.JSX.Element {
             {user.username.charAt(0).toUpperCase()}
           </span>
         </div>
-        <svg 
+        <ChevronIcon 
           className={`chevron ${isOpen ? 'open' : ''}`}
-          width="16" 
-          height="16" 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2"
-        >
-          <polyline points="6,9 12,15 18,9"/>
-        </svg>
+          size="small"
+          direction={isOpen ? "up" : "down"}
+        />
       </button>
 
       {/* Dropdown menu */}
@@ -119,10 +114,7 @@ export function UserMenu(): React.JSX.Element {
               role="menuitem"
               onClick={() => setIsOpen(false)}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
+              <UserIcon size="small" />
               <span>Profile</span>
             </Link>
 
@@ -132,10 +124,7 @@ export function UserMenu(): React.JSX.Element {
               role="menuitem"
               onClick={() => setIsOpen(false)}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
+              <SettingsIcon size="small" />
               <span>Settings</span>
             </button>
 
@@ -147,11 +136,7 @@ export function UserMenu(): React.JSX.Element {
               role="menuitem"
               onClick={handleLogoutClick}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                <polyline points="16,17 21,12 16,7"/>
-                <line x1="21" y1="12" x2="9" y2="12"/>
-              </svg>
+              <LogoutIcon size="small" />
               <span>Sign Out</span>
             </button>
           </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input, Select } from '@/components/common';
+import { SearchIcon, CloseIcon } from '@/components/icons';
 
 interface UserFilterProps {
   onFiltersChange: (filters: UserFilters) => void;
@@ -92,12 +93,7 @@ export function UserFilter({ onFiltersChange, initialFilters = {} }: UserFilterP
             placeholder="Search by username or email..."
             value={searchInput}
             onChange={handleSearchChange}
-            leftIcon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"/>
-                <path d="M21 21l-4.35-4.35"/>
-              </svg>
-            }
+            leftIcon={<SearchIcon size="small" />}
             className="search-input"
           />
         </div>
@@ -126,10 +122,7 @@ export function UserFilter({ onFiltersChange, initialFilters = {} }: UserFilterP
               className="clear-filters-btn"
               title="Clear all filters"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+              <CloseIcon size="small" />
               Clear
             </button>
           )}

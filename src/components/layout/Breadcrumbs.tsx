@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { ChevronIcon } from '@/components/icons';
 import { ROUTES } from '@/utils/routes';
 
 interface BreadcrumbItem {
@@ -104,18 +105,12 @@ export function Breadcrumbs(): React.JSX.Element {
             )}
             
             {index < breadcrumbs.length - 1 && (
-              <svg 
+              <ChevronIcon 
                 className="breadcrumb-separator" 
-                width="16" 
-                height="16" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2"
+                size="small"
+                direction="right"
                 aria-hidden="true"
-              >
-                <polyline points="9,18 15,12 9,6"/>
-              </svg>
+              />
             )}
           </li>
         ))}

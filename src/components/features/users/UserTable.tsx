@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Table, Badge, Button } from '@/components/common';
 import { UserActionsMenu } from './UserActionsMenu';
 import { usePermissions } from '@/hooks';
+import { CheckIcon, ErrorIcon, GroupIcon, DeleteIcon } from '@/components/icons';
 import type { TableColumn } from '@/components/common';
 import type { User, UserType } from '@/types/auth.types';
 
@@ -274,10 +275,7 @@ export function UserTable({
                   onClick={handleBulkActivate}
                   disabled={isBulkLoading}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 12l2 2 4-4"/>
-                    <circle cx="12" cy="12" r="10"/>
-                  </svg>
+                  <CheckIcon size="small" />
                   Activate
                 </Button>
                 
@@ -287,11 +285,7 @@ export function UserTable({
                   onClick={handleBulkDeactivate}
                   disabled={isBulkLoading}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                  </svg>
+                  <ErrorIcon size="small" />
                   Deactivate
                 </Button>
               </>
@@ -304,12 +298,7 @@ export function UserTable({
                 onClick={handleBulkAssignGroup}
                 disabled={isBulkLoading}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
+                <GroupIcon size="small" />
                 Assign Group
               </Button>
             )}
@@ -321,10 +310,7 @@ export function UserTable({
                 onClick={handleBulkDelete}
                 disabled={isBulkLoading}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="3,6 5,6 21,6"/>
-                  <path d="M19,6v14a2,2 0,0,1-2,2H7a2,2 0,0,1-2-2V6m3,0V4a2,2 0,0,1,2-2h4a2,2 0,0,1,2,2v2"/>
-                </svg>
+                <DeleteIcon size="small" />
                 Delete
               </Button>
             )}

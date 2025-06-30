@@ -3,6 +3,7 @@ import { Input, Select, Button, Card, Modal } from '@/components/common';
 import { usePermissions, useUserType, useAuth } from '@/hooks';
 import { authService } from '@/services';
 import AssignProjectModal from './AssignProjectModal';
+import { WarningIcon, InfoIcon, ProjectIcon } from '@/components/icons';
 import type { UserFormData, UserFormErrors } from '@/types/user.types';
 import type { UserType, User } from '@/types/auth.types';
 
@@ -94,9 +95,9 @@ export function UserForm({
 
       if (response.success) {
         if (field === 'username') {
-          setUsernameAvailable(response.username_available === null ? undefined : response.username_available);
+          setUsernameAvailable(response.username_available === null ? undefined : response.username_available as boolean);
         } else {
-          setEmailAvailable(response.email_available === null ? undefined : response.email_available);
+          setEmailAvailable(response.email_available === null ? undefined : response.email_available as boolean);
         }
       }
     } catch (error) {
@@ -221,11 +222,7 @@ export function UserForm({
           {mode === 'create' && formData.userType === 'root' && (
             <div className="security-warning">
               <div className="warning-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
+                <WarningIcon size="medium" />
               </div>
               <div className="warning-content">
                 <h4>Creating ROOT User</h4>
@@ -238,11 +235,7 @@ export function UserForm({
           {isEditingSelf && (
             <div className="info-banner">
               <div className="info-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M12 16v-4"/>
-                  <path d="M12 8h.01"/>
-                </svg>
+                <InfoIcon size="medium" />
               </div>
               <div className="info-content">
                 <p>You are editing your own account. Some restrictions apply for security reasons.</p>
@@ -372,9 +365,7 @@ export function UserForm({
                   onClick={() => setShowProjectModal(true)}
                   disabled={isLoading}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                  </svg>
+                  <ProjectIcon size="small" />
                   Assign Projects
                 </Button>
               </div>
@@ -414,11 +405,7 @@ export function UserForm({
           <div className="root-confirmation-content">
             <div className="warning-section">
               <div className="warning-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="confirm-icon confirm-icon-warning">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
+                <WarningIcon size="large" className="confirm-icon confirm-icon-warning" />
               </div>
               <div className="warning-message">
                 <p>You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>
