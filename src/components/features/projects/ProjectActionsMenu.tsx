@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/common';
 import { usePermissions } from '@/hooks';
+import { ROUTES } from '@/utils/routes';
 import type { ProjectDetails } from '@/types/project.types';
 
 interface ProjectActionsMenuProps {
@@ -12,22 +14,21 @@ export const ProjectActionsMenu: React.FC<ProjectActionsMenuProps> = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { hasPermission } = usePermissions();
+  const navigate = useNavigate();
 
   const handleViewDetails = () => {
-    // TODO: Navigate to project details page
-    console.log('View project details:', project.project_hash);
+    navigate(`${ROUTES.PROJECTS_DETAILS}/${project.project_hash}`);
     setIsMenuOpen(false);
   };
 
   const handleEditProject = () => {
-    // TODO: Navigate to project edit page
-    console.log('Edit project:', project.project_hash);
+    navigate(`${ROUTES.PROJECTS_EDIT}/${project.project_hash}`);
     setIsMenuOpen(false);
   };
 
   const handleArchiveProject = () => {
-    // TODO: Archive project functionality
-    console.log('Archive project:', project.project_hash);
+    // Navigate to project details page with settings tab
+    navigate(`${ROUTES.PROJECTS_DETAILS}/${project.project_hash}?tab=settings`);
     setIsMenuOpen(false);
   };
 

@@ -4,7 +4,9 @@ import type {
   CreateProjectRequest,
   CreateProjectResponse,
   ProjectListParams,
-  ProjectListResponse
+  ProjectListResponse,
+  ProjectDetailsResponse,
+  ProjectMembersResponse
 } from '@/types/project.types';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
 
@@ -24,8 +26,9 @@ class ProjectService {
   }
 
   // Get project details
-  async getProject(projectHash: string): Promise<ApiResponse<ProjectDetails>> {
-    return await apiClient.get<ProjectDetails>(`/projects/${projectHash}`);
+  async getProject(projectHash: string): Promise<ProjectDetailsResponse> {
+    const response = await apiClient.get<any>(`/projects/${projectHash}`);
+    return response as ProjectDetailsResponse;
   }
 
   // Create new project
@@ -49,7 +52,7 @@ class ProjectService {
   async getProjectMembers(
     projectHash: string, 
     params: PaginationParams = {}
-  ): Promise<ApiResponse<any[]>> {
+  ): Promise<ProjectMembersResponse> {
     // Filter out undefined values from params
     const cleanParams: Record<string, any> = {};
     Object.entries(params).forEach(([key, value]) => {
@@ -58,7 +61,8 @@ class ProjectService {
       }
     });
     
-    return await apiClient.get<any[]>(`/projects/${projectHash}/members`, cleanParams);
+    const response = await apiClient.get<ProjectMembersResponse>(`/projects/${projectHash}/members`, cleanParams);
+    return response as ProjectMembersResponse;
   }
 
   // Add member to project

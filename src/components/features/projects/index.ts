@@ -2,4 +2,7 @@ export { ProjectTable } from './ProjectTable';
 export { ProjectCard } from './ProjectCard';
 export { ProjectFilter } from './ProjectFilter';
 export { ProjectForm } from './ProjectForm';
-export { ProjectActionsMenu } from './ProjectActionsMenu'; 
+export { ProjectActionsMenu } from './ProjectActionsMenu';
+export { ProjectOverviewTab } from './ProjectOverviewTab';
+export { ProjectMembersTab } from './ProjectMembersTab';
+export { ProjectSettingsTab } from './ProjectSettingsTab'; 

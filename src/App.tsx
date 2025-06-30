@@ -16,7 +16,7 @@ import './styles/pages/user-list.css';
 import './styles/components/user-management.css';
 
 // Import pages
-import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectCreatePage } from '@/pages';
+import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectCreatePage, ProjectEditPage, ProjectDetailsPage } from '@/pages';
 import { UserCreatePage } from '@/pages/users/UserCreatePage';
 import { UserEditPage } from '@/pages/users/UserEditPage';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
@@ -153,6 +153,28 @@ function App(): React.JSX.Element {
                   <AdminRoute>
                     <DashboardLayout>
                       <ProjectCreatePage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={`${ROUTES.PROJECTS_EDIT}/:projectHash`}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ProjectEditPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={`${ROUTES.PROJECTS_DETAILS}/:projectHash`}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ProjectDetailsPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }
