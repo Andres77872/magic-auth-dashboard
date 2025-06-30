@@ -4,6 +4,7 @@ export { useProjects } from './useProjects';
 export { useUserType } from './useUserType';
 export { usePermissions } from './usePermissions';
 export { useGroups } from './useGroups';
+export { useProjectGroups } from './useProjectGroups';
 
 // Dashboard hooks
 export { default as useSystemStats } from './dashboard/useSystemStats';

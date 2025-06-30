@@ -28,6 +28,11 @@ export const ROUTES = {
   GROUPS_CREATE: '/dashboard/groups/create',
   GROUPS_EDIT: '/dashboard/groups/edit',
   
+  // Project Group Management
+  PROJECT_GROUPS: '/dashboard/groups/project-groups',
+  PROJECT_GROUPS_CREATE: '/dashboard/groups/project-groups/create',
+  PROJECT_GROUPS_EDIT: '/dashboard/groups/project-groups/edit',
+  
   // RBAC Management
   PERMISSIONS: '/dashboard/permissions',
   PERMISSIONS_ROLES: '/dashboard/permissions/roles',

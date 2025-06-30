@@ -2,4 +2,7 @@ export { GroupTable } from './GroupTable';
 export { GroupCard } from './GroupCard';
 export { GroupFilter } from './GroupFilter';
 export { GroupForm } from './GroupForm';
-export { GroupActionsMenu } from './GroupActionsMenu'; 
+export { GroupActionsMenu } from './GroupActionsMenu';
+export { ProjectGroupTable } from './ProjectGroupTable';
+export { ProjectGroupActionsMenu } from './ProjectGroupActionsMenu';
+export { ProjectGroupForm } from './ProjectGroupForm'; 

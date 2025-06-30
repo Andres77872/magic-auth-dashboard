@@ -20,7 +20,15 @@ import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPa
 import { UserCreatePage } from '@/pages/users/UserCreatePage';
 import { UserEditPage } from '@/pages/users/UserEditPage';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
-import { GroupListPage, GroupCreatePage, GroupEditPage, GroupDetailsPage } from '@/pages/groups';
+import { 
+  GroupListPage, 
+  GroupCreatePage, 
+  GroupEditPage, 
+  GroupDetailsPage,
+  ProjectGroupsPage,
+  ProjectGroupCreatePage,
+  ProjectGroupEditPage
+} from '@/pages/groups';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
@@ -221,6 +229,40 @@ function App(): React.JSX.Element {
                   <AdminRoute>
                     <DashboardLayout>
                       <GroupDetailsPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+
+              {/* Project Group Management */}
+              <Route
+                path={ROUTES.PROJECT_GROUPS}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ProjectGroupsPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={ROUTES.PROJECT_GROUPS_CREATE}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ProjectGroupCreatePage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={`${ROUTES.PROJECT_GROUPS_EDIT}/:groupHash`}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <ProjectGroupEditPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }
