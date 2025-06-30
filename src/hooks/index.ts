@@ -7,6 +7,8 @@ export { useRoles } from './useRoles';
 export { useRBAC } from './useRBAC';
 export { useGroups } from './useGroups';
 export { useProjectGroups } from './useProjectGroups';
+export { useUserRoleAssignments } from './useUserRoleAssignments';
+export { useEffectivePermissions } from './useEffectivePermissions';
 
 // Dashboard hooks
 export { default as useSystemStats } from './dashboard/useSystemStats';

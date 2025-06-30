@@ -35,6 +35,7 @@ import {
   PermissionsPage,
   AuditPage
 } from '@/pages/permissions';
+import AssignmentsPage from '@/pages/permissions/AssignmentsPage';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
@@ -314,6 +315,17 @@ function App(): React.JSX.Element {
                   <AdminRoute>
                     <DashboardLayout>
                       <AuditPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={`${ROUTES.PERMISSIONS_ASSIGNMENTS}/:projectHash?`}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <AssignmentsPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }
