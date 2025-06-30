@@ -1,0 +1,55 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+if you are not sure how is the response for an API endpoint make a curl fetch to review the response to
+
+**Base URL:** `http://localhost:8000`  
+**Authentication:** Bearer token in Authorization header or HTTP-only cookies
+
+To get the token you can get with a user demo login
+
+### POST `/auth/login`
+**Description:** Authenticate user and return session token with group context. Sets HTTP-only cookie with JWT token.
+
+For root users: project_hash is optional (they have global access)
+For other users: project_hash is required
+
+**Request:**
+```json
+{
+  "username": "root",
+  "password": "1248163264",
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "session_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "user_hash": "usr_def456abc",
+    "username": "john_doe", 
+    "email": "john@example.com",
+    "user_type": "consumer",
+    "created_at": "2024-01-15T10:30:00Z"
+  },
+  "project": {
+    "project_hash": "proj_abc123xyz",
+    "project_name": "My Project",
+    "project_description": "Sample project"
+  },
+  "accessible_projects": [
+    {
+      "project_hash": "proj_abc123xyz",
+      "project_name": "My Project",
+      "project_description": "Sample project"
+    }
+  ],
+  "expires_at": "2024-01-18T10:30:00Z"
+}
+```
+
