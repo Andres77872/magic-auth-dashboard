@@ -6,9 +6,7 @@
 @import './tokens/borders.css';
 @import './tokens/transitions.css';
 @import './tokens/breakpoints.css';
-
-/* Import legacy variables for backwards compatibility */
-@import './variables.css';
+@import './tokens/z-index.css';
 
 /* Import component styles */
 @import './components/dashboard-layout.css';
@@ -31,12 +29,12 @@
 html {
   line-height: 1.15;
   -webkit-text-size-adjust: 100%;
-  font-family: var(--font-family-sans);
+  font-family: var(--font-family-primary);
 }
 
 body {
   margin: 0;
-  font-family: var(--font-family-sans);
+  font-family: var(--font-family-primary);
   font-size: var(--font-size-base);
   line-height: var(--line-height-normal);
   color: var(--color-gray-900);
