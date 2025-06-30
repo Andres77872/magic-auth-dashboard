@@ -29,6 +29,12 @@ import {
   ProjectGroupCreatePage,
   ProjectGroupEditPage
 } from '@/pages/groups';
+import {
+  PermissionsOverviewPage,
+  RolesPage,
+  PermissionsPage,
+  AuditPage
+} from '@/pages/permissions';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
@@ -268,16 +274,46 @@ function App(): React.JSX.Element {
                 }
               />
 
+              {/* Permission Management Routes */}
               <Route
                 path={ROUTES.PERMISSIONS}
                 element={
                   <AdminRoute>
                     <DashboardLayout>
-                      <ComingSoon 
-                        title="Permission Management"
-                        description="Configure roles, permissions, and access control policies"
-                        feature="Permission and role management"
-                      />
+                      <PermissionsOverviewPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={ROUTES.PERMISSIONS_ROLES}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <RolesPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={ROUTES.PERMISSIONS_LIST}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <PermissionsPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path="/dashboard/permissions/audit"
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <AuditPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }

@@ -6,6 +6,8 @@ export { projectService } from './project.service';
 export { groupService } from './group.service';
 export { projectGroupService } from './project-group.service';
 export { rbacService } from './rbac.service';
+export { roleService } from './role.service';
+export { permissionService } from './permission.service';
 export { systemService } from './system.service';
 export { adminService } from './admin.service';
 export { analyticsService } from './analytics.service';

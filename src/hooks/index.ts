@@ -3,6 +3,8 @@ export { useUsers } from './useUsers';
 export { useProjects } from './useProjects';
 export { useUserType } from './useUserType';
 export { usePermissions } from './usePermissions';
+export { useRoles } from './useRoles';
+export { useRBAC } from './useRBAC';
 export { useGroups } from './useGroups';
 export { useProjectGroups } from './useProjectGroups';
 

@@ -10,10 +10,17 @@ export interface Permission {
 
 export interface Role {
   id: number;
-  role_name: string;
+  group_name: string; // API uses group_name instead of role_name
+  priority: number;
   description: string;
-  permissions: Permission[];
   created_at: string;
+  is_active: boolean;
+  permissions?: Permission[]; // Optional since it might not always be included
+}
+
+// For API compatibility, we can also create a role name getter
+export interface RoleDisplayData extends Role {
+  role_name: string; // For backward compatibility in components
 }
 
 export interface UserRoleAssignment {
@@ -114,5 +121,21 @@ export interface ProjectPermissionsResponse extends ApiResponse {
     offset: number;
     total: number;
     has_more: boolean;
+  };
+}
+
+export interface ProjectRolesResponse extends ApiResponse {
+  project: {
+    project_hash: string;
+    project_name: string;
+    project_description: string | null;
+    created_at: string | null;
+  };
+  roles: Role[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    has_more: boolean | null;
   };
 } 
