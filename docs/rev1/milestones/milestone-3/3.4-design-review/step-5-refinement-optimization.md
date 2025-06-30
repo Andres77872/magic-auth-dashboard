@@ -322,4 +322,4 @@ Upon successful completion of this step:
 - [ ] Team ready for Phase 4 development
 
 ## ➡️ Final Validation
-Complete [Final Milestone Review](./milestone-completion-checklist.md) to validate all success criteria and prepare for Phase 4 development. 
+Complete [Final Milestone Review](milestone-completion-checklist.md) to validate all success criteria and prepare for Phase 4 development. 

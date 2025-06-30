@@ -326,4 +326,4 @@ All deliverables are available in the project root:
 
 ## ➡️ Next Steps
 **IMMEDIATE**: Address critical conflicts before proceeding  
-**THEN**: Proceed to [Step 4: Integration & Conflict Testing](./step-4-integration-conflict-testing.md)
+**THEN**: Proceed to [Step 4: Integration & Conflict Testing](step-4-integration-conflict-testing.md)

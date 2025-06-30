@@ -320,4 +320,4 @@ Resolution: [Fix description]
 ```
 
 ## ➡️ Next Steps
-Upon completion, proceed to [Step 5: Refinement & Optimization](./step-5-refinement-optimization.md) 
+Upon completion, proceed to [Step 5: Refinement & Optimization](step-5-refinement-optimization.md) 
