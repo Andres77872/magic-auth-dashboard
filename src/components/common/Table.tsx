@@ -84,8 +84,8 @@ export function Table<T extends Record<string, any>>({
   return (
     <div className={tableClasses}>
       <div 
-        className="table-container"
-        style={{ maxHeight }}
+        className="table-container table-container-dynamic"
+        style={{ '--dynamic-table-height': maxHeight } as React.CSSProperties}
       >
         <table className="table">
           <thead className="table-header">
@@ -93,8 +93,8 @@ export function Table<T extends Record<string, any>>({
               {columns.map((column) => (
                 <th
                   key={column.key as string}
-                  className={`table-header-cell ${column.sortable ? 'table-sortable' : ''} table-align-${column.align || 'left'}`}
-                  style={{ width: column.width }}
+                  className={`table-header-cell ${column.sortable ? 'table-sortable' : ''} table-align-${column.align || 'left'} table-column-dynamic`}
+                  style={{ '--dynamic-column-width': column.width } as React.CSSProperties}
                   onClick={() => handleSort(column)}
                 >
                   <div className="table-header-content">

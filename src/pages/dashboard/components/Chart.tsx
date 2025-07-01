@@ -209,8 +209,8 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
             return (
               <div key={index} className="legend-item">
                 <div 
-                  className="legend-color"
-                  style={{ backgroundColor: colors[index % colors.length] }}
+                  className="legend-color legend-color-dynamic"
+                  style={{ '--dynamic-legend-color': colors[index % colors.length] } as React.CSSProperties}
                 />
                 <span className="legend-label">{point.label}</span>
                 <span className="legend-value">{point.value}</span>

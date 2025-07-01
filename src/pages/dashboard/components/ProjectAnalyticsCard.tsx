@@ -51,8 +51,8 @@ export function ProjectAnalyticsCard({ project, onClick }: ProjectAnalyticsCardP
         
         <div className="health-indicator">
           <div 
-            className="health-score"
-            style={{ color: getHealthColor(project.healthScore) }}
+            className="health-score health-color-dynamic"
+            style={{ '--dynamic-health-color': getHealthColor(project.healthScore) } as React.CSSProperties}
           >
             {project.healthScore}%
           </div>
@@ -147,11 +147,11 @@ export function ProjectAnalyticsCard({ project, onClick }: ProjectAnalyticsCardP
       <div className="card-footer">
         <div className="health-bar">
           <div 
-            className="health-fill"
+            className="health-fill health-fill-dynamic"
             style={{ 
-              width: `${project.healthScore}%`,
-              backgroundColor: getHealthColor(project.healthScore)
-            }}
+              '--dynamic-width': `${project.healthScore}%`,
+              '--dynamic-health-bg': getHealthColor(project.healthScore)
+            } as React.CSSProperties}
           />
         </div>
         

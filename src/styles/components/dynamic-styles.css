@@ -1,0 +1,157 @@
+/* Dynamic Styling Patterns for CSS Migration */
+
+/* === DYNAMIC COLOR PATTERNS === */
+
+/* Health color utilities that accept CSS custom properties */
+.health-color-dynamic {
+  color: var(--dynamic-health-color, var(--color-text-primary));
+}
+
+.health-bg-dynamic {
+  background-color: var(--dynamic-health-bg, var(--color-background));
+}
+
+.status-color-dynamic {
+  color: var(--dynamic-status-color, var(--color-text-primary));
+}
+
+.status-bg-dynamic {
+  background-color: var(--dynamic-status-bg, var(--color-background));
+}
+
+/* Chart color utilities */
+.chart-bg-dynamic {
+  background-color: var(--dynamic-chart-color, var(--color-primary-500));
+}
+
+.chart-color-dynamic {
+  color: var(--dynamic-chart-color, var(--color-primary-500));
+}
+
+/* === DYNAMIC DIMENSION PATTERNS === */
+
+/* Dynamic width utilities */
+.w-dynamic {
+  width: var(--dynamic-width, auto);
+}
+
+.max-w-dynamic {
+  max-width: var(--dynamic-max-width, none);
+}
+
+.min-w-dynamic {
+  min-width: var(--dynamic-min-width, 0);
+}
+
+/* Dynamic height utilities */
+.h-dynamic {
+  height: var(--dynamic-height, auto);
+}
+
+.max-h-dynamic {
+  max-height: var(--dynamic-max-height, none);
+}
+
+.min-h-dynamic {
+  min-height: var(--dynamic-min-height, 0);
+}
+
+/* === DYNAMIC TRANSFORM PATTERNS === */
+
+.transform-dynamic {
+  transform: var(--dynamic-transform, none);
+}
+
+.rotate-dynamic {
+  transform: rotate(var(--dynamic-rotation, 0deg));
+}
+
+.translate-dynamic {
+  transform: translate(var(--dynamic-translate-x, 0), var(--dynamic-translate-y, 0));
+}
+
+/* === COMPONENT-SPECIFIC DYNAMIC PATTERNS === */
+
+/* Health bar fill pattern */
+.health-fill-dynamic {
+  width: var(--dynamic-width, 0%);
+  background-color: var(--dynamic-health-bg, var(--color-primary-500));
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+/* Status indicator pattern */
+.status-indicator-dynamic {
+  color: var(--dynamic-status-color, var(--color-text-primary));
+}
+
+.status-light-dynamic {
+  background-color: var(--dynamic-status-bg, var(--color-gray-500));
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.pulse-dot-dynamic {
+  background-color: var(--dynamic-status-bg, var(--color-gray-500));
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+/* Table column width pattern */
+.table-column-dynamic {
+  width: var(--dynamic-column-width, auto);
+}
+
+.table-container-dynamic {
+  max-height: var(--dynamic-table-height, 400px);
+  overflow-y: auto;
+}
+
+/* Chart legend color pattern */
+.legend-color-dynamic {
+  background-color: var(--dynamic-legend-color, var(--color-gray-500));
+  width: 12px;
+  height: 12px;
+  border-radius: var(--border-radius-sm);
+  flex-shrink: 0;
+}
+
+/* === ANIMATION UTILITIES === */
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+/* === HELPER UTILITIES === */
+
+/* For cases where we need both dynamic color and fallback classes */
+.health-excellent { color: var(--color-success); }
+.health-good { color: var(--color-success); }
+.health-fair { color: var(--color-warning); }
+.health-poor { color: var(--color-error); }
+
+.health-bg-excellent { background-color: var(--color-success); }
+.health-bg-good { background-color: var(--color-success); }
+.health-bg-fair { background-color: var(--color-warning); }
+.health-bg-poor { background-color: var(--color-error); }
+
+.status-healthy { color: var(--color-success); }
+.status-warning { color: var(--color-warning); }
+.status-critical { color: var(--color-error); }
+
+.status-bg-healthy { background-color: var(--color-success); }
+.status-bg-warning { background-color: var(--color-warning); }
+.status-bg-critical { background-color: var(--color-error); } 

@@ -305,6 +305,12 @@
 .z-40 { z-index: 40; }
 .z-50 { z-index: 50; }
 
+/* === SPECIFIC SIZING UTILITIES === */
+/* Common hardcoded values that appear in inline styles */
+
+.max-w-300 { max-width: 300px; }
+.cursor-pointer { cursor: pointer; }
+
 /* === COMMON LAYOUT PATTERNS === */
 /* These classes replace common hardcoded inline styles */
 

@@ -68,8 +68,8 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
         <div className="health-title-row">
           <h4 className="health-title">{title}</h4>
           <div 
-            className="health-status"
-            style={{ color: getStatusColor(component.status) }}
+            className="health-status status-color-dynamic"
+            style={{ '--dynamic-status-color': getStatusColor(component.status) } as React.CSSProperties}
           >
             <span className="status-icon">
               {getStatusIcon(component.status)}
@@ -80,8 +80,8 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
         
         <div className="health-pulse">
           <div 
-            className={`pulse-dot pulse-${component.status}`}
-            style={{ backgroundColor: getStatusColor(component.status) }}
+            className={`pulse-dot pulse-${component.status} pulse-dot-dynamic`}
+            style={{ '--dynamic-status-bg': getStatusColor(component.status) } as React.CSSProperties}
           />
         </div>
       </div>

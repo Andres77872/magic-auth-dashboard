@@ -30,6 +30,7 @@
 @import './components/groups.css';
 @import './components/projects.css';
 @import './components/layout-patterns.css';
+@import './components/dynamic-styles.css';
 
 /* Import utilities */
 @import './utilities.css';

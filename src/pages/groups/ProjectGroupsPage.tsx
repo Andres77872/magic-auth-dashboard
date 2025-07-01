@@ -93,7 +93,7 @@ export function ProjectGroupsPage(): React.JSX.Element {
               placeholder="Search project groups..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              style={{ maxWidth: '300px' }}
+              className="max-w-300"
             />
           </div>
 
@@ -163,9 +163,8 @@ function ProjectGroupCard({ group, onEdit, onDelete, onView }: ProjectGroupCardP
     <Card className="project-group-card">
       <div className="card-header">
         <h3 
-          className="group-name"
+          className="group-name cursor-pointer"
           onClick={() => onView(group)}
-          style={{ cursor: 'pointer' }}
         >
           {group.group_name}
         </h3>
@@ -201,7 +200,7 @@ function ProjectGroupCard({ group, onEdit, onDelete, onView }: ProjectGroupCardP
           size="small" 
           variant="outline" 
           onClick={() => onDelete(group)}
-          style={{ color: 'var(--color-danger)' }}
+          className="text-error"
         >
           Delete
         </Button>
