@@ -1,9 +1,10 @@
 import React from 'react';
 import { useAuth, useUserType } from '@/hooks';
+import { getUserTypeBadgeClass } from '@/utils/userTypeStyles';
 
 export function ProfilePage(): React.JSX.Element {
   const { user } = useAuth();
-  const { getUserTypeLabel, getUserTypeBadgeColor } = useUserType();
+  const { getUserTypeLabel, userType } = useUserType();
 
   return (
     <div className="profile-page">
@@ -24,8 +25,7 @@ export function ProfilePage(): React.JSX.Element {
             <h2>{user?.username}</h2>
             <p>{user?.email}</p>
             <div 
-              className="user-type-badge"
-              style={{ color: getUserTypeBadgeColor() }}
+              className={`user-type-badge ${getUserTypeBadgeClass(userType || undefined)}`}
             >
               {getUserTypeLabel()}
             </div>

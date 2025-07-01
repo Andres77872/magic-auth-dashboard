@@ -3,13 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useUserType } from '@/hooks';
 import { ChevronIcon, UserIcon, SettingsIcon, LogoutIcon } from '@/components/icons';
 import { ROUTES } from '@/utils/routes';
+import { getUserTypeBadgeClass } from '@/utils/userTypeStyles';
 
 export function UserMenu(): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
-  const { getUserTypeLabel, getUserTypeBadgeColor } = useUserType();
+  const { getUserTypeLabel, userType } = useUserType();
   const navigate = useNavigate();
 
   // Close menu when clicking outside
@@ -97,8 +98,7 @@ export function UserMenu(): React.JSX.Element {
                 <div className="user-name-large">{user.username}</div>
                 <div className="user-email">{user.email}</div>
                 <div 
-                  className="user-type-badge"
-                  style={{ color: getUserTypeBadgeColor() }}
+                  className={`user-type-badge ${getUserTypeBadgeClass(userType || undefined)}`}
                 >
                   {getUserTypeLabel()}
                 </div>

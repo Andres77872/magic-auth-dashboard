@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Activity } from './RecentActivityFeed';
+import { getSeverityClass, getUserTypeBadgeClass } from '@/utils/userTypeStyles';
 
 interface ActivityItemProps {
   activity: Activity;
@@ -100,18 +101,6 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
     return icons[type] || icons.system_event;
   };
 
-  const getSeverityColor = (severity: Activity['severity']) => {
-    switch (severity) {
-      case 'critical':
-        return 'var(--color-error)';
-      case 'warning':
-        return 'var(--color-warning)';
-      case 'info':
-      default:
-        return 'var(--color-primary-500)';
-    }
-  };
-
   const formatRelativeTime = (timestamp: string) => {
     const now = new Date();
     const time = new Date(timestamp);
@@ -133,16 +122,10 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
     }
   };
 
-  const getUserTypeBadgeColor = (userType: string) => {
-    switch (userType.toLowerCase()) {
-      case 'root':
-        return 'var(--color-error)';
-      case 'admin':
-        return 'var(--color-warning)';
-      case 'consumer':
-        return 'var(--color-info)';
-      default:
-        return 'var(--color-gray-500)';
+  const toggleMetadata = () => {
+    const details = document.getElementById(`metadata-${activity.id}`);
+    if (details) {
+      details.classList.toggle('hidden');
     }
   };
 
@@ -150,8 +133,7 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
     <div className={`activity-item activity-item-${activity.severity}`}>
       <div className="activity-icon">
         <div 
-          className="icon-container"
-          style={{ color: getSeverityColor(activity.severity) }}
+          className={`icon-container ${getSeverityClass(activity.severity)}`}
         >
           {getActivityIcon(activity.type)}
         </div>
@@ -172,8 +154,7 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
             </span>
             <span className="user-name">{activity.user.username}</span>
             <span 
-              className="user-type-badge"
-              style={{ color: getUserTypeBadgeColor(activity.user.user_type) }}
+              className={`user-type-badge ${getUserTypeBadgeClass(activity.user.user_type)}`}
             >
               {activity.user.user_type.toUpperCase()}
             </span>
@@ -183,12 +164,7 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
             <div className="activity-metadata">
               <button
                 className="metadata-toggle"
-                onClick={() => {
-                  const details = document.getElementById(`metadata-${activity.id}`);
-                  if (details) {
-                    details.style.display = details.style.display === 'none' ? 'block' : 'none';
-                  }
-                }}
+                onClick={toggleMetadata}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="1"/>
@@ -199,8 +175,7 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
               </button>
               <div 
                 id={`metadata-${activity.id}`} 
-                className="metadata-details"
-                style={{ display: 'none' }}
+                className="metadata-details hidden"
               >
                 {Object.entries(activity.metadata).map(([key, value]) => (
                   <div key={key} className="metadata-item">

@@ -49,28 +49,28 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
 
   return (
     <div className="project-overview-tab">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+      <div className="project-overview-grid">
         {/* Project Information */}
         <Card>
           <h3>Project Information</h3>
-          <div style={{ marginTop: '16px' }}>
-            <div style={{ marginBottom: '12px' }}>
+          <div className="overview-section">
+            <div className="overview-item">
               <strong>Project Hash:</strong>
-              <div style={{ fontFamily: 'monospace', fontSize: '0.9em', color: 'var(--color-text-secondary)' }}>
+              <div className="code-block">
                 {project.project_hash}
               </div>
             </div>
-            <div style={{ marginBottom: '12px' }}>
+            <div className="overview-item">
               <strong>Created:</strong>
               <div>{formatDate(project.created_at)}</div>
             </div>
             {project.updated_at && (
-              <div style={{ marginBottom: '12px' }}>
+              <div className="overview-item">
                 <strong>Last Updated:</strong>
                 <div>{formatDate(project.updated_at)}</div>
               </div>
             )}
-            <div style={{ marginBottom: '12px' }}>
+            <div className="overview-item">
               <strong>Status:</strong>
               <div>
                 {project.is_active !== false ? (
@@ -81,7 +81,7 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
               </div>
             </div>
             {userAccess?.access_level && (
-              <div style={{ marginBottom: '12px' }}>
+              <div className="overview-item">
                 <strong>Your Access Level:</strong>
                 <div>
                   <Badge variant="info">{userAccess.access_level}</Badge>
@@ -89,9 +89,9 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
               </div>
             )}
             {userAccess?.permissions && userAccess.permissions.length > 0 && (
-              <div style={{ marginBottom: '12px' }}>
+              <div className="overview-item">
                 <strong>Your Permissions:</strong>
-                <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                <div className="permissions-badge-grid">
                   {userAccess.permissions.map((permission, index) => (
                     <Badge key={index} variant="secondary">
                       {permission}
@@ -107,35 +107,35 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
         <Card>
           <h3>Statistics</h3>
           {!statistics ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+            <div className="modal-loading-centered">
               <LoadingSpinner />
             </div>
           ) : (
-            <div style={{ marginTop: '16px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="overview-section">
+              <div className="stats-grid">
                 <div className="stat-item">
-                  <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--color-primary)' }}>
+                  <div className="stat-value-large stat-value-primary">
                     {statistics.total_users}
                   </div>
-                  <div style={{ color: 'var(--color-text-secondary)' }}>Users</div>
+                  <div className="stat-label-secondary">Users</div>
                 </div>
                 <div className="stat-item">
-                  <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--color-success)' }}>
+                  <div className="stat-value-large stat-value-success">
                     {statistics.total_groups}
                   </div>
-                  <div style={{ color: 'var(--color-text-secondary)' }}>Groups</div>
+                  <div className="stat-label-secondary">Groups</div>
                 </div>
                 <div className="stat-item">
-                  <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--color-info)' }}>
+                  <div className="stat-value-large stat-value-info">
                     {statistics.active_sessions}
                   </div>
-                  <div style={{ color: 'var(--color-text-secondary)' }}>Active Sessions</div>
+                  <div className="stat-label-secondary">Active Sessions</div>
                 </div>
                 <div className="stat-item">
-                  <div style={{ fontSize: '2em', fontWeight: 'bold', color: 'var(--color-warning)' }}>
+                  <div className="stat-value-large stat-value-warning">
                     {Object.keys(statistics.group_distribution || {}).length}
                   </div>
-                  <div style={{ color: 'var(--color-text-secondary)' }}>Group Types</div>
+                  <div className="stat-label-secondary">Group Types</div>
                 </div>
               </div>
             </div>
@@ -147,42 +147,29 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
       <Card>
         <h3>Recent Activity</h3>
         {isLoadingActivity ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+          <div className="modal-loading-centered">
             <LoadingSpinner />
           </div>
         ) : activity.length > 0 ? (
-          <div style={{ marginTop: '16px' }}>
+          <div className="overview-section">
             {activity.map((item, index) => (
-              <div 
-                key={index} 
-                style={{ 
-                  padding: '12px', 
-                  borderBottom: index < activity.length - 1 ? '1px solid var(--color-border)' : 'none',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
+              <div key={index} className="activity-item">
                 <div>
-                  <div style={{ fontWeight: '500' }}>
+                  <div className="activity-title">
                     {item.action || item.activity_type || 'Activity'}
                   </div>
-                  <div style={{ fontSize: '0.9em', color: 'var(--color-text-secondary)' }}>
+                  <div className="activity-description">
                     {item.description || item.details || 'No details available'}
                   </div>
                 </div>
-                <div style={{ fontSize: '0.9em', color: 'var(--color-text-secondary)' }}>
+                <div className="activity-timestamp">
                   {item.created_at && formatDate(item.created_at)}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '40px', 
-            color: 'var(--color-text-secondary)' 
-          }}>
+          <div className="modal-text-centered">
             No recent activity found
           </div>
         )}

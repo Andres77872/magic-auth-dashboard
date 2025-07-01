@@ -192,15 +192,13 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
   if (error) {
     return (
       <div className="project-members-tab">
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '40px', 
-          color: 'var(--color-error)' 
-        }}>
-          <p>{error}</p>
-          <Button onClick={() => fetchMembers(currentPage)}>
-            Retry
-          </Button>
+        <div className="members-error">
+          <div className="members-error-content">
+            <p>{error}</p>
+            <Button onClick={() => fetchMembers(currentPage)}>
+              Retry
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -208,12 +206,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
 
   return (
     <div className="project-members-tab">
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '24px' 
-      }}>
+      <div className="members-header">
         <h3>Project Members ({members.length})</h3>
         <Button onClick={() => setIsAddModalOpen(true)}>
           Add Member
@@ -221,19 +214,17 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
       </div>
 
       {isLoading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+        <div className="members-loading">
           <LoadingSpinner />
         </div>
       ) : members.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '40px', 
-          color: 'var(--color-text-secondary)' 
-        }}>
-          <p>No members found for this project.</p>
-          <Button onClick={() => setIsAddModalOpen(true)}>
-            Add First Member
-          </Button>
+        <div className="members-empty">
+          <div className="members-empty-content">
+            <p>No members found for this project.</p>
+            <Button onClick={() => setIsAddModalOpen(true)}>
+              Add First Member
+            </Button>
+          </div>
         </div>
       ) : (
         <>
@@ -244,7 +235,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
           />
           
           {totalPages > 1 && (
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+            <div className="pagination-centered">
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
@@ -268,8 +259,8 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
         }}
         title="Add Project Member"
       >
-        <div style={{ minWidth: '400px' }}>
-          <div style={{ marginBottom: '16px' }}>
+        <div className="modal-content-wide">
+          <div className="modal-form-field">
             <Input
               placeholder="Search users by username or email..."
               value={searchQuery}
@@ -278,30 +269,19 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
           </div>
 
           {isSearching ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '20px' }}>
+            <div className="modal-loading-centered">
               <LoadingSpinner />
             </div>
           ) : searchResults.length > 0 ? (
-            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+            <div className="user-search-results-container">
               {searchResults.map(user => (
-                <div
-                  key={user.user_hash}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: '4px',
-                    marginBottom: '8px',
-                  }}
-                >
+                <div key={user.user_hash} className="user-search-item">
                   <div>
-                    <div style={{ fontWeight: '500' }}>{user.username}</div>
-                    <div style={{ fontSize: '0.9em', color: 'var(--color-text-secondary)' }}>
+                    <div className="user-search-name">{user.username}</div>
+                    <div className="user-search-email">
                       {user.email}
                     </div>
-                    <div style={{ fontSize: '0.8em', color: 'var(--color-text-secondary)' }}>
+                    <div className="user-search-type">
                       {user.user_type}
                     </div>
                   </div>
@@ -317,19 +297,11 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
               ))}
             </div>
           ) : searchQuery ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '40px', 
-              color: 'var(--color-text-secondary)' 
-            }}>
+            <div className="modal-text-centered">
               No users found matching "{searchQuery}"
             </div>
           ) : (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '40px', 
-              color: 'var(--color-text-secondary)' 
-            }}>
+            <div className="modal-text-centered">
               No available users to add to this project
             </div>
           )}

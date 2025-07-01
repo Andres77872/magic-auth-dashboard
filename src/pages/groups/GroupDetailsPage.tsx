@@ -59,7 +59,7 @@ export const GroupDetailsPage: React.FC = () => {
   if (error || !group) {
     return (
       <div className="group-details-page">
-        <div style={{ color: 'var(--color-danger)' }}>
+        <div className="danger-text">
           {error || 'Group not found'}
         </div>
       </div>
@@ -68,25 +68,17 @@ export const GroupDetailsPage: React.FC = () => {
 
   return (
     <div className="group-details-page">
-      <div className="page-header" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'flex-start',
-        marginBottom: '2rem' 
-      }}>
+      <div className="page-header-flex">
         <div>
           <h1>{group.group_name}</h1>
           {group.description && (
-            <p style={{ 
-              color: 'var(--color-text-secondary)',
-              marginTop: '0.5rem'
-            }}>
+            <p className="description-secondary">
               {group.description}
             </p>
           )}
         </div>
         
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="button-group">
           <Button
             variant="outline"
             onClick={() => window.location.href = `${ROUTES.GROUPS_EDIT}/${group.group_hash}`}
@@ -104,86 +96,48 @@ export const GroupDetailsPage: React.FC = () => {
 
       <div className="group-details-content">
         <Card title="Group Information">
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingBottom: '0.5rem',
-              borderBottom: '1px solid var(--color-border)'
-            }}>
-              <span style={{ fontWeight: '500' }}>Group Name</span>
+          <div className="info-grid">
+            <div className="info-item">
+              <span className="detail-label">Group Name</span>
               <span>{group.group_name}</span>
             </div>
             
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingBottom: '0.5rem',
-              borderBottom: '1px solid var(--color-border)'
-            }}>
-              <span style={{ fontWeight: '500' }}>Description</span>
+            <div className="info-item">
+              <span className="detail-label">Description</span>
               <span>{group.description || 'No description'}</span>
             </div>
             
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingBottom: '0.5rem',
-              borderBottom: '1px solid var(--color-border)'
-            }}>
-              <span style={{ fontWeight: '500' }}>Members</span>
+            <div className="info-item">
+              <span className="detail-label">Members</span>
               <Badge variant="secondary">
                 {statistics?.total_members ?? group.member_count ?? 0} member{(statistics?.total_members ?? group.member_count ?? 0) !== 1 ? 's' : ''}
               </Badge>
             </div>
             
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingBottom: '0.5rem',
-              borderBottom: '1px solid var(--color-border)'
-            }}>
-              <span style={{ fontWeight: '500' }}>Created</span>
+            <div className="info-item">
+              <span className="detail-label">Created</span>
               <span>{formatDate(group.created_at)}</span>
             </div>
             
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              paddingBottom: '0.5rem',
-              borderBottom: '1px solid var(--color-border)'
-            }}>
-              <span style={{ fontWeight: '500' }}>Projects</span>
+            <div className="info-item">
+              <span className="detail-label">Projects</span>
               <Badge variant="secondary">
                 {statistics?.total_projects ?? 0} project{(statistics?.total_projects ?? 0) !== 1 ? 's' : ''}
               </Badge>
             </div>
             
             {group.updated_at && (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
-                <span style={{ fontWeight: '500' }}>Last Updated</span>
+              <div className="info-item">
+                <span className="detail-label">Last Updated</span>
                 <span>{formatDate(group.updated_at)}</span>
               </div>
             )}
           </div>
         </Card>
 
-        <div style={{ marginTop: '2rem' }}>
+        <div className="mt-8">
           <Card title="Members">
-            <div style={{ 
-              textAlign: 'center',
-              padding: '2rem',
-              color: 'var(--color-text-secondary)'
-            }}>
+            <div className="text-center p-8 text-secondary">
               <p>Member management will be implemented in the next phase.</p>
               <p>This group currently has {statistics?.total_members ?? group.member_count ?? 0} members.</p>
             </div>

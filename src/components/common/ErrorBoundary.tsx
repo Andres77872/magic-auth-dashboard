@@ -27,45 +27,21 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return this.props.fallback || (
-        <div className="error-boundary" style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '400px',
-          padding: 'var(--spacing-8)',
-          textAlign: 'center',
-          backgroundColor: 'var(--color-error-light)',
-          border: '1px solid var(--color-error)',
-          borderRadius: 'var(--border-radius-lg)',
-          margin: 'var(--spacing-4)',
-        }}>
-          <h2 style={{ 
-            color: 'var(--color-error)', 
-            marginBottom: 'var(--spacing-4)' 
-          }}>
-            Authentication Error
-          </h2>
-          <p style={{ 
-            color: 'var(--color-gray-700)', 
-            marginBottom: 'var(--spacing-6)' 
-          }}>
-            Something went wrong with the authentication system.
-          </p>
-          <button 
-            onClick={() => this.setState({ hasError: false })}
-            style={{
-              padding: 'var(--spacing-2) var(--spacing-4)',
-              backgroundColor: 'var(--color-primary-600)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 'var(--border-radius-md)',
-              cursor: 'pointer',
-              fontSize: 'var(--font-size-sm)',
-            }}
-          >
-            Try again
-          </button>
+        <div className="error-boundary">
+          <div className="error-boundary-content">
+            <h2 className="error-boundary-title">
+              Authentication Error
+            </h2>
+            <p className="error-boundary-message">
+              Something went wrong with the authentication system.
+            </p>
+            <button 
+              onClick={() => this.setState({ hasError: false })}
+              className="error-boundary-reload-button"
+            >
+              Try again
+            </button>
+          </div>
         </div>
       );
     }

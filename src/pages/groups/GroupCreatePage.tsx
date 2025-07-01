@@ -27,7 +27,7 @@ export const GroupCreatePage: React.FC = () => {
 
   return (
     <div className="group-create-page">
-      <div className="page-header" style={{ marginBottom: '2rem' }}>
+      <div className="page-header mb-8">
         <h1>Create New Group</h1>
         <p>Create a new user group to organize and manage user permissions.</p>
       </div>

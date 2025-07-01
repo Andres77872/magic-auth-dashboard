@@ -134,7 +134,7 @@ export const ProjectDetailsPage: React.FC = () => {
       {successMessage && (
         <div className="success-message">
           <Card>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-success)' }}>
+            <div className="flex items-center gap-2 text-success">
               <span>✅</span>
               <span>{successMessage}</span>
               <Button 
@@ -151,7 +151,7 @@ export const ProjectDetailsPage: React.FC = () => {
 
       <div className="page-header">
         <div className="header-content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="flex items-center gap-2">
             <h1>{project.project_name}</h1>
             {project.is_active !== false ? (
               <Badge variant="success">Active</Badge>
