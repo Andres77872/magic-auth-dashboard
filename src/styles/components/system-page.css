@@ -1,0 +1,41 @@
+/* System Page Styles */
+.system-page {
+  padding: var(--spacing-8);
+}
+
+.system-page h1 {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.system-page p {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-4);
+}
+
+.system-success-message {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+}
+
+/* Not Found Page Styles */
+.not-found {
+  padding: var(--spacing-8);
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.not-found h1 {
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.not-found p {
+  color: var(--color-text-secondary);
+  margin: 0;
+} 
