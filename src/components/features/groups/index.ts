@@ -5,4 +5,5 @@ export { GroupForm } from './GroupForm';
 export { GroupActionsMenu } from './GroupActionsMenu';
 export { ProjectGroupTable } from './ProjectGroupTable';
 export { ProjectGroupActionsMenu } from './ProjectGroupActionsMenu';
-export { ProjectGroupForm } from './ProjectGroupForm'; 
+export { ProjectGroupForm } from './ProjectGroupForm';
+export { GroupMembersTable } from './GroupMembersTable'; 

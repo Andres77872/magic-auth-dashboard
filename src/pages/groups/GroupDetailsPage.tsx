@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, Badge, Button } from '@/components/common';
 import { groupService } from '@/services';
+import { GroupMembersTable } from '@/components/features/groups/GroupMembersTable';
+import type { GroupMember } from '@/components/features/groups/GroupMembersTable';
 import { ROUTES } from '@/utils/routes';
 import type { UserGroup } from '@/types/group.types';
 
@@ -9,6 +11,7 @@ export const GroupDetailsPage: React.FC = () => {
   const { groupHash } = useParams<{ groupHash: string }>();
   const [group, setGroup] = useState<UserGroup | null>(null);
   const [statistics, setStatistics] = useState<{ total_members: number; total_projects: number } | null>(null);
+  const [members, setMembers] = useState<GroupMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,6 +28,11 @@ export const GroupDetailsPage: React.FC = () => {
         if (response.success && response.user_group) {
           setGroup(response.user_group);
           setStatistics(response.statistics);
+          // The API returns members array inside the same response
+          // Map to GroupMember type to ensure keys exist
+          if (Array.isArray(response.members)) {
+            setMembers(response.members as unknown as GroupMember[]);
+          }
         } else {
           setError(response.message || 'Failed to fetch group');
         }
@@ -137,10 +145,7 @@ export const GroupDetailsPage: React.FC = () => {
 
         <div className="mt-8">
           <Card title="Members">
-            <div className="text-center p-8 text-secondary">
-              <p>Member management will be implemented in the next phase.</p>
-              <p>This group currently has {statistics?.total_members ?? group.member_count ?? 0} members.</p>
-            </div>
+            <GroupMembersTable members={members} />
           </Card>
         </div>
       </div>
