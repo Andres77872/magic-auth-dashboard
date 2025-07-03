@@ -155,6 +155,15 @@ export function UserProfilePage(): React.JSX.Element {
 
   const { user, permissions, groups, accessible_projects, statistics } = profileData;
 
+  // Provide default statistics when API returns null to avoid runtime errors
+  const defaultStatistics = {
+    total_groups: 0,
+    total_accessible_projects: 0,
+    total_permissions: 0,
+    account_age_days: 0,
+  };
+  const stats = statistics ?? defaultStatistics;
+
   return (
     <div className="user-profile-page">
       <div className="page-header">
@@ -231,7 +240,7 @@ export function UserProfilePage(): React.JSX.Element {
 
                 <div className="detail-item">
                   <label>Account Age</label>
-                  <span>{statistics.account_age_days} days</span>
+                  <span>{stats.account_age_days} days</span>
                 </div>
               </div>
             </div>
@@ -241,15 +250,15 @@ export function UserProfilePage(): React.JSX.Element {
           <Card title="User Statistics" padding="large">
             <div className="statistics-grid">
               <div className="statistic-item">
-                <div className="statistic-value">{statistics.total_accessible_projects}</div>
+                <div className="statistic-value">{stats.total_accessible_projects}</div>
                 <div className="statistic-label">Projects</div>
               </div>
               <div className="statistic-item">
-                <div className="statistic-value">{statistics.total_groups}</div>
+                <div className="statistic-value">{stats.total_groups}</div>
                 <div className="statistic-label">Groups</div>
               </div>
               <div className="statistic-item">
-                <div className="statistic-value">{statistics.total_permissions}</div>
+                <div className="statistic-value">{stats.total_permissions}</div>
                 <div className="statistic-label">Permissions</div>
               </div>
             </div>

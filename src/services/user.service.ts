@@ -54,7 +54,7 @@ class UserService {
       }
     });
     
-    const response = await apiClient.get<UserListResponse>('/users', cleanParams);
+    const response = await apiClient.get<UserListResponse>('/users/list', cleanParams);
     return response as UserListResponse;
   }
 

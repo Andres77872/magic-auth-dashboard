@@ -61,7 +61,7 @@ export interface UserProfileResponse {
     total_accessible_projects: number;
     total_permissions: number;
     account_age_days: number;
-  };
+  } | null;
 }
 
 export interface Project {
