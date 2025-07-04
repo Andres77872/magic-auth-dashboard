@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Badge, LoadingSpinner } from '@/components/common';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import type { UserType, UserProfileResponse } from '@/types/auth.types';
+import type { UserType, UserProfileResponse, UserGroupAssignment, UserProjectAccess } from '@/types/auth.types';
+import '@/styles/pages/user-profile.css';
 
 export function UserProfilePage(): React.JSX.Element {
   const [profileData, setProfileData] = useState<UserProfileResponse | null>(null);
@@ -28,8 +29,35 @@ export function UserProfilePage(): React.JSX.Element {
 
       const response = await userService.getUserByHash(hash);
 
-      if (response.success && (response as UserProfileResponse).user) {
-        setProfileData(response as UserProfileResponse);
+      if (response.success && response.data) {
+        // Transform the response to match our expected structure
+        const transformedResponse: UserProfileResponse = {
+          success: response.success,
+          message: response.message,
+          user: response.data,
+          permissions: [], // Will be populated from user data
+          groups: [], // Legacy field
+          accessible_projects: [], // Legacy field
+          statistics: null, // Will be calculated from user data
+        };
+
+        // Calculate statistics from user data
+        const userGroups = response.data.groups || [];
+        const userProjects = response.data.projects || [];
+        const allPermissions = userProjects.flatMap(project => project.effective_permissions || []);
+        const accountAgeMs = new Date().getTime() - new Date(response.data.created_at).getTime();
+        const accountAgeDays = Math.floor(accountAgeMs / (1000 * 60 * 60 * 24));
+
+        transformedResponse.statistics = {
+          total_groups: userGroups.length,
+          total_accessible_projects: userProjects.length,
+          total_permissions: allPermissions.length,
+          account_age_days: accountAgeDays,
+        };
+
+        transformedResponse.permissions = allPermissions;
+
+        setProfileData(transformedResponse);
       } else {
         setError(response.message || 'Failed to fetch user data');
       }
@@ -153,7 +181,9 @@ export function UserProfilePage(): React.JSX.Element {
     );
   }
 
-  const { user, permissions, groups, accessible_projects, statistics } = profileData;
+  const { user, permissions, statistics } = profileData;
+  const userGroups = user.groups || [];
+  const userProjects = user.projects || [];
 
   // Provide default statistics when API returns null to avoid runtime errors
   const defaultStatistics = {
@@ -211,7 +241,7 @@ export function UserProfilePage(): React.JSX.Element {
               <div className="user-details-grid">
                 <div className="detail-item">
                   <label>Email Address</label>
-                  <span>{user.email}</span>
+                  <span>{user.email || 'Not provided'}</span>
                 </div>
 
                 <div className="detail-item">
@@ -238,11 +268,40 @@ export function UserProfilePage(): React.JSX.Element {
                   </div>
                 )}
 
+                {user.last_login && (
+                  <div className="detail-item">
+                    <label>Last Login</label>
+                    <span>{formatDate(user.last_login)}</span>
+                  </div>
+                )}
+
                 <div className="detail-item">
                   <label>Account Age</label>
                   <span>{stats.account_age_days} days</span>
                 </div>
+
+                {/* User Type Info */}
+                {user.user_type_info && (
+                  <div className="detail-item">
+                    <label>User ID</label>
+                    <span>{user.user_type_info.user_id}</span>
+                  </div>
+                )}
               </div>
+
+              {/* User Capabilities */}
+              {user.user_type_info && user.user_type_info.capabilities && user.user_type_info.capabilities.length > 0 && (
+                <div className="user-capabilities">
+                  <h4>User Capabilities</h4>
+                  <div className="capabilities-list">
+                    {user.user_type_info.capabilities.map((capability, index) => (
+                      <Badge key={index} variant="info" size="small">
+                        {capability}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
 
@@ -265,15 +324,54 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Projects Section */}
-          <Card title={`Assigned Projects (${accessible_projects.length})`} padding="large">
-            {accessible_projects.length > 0 ? (
+          <Card title={`Assigned Projects (${userProjects.length})`} padding="large">
+            {userProjects.length > 0 ? (
               <div className="projects-list">
-                {accessible_projects.map((_, index) => (
-                  <div key={index} className="project-item">
-                    {/* Display project information when structure is known */}
-                    <div className="project-placeholder">
-                      <p>Project details will be displayed here once available.</p>
+                {userProjects.map((project, index) => (
+                  <div key={project.project_hash} className="project-item">
+                    <div className="project-header">
+                      <h4>{project.project_name}</h4>
+                      <Badge variant="info" size="small">
+                        {project.effective_permissions.length} permissions
+                      </Badge>
                     </div>
+                    {project.project_description && (
+                      <p className="project-description">{project.project_description}</p>
+                    )}
+                    <div className="project-meta">
+                      <span className="project-hash">ID: {project.project_hash}</span>
+                    </div>
+                    
+                    {/* Access Groups */}
+                    {project.access_groups && project.access_groups.length > 0 && (
+                      <div className="project-access-groups">
+                        <h5>Access Groups:</h5>
+                        <div className="access-groups-list">
+                          {project.access_groups.map((group, groupIndex) => (
+                            <div key={group.group_hash} className="access-group">
+                              <span className="group-name">{group.group_name}</span>
+                              <span className="group-permissions">
+                                {group.permissions.length} permissions
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Effective Permissions */}
+                    {project.effective_permissions && project.effective_permissions.length > 0 && (
+                      <div className="project-permissions">
+                        <h5>Effective Permissions:</h5>
+                        <div className="permissions-list">
+                          {project.effective_permissions.map((permission, permIndex) => (
+                            <Badge key={permIndex} variant="secondary" size="small">
+                              {permission}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -289,14 +387,30 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Groups Section */}
-          <Card title={`User Groups (${groups.length})`} padding="large">
-            {groups.length > 0 ? (
+          <Card title={`User Groups (${userGroups.length})`} padding="large">
+            {userGroups.length > 0 ? (
               <div className="groups-list">
-                {groups.map((_, index) => (
-                  <div key={index} className="group-item">
-                    {/* Display group information when structure is known */}
-                    <div className="group-placeholder">
-                      <p>Group details will be displayed here once available.</p>
+                {userGroups.map((group, index) => (
+                  <div key={group.group_hash} className="group-item">
+                    <div className="group-header">
+                      <h4>{group.group_name}</h4>
+                      <Badge variant="info" size="small">
+                        {group.projects_count} projects
+                      </Badge>
+                    </div>
+                    {group.group_description && (
+                      <p className="group-description">{group.group_description}</p>
+                    )}
+                    <div className="group-meta">
+                      <span className="group-hash">ID: {group.group_hash}</span>
+                      <span className="group-assigned">
+                        Assigned: {formatDate(group.assigned_at)}
+                      </span>
+                      {group.assigned_by && (
+                        <span className="group-assigned-by">
+                          By: {group.assigned_by}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -316,7 +430,7 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Permissions Section */}
-          <Card title={`Permissions (${permissions.length})`} padding="large">
+          <Card title={`All Permissions (${permissions.length})`} padding="large">
             {permissions.length > 0 ? (
               <div className="permissions-list">
                 {permissions.map((permission, index) => (
