@@ -3,6 +3,7 @@ import { Button, LoadingSpinner, Table, Pagination, ConfirmDialog, Modal, Input 
 import { projectService, userService } from '@/services';
 import type { ProjectDetails, ProjectMember } from '@/types/project.types';
 import type { User } from '@/types/auth.types';
+import type { TableColumn } from '@/components/common/Table';
 
 interface ProjectMembersTabProps {
   project: ProjectDetails;
@@ -152,42 +153,39 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
     });
   };
 
-  type TableRow = {
-    username: string;
-    email: string;
-    user_type: string;
-    role: string;
-    added_at: string;
-    actions: React.ReactElement;
-  };
-
-  const columns: Array<{ key: keyof TableRow; header: string; sortable: boolean }> = [
+  const columns: TableColumn<ProjectMember>[] = [
     { key: 'username', header: 'Username', sortable: true },
     { key: 'email', header: 'Email', sortable: false },
     { key: 'user_type', header: 'User Type', sortable: true },
-    { key: 'role', header: 'Access Level', sortable: false },
-    { key: 'added_at', header: 'Added', sortable: true },
-    { key: 'actions', header: 'Actions', sortable: false },
+    { 
+      key: 'access_level', 
+      header: 'Access Level', 
+      sortable: false,
+      render: (value) => value || 'read-only'
+    },
+    { 
+      key: 'joined_at', 
+      header: 'Added', 
+      sortable: true,
+      render: (value, member) => formatDate(value as string || member.created_at)
+    },
+    { 
+      key: 'user_hash', 
+      header: 'Actions', 
+      sortable: false,
+      render: (_, member) => (
+        <Button
+          variant="outline"
+          size="small"
+          onClick={() => setConfirmDelete(member)}
+          disabled={isRemoving === member.user_hash}
+          isLoading={isRemoving === member.user_hash}
+        >
+          Remove
+        </Button>
+      )
+    },
   ];
-
-  const tableData: TableRow[] = members.map(member => ({
-    username: member.username,
-    email: member.email,
-    user_type: member.user_type,
-    role: member.access_level || 'read-only',
-    added_at: formatDate(member.joined_at || member.created_at),
-    actions: (
-      <Button
-        variant="outline"
-        size="small"
-        onClick={() => setConfirmDelete(member)}
-        disabled={isRemoving === member.user_hash}
-        isLoading={isRemoving === member.user_hash}
-      >
-        Remove
-      </Button>
-    ),
-  }));
 
   if (error) {
     return (
@@ -230,7 +228,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
         <>
           <Table
             columns={columns}
-            data={tableData}
+            data={members}
             emptyMessage="No members found"
           />
           

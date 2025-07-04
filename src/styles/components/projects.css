@@ -144,28 +144,124 @@
 }
 
 /* Project Members Tab Styles */
+.project-groups-tab,
+.project-members-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+}
+
+.groups-header,
 .members-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-6);
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+  border-bottom: 1px solid var(--color-border);
 }
 
+.groups-title,
+.members-title {
+  flex: 1;
+}
+
+.groups-title h3,
+.members-title h3 {
+  margin: 0 0 var(--spacing-1) 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.groups-title p,
+.members-title p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.groups-table,
+.members-table {
+  background: var(--color-surface);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.groups-pagination,
+.members-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--spacing-4);
+}
+
+.groups-loading,
 .members-loading {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: var(--spacing-10);
+  gap: var(--spacing-3);
+  padding: var(--spacing-8);
+  text-align: center;
 }
 
+.groups-error,
 .members-error {
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding: var(--spacing-10);
+  padding: var(--spacing-8);
 }
 
+.groups-error-content,
 .members-error-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-4);
   text-align: center;
-  color: var(--color-error);
+  max-width: 400px;
+}
+
+.groups-empty,
+.members-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+}
+
+.empty-content,
+.members-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-4);
+  text-align: center;
+  max-width: 400px;
+}
+
+.empty-content h4,
+.members-empty-content h4 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.empty-content p,
+.members-empty-content p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+}
+
+/* Table Actions Column Styling */
+.table-cell:last-child {
+  text-align: center;
+  width: 120px;
 }
 
 .members-empty {
@@ -177,18 +273,6 @@
 .members-empty-content {
   text-align: center;
   color: var(--color-text-secondary);
-}
-
-.members-pagination {
-  margin-top: var(--spacing-5);
-  display: flex;
-  justify-content: center;
-}
-
-.pagination-centered {
-  margin-top: var(--spacing-5);
-  display: flex;
-  justify-content: center;
 }
 
 .add-members-modal {
@@ -432,4 +516,22 @@
   .project-overview-grid {
     grid-template-columns: 1fr;
   }
+
+  .groups-header,
+  .members-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-3);
+  }
+  
+  .table-cell:last-child {
+    width: auto;
+  }
+} 
+
+/* Pagination Styles */
+.pagination-centered {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--spacing-5);
 } 

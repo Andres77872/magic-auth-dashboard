@@ -3,6 +3,7 @@ import { Button, LoadingSpinner, Table, Pagination, ConfirmDialog } from '@/comp
 import { projectService } from '@/services';
 import type { ProjectDetails } from '@/types/project.types';
 import type { UserGroup } from '@/types/group.types';
+import type { TableColumn } from '@/components/common/Table';
 import { AssignGroupToProjectModal } from './AssignGroupToProjectModal';
 
 interface ProjectGroupsTabProps {
@@ -109,39 +110,43 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({ project }) =
     });
   };
 
-  type TableRow = {
-    group_name: string;
-    description: string;
-    member_count: string;
-    created_at: string;
-    actions: React.ReactElement;
-  };
-
-  const columns: Array<{ key: keyof TableRow; header: string; sortable: boolean }> = [
+  const columns: TableColumn<UserGroup>[] = [
     { key: 'group_name', header: 'Group Name', sortable: true },
-    { key: 'description', header: 'Description', sortable: false },
-    { key: 'member_count', header: 'Members', sortable: true },
-    { key: 'created_at', header: 'Created', sortable: true },
-    { key: 'actions', header: 'Actions', sortable: false },
+    { 
+      key: 'description', 
+      header: 'Description', 
+      sortable: false,
+      render: (value) => value || 'No description'
+    },
+    { 
+      key: 'member_count', 
+      header: 'Members', 
+      sortable: true,
+      render: (value) => String(value || 0)
+    },
+    { 
+      key: 'created_at', 
+      header: 'Created', 
+      sortable: true,
+      render: (value) => formatDate(value as string)
+    },
+    { 
+      key: 'group_hash', 
+      header: 'Actions', 
+      sortable: false,
+      render: (_, group) => (
+        <Button
+          variant="outline"
+          size="small"
+          onClick={() => setConfirmRemove(group)}
+          disabled={isRemoving === group.group_hash}
+          isLoading={isRemoving === group.group_hash}
+        >
+          Remove
+        </Button>
+      )
+    },
   ];
-
-  const tableData: TableRow[] = groups.map(group => ({
-    group_name: group.group_name,
-    description: group.description || 'No description',
-    member_count: String(group.member_count || 0),
-    created_at: formatDate(group.created_at),
-    actions: (
-      <Button
-        variant="outline"
-        size="small"
-        onClick={() => setConfirmRemove(group)}
-        disabled={isRemoving === group.group_hash}
-        isLoading={isRemoving === group.group_hash}
-      >
-        Remove
-      </Button>
-    ),
-  }));
 
   if (error) {
     return (
@@ -192,7 +197,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({ project }) =
         <>
           <div className="groups-table">
             <Table
-              data={tableData}
+              data={groups}
               columns={columns}
               isLoading={isLoading}
               emptyMessage="No groups found"
