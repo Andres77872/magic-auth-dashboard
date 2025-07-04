@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Card, LoadingSpinner, Button, Badge } from '@/components/common';
-import { ProjectOverviewTab, ProjectMembersTab, ProjectSettingsTab } from '@/components/features/projects';
+import { ProjectOverviewTab, ProjectMembersTab, ProjectSettingsTab, ProjectGroupsTab } from '@/components/features/projects';
 import { projectService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { ProjectDetails, ProjectStatistics, UserAccess } from '@/types/project.types';
 import './ProjectCreatePage.css'; // Reuse existing styles
 import './ProjectDetailsPage.css'; // Tab-specific styles
 
-type TabType = 'overview' | 'members' | 'settings';
+type TabType = 'overview' | 'members' | 'groups' | 'settings';
 
 export const ProjectDetailsPage: React.FC = () => {
   const { projectHash } = useParams<{ projectHash: string }>();
@@ -26,7 +26,7 @@ export const ProjectDetailsPage: React.FC = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get('tab') as TabType;
-    if (tabParam && ['overview', 'members', 'settings'].includes(tabParam)) {
+    if (tabParam && ['overview', 'members', 'groups', 'settings'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -126,6 +126,7 @@ export const ProjectDetailsPage: React.FC = () => {
   const tabs = [
     { id: 'overview' as TabType, label: 'Overview', icon: '📊' },
     { id: 'members' as TabType, label: 'Members', icon: '👥' },
+    { id: 'groups' as TabType, label: 'Groups', icon: '🏷️' },
     { id: 'settings' as TabType, label: 'Settings', icon: '⚙️' },
   ];
 
@@ -202,6 +203,9 @@ export const ProjectDetailsPage: React.FC = () => {
             )}
             {activeTab === 'members' && (
               <ProjectMembersTab project={project} />
+            )}
+            {activeTab === 'groups' && (
+              <ProjectGroupsTab project={project} />
             )}
             {activeTab === 'settings' && (
               <ProjectSettingsTab 

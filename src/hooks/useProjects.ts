@@ -53,11 +53,22 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
       };
 
       const response = await projectService.getProjects(params);
-      
-      if (response.success && response.projects) {
-        setProjects(response.projects);
-        if (response.pagination) {
-          setPagination(response.pagination);
+
+      /**
+       * The backend may return the project list in two different envelope formats:
+       * 1. Direct list (legacy) – `{ success, message, projects, pagination, ... }`
+       * 2. Wrapped inside a `data` property – `{ success, message, data: { projects, pagination, ... } }`
+       *
+       * To make the UI resilient to either variation, we normalise the response
+       * by checking both locations before updating state.
+       */
+      const projectsPayload = (response as any).projects ?? (response as any).data?.projects;
+      const paginationPayload = (response as any).pagination ?? (response as any).data?.pagination;
+
+      if (response.success && Array.isArray(projectsPayload)) {
+        setProjects(projectsPayload);
+        if (paginationPayload) {
+          setPagination(paginationPayload);
         }
       } else {
         setError(response.message || 'Failed to fetch projects');

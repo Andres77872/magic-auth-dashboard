@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input } from '@/components/common';
 import { projectService } from '@/services';
 import type { ProjectDetails } from '@/types/project.types';
+import type { UserType } from '@/types/auth.types';
 import { SearchIcon, LoadingIcon, ErrorIcon, HealthIcon } from '@/components/icons';
+import '@/styles/components/assign-project-modal.css';
 
 interface AssignProjectModalProps {
   isOpen: boolean;
@@ -11,6 +13,8 @@ interface AssignProjectModalProps {
   initialSelection?: string[];
   isLoading?: boolean;
   userName?: string;
+  allowMultiple?: boolean;
+  userType?: UserType;
 }
 
 export function AssignProjectModal({
@@ -19,7 +23,9 @@ export function AssignProjectModal({
   onConfirm,
   initialSelection = [],
   isLoading = false,
-  userName = 'user'
+  userName = 'user',
+  allowMultiple = true,
+  userType = 'consumer'
 }: AssignProjectModalProps): React.JSX.Element {
   const [projects, setProjects] = useState<ProjectDetails[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(initialSelection);
@@ -65,6 +71,12 @@ export function AssignProjectModal({
 
   const handleProjectToggle = (projectHash: string) => {
     setSelectedProjects(prev => {
+      if (!allowMultiple) {
+        // Single selection mode for consumer users
+        return prev.includes(projectHash) ? [] : [projectHash];
+      }
+      
+      // Multiple selection mode for admin users
       if (prev.includes(projectHash)) {
         return prev.filter(hash => hash !== projectHash);
       } else {
@@ -74,6 +86,9 @@ export function AssignProjectModal({
   };
 
   const handleSelectAll = () => {
+    // Only available in multiple selection mode
+    if (!allowMultiple) return;
+    
     if (selectedProjects.length === filteredProjects.length) {
       // Deselect all filtered projects
       setSelectedProjects(prev => 
@@ -107,7 +122,7 @@ export function AssignProjectModal({
     <Modal
       isOpen={isOpen}
       onClose={handleCancel}
-      title={`Assign Projects to ${userName}`}
+      title={`Assign ${allowMultiple ? 'Projects' : 'Project'} to ${userName}`}
       size="large"
       className="assign-project-modal"
       closeOnBackdropClick={!isLoading}
@@ -117,7 +132,15 @@ export function AssignProjectModal({
         {/* Header with selection count */}
         <div className="selection-header">
           <p className="selection-count">
-            {selectedCount} project{selectedCount !== 1 ? 's' : ''} selected
+            {allowMultiple ? (
+              <>{selectedCount} project{selectedCount !== 1 ? 's' : ''} selected</>
+            ) : (
+              userType === 'consumer' ? (
+                selectedCount > 0 ? 'Project selected' : 'Select a project (required)'
+              ) : (
+                <>{selectedCount} project{selectedCount !== 1 ? 's' : ''} selected</>
+              )
+            )}
           </p>
         </div>
 
@@ -133,7 +156,7 @@ export function AssignProjectModal({
             />
           </div>
           
-          {filteredProjects.length > 0 && (
+          {allowMultiple && filteredProjects.length > 0 && (
             <div className="select-all-section">
               <button
                 type="button"
@@ -192,7 +215,8 @@ export function AssignProjectModal({
                   >
                     <div className="project-checkbox">
                       <input
-                        type="checkbox"
+                        type={allowMultiple ? "checkbox" : "radio"}
+                        name={allowMultiple ? undefined : "project-selection"}
                         checked={isSelected}
                         onChange={() => handleProjectToggle(project.project_hash)}
                         onClick={(e) => e.stopPropagation()}
@@ -235,9 +259,12 @@ export function AssignProjectModal({
             variant="primary"
             onClick={handleConfirm}
             isLoading={isLoading}
-            disabled={fetchingProjects}
+            disabled={fetchingProjects || (userType === 'consumer' && selectedCount === 0)}
           >
-            Assign {selectedCount} Project{selectedCount !== 1 ? 's' : ''}
+            {allowMultiple 
+              ? `Assign ${selectedCount} Project${selectedCount !== 1 ? 's' : ''}`
+              : selectedCount > 0 ? 'Assign Project' : 'Select a Project'
+            }
           </Button>
         </div>
       </div>

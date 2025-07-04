@@ -69,6 +69,7 @@ export interface UserFormData {
   confirmPassword: string;
   userType: UserType;
   assignedProjects?: string[];
+  assignedGroup?: string;
 }
 
 export interface UserFormErrors {
@@ -78,6 +79,7 @@ export interface UserFormErrors {
   confirmPassword?: string;
   userType?: string;
   assignedProjects?: string;
+  assignedGroup?: string;
 }
 
 export interface UserListParams {

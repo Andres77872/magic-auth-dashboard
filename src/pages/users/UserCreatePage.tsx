@@ -4,6 +4,7 @@ import { UserForm } from '@/components/features/users/UserForm';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { UserFormData } from '@/types/user.types';
+import '@/styles/pages/user-form.css';
 
 export function UserCreatePage(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,27 +28,29 @@ export function UserCreatePage(): React.JSX.Element {
           });
           break;
         case 'admin':
+          // Admin users can be assigned to multiple projects
           response = await userService.createAdminUser({
             username: formData.username,
             password: formData.password,
             email: formData.email,
-            assigned_project_ids: [], // TODO: Implement project assignment
+            assigned_project_ids: [], // TODO: Convert project hashes to IDs if needed
           });
           break;
         case 'consumer':
         default:
-          // Create consumer user without project_hash (now optional)
-          const consumerData: any = {
+          // Validate that a group is assigned
+          if (!formData.assignedGroup) {
+            setError('Consumer users must be assigned to a user group');
+            setIsLoading(false);
+            return;
+          }
+          
+          const consumerData = {
             username: formData.username,
             password: formData.password,
             email: formData.email,
+            user_group_hash: formData.assignedGroup,
           };
-          
-          // Only include project_hash if it's available from context
-          // TODO: Add logic to get project_hash from current context if needed
-          // if (currentProjectHash) {
-          //   consumerData.project_hash = currentProjectHash;
-          // }
           
           response = await userService.createConsumerUser(consumerData);
           break;

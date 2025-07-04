@@ -5,4 +5,6 @@ export { ProjectForm } from './ProjectForm';
 export { ProjectActionsMenu } from './ProjectActionsMenu';
 export { ProjectOverviewTab } from './ProjectOverviewTab';
 export { ProjectMembersTab } from './ProjectMembersTab';
-export { ProjectSettingsTab } from './ProjectSettingsTab'; 
+export { ProjectSettingsTab } from './ProjectSettingsTab';
+export { ProjectGroupsTab } from './ProjectGroupsTab';
+export { AssignGroupToProjectModal } from './AssignGroupToProjectModal'; 
