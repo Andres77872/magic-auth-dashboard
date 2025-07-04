@@ -5,6 +5,7 @@ import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { UserType, UserProfileResponse, UserGroupAssignment, UserProjectAccess } from '@/types/auth.types';
 import '@/styles/pages/user-profile.css';
+import '@/styles/pages/user-profile.css';
 
 export function UserProfilePage(): React.JSX.Element {
   const [profileData, setProfileData] = useState<UserProfileResponse | null>(null);
