@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Table, Badge, Button } from '@/components/common';
 import { UserActionsMenu } from './UserActionsMenu';
 import { usePermissions } from '@/hooks';
-import { CheckIcon, ErrorIcon, GroupIcon, DeleteIcon } from '@/components/icons';
+import { CheckIcon, ErrorIcon, GroupIcon, DeleteIcon, ProjectIcon, WarningIcon } from '@/components/icons';
 import type { TableColumn } from '@/components/common';
 import type { User, UserType } from '@/types/auth.types';
 
@@ -65,8 +65,6 @@ export function UserTable({
       minute: '2-digit',
     });
   };
-
-
 
   const handleSelectUser = (userHash: string) => {
     const newSelected = new Set(selectedUsers);
@@ -191,13 +189,72 @@ export function UserTable({
       key: 'user_type',
       header: 'User Type',
       sortable: true,
-      render: (value) => (
-        <Badge 
-          variant={getUserTypeBadgeVariant(value as UserType)}
-          size="small"
-        >
-          {(value as string).toUpperCase()}
-        </Badge>
+      render: (value, user) => (
+        <div className="user-type-info">
+          <Badge 
+            variant={getUserTypeBadgeVariant(value as UserType)}
+            size="small"
+          >
+            {(value as string).toUpperCase()}
+          </Badge>
+          {user.user_type_info?.error && (
+            <div className="user-type-error" title={user.user_type_info.error}>
+              <WarningIcon size="small" />
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'groups',
+      header: 'Groups',
+      sortable: false,
+      render: (_, user) => (
+        <div className="user-groups">
+          {user.groups && user.groups.length > 0 ? (
+            <div className="group-list">
+              {user.groups.slice(0, 2).map(group => (
+                <Badge key={group.group_hash} variant="secondary" size="small">
+                  <GroupIcon size="small" />
+                  {group.group_name}
+                </Badge>
+              ))}
+              {user.groups.length > 2 && (
+                <Badge variant="secondary" size="small">
+                  +{user.groups.length - 2} more
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <span className="no-groups">No groups</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'projects',
+      header: 'Projects',
+      sortable: false,
+      render: (_, user) => (
+        <div className="user-projects">
+          {user.projects && user.projects.length > 0 ? (
+            <div className="project-list">
+              {user.projects.slice(0, 2).map(project => (
+                <Badge key={project.project_hash} variant="info" size="small">
+                  <ProjectIcon size="small" />
+                  {project.project_name}
+                </Badge>
+              ))}
+              {user.projects.length > 2 && (
+                <Badge variant="secondary" size="small">
+                  +{user.projects.length - 2} more
+                </Badge>
+              )}
+            </div>
+          ) : (
+            <span className="no-projects">No projects</span>
+          )}
+        </div>
       ),
     },
     {

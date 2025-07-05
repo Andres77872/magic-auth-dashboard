@@ -39,8 +39,8 @@ export function UserForm({
     password: '',
     confirmPassword: '',
     userType: (initialData?.user_type as UserType) || 'consumer',
-    assignedProjects: [],
-    assignedGroup: initialData && (initialData as any).assigned_group_hash ? (initialData as any).assigned_group_hash : '',
+    assignedProjects: initialData?.projects?.map(p => p.project_hash) || [],
+    assignedGroup: initialData?.groups?.[0]?.group_hash || '',
   });
 
   const [errors, setErrors] = useState<UserFormErrors>({});
@@ -242,6 +242,17 @@ export function UserForm({
     setShowGroupModal(false);
   };
 
+  // Helper function to display current user data
+  const getCurrentUserGroups = () => {
+    if (!initialData?.groups) return [];
+    return initialData.groups;
+  };
+
+  const getCurrentUserProjects = () => {
+    if (!initialData?.projects) return [];
+    return initialData.projects;
+  };
+
   return (
     <>
       <Card title={mode === 'create' ? 'Create New User' : 'Edit User'} padding="large">
@@ -267,6 +278,43 @@ export function UserForm({
               </div>
               <div className="info-content">
                 <p>You are editing your own account. Some restrictions apply for security reasons.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Display current user data in edit mode */}
+          {mode === 'edit' && initialData && (
+            <div className="current-user-info">
+              <h4>Current User Information</h4>
+              <div className="user-data-summary">
+                <div className="data-item">
+                  <label>Groups:</label>
+                  <div className="current-groups">
+                    {getCurrentUserGroups().length > 0 ? (
+                      getCurrentUserGroups().map(group => (
+                        <span key={group.group_hash} className="group-tag">
+                          {group.group_name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="no-data">No groups assigned</span>
+                    )}
+                  </div>
+                </div>
+                <div className="data-item">
+                  <label>Projects:</label>
+                  <div className="current-projects">
+                    {getCurrentUserProjects().length > 0 ? (
+                      getCurrentUserProjects().map(project => (
+                        <span key={project.project_hash} className="project-tag">
+                          {project.project_name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="no-data">No projects assigned</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -387,9 +435,7 @@ export function UserForm({
                     </div>
                   ) : (
                     <p className="no-projects">
-                      {formData.userType === 'consumer' && mode === 'create' 
-                        ? '⚠️ Please assign at least one project'
-                        : 'No projects assigned'}
+                                        No projects assigned
                     </p>
                   )}
                 </div>
@@ -405,9 +451,9 @@ export function UserForm({
                 </Button>
               </div>
               
-              {formData.userType === 'consumer' && mode === 'create' && (!formData.assignedProjects || formData.assignedProjects.length === 0) && (
+              {mode === 'create' && (!formData.assignedProjects || formData.assignedProjects.length === 0) && (
                 <p className="field-warning-text">
-                  Consumer users must be assigned to at least one project
+                  Admin users should be assigned to at least one project
                 </p>
               )}
               

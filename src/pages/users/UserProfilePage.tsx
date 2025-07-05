@@ -30,35 +30,30 @@ export function UserProfilePage(): React.JSX.Element {
 
       const response = await userService.getUserByHash(hash);
 
-      if (response.success && response.data) {
-        // Transform the response to match our expected structure
-        const transformedResponse: UserProfileResponse = {
-          success: response.success,
-          message: response.message,
-          user: response.data,
-          permissions: [], // Will be populated from user data
-          groups: [], // Legacy field
-          accessible_projects: [], // Legacy field
-          statistics: null, // Will be calculated from user data
-        };
-
-        // Calculate statistics from user data
-        const userGroups = response.data.groups || [];
-        const userProjects = response.data.projects || [];
+      if (response.success && response.user) {
+        // The response already matches UserProfileResponse structure
+        // Calculate statistics from user data if not provided
+        const userGroups = response.user.groups || [];
+        const userProjects = response.user.projects || [];
         const allPermissions = userProjects.flatMap(project => project.effective_permissions || []);
-        const accountAgeMs = new Date().getTime() - new Date(response.data.created_at).getTime();
+        const accountAgeMs = new Date().getTime() - new Date(response.user.created_at).getTime();
         const accountAgeDays = Math.floor(accountAgeMs / (1000 * 60 * 60 * 24));
 
-        transformedResponse.statistics = {
+        // Use statistics from API if available, otherwise calculate
+        const calculatedStatistics = {
           total_groups: userGroups.length,
           total_accessible_projects: userProjects.length,
           total_permissions: allPermissions.length,
           account_age_days: accountAgeDays,
         };
 
-        transformedResponse.permissions = allPermissions;
+        const finalResponse: UserProfileResponse = {
+          ...response,
+          statistics: response.statistics || calculatedStatistics,
+          permissions: response.permissions || allPermissions,
+        };
 
-        setProfileData(transformedResponse);
+        setProfileData(finalResponse);
       } else {
         setError(response.message || 'Failed to fetch user data');
       }
@@ -281,28 +276,14 @@ export function UserProfilePage(): React.JSX.Element {
                   <span>{stats.account_age_days} days</span>
                 </div>
 
-                {/* User Type Info */}
-                {user.user_type_info && (
+                {/* User Type Info Error */}
+                {user.user_type_info?.error && (
                   <div className="detail-item">
-                    <label>User ID</label>
-                    <span>{user.user_type_info.user_id}</span>
+                    <label>User Type Error</label>
+                    <span className="error-text">{user.user_type_info.error}</span>
                   </div>
                 )}
               </div>
-
-              {/* User Capabilities */}
-              {user.user_type_info && user.user_type_info.capabilities && user.user_type_info.capabilities.length > 0 && (
-                <div className="user-capabilities">
-                  <h4>User Capabilities</h4>
-                  <div className="capabilities-list">
-                    {user.user_type_info.capabilities.map((capability, index) => (
-                      <Badge key={index} variant="info" size="small">
-                        {capability}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </Card>
 
