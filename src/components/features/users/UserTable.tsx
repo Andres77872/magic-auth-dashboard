@@ -167,7 +167,7 @@ export function UserTable({
       sortable: true,
       render: (value, user) => (
         <div className="user-info">
-          <div className="user-avatar">
+                                <div className="user-table-avatar">
             {user.username.charAt(0).toUpperCase()}
           </div>
           <div className="user-details">

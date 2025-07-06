@@ -71,7 +71,7 @@ export function UserMenu(): React.JSX.Element {
         aria-haspopup="true"
         aria-label="User menu"
       >
-        <div className="user-avatar">
+        <div className="navigation-user-avatar">
           <span className="avatar-text">
             {user.username.charAt(0).toUpperCase()}
           </span>
@@ -89,7 +89,7 @@ export function UserMenu(): React.JSX.Element {
           {/* User info header */}
           <div className="user-menu-header">
             <div className="user-info-detailed">
-              <div className="user-avatar-large">
+              <div className="navigation-user-avatar-large">
                 <span className="avatar-text-large">
                   {user.username.charAt(0).toUpperCase()}
                 </span>

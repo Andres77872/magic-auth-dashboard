@@ -143,7 +143,7 @@
   gap: var(--spacing-xs);
 }
 
-.user-avatar {
+.analytics-user-avatar {
   display: flex;
   align-items: center;
   justify-content: center;

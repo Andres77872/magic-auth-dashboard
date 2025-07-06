@@ -84,7 +84,7 @@
   gap: 1.5rem;
 }
 
-.user-avatar-section {
+.profile-user-avatar-section {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -92,7 +92,7 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-.user-avatar-large {
+.profile-user-avatar-large {
   width: 80px;
   height: 80px;
   border-radius: var(--radius-full);
@@ -482,7 +482,7 @@
     grid-template-columns: 1fr;
   }
 
-  .user-avatar-section {
+  .profile-user-avatar-section {
     flex-direction: column;
     text-align: center;
   }
@@ -519,7 +519,7 @@
 }
 
 @media (max-width: 480px) {
-  .user-avatar-large {
+  .profile-user-avatar-large {
     width: 60px;
     height: 60px;
     font-size: 1.5rem;

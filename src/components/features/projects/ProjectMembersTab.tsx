@@ -257,7 +257,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
         }}
         title="Add Project Member"
       >
-        <div className="modal-content-wide">
+                  <div className="project-modal-content-wide">
           <div className="modal-form-field">
             <Input
               placeholder="Search users by username or email..."

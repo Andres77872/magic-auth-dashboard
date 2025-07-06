@@ -84,10 +84,10 @@ export const GroupForm: React.FC<GroupFormProps> = ({
           </div>
         )}
 
-        <div className="form-group-spaced">
+        <div className="group-form-group-spaced">
           <label 
             htmlFor="group_name"
-            className="form-label"
+            className="group-form-label"
           >
             Group Name <span className="text-error">*</span>
           </label>
@@ -105,10 +105,10 @@ export const GroupForm: React.FC<GroupFormProps> = ({
           </div>
         </div>
 
-        <div className="form-group-description">
+        <div className="group-form-group-description">
           <label 
             htmlFor="description"
-            className="form-label"
+            className="group-form-label"
           >
             Description
           </label>

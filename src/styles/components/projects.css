@@ -340,28 +340,28 @@
 }
 
 /* Modal Layouts and Common Styles */
-.modal-content-wide {
+.project-modal-content-wide {
   min-width: 400px;
 }
 
-.modal-content-scrollable {
+.project-modal-content-scrollable {
   max-height: 300px;
   overflow-y: auto;
 }
 
-.modal-loading-centered {
+.project-modal-loading-centered {
   display: flex;
   justify-content: center;
   padding: var(--spacing-5);
 }
 
-.modal-centered-content {
+.project-modal-centered-content {
   display: flex;
   justify-content: center;
   padding: var(--spacing-10);
 }
 
-.modal-text-centered {
+.project-modal-text-centered {
   text-align: center;
   padding: var(--spacing-10);
   color: var(--color-text-secondary);
@@ -429,32 +429,32 @@
 }
 
 /* Modal Actions */
-.modal-actions {
+.project-modal-actions {
   display: flex;
   gap: var(--spacing-3);
   justify-content: flex-end;
 }
 
-.modal-form-field {
+.project-modal-form-field {
   margin-bottom: var(--spacing-4);
 }
 
-.modal-error-message {
+.project-modal-error-message {
   color: var(--color-error);
   font-weight: var(--font-weight-bold);
   margin: 0 0 var(--spacing-2) 0;
 }
 
-.modal-warning-message {
+.project-modal-warning-message {
   color: var(--color-error);
   margin: 0;
 }
 
-.modal-description {
+.project-modal-description {
   margin-bottom: var(--spacing-3);
 }
 
-.modal-input {
+.project-modal-input {
   width: 100%;
   padding: var(--spacing-3);
   border: 2px solid var(--color-border);
@@ -463,7 +463,7 @@
   margin-bottom: var(--spacing-5);
 }
 
-.modal-input:focus {
+.project-modal-input:focus {
   outline: none;
   border-color: var(--color-primary-500);
   box-shadow: 0 0 0 3px var(--color-focus-ring-primary);

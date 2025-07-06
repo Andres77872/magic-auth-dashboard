@@ -57,7 +57,7 @@ export function GroupMembersTable({
       sortable: true,
       render: (value, member) => (
         <div className="user-info flex items-center gap-2">
-          <div className="user-avatar bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                              <div className="group-member-avatar bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
             {(member.username || '?').charAt(0).toUpperCase()}
           </div>
           <div className="truncate max-w-200">

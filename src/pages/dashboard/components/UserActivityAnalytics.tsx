@@ -176,7 +176,7 @@ export function UserActivityAnalytics(): React.JSX.Element {
             <div className="active-users-list">
               {data.engagement.mostActiveUsers.slice(0, 5).map((user) => (
                 <div key={user.user_hash} className="active-user-item">
-                  <div className="user-avatar">
+                  <div className="analytics-user-avatar">
                     {user.username.charAt(0).toUpperCase()}
                   </div>
                   <div className="user-info">

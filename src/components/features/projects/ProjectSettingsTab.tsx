@@ -270,17 +270,17 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
           title="Delete Project"
           size="medium"
         >
-          <div className="modal-content-wide">
+          <div className="project-modal-content-wide">
             <div className="alert-danger">
-              <p className="modal-error-message">
+              <p className="project-modal-error-message">
                 ⚠️ This action cannot be undone!
               </p>
-              <p className="modal-warning-message">
+              <p className="project-modal-warning-message">
                 This will permanently delete the project "{project.project_name}" and all associated data.
               </p>
             </div>
             
-            <p className="modal-description">
+            <p className="project-modal-description">
               Please type <strong>{project.project_name}</strong> to confirm:
             </p>
             
@@ -288,10 +288,10 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
               placeholder="Enter project name"
               value={deleteConfirmation}
               onChange={(e) => setDeleteConfirmation(e.target.value)}
-              className="modal-input"
+              className="project-modal-input"
             />
             
-            <div className="modal-actions">
+            <div className="project-modal-actions">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -326,17 +326,17 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
           title="Transfer Project Ownership"
           size="medium"
         >
-          <div className="modal-content-wide">
-            <p className="modal-description">
+          <div className="project-modal-content-wide">
+            <p className="project-modal-description">
               Select a new owner for the project "{project.project_name}". Only admin users can own projects.
             </p>
             
             {isLoadingUsers ? (
-              <div className="modal-loading-centered">
+              <div className="project-modal-loading-centered">
                 Loading users...
               </div>
             ) : (
-              <div className="modal-form-field">
+              <div className="project-modal-form-field">
                 <Select
                   placeholder="Select new owner..."
                   value={selectedNewOwner}
@@ -346,7 +346,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
               </div>
             )}
             
-            <div className="modal-actions">
+            <div className="project-modal-actions">
               <Button
                 variant="outline"
                 onClick={() => {

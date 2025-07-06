@@ -149,7 +149,7 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
 
         <div className="activity-meta">
           <div className="activity-user">
-            <span className="user-avatar">
+                          <span className="analytics-user-avatar">
               {activity.user.username.charAt(0).toUpperCase()}
             </span>
             <span className="user-name">{activity.user.username}</span>

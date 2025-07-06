@@ -219,8 +219,8 @@ export function UserProfilePage(): React.JSX.Element {
           {/* User Information Card */}
           <Card title="User Information" padding="large">
             <div className="user-profile-info">
-              <div className="user-avatar-section">
-                <div className="user-avatar-large">
+                          <div className="profile-user-avatar-section">
+              <div className="profile-user-avatar-large">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="avatar-info">

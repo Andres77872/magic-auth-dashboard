@@ -172,7 +172,7 @@ export function AssignGroupToProjectModal({
           )}
         </div>
 
-        <div className="modal-actions">
+                    <div className="project-modal-actions">
           <Button variant="outline" onClick={handleCancel} disabled={isLoading}>Cancel</Button>
           <Button
             variant="primary"
