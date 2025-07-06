@@ -210,11 +210,13 @@
   margin-bottom: var(--spacing-1);
 }
 
-.user-type-badge {
+.nav-user-type-badge {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-sm);
 }
 
 .user-menu-items {

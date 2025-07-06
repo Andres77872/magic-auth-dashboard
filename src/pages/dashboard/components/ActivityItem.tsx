@@ -154,7 +154,7 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
             </span>
             <span className="user-name">{activity.user.username}</span>
             <span 
-              className={`user-type-badge ${getUserTypeBadgeClass(activity.user.user_type)}`}
+              className={`analytics-user-badge ${getUserTypeBadgeClass(activity.user.user_type)}`}
             >
               {activity.user.user_type.toUpperCase()}
             </span>

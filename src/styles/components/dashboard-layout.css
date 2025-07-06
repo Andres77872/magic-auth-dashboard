@@ -269,10 +269,14 @@
   text-align: left;
 }
 
-.user-type-badge {
+.dashboard-user-badge {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   line-height: 1;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .dropdown-arrow {

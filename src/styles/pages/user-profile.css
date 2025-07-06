@@ -407,7 +407,7 @@
 }
 
 /* Loading State */
-.loading-container {
+.user-profile-loading {
   display: flex;
   align-items: center;
   justify-content: center;

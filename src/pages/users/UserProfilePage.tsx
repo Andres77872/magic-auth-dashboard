@@ -113,7 +113,7 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="loading-container">
+          <div className="user-profile-loading">
             <LoadingSpinner size="large" message="Loading user profile..." />
           </div>
         </div>

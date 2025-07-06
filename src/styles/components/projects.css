@@ -416,15 +416,15 @@
 }
 
 /* User Type Badge Color Classes */
-.user-type-badge-root {
+.project-user-badge-root {
   color: var(--color-error);
 }
 
-.user-type-badge-admin {
+.project-user-badge-admin {
   color: var(--color-warning);
 }
 
-.user-type-badge-consumer {
+.project-user-badge-consumer {
   color: var(--color-info);
 }
 

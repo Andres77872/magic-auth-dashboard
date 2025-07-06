@@ -38,7 +38,7 @@ export function WelcomeSection(): React.JSX.Element {
         <div className="welcome-info">
           <div className="user-badge-container">
             <span 
-              className={`user-type-badge ${getUserTypeBadgeBackgroundClass(userType || undefined)}`}
+              className={`dashboard-welcome-badge ${getUserTypeBadgeBackgroundClass(userType || undefined)}`}
             >
               {getUserTypeLabel()}
             </span>

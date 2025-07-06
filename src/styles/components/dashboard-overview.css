@@ -74,7 +74,7 @@
   align-items: flex-end;
 }
 
-.user-badge-container .user-type-badge {
+.user-badge-container .dashboard-welcome-badge {
   padding: var(--spacing-2) var(--spacing-4);
   border-radius: var(--border-radius-full);
   font-size: var(--font-size-sm);

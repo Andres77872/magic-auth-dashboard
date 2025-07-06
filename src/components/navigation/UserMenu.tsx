@@ -98,7 +98,7 @@ export function UserMenu(): React.JSX.Element {
                 <div className="user-name-large">{user.username}</div>
                 <div className="user-email">{user.email}</div>
                 <div 
-                  className={`user-type-badge ${getUserTypeBadgeClass(userType || undefined)}`}
+                  className={`nav-user-type-badge ${getUserTypeBadgeClass(userType || undefined)}`}
                 >
                   {getUserTypeLabel()}
                 </div>

@@ -25,7 +25,7 @@ export function ProfilePage(): React.JSX.Element {
             <h2>{user?.username}</h2>
             <p>{user?.email}</p>
             <div 
-              className={`user-type-badge ${getUserTypeBadgeClass(userType || undefined)}`}
+              className={`profile-user-badge ${getUserTypeBadgeClass(userType || undefined)}`}
             >
               {getUserTypeLabel()}
             </div>

@@ -97,7 +97,7 @@ export function UserEditPage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="loading-container">
+          <div className="user-form-loading">
             <LoadingSpinner size="large" message="Loading user data..." />
           </div>
         </div>

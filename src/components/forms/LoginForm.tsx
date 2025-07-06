@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/utils/routes';
 import { VALIDATION } from '@/utils/constants';
-import { LoadingSpinner } from '@/components/common';
-import { UserIcon, EyeIcon, LogoutIcon, ErrorIcon } from '@/components/icons';
+import { LoadingSpinner, Input, Button } from '@/components/common';
+import { UserIcon, EyeIcon, LockIcon, ErrorIcon } from '@/components/icons';
 
 interface LoginFormData {
   username: string;
@@ -42,11 +42,10 @@ export function LoginForm(): React.JSX.Element {
   }, [formData.username, formData.password, errors]);
 
   // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (field: keyof LoginFormData, value: string | boolean): void => {
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [field]: value,
     }));
   };
 
@@ -95,11 +94,11 @@ export function LoginForm(): React.JSX.Element {
         const from = (location.state as { from?: string })?.from || ROUTES.DASHBOARD;
         void navigate(from, { replace: true });
       }
-          } catch {
-        setErrors({
-          general: 'An unexpected error occurred. Please try again.',
-        });
-      } finally {
+    } catch {
+      setErrors({
+        general: 'An unexpected error occurred. Please try again.',
+      });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -107,138 +106,106 @@ export function LoginForm(): React.JSX.Element {
   // Show loading state
   if (isLoading) {
     return (
-      <div className="login-loading">
+      <div className="auth-login-loading">
         <LoadingSpinner size="large" message="Checking authentication..." />
       </div>
     );
   }
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="login-form" noValidate>
-      <div className="form-header">
-        <h1 className="form-title">Admin Login</h1>
-        <p className="form-subtitle">
-          Sign in to access the Magic Auth Dashboard
-        </p>
-      </div>
-
+    <form onSubmit={(e) => void handleSubmit(e)} className="auth-login-form" noValidate>
       {/* General error message */}
       {(errors.general || state.error) && (
-        <div className="error-alert" role="alert">
-          <div className="error-icon">
+        <div className="auth-login-error" role="alert">
+          <div className="auth-login-error-icon">
             <ErrorIcon size="medium" />
           </div>
-          <span>{errors.general || state.error}</span>
+          <span className="auth-login-error-text">{errors.general || state.error}</span>
         </div>
       )}
 
       {/* Username field */}
-      <div className="form-field">
-        <label htmlFor="username" className="form-label">
-          Username
-        </label>
-        <div className="input-wrapper">
-          <input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleInputChange}
-            className={`form-input ${errors.username ? 'input-error' : ''}`}
-            placeholder="Enter your username"
-            autoComplete="username"
-            disabled={isSubmitting}
-            aria-describedby={errors.username ? 'username-error' : undefined}
-            required
-          />
-          <div className="input-icon">
-            <UserIcon size="medium" />
-          </div>
-        </div>
-        {errors.username && (
-          <div id="username-error" className="field-error" role="alert">
-            {errors.username}
-          </div>
-        )}
+      <div className="auth-login-field">
+        <Input
+          id="username"
+          type="text"
+          label="Username"
+          value={formData.username}
+          onChange={(e) => handleInputChange('username', e.target.value)}
+          error={errors.username}
+          placeholder="Enter your username"
+          leftIcon={<UserIcon size="medium" />}
+          autoComplete="username"
+          disabled={isSubmitting}
+          fullWidth
+          required
+        />
       </div>
 
       {/* Password field */}
-      <div className="form-field">
-        <label htmlFor="password" className="form-label">
-          Password
-        </label>
-        <div className="input-wrapper">
-          <input
-            type={showPassword ? 'text' : 'password'}
-            id="password"
-            name="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            className={`form-input ${errors.password ? 'input-error' : ''}`}
-            placeholder="Enter your password"
-            autoComplete="current-password"
-            disabled={isSubmitting}
-            aria-describedby={errors.password ? 'password-error' : undefined}
-            required
-          />
-          <button
-            type="button"
-            className="password-toggle"
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? 'Hide password' : 'Show password'}
-            disabled={isSubmitting}
-          >
-            <EyeIcon size="medium" isVisible={showPassword} />
-          </button>
-        </div>
-        {errors.password && (
-          <div id="password-error" className="field-error" role="alert">
-            {errors.password}
-          </div>
-        )}
+      <div className="auth-login-field">
+        <Input
+          id="password"
+          type={showPassword ? 'text' : 'password'}
+          label="Password"
+          value={formData.password}
+          onChange={(e) => handleInputChange('password', e.target.value)}
+          error={errors.password}
+          placeholder="Enter your password"
+          leftIcon={<LockIcon size="medium" />}
+          rightIcon={
+            <button
+              type="button"
+              className="auth-login-password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              disabled={isSubmitting}
+              tabIndex={-1}
+            >
+              <EyeIcon size="medium" isVisible={showPassword} />
+            </button>
+          }
+          autoComplete="current-password"
+          disabled={isSubmitting}
+          fullWidth
+          required
+        />
       </div>
 
       {/* Remember me checkbox */}
-      <div className="form-field checkbox-field">
-        <label htmlFor="rememberMe" className="checkbox-label">
+      <div className="auth-login-field auth-login-checkbox-field">
+        <label className="auth-login-checkbox-label">
           <input
             type="checkbox"
-            id="rememberMe"
-            name="rememberMe"
             checked={formData.rememberMe}
-            onChange={handleInputChange}
-            className="checkbox-input"
+            onChange={(e) => handleInputChange('rememberMe', e.target.checked)}
+            className="auth-login-checkbox-input"
             disabled={isSubmitting}
           />
-          <span className="checkbox-checkmark"></span>
-          <span className="checkbox-text">Remember me for 30 days</span>
+          <span className="auth-login-checkbox-checkmark"></span>
+          <span className="auth-login-checkbox-text">Remember me for 30 days</span>
         </label>
       </div>
 
       {/* Submit button */}
-      <button
-        type="submit"
-        className="submit-button"
-        disabled={isSubmitting || !formData.username || !formData.password}
-      >
-        {isSubmitting ? (
-          <>
-            <LoadingSpinner size="small" />
-            <span>Signing in...</span>
-          </>
-        ) : (
-          <>
-            <span>Sign In</span>
-            <LogoutIcon size="medium" />
-          </>
-        )}
-      </button>
+      <div className="auth-login-submit">
+        <Button
+          type="submit"
+          variant="primary"
+          size="large"
+          fullWidth
+          isLoading={isSubmitting}
+          disabled={isSubmitting || !formData.username || !formData.password}
+        >
+          {isSubmitting ? 'Signing in...' : 'Sign In'}
+        </Button>
+      </div>
 
       {/* Footer links */}
-      <div className="form-footer">
-        <p className="footer-text">
+      <div className="auth-login-footer">
+        <p className="auth-login-footer-text">
           Admin and ROOT users only. Need access?{' '}
-          <a href="mailto:admin@magicauth.com" className="footer-link">
+          <a href="mailto:andres@arz.ai" className="auth-login-footer-link">
             Contact Administrator
           </a>
         </p>
