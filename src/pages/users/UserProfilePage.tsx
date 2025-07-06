@@ -136,7 +136,7 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="error-state">
+          <div className="user-profile-error-state">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
               <line x1="15" y1="9" x2="9" y2="15"/>
@@ -168,7 +168,7 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="error-state">
+          <div className="user-profile-error-state">
             <h3>User Not Found</h3>
             <p>The user you're looking for doesn't exist or has been deleted.</p>
           </div>

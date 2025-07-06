@@ -74,14 +74,7 @@
   gap: var(--spacing-4);
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-3);
-  margin-top: var(--spacing-6);
-  padding-top: var(--spacing-4);
-  border-top: 1px solid var(--color-border);
-}
+
 
 @media (max-width: 768px) {
   .project-create-page {
@@ -98,7 +91,5 @@
     padding: var(--spacing-4);
   }
   
-  .form-actions {
-    flex-direction: column-reverse;
-  }
+
 } 
