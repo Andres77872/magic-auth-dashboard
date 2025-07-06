@@ -4,7 +4,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { RBACDashboard } from '@/components/features/rbac/RBACDashboard';
 import { ProjectPermissionsSummary } from '@/components/features/rbac/ProjectPermissionsSummary';
 import { QuickActions } from '@/components/features/rbac/QuickActions';
-import './PermissionsOverview.css';
+import '@/styles/pages/PermissionsOverview.css';
 
 export const PermissionsOverviewPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();

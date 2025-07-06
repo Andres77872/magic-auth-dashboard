@@ -4,7 +4,7 @@ import { Button, LoadingSpinner, Card } from '@/components/common';
 import { ProjectTable, ProjectCard, ProjectFilter } from '@/components/features/projects';
 import { useProjects } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
-import './ProjectListPage.css';
+import '@/styles/pages/ProjectListPage.css';
 
 export const ProjectListPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');

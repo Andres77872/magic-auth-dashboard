@@ -5,8 +5,8 @@ import { ProjectOverviewTab, ProjectMembersTab, ProjectSettingsTab, ProjectGroup
 import { projectService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { ProjectDetails, ProjectStatistics, UserAccess } from '@/types/project.types';
-import './ProjectCreatePage.css'; // Reuse existing styles
-import './ProjectDetailsPage.css'; // Tab-specific styles
+import '@/styles/pages/ProjectCreatePage.css'; // Reuse existing styles
+import '@/styles/pages/ProjectDetailsPage.css'; // Tab-specific styles
 
 type TabType = 'overview' | 'members' | 'groups' | 'settings';
 

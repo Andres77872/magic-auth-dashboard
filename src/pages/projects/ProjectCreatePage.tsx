@@ -5,7 +5,7 @@ import { ProjectForm } from '@/components/features/projects';
 import { projectService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { ProjectFormData } from '@/types/project.types';
-import './ProjectCreatePage.css';
+import '@/styles/pages/ProjectCreatePage.css';
 
 export const ProjectCreatePage: React.FC = () => {
   const navigate = useNavigate();
