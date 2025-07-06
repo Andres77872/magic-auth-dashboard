@@ -81,9 +81,9 @@ export function UserCreatePage(): React.JSX.Element {
 
   return (
     <div className="user-create-page">
-      <div className="page-header">
-        <div className="page-title-section">
-          <button onClick={handleGoBack} className="back-button">
+      <div className="user-form-page-header">
+        <div className="user-form-title-section">
+          <button onClick={handleGoBack} className="user-form-back-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15,18 9,12 15,6"/>
             </svg>
@@ -94,14 +94,14 @@ export function UserCreatePage(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="page-content">
+      <div className="user-form-content">
         {error && (
-          <div className="error-banner">
-            <div className="error-content">
-              <span className="error-message">{error}</span>
+          <div className="user-form-error-banner">
+            <div className="user-form-error-content">
+              <span className="user-form-error-message">{error}</span>
               <button 
                 onClick={() => setError(null)}
-                className="error-dismiss"
+                className="user-form-error-dismiss"
               >
                 ×
               </button>

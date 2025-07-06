@@ -7,19 +7,19 @@
 }
 
 /* Page Header */
-.page-header {
+.user-form-page-header {
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   padding: calc(var(--spacing-unit) * 2) calc(var(--spacing-unit) * 3);
   margin-bottom: calc(var(--spacing-unit) * 2);
 }
 
-.page-title-section {
+.user-form-title-section {
   max-width: var(--form-max-width);
   margin: 0 auto;
 }
 
-.back-button {
+.user-form-back-button {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -36,33 +36,33 @@
   cursor: pointer;
 }
 
-.back-button:hover {
+.user-form-back-button:hover {
   color: var(--color-primary);
   background: var(--color-primary-bg);
 }
 
-.page-header h1 {
+.user-form-page-header h1 {
   font-size: 1.875rem;
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0 0 0.5rem 0;
 }
 
-.page-header p {
+.user-form-page-header p {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
   margin: 0;
 }
 
 /* Page Content */
-.page-content {
+.user-form-content {
   max-width: var(--form-max-width);
   margin: 0 auto;
   padding: 0 calc(var(--spacing-unit) * 3);
 }
 
 /* Error Banner */
-.error-banner {
+.user-form-error-banner {
   background: var(--color-error-bg);
   border: 1px solid var(--color-error-border);
   border-radius: var(--radius-lg);
@@ -71,20 +71,20 @@
   animation: slideDown 0.3s ease-out;
 }
 
-.error-content {
+.user-form-error-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
 
-.error-message {
+.user-form-error-message {
   color: var(--color-error);
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-.error-dismiss {
+.user-form-error-dismiss {
   background: transparent;
   border: none;
   color: var(--color-error);
@@ -96,7 +96,7 @@
   transition: opacity 0.15s ease;
 }
 
-.error-dismiss:hover {
+.user-form-error-dismiss:hover {
   opacity: 1;
 }
 
@@ -366,11 +366,11 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .page-header {
+  .user-form-page-header {
     padding: 1rem 1.5rem;
   }
 
-  .page-content {
+  .user-form-content {
     padding: 0 1.5rem;
   }
 

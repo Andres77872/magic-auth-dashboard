@@ -6,6 +6,7 @@ import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { UserFormData } from '@/types/user.types';
 import type { User } from '@/types/auth.types';
+import '@/styles/pages/user-form.css';
 
 export function UserEditPage(): React.JSX.Element {
   const [user, setUser] = useState<User | null>(null);
@@ -85,9 +86,9 @@ export function UserEditPage(): React.JSX.Element {
   if (isLoading) {
     return (
       <div className="user-edit-page">
-        <div className="page-header">
-          <div className="page-title-section">
-            <button onClick={handleGoBack} className="back-button">
+        <div className="user-form-page-header">
+          <div className="user-form-title-section">
+            <button onClick={handleGoBack} className="user-form-back-button">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="15,18 9,12 15,6"/>
               </svg>
@@ -96,7 +97,7 @@ export function UserEditPage(): React.JSX.Element {
             <h1>Edit User</h1>
           </div>
         </div>
-        <div className="page-content">
+        <div className="user-form-content">
           <div className="user-form-loading">
             <LoadingSpinner size="large" message="Loading user data..." />
           </div>
@@ -108,9 +109,9 @@ export function UserEditPage(): React.JSX.Element {
   if (error && !user) {
     return (
       <div className="user-edit-page">
-        <div className="page-header">
-          <div className="page-title-section">
-            <button onClick={handleGoBack} className="back-button">
+        <div className="user-form-page-header">
+          <div className="user-form-title-section">
+            <button onClick={handleGoBack} className="user-form-back-button">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="15,18 9,12 15,6"/>
               </svg>
@@ -119,7 +120,7 @@ export function UserEditPage(): React.JSX.Element {
             <h1>Edit User</h1>
           </div>
         </div>
-        <div className="page-content">
+        <div className="user-form-content">
           <div className="error-state">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
@@ -139,9 +140,9 @@ export function UserEditPage(): React.JSX.Element {
 
   return (
     <div className="user-edit-page">
-      <div className="page-header">
-        <div className="page-title-section">
-          <button onClick={handleGoBack} className="back-button">
+      <div className="user-form-page-header">
+        <div className="user-form-title-section">
+          <button onClick={handleGoBack} className="user-form-back-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15,18 9,12 15,6"/>
             </svg>
@@ -152,14 +153,14 @@ export function UserEditPage(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="page-content">
+      <div className="user-form-content">
         {error && (
-          <div className="error-banner">
-            <div className="error-content">
-              <span className="error-message">{error}</span>
+          <div className="user-form-error-banner">
+            <div className="user-form-error-content">
+              <span className="user-form-error-message">{error}</span>
               <button 
                 onClick={() => setError(null)}
-                className="error-dismiss"
+                className="user-form-error-dismiss"
               >
                 ×
               </button>
