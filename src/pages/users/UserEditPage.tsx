@@ -31,8 +31,8 @@ export function UserEditPage(): React.JSX.Element {
 
       const response = await userService.getUserByHash(hash);
       
-      if (response.success && response.data) {
-        setUser(response.data);
+      if (response.success && response.user) {
+        setUser(response.user);
       } else {
         setError(response.message || 'Failed to fetch user data');
       }
