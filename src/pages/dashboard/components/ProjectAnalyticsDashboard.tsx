@@ -90,7 +90,7 @@ export function ProjectAnalyticsDashboard(): React.JSX.Element {
   if (isLoading || !data) {
     return (
       <div className="analytics-loading">
-        <LoadingSpinner size="large" message="Loading project analytics..." />
+        <LoadingSpinner size="lg" message="Loading project analytics..." />
       </div>
     );
   }

@@ -66,7 +66,7 @@ export function ProjectGroupEditPage(): React.JSX.Element {
       <div className="page-container">
         <div className="page-content">
           <Card className="loading-card">
-            <LoadingSpinner size="medium" message="Loading project group..." />
+            <LoadingSpinner size="md" message="Loading project group..." />
           </Card>
         </div>
       </div>

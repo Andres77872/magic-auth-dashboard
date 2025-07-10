@@ -84,7 +84,7 @@ export function UserActivityAnalytics(): React.JSX.Element {
   if (isLoading || !data) {
     return (
       <div className="analytics-loading">
-        <LoadingSpinner size="large" message="Loading user analytics..." />
+        <LoadingSpinner size="lg" message="Loading user analytics..." />
       </div>
     );
   }
