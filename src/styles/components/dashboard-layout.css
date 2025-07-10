@@ -53,27 +53,7 @@
   --mobile-breakpoint: 1024px;
 }
 
-/* Dashboard Loading State */
-.dashboard-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background-color: var(--color-gray-50);
-  gap: var(--spacing-4);
-}
-
-.dashboard-loading .loading-spinner {
-  width: 48px;
-  height: 48px;
-}
-
-.dashboard-loading p {
-  color: var(--color-gray-600);
-  font-size: var(--font-size-lg);
-  margin: 0;
-}
+/* Dashboard Loading State - Now handled by LoadingSpinner component */
 
 /* Mobile Overlay */
 .mobile-overlay {

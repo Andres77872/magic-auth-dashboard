@@ -50,7 +50,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || isLoading}
         {...props}
       >
-        {isLoading && <LoadingSpinner size="small" />}
+        {isLoading && <LoadingSpinner size="xs" />}
         {!isLoading && leftIcon && <span className="btn-icon btn-icon-left">{leftIcon}</span>}
         <span className="btn-content">{children}</span>
         {!isLoading && rightIcon && <span className="btn-icon btn-icon-right">{rightIcon}</span>}

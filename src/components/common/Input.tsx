@@ -74,7 +74,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           
           {isLoading && (
             <span className="input-icon input-icon-right">
-              <LoadingSpinner size="small" />
+              <LoadingSpinner size="xs" />
             </span>
           )}
           {!isLoading && rightIcon && (

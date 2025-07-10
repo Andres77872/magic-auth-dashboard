@@ -107,9 +107,9 @@ export function Table<T extends Record<string, any>>({
           </thead>
           <tbody className="table-body">
             {isLoading ? (
-              <tr>
-                <td colSpan={columns.length} className="table-loading">
-                  <LoadingSpinner size="medium" message="Loading data..." />
+              <tr className="table-loading-row">
+                <td colSpan={columns.length} className="table-loading-cell">
+                  <LoadingSpinner size="md" message="Loading data..." />
                 </td>
               </tr>
             ) : data.length === 0 ? (

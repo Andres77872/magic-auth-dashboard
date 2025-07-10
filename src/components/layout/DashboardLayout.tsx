@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth, useUserType } from '@/hooks';
+import { LoadingSpinner } from '@/components/common';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { Footer } from './Footer';
@@ -41,12 +42,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.E
 
   if (isLoading) {
     return (
-      <div className="dashboard-loading">
-        <div className="loading-spinner">
-          <div className="spinner-circle"></div>
-        </div>
-        <p>Loading dashboard...</p>
-      </div>
+      <LoadingSpinner 
+        size="lg" 
+        variant="primary"
+        message="Loading dashboard..." 
+        fullScreen 
+      />
     );
   }
 

@@ -23,7 +23,12 @@ export function ProtectedRoute({
   if (isLoading) {
     return (
       <div className="route-loading">
-        <LoadingSpinner size="large" message="Verifying authentication..." />
+        <LoadingSpinner 
+          size="lg" 
+          variant="primary"
+          message="Verifying authentication..." 
+          fullScreen 
+        />
       </div>
     );
   }

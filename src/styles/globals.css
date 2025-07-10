@@ -16,6 +16,7 @@
 @import './components/cards.css';
 @import './components/badges.css';
 @import './components/toasts.css';
+@import './components/loading-spinner.css';
 @import './components/dashboard-layout.css';
 @import './components/dashboard-overview.css';
 @import './components/navigation.css';

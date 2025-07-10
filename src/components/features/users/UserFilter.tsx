@@ -39,13 +39,11 @@ export function UserFilter({ onFiltersChange, initialFilters = {} }: UserFilterP
     }
 
     debounceTimeout.current = setTimeout(() => {
-      setFilters(prev => {
-        const newFilters = { ...prev, search: searchValue || undefined };
-        onFiltersChange(newFilters);
-        return newFilters;
-      });
+      const newFilters = { ...filters, search: searchValue || undefined };
+      setFilters(newFilters);
+      onFiltersChange(newFilters);
     }, 300);
-  }, [onFiltersChange]);
+  }, [onFiltersChange, filters]);
 
   useEffect(() => {
     debouncedSearch(searchInput);

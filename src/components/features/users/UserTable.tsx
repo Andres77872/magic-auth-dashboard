@@ -145,7 +145,7 @@ export function UserTable({
   const columns: TableColumn<User>[] = [
     // Checkbox column
     {
-      key: 'user_hash' as keyof User,
+      key: 'select' as keyof User,
       header: 'Select',
       sortable: false,
       width: '50px',

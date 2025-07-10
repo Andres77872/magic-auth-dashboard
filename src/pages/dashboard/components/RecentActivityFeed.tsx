@@ -157,7 +157,7 @@ export function RecentActivityFeed(): React.JSX.Element {
       <div className="activity-feed-container">
         {isLoading && activities.length === 0 ? (
           <div className="activity-loading">
-            <LoadingSpinner size="medium" message="Loading activity feed..." />
+            <LoadingSpinner size="md" variant="subtle" message="Loading activity feed..." />
           </div>
         ) : activities.length === 0 ? (
           <div className="activity-empty">
@@ -183,7 +183,7 @@ export function RecentActivityFeed(): React.JSX.Element {
 
             {loadingMore && (
               <div className="activity-loading-more">
-                <LoadingSpinner size="small" message="Loading more..." />
+                <LoadingSpinner size="sm" message="Loading more..." />
               </div>
             )}
 

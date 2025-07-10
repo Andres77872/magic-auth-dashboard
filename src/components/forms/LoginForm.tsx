@@ -38,16 +38,8 @@ export function LoginForm(): React.JSX.Element {
   useEffect(() => {
     if (Object.keys(errors).length > 0 || state.error) {
       setErrors({});
-      // Also clear auth context errors when user starts typing
-      if (state.error) {
-        // Clear error from auth context after a small delay to avoid flashing
-        const timer = setTimeout(() => {
-          // The error will be cleared naturally when the form is submitted again
-        }, 100);
-        return () => clearTimeout(timer);
-      }
     }
-  }, [formData.username, formData.password, errors, state.error]);
+  }, [formData.username, formData.password, state.error]);
 
   // Handle form input changes
   const handleInputChange = (field: keyof LoginFormData, value: string | boolean): void => {
@@ -121,7 +113,7 @@ export function LoginForm(): React.JSX.Element {
   if (isLoading) {
     return (
       <div className="auth-login-loading">
-        <LoadingSpinner size="large" message="Checking authentication..." />
+        <LoadingSpinner size="lg" message="Checking authentication..." />
       </div>
     );
   }

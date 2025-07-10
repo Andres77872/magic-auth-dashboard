@@ -1,58 +1,39 @@
 /* Route Guards Styles */
 .route-loading {
+  /* This wrapper is now just for fallback - the fullScreen spinner handles its own positioning */
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(135deg,
+      #0f172a 0%,
+      #1e293b 50%,
+      #334155 100%
+    );
+}
+
+/* Keep only route-specific non-spinner styles */
+.route-unauthorized {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   background-color: var(--color-gray-50);
+  padding: var(--spacing-4);
 }
 
-/* Loading Spinner */
-.loading-spinner {
+.route-error {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-4);
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--color-error-bg);
+  padding: var(--spacing-4);
 }
 
-.spinner {
-  display: inline-block;
-  position: relative;
-}
-
-.spinner-circle {
-  display: inline-block;
-  border-radius: 50%;
-  border: 2px solid var(--color-gray-200);
-  border-top-color: var(--color-primary-500);
-  animation: spin 1s linear infinite;
-}
-
-/* Spinner sizes */
-.spinner-small .spinner-circle {
-  width: 20px;
-  height: 20px;
-}
-
-.spinner-medium .spinner-circle {
-  width: 32px;
-  height: 32px;
-}
-
-.spinner-large .spinner-circle {
-  width: 48px;
-  height: 48px;
-}
-
-.spinner-message {
-  margin: 0;
-  color: var(--color-gray-600);
-  font-size: var(--font-size-sm);
-  text-align: center;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+/* Accessibility - Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 } 
