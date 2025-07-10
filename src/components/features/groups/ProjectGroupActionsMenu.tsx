@@ -62,7 +62,7 @@ export function ProjectGroupActionsMenu({
           variant="outline"
           size="small"
           onClick={handleDelete}
-          style={{ color: 'var(--color-danger)' }}
+          className="actions-menu-item-danger"
         >
           Delete
         </Button>

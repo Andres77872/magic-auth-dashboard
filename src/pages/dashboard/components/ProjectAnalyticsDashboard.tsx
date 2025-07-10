@@ -241,10 +241,10 @@ export function ProjectAnalyticsDashboard(): React.JSX.Element {
                 <div className="timeline-date">{new Date(day.date).toLocaleDateString()}</div>
                 <div className="timeline-bar">
                   <div 
-                    className="timeline-fill"
+                    className="timeline-fill h-dynamic"
                     style={{ 
-                      height: `${Math.min(100, (day.activityCount / Math.max(...data.engagement.projectActivity.map(d => d.activityCount))) * 100)}%` 
-                    }}
+                      '--dynamic-height': `${Math.min(100, (day.activityCount / Math.max(...data.engagement.projectActivity.map(d => d.activityCount))) * 100)}%` 
+                    } as React.CSSProperties}
                   />
                 </div>
                 <div className="timeline-count">{day.activityCount}</div>

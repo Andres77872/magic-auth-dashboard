@@ -5,7 +5,7 @@ import { useRoles } from '@/hooks/useRoles';
 import { RoleTable } from '@/components/features/rbac/RoleTable';
 import { RoleForm } from '@/components/features/rbac/RoleForm';
 import type { Role } from '@/types/rbac.types';
-import './RolesPage.css';
+import '@/styles/pages/RolesPage.css';
 
 export const RolesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();

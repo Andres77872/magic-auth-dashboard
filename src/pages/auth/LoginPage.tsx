@@ -1,5 +1,6 @@
 import React from 'react';
 import { LoginForm } from '@/components/forms';
+import { LogoIcon, CheckIcon, SecurityIcon, UserIcon, ProjectIcon, HealthIcon } from '@/components/icons';
 
 export function LoginPage(): React.JSX.Element {
   return (
@@ -9,24 +10,13 @@ export function LoginPage(): React.JSX.Element {
         <div className="login-branding">
           <div className="brand-content">
             <div className="brand-logo">
-              <svg 
-                width="64" 
-                height="64" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2"
-                className="logo-icon"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="9" cy="9" r="2"/>
-                <path d="M21 15.5c-.5-1-1.5-2-3-2s-2.5 1-3 2"/>
-                <path d="M9 17l3-3 3 3"/>
-              </svg>
+              <LogoIcon size={64} className="logo-icon" />
             </div>
             
-            <h1 className="brand-title">Magic Auth</h1>
-            <h2 className="brand-subtitle">Admin Dashboard</h2>
+            <div className="brand-header">
+              <h1 className="brand-title">Magic Auth</h1>
+              <h2 className="brand-subtitle">Admin Dashboard</h2>
+            </div>
             
             <div className="brand-description">
               <p>
@@ -35,53 +25,57 @@ export function LoginPage(): React.JSX.Element {
               
               <div className="feature-list">
                 <div className="feature-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20,6 9,17 4,12"/>
-                  </svg>
-                  <span>3-Tier User Management</span>
+                  <div className="feature-icon">
+                    <UserIcon size="small" />
+                  </div>
+                  <span className="feature-text">3-Tier User Management</span>
                 </div>
                 <div className="feature-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20,6 9,17 4,12"/>
-                  </svg>
-                  <span>Role-Based Access Control</span>
+                  <div className="feature-icon">
+                    <SecurityIcon size="small" />
+                  </div>
+                  <span className="feature-text">Role-Based Access Control</span>
                 </div>
                 <div className="feature-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20,6 9,17 4,12"/>
-                  </svg>
-                  <span>Project Management</span>
+                  <div className="feature-icon">
+                    <ProjectIcon size="small" />
+                  </div>
+                  <span className="feature-text">Project Management</span>
                 </div>
                 <div className="feature-item">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20,6 9,17 4,12"/>
-                  </svg>
-                  <span>System Health Monitoring</span>
+                  <div className="feature-icon">
+                    <HealthIcon size="small" />
+                  </div>
+                  <span className="feature-text">System Health Monitoring</span>
                 </div>
               </div>
             </div>
           </div>
           
           <div className="brand-footer">
-            <div className="user-types">
-              <h3>Access Levels</h3>
+              <h3 className="user-types-title">Access Levels</h3>
               <div className="user-type-list">
-                <div className="user-type-item root">
-                  <span className="user-type-badge">ROOT</span>
+                <div className="user-type-item user-type-root">
+                  <span className="login-user-badge badge-root">ROOT</span>
                   <span className="user-type-label">System Administrator</span>
                 </div>
-                <div className="user-type-item admin">
-                  <span className="user-type-badge">ADMIN</span>
+                <div className="user-type-item user-type-admin">
+                  <span className="login-user-badge badge-admin">ADMIN</span>
                   <span className="user-type-label">Project Manager</span>
                 </div>
               </div>
-            </div>
           </div>
         </div>
 
         {/* Right side - Login form */}
         <div className="login-form-section">
           <div className="form-container">
+            <div className="form-header-section">
+              <h2 className="form-main-title">Welcome Back</h2>
+              <p className="form-main-subtitle">
+                Sign in to access the Magic Auth Dashboard
+              </p>
+            </div>
             <LoginForm />
           </div>
         </div>

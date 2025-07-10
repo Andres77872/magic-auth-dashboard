@@ -54,20 +54,9 @@ export const GroupFilter: React.FC<GroupFilterProps> = ({
   const hasActiveFilters = searchTerm.length > 0;
 
   return (
-    <div className="group-filters" style={{ 
-      marginBottom: '1.5rem',
-      padding: '1rem',
-      backgroundColor: 'var(--color-background-secondary)',
-      borderRadius: '8px',
-      border: '1px solid var(--color-border)'
-    }}>
-      <div className="filter-row" style={{ 
-        display: 'flex', 
-        gap: '1rem', 
-        alignItems: 'center',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ flex: '1', minWidth: '250px' }}>
+    <div className="group-filters-container">
+      <div className="filter-row-flex">
+        <div className="search-field">
           <Input
             type="search"
             placeholder="Search groups by name or description..."
@@ -77,7 +66,7 @@ export const GroupFilter: React.FC<GroupFilterProps> = ({
           />
         </div>
         
-        <div style={{ minWidth: '200px' }}>
+        <div className="sort-field">
           <Select
             value={currentSortValue}
             onChange={(value) => {

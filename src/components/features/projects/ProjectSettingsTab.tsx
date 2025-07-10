@@ -168,16 +168,16 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
   }));
 
   return (
-    <div className="project-settings-tab">
+    <div className="project-settings-container">
       {error && (
         <Card className="error-card">
-          <div style={{ color: 'var(--color-error)' }}>
+          <div className="error-message">
             ⚠️ {error}
             <Button 
               variant="ghost" 
               size="small" 
               onClick={() => setError(null)}
-              style={{ float: 'right' }}
+              className="float-right"
             >
               ×
             </Button>
@@ -186,9 +186,9 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
       )}
 
       {/* Project Information */}
-      <Card className="settings-card">
-        <h3>Project Information</h3>
-        <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
+      <Card className="settings-section">
+        <h3 className="settings-section-title">Project Information</h3>
+        <p className="settings-section-description">
           Update the basic information about your project.
         </p>
         
@@ -205,13 +205,13 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
       </Card>
 
       {/* Project Management */}
-      <Card className="settings-card">
-        <h3>Project Management</h3>
-        <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
+      <Card className="settings-section">
+        <h3 className="settings-section-title">Project Management</h3>
+        <p className="settings-section-description">
           Transfer ownership or change project status.
         </p>
         
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        <div className="settings-actions">
           <Button
             variant="outline"
             onClick={openTransferModal}
@@ -230,9 +230,9 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
       </Card>
 
       {/* Danger Zone */}
-      <Card className="danger-card">
-        <h3 style={{ color: 'var(--color-error)' }}>⚠️ Danger Zone</h3>
-        <p style={{ color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
+      <Card className="danger-zone">
+        <h3 className="danger-zone-title">⚠️ Danger Zone</h3>
+        <p className="danger-zone-description">
           Irreversible and destructive actions. Please be cautious.
         </p>
         
@@ -270,23 +270,17 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
           title="Delete Project"
           size="medium"
         >
-          <div style={{ minWidth: '400px' }}>
-            <div style={{ 
-              padding: '16px', 
-              backgroundColor: 'var(--color-error-bg)', 
-              border: '1px solid var(--color-error)',
-              borderRadius: '4px',
-              marginBottom: '20px'
-            }}>
-              <p style={{ color: 'var(--color-error)', fontWeight: 'bold', margin: '0 0 8px 0' }}>
+          <div className="project-modal-content-wide">
+            <div className="alert-danger">
+              <p className="project-modal-error-message">
                 ⚠️ This action cannot be undone!
               </p>
-              <p style={{ color: 'var(--color-error)', margin: 0 }}>
+              <p className="project-modal-warning-message">
                 This will permanently delete the project "{project.project_name}" and all associated data.
               </p>
             </div>
             
-            <p style={{ marginBottom: '12px' }}>
+            <p className="project-modal-description">
               Please type <strong>{project.project_name}</strong> to confirm:
             </p>
             
@@ -294,10 +288,10 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
               placeholder="Enter project name"
               value={deleteConfirmation}
               onChange={(e) => setDeleteConfirmation(e.target.value)}
-              style={{ marginBottom: '20px' }}
+              className="project-modal-input"
             />
             
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div className="project-modal-actions">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -332,17 +326,17 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
           title="Transfer Project Ownership"
           size="medium"
         >
-          <div style={{ minWidth: '400px' }}>
-            <p style={{ marginBottom: '20px' }}>
+          <div className="project-modal-content-wide">
+            <p className="project-modal-description">
               Select a new owner for the project "{project.project_name}". Only admin users can own projects.
             </p>
             
             {isLoadingUsers ? (
-              <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div className="project-modal-loading-centered">
                 Loading users...
               </div>
             ) : (
-              <div style={{ marginBottom: '20px' }}>
+              <div className="project-modal-form-field">
                 <Select
                   placeholder="Select new owner..."
                   value={selectedNewOwner}
@@ -352,7 +346,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
               </div>
             )}
             
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div className="project-modal-actions">
               <Button
                 variant="outline"
                 onClick={() => {

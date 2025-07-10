@@ -59,7 +59,7 @@ export const GroupEditPage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="group-edit-page">
-        <div className="page-header" style={{ marginBottom: '2rem' }}>
+        <div className="page-header mb-8">
           <h1>Edit Group</h1>
         </div>
         <div>Loading group...</div>
@@ -70,10 +70,10 @@ export const GroupEditPage: React.FC = () => {
   if (error || !group) {
     return (
       <div className="group-edit-page">
-        <div className="page-header" style={{ marginBottom: '2rem' }}>
+        <div className="page-header mb-8">
           <h1>Edit Group</h1>
         </div>
-        <div style={{ color: 'var(--color-danger)' }}>
+        <div className="danger-text">
           {error || 'Group not found'}
         </div>
       </div>
@@ -82,7 +82,7 @@ export const GroupEditPage: React.FC = () => {
 
   return (
     <div className="group-edit-page">
-      <div className="page-header" style={{ marginBottom: '2rem' }}>
+      <div className="page-header mb-8">
         <h1>Edit Group</h1>
         <p>Update the group information and settings.</p>
       </div>

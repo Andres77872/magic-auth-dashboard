@@ -86,6 +86,15 @@
   --spacing-stack-xl: var(--spacing-8);
   --spacing-stack-2xl: var(--spacing-12);
 
+  /* === LEGACY SPACING ALIASES === */
+  /* For backward compatibility with existing CSS */
+  --spacing-xs: var(--spacing-1);
+  --spacing-sm: var(--spacing-2);
+  --spacing-md: var(--spacing-4);
+  --spacing-lg: var(--spacing-6);
+  --spacing-xl: var(--spacing-8);
+  --spacing-2xl: var(--spacing-12);
+
   /* === RESPONSIVE SPACING === */
   
   /* Mobile-optimized spacing values */

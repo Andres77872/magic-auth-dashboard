@@ -3,6 +3,7 @@ import { Input, Select, Button, Card, Modal } from '@/components/common';
 import { usePermissions, useUserType, useAuth } from '@/hooks';
 import { authService } from '@/services';
 import AssignProjectModal from './AssignProjectModal';
+import AssignGroupModal from './AssignGroupModal';
 import { WarningIcon, InfoIcon, ProjectIcon } from '@/components/icons';
 import type { UserFormData, UserFormErrors } from '@/types/user.types';
 import type { UserType, User } from '@/types/auth.types';
@@ -38,7 +39,8 @@ export function UserForm({
     password: '',
     confirmPassword: '',
     userType: (initialData?.user_type as UserType) || 'consumer',
-    assignedProjects: [],
+    assignedProjects: initialData?.projects?.map(p => p.project_hash) || [],
+    assignedGroup: initialData?.groups?.[0]?.group_hash || '',
   });
 
   const [errors, setErrors] = useState<UserFormErrors>({});
@@ -53,6 +55,7 @@ export function UserForm({
   
   // Project assignment modal
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const [showGroupModal, setShowGroupModal] = useState(false);
   
   // Email input ref for auto-focus
   const emailInputRef = React.useRef<HTMLInputElement>(null);
@@ -159,6 +162,13 @@ export function UserForm({
       newErrors.userType = 'User type is required';
     }
 
+    // Group assignment validation for consumer users
+    if (mode === 'create' && formData.userType === 'consumer') {
+      if (!formData.assignedGroup) {
+        newErrors.assignedGroup = 'Consumer users must be assigned to a user group';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -227,6 +237,22 @@ export function UserForm({
     setShowProjectModal(false);
   };
 
+  const handleGroupAssignment = (selectedGroup: string) => {
+    setFormData(prev => ({ ...prev, assignedGroup: selectedGroup }));
+    setShowGroupModal(false);
+  };
+
+  // Helper function to display current user data
+  const getCurrentUserGroups = () => {
+    if (!initialData?.groups) return [];
+    return initialData.groups;
+  };
+
+  const getCurrentUserProjects = () => {
+    if (!initialData?.projects) return [];
+    return initialData.projects;
+  };
+
   return (
     <>
       <Card title={mode === 'create' ? 'Create New User' : 'Edit User'} padding="large">
@@ -252,6 +278,43 @@ export function UserForm({
               </div>
               <div className="info-content">
                 <p>You are editing your own account. Some restrictions apply for security reasons.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Display current user data in edit mode */}
+          {mode === 'edit' && initialData && (
+            <div className="current-user-info">
+              <h4>Current User Information</h4>
+              <div className="user-data-summary">
+                <div className="data-item">
+                  <label>Groups:</label>
+                  <div className="current-groups">
+                    {getCurrentUserGroups().length > 0 ? (
+                      getCurrentUserGroups().map(group => (
+                        <span key={group.group_hash} className="group-tag">
+                          {group.group_name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="no-data">No groups assigned</span>
+                    )}
+                  </div>
+                </div>
+                <div className="data-item">
+                  <label>Projects:</label>
+                  <div className="current-projects">
+                    {getCurrentUserProjects().length > 0 ? (
+                      getCurrentUserProjects().map(project => (
+                        <span key={project.project_hash} className="project-tag">
+                          {project.project_name}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="no-data">No projects assigned</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -339,12 +402,14 @@ export function UserForm({
             )}
           </div>
 
-          {/* Admin Project Assignment */}
+          {/* Project Assignment for Admin and Consumer Users */}
           {formData.userType === 'admin' && (
-            <div className="admin-projects-section">
+            <div className="project-assignment-section">
               <h4>Project Assignment</h4>
               <p className="help-text">
-                Assign this admin user to specific projects they can manage.
+                {formData.userType === 'admin' 
+                  ? 'Assign this admin user to specific projects they can manage.'
+                  : 'Assign this user to a project. Consumer users need to be associated with at least one project.'}
               </p>
               
               <div className="project-assignment-controls">
@@ -357,6 +422,7 @@ export function UserForm({
                       <div className="project-tags">
                         {formData.assignedProjects.slice(0, 3).map((projectHash, index) => (
                           <span key={projectHash} className="project-tag">
+                            <ProjectIcon size="small" />
                             Project {index + 1}
                           </span>
                         ))}
@@ -368,7 +434,9 @@ export function UserForm({
                       </div>
                     </div>
                   ) : (
-                    <p className="no-projects">No projects assigned</p>
+                    <p className="no-projects">
+                                        No projects assigned
+                    </p>
                   )}
                 </div>
                 
@@ -379,9 +447,60 @@ export function UserForm({
                   disabled={isLoading}
                 >
                   <ProjectIcon size="small" />
-                  Assign Projects
+                  {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
                 </Button>
               </div>
+              
+              {mode === 'create' && (!formData.assignedProjects || formData.assignedProjects.length === 0) && (
+                <p className="field-warning-text">
+                  Admin users should be assigned to at least one project
+                </p>
+              )}
+              
+              {errors.assignedProjects && (
+                <p className="field-error-text" style={{ color: 'var(--color-error)', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: 500 }}>
+                  {errors.assignedProjects}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Group Assignment for Consumer Users */}
+          {formData.userType === 'consumer' && (
+            <div className="group-assignment-section">
+              <h4>User Group Assignment</h4>
+              <p className="help-text">Assign this consumer user to a user group. This is required.</p>
+
+              <div className="project-assignment-controls">
+                <div className="assigned-projects-display">
+                  {formData.assignedGroup ? (
+                    <div className="project-list-summary">
+                      <p className="project-count">1 group assigned</p>
+                      <div className="project-tags">
+                        <span className="project-tag">{formData.assignedGroup}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="no-projects">No group assigned</p>
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowGroupModal(true)}
+                  disabled={isLoading}
+                >
+                  <ProjectIcon size="small" />
+                  {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
+                </Button>
+              </div>
+
+              {errors.assignedGroup && (
+                <p className="field-error-text" style={{ color: 'var(--color-error)', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: 500 }}>
+                  {errors.assignedGroup}
+                </p>
+              )}
             </div>
           )}
 
@@ -469,7 +588,19 @@ export function UserForm({
         onConfirm={handleProjectAssignment}
         initialSelection={formData.assignedProjects || []}
         isLoading={isLoading}
-        userName={formData.username || 'Admin User'}
+        userName={formData.username || (formData.userType === 'admin' ? 'Admin User' : 'Consumer User')}
+        allowMultiple={true}
+        userType={formData.userType}
+      />
+
+      {/* Assign Group Modal */}
+      <AssignGroupModal
+        isOpen={showGroupModal}
+        onClose={() => setShowGroupModal(false)}
+        onConfirm={handleGroupAssignment}
+        initialSelection={formData.assignedGroup ? [formData.assignedGroup] : []}
+        isLoading={isLoading}
+        userName={formData.username || 'Consumer User'}
       />
     </>
   );

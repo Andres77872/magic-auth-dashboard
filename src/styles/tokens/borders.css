@@ -41,6 +41,15 @@
   --border-divider: var(--border-width-1) solid var(--color-border);
   --border-divider-strong: var(--border-width-1) solid var(--color-border-strong);
 
+  /* === LEGACY BORDER ALIASES === */
+  /* For backward compatibility with existing CSS */
+  --border-radius: var(--border-radius-md);
+  --radius-sm: var(--border-radius-sm);
+  --radius-md: var(--border-radius-md);
+  --radius-lg: var(--border-radius-lg);
+  --radius-xl: var(--border-radius-xl);
+  --radius-full: var(--border-radius-full);
+
   /* Component Border Radius */
   --border-radius-button: var(--border-radius-md);
   --border-radius-input: var(--border-radius-md);

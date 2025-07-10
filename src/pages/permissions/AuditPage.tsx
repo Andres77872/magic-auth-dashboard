@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useProjects } from '@/hooks/useProjects';
 import { AuditLogTable } from '@/components/features/rbac/AuditLogTable';
 import { AuditFilters } from '@/components/features/rbac/AuditFilters';
-import './AuditPage.css';
+import '@/styles/pages/AuditPage.css';
 
 export interface AuditFilters {
   action_type?: string;

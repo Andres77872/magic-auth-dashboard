@@ -45,7 +45,7 @@ export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({ group }) => 
           variant="outline"
           size="small"
           onClick={handleDelete}
-          style={{ color: 'var(--color-danger)' }}
+          className="actions-menu-item-danger"
         >
           Delete
         </Button>

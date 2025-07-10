@@ -39,10 +39,10 @@ import AssignmentsPage from '@/pages/permissions/AssignmentsPage';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
-  <div className="container" style={{ padding: 'var(--spacing-8)' }}>
+  <div className="container system-page">
     <h1>System Management</h1>
     <p>System management will be implemented in Phase 9</p>
-    <p style={{ color: 'var(--color-success)', fontWeight: 'bold' }}>
+    <p className="system-success-message">
       ✅ ROOT access successfully verified!
     </p>
   </div>
@@ -348,15 +348,7 @@ function App(): React.JSX.Element {
               <Route
                 path="*"
                 element={
-                  <div className="not-found" style={{ 
-                    padding: 'var(--spacing-8)', 
-                    textAlign: 'center',
-                    minHeight: '100vh',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}>
+                  <div className="not-found">
                     <h1>Page Not Found</h1>
                     <p>The page you're looking for doesn't exist.</p>
                   </div>

@@ -3,13 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useUserType } from '@/hooks';
 import { ChevronIcon, UserIcon, SettingsIcon, LogoutIcon } from '@/components/icons';
 import { ROUTES } from '@/utils/routes';
+import { getUserTypeBadgeClass } from '@/utils/userTypeStyles';
 
 export function UserMenu(): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
-  const { getUserTypeLabel, getUserTypeBadgeColor } = useUserType();
+  const { getUserTypeLabel, userType } = useUserType();
   const navigate = useNavigate();
 
   // Close menu when clicking outside
@@ -70,7 +71,7 @@ export function UserMenu(): React.JSX.Element {
         aria-haspopup="true"
         aria-label="User menu"
       >
-        <div className="user-avatar">
+        <div className="navigation-user-avatar">
           <span className="avatar-text">
             {user.username.charAt(0).toUpperCase()}
           </span>
@@ -88,7 +89,7 @@ export function UserMenu(): React.JSX.Element {
           {/* User info header */}
           <div className="user-menu-header">
             <div className="user-info-detailed">
-              <div className="user-avatar-large">
+              <div className="navigation-user-avatar-large">
                 <span className="avatar-text-large">
                   {user.username.charAt(0).toUpperCase()}
                 </span>
@@ -97,8 +98,7 @@ export function UserMenu(): React.JSX.Element {
                 <div className="user-name-large">{user.username}</div>
                 <div className="user-email">{user.email}</div>
                 <div 
-                  className="user-type-badge"
-                  style={{ color: getUserTypeBadgeColor() }}
+                  className={`nav-user-type-badge ${getUserTypeBadgeClass(userType || undefined)}`}
                 >
                   {getUserTypeLabel()}
                 </div>

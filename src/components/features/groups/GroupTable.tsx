@@ -35,11 +35,7 @@ export const GroupTable: React.FC<GroupTableProps> = ({
         <div className="group-name-cell">
           <strong>{group.group_name}</strong>
           {group.description && (
-            <div className="group-description" style={{ 
-              fontSize: '0.875rem', 
-              color: 'var(--color-text-secondary)',
-              marginTop: '4px'
-            }}>
+            <div className="group-description">
               {group.description}
             </div>
           )}

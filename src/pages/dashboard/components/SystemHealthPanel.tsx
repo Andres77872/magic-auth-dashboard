@@ -115,11 +115,14 @@ export function SystemHealthPanel({
           <div className="overall-status">
             <div className="status-indicator">
               <div 
-                className="status-light"
-                style={{ backgroundColor: getOverallStatusColor(health.status) }}
+                className="status-light status-light-dynamic"
+                style={{ '--dynamic-status-bg': getOverallStatusColor(health.status) } as React.CSSProperties}
               />
               <span className="status-label">
-                System Status: <strong style={{ color: getOverallStatusColor(health.status) }}>
+                System Status: <strong 
+                  className="status-color-dynamic"
+                  style={{ '--dynamic-status-color': getOverallStatusColor(health.status) } as React.CSSProperties}
+                >
                   {health.status?.toUpperCase() || 'UNKNOWN'}
                 </strong>
               </span>

@@ -5,7 +5,7 @@ import { useUserRoleAssignments } from '@/hooks/useUserRoleAssignments';
 import { useEffectivePermissions } from '@/hooks/useEffectivePermissions';
 import { useRoles } from '@/hooks/useRoles';
 import { useUsers } from '@/hooks/useUsers';
-import './AssignmentsPage.css';
+import '@/styles/pages/AssignmentsPage.css';
 
 interface AssignmentView {
   id: string;

@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Badge, LoadingSpinner } from '@/components/common';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import type { UserType, UserProfileResponse } from '@/types/auth.types';
+import type { UserType, UserProfileResponse, UserGroupAssignment, UserProjectAccess } from '@/types/auth.types';
+import '@/styles/pages/user-profile.css';
+import '@/styles/pages/user-profile.css';
 
 export function UserProfilePage(): React.JSX.Element {
   const [profileData, setProfileData] = useState<UserProfileResponse | null>(null);
@@ -28,8 +30,30 @@ export function UserProfilePage(): React.JSX.Element {
 
       const response = await userService.getUserByHash(hash);
 
-      if (response.success && (response as UserProfileResponse).user) {
-        setProfileData(response as UserProfileResponse);
+      if (response.success && response.user) {
+        // The response already matches UserProfileResponse structure
+        // Calculate statistics from user data if not provided
+        const userGroups = response.user.groups || [];
+        const userProjects = response.user.projects || [];
+        const allPermissions = userProjects.flatMap(project => project.effective_permissions || []);
+        const accountAgeMs = new Date().getTime() - new Date(response.user.created_at).getTime();
+        const accountAgeDays = Math.floor(accountAgeMs / (1000 * 60 * 60 * 24));
+
+        // Use statistics from API if available, otherwise calculate
+        const calculatedStatistics = {
+          total_groups: userGroups.length,
+          total_accessible_projects: userProjects.length,
+          total_permissions: allPermissions.length,
+          account_age_days: accountAgeDays,
+        };
+
+        const finalResponse: UserProfileResponse = {
+          ...response,
+          statistics: response.statistics || calculatedStatistics,
+          permissions: response.permissions || allPermissions,
+        };
+
+        setProfileData(finalResponse);
       } else {
         setError(response.message || 'Failed to fetch user data');
       }
@@ -89,7 +113,7 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="loading-container">
+          <div className="user-profile-loading">
             <LoadingSpinner size="large" message="Loading user profile..." />
           </div>
         </div>
@@ -112,7 +136,7 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="error-state">
+          <div className="user-profile-error-state">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
               <line x1="15" y1="9" x2="9" y2="15"/>
@@ -144,7 +168,7 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="error-state">
+          <div className="user-profile-error-state">
             <h3>User Not Found</h3>
             <p>The user you're looking for doesn't exist or has been deleted.</p>
           </div>
@@ -153,7 +177,18 @@ export function UserProfilePage(): React.JSX.Element {
     );
   }
 
-  const { user, permissions, groups, accessible_projects, statistics } = profileData;
+  const { user, permissions, statistics } = profileData;
+  const userGroups = user.groups || [];
+  const userProjects = user.projects || [];
+
+  // Provide default statistics when API returns null to avoid runtime errors
+  const defaultStatistics = {
+    total_groups: 0,
+    total_accessible_projects: 0,
+    total_permissions: 0,
+    account_age_days: 0,
+  };
+  const stats = statistics ?? defaultStatistics;
 
   return (
     <div className="user-profile-page">
@@ -184,8 +219,8 @@ export function UserProfilePage(): React.JSX.Element {
           {/* User Information Card */}
           <Card title="User Information" padding="large">
             <div className="user-profile-info">
-              <div className="user-avatar-section">
-                <div className="user-avatar-large">
+                          <div className="profile-user-avatar-section">
+              <div className="profile-user-avatar-large">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="avatar-info">
@@ -202,7 +237,7 @@ export function UserProfilePage(): React.JSX.Element {
               <div className="user-details-grid">
                 <div className="detail-item">
                   <label>Email Address</label>
-                  <span>{user.email}</span>
+                  <span>{user.email || 'Not provided'}</span>
                 </div>
 
                 <div className="detail-item">
@@ -229,10 +264,25 @@ export function UserProfilePage(): React.JSX.Element {
                   </div>
                 )}
 
+                {user.last_login && (
+                  <div className="detail-item">
+                    <label>Last Login</label>
+                    <span>{formatDate(user.last_login)}</span>
+                  </div>
+                )}
+
                 <div className="detail-item">
                   <label>Account Age</label>
-                  <span>{statistics.account_age_days} days</span>
+                  <span>{stats.account_age_days} days</span>
                 </div>
+
+                {/* User Type Info Error */}
+                {user.user_type_info?.error && (
+                  <div className="detail-item">
+                    <label>User Type Error</label>
+                    <span className="error-text">{user.user_type_info.error}</span>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -241,30 +291,69 @@ export function UserProfilePage(): React.JSX.Element {
           <Card title="User Statistics" padding="large">
             <div className="statistics-grid">
               <div className="statistic-item">
-                <div className="statistic-value">{statistics.total_accessible_projects}</div>
+                <div className="statistic-value">{stats.total_accessible_projects}</div>
                 <div className="statistic-label">Projects</div>
               </div>
               <div className="statistic-item">
-                <div className="statistic-value">{statistics.total_groups}</div>
+                <div className="statistic-value">{stats.total_groups}</div>
                 <div className="statistic-label">Groups</div>
               </div>
               <div className="statistic-item">
-                <div className="statistic-value">{statistics.total_permissions}</div>
+                <div className="statistic-value">{stats.total_permissions}</div>
                 <div className="statistic-label">Permissions</div>
               </div>
             </div>
           </Card>
 
           {/* Projects Section */}
-          <Card title={`Assigned Projects (${accessible_projects.length})`} padding="large">
-            {accessible_projects.length > 0 ? (
+          <Card title={`Assigned Projects (${userProjects.length})`} padding="large">
+            {userProjects.length > 0 ? (
               <div className="projects-list">
-                {accessible_projects.map((_, index) => (
-                  <div key={index} className="project-item">
-                    {/* Display project information when structure is known */}
-                    <div className="project-placeholder">
-                      <p>Project details will be displayed here once available.</p>
+                {userProjects.map((project, index) => (
+                  <div key={project.project_hash} className="project-item">
+                    <div className="project-header">
+                      <h4>{project.project_name}</h4>
+                      <Badge variant="info" size="small">
+                        {project.effective_permissions.length} permissions
+                      </Badge>
                     </div>
+                    {project.project_description && (
+                      <p className="project-description">{project.project_description}</p>
+                    )}
+                    <div className="project-meta">
+                      <span className="project-hash">ID: {project.project_hash}</span>
+                    </div>
+                    
+                    {/* Access Groups */}
+                    {project.access_groups && project.access_groups.length > 0 && (
+                      <div className="project-access-groups">
+                        <h5>Access Groups:</h5>
+                        <div className="access-groups-list">
+                          {project.access_groups.map((group, groupIndex) => (
+                            <div key={group.group_hash} className="access-group">
+                              <span className="group-name">{group.group_name}</span>
+                              <span className="group-permissions">
+                                {group.permissions.length} permissions
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Effective Permissions */}
+                    {project.effective_permissions && project.effective_permissions.length > 0 && (
+                      <div className="project-permissions">
+                        <h5>Effective Permissions:</h5>
+                        <div className="permissions-list">
+                          {project.effective_permissions.map((permission, permIndex) => (
+                            <Badge key={permIndex} variant="secondary" size="small">
+                              {permission}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -280,14 +369,30 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Groups Section */}
-          <Card title={`User Groups (${groups.length})`} padding="large">
-            {groups.length > 0 ? (
+          <Card title={`User Groups (${userGroups.length})`} padding="large">
+            {userGroups.length > 0 ? (
               <div className="groups-list">
-                {groups.map((_, index) => (
-                  <div key={index} className="group-item">
-                    {/* Display group information when structure is known */}
-                    <div className="group-placeholder">
-                      <p>Group details will be displayed here once available.</p>
+                {userGroups.map((group, index) => (
+                  <div key={group.group_hash} className="group-item">
+                    <div className="group-header">
+                      <h4>{group.group_name}</h4>
+                      <Badge variant="info" size="small">
+                        {group.projects_count} projects
+                      </Badge>
+                    </div>
+                    {group.group_description && (
+                      <p className="group-description">{group.group_description}</p>
+                    )}
+                    <div className="group-meta">
+                      <span className="group-hash">ID: {group.group_hash}</span>
+                      <span className="group-assigned">
+                        Assigned: {formatDate(group.assigned_at)}
+                      </span>
+                      {group.assigned_by && (
+                        <span className="group-assigned-by">
+                          By: {group.assigned_by}
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -307,7 +412,7 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Permissions Section */}
-          <Card title={`Permissions (${permissions.length})`} padding="large">
+          <Card title={`All Permissions (${permissions.length})`} padding="large">
             {permissions.length > 0 ? (
               <div className="permissions-list">
                 {permissions.map((permission, index) => (

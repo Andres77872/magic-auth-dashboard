@@ -126,7 +126,7 @@
   background-color: var(--color-gray-100);
 }
 
-.user-avatar {
+.navigation-user-avatar {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -177,7 +177,7 @@
   gap: var(--spacing-3);
 }
 
-.user-avatar-large {
+.navigation-user-avatar-large {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -210,11 +210,13 @@
   margin-bottom: var(--spacing-1);
 }
 
-.user-type-badge {
+.nav-user-type-badge {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-sm);
 }
 
 .user-menu-items {

@@ -38,30 +38,67 @@ export interface RegisterResponse {
   project: Project;
 }
 
+// User Type Info for enhanced user details - Updated to handle API errors
+export interface UserTypeInfo {
+  user_type: UserType | null;
+  error?: string; // Handle database errors like missing tables
+}
+
+// User Group assignment information
+export interface UserGroupAssignment {
+  group_hash: string;
+  group_name: string;
+  group_description: string;
+  assigned_at: string;
+  assigned_by: string;
+  projects_count: number;
+}
+
+// User Project access information
+export interface UserProjectAccess {
+  project_hash: string;
+  project_name: string;
+  project_description: string;
+  effective_permissions: string[];
+  access_groups: {
+    group_hash: string;
+    group_name: string;
+    permissions: string[];
+  }[];
+}
+
+// User Statistics
+export interface UserStatistics {
+  total_groups: number;
+  total_accessible_projects: number;
+  total_permissions: number;
+  account_age_days: number;
+}
+
+// Enhanced User interface to match API response
 export interface User {
   user_hash: string;
   username: string;
   email: string;
   user_type: UserType;
-  is_active: boolean;
+  user_type_info?: UserTypeInfo;
   created_at: string;
-  updated_at?: string;
+  updated_at?: string | null;
+  last_login?: string | null;
+  is_active: boolean;
+  groups?: UserGroupAssignment[];
+  projects?: UserProjectAccess[];
 }
 
-// User Profile Response Interface
+// User Profile Response Interface - Updated to match actual API response
 export interface UserProfileResponse {
   success: boolean;
   message: string | null;
   user: User;
   permissions: string[];
-  groups: any[]; // Update with proper type when available
-  accessible_projects: any[]; // Update with proper type when available
-  statistics: {
-    total_groups: number;
-    total_accessible_projects: number;
-    total_permissions: number;
-    account_age_days: number;
-  };
+  groups: any[]; // Legacy field, usually empty
+  accessible_projects: any[]; // Legacy field, usually empty
+  statistics: UserStatistics | null;
 }
 
 export interface Project {

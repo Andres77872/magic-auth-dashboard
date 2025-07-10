@@ -11,6 +11,10 @@
   overflow-y: auto;
 }
 
+.table-container[data-max-height] {
+  max-height: var(--table-max-height, 400px);
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -28,6 +32,10 @@
   font-weight: var(--font-weight-medium);
   color: var(--color-gray-700);
   border: none;
+}
+
+.table-header-cell[data-width] {
+  width: var(--column-width);
 }
 
 .table-sortable {

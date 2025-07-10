@@ -5,7 +5,7 @@ import { ProjectForm } from '@/components/features/projects';
 import { projectService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { ProjectDetails, ProjectFormData } from '@/types/project.types';
-import './ProjectCreatePage.css'; // Reuse existing styles
+import '@/styles/pages/ProjectCreatePage.css'; // Reuse existing styles
 
 export const ProjectEditPage: React.FC = () => {
   const { projectHash } = useParams<{ projectHash: string }>();

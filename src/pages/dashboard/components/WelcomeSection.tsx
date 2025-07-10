@@ -1,9 +1,10 @@
 import React from 'react';
 import { useAuth, useUserType } from '@/hooks';
+import { getUserTypeBadgeBackgroundClass } from '@/utils/userTypeStyles';
 
 export function WelcomeSection(): React.JSX.Element {
   const { user } = useAuth();
-  const { getUserTypeLabel, getUserTypeBadgeColor } = useUserType();
+  const { getUserTypeLabel, userType } = useUserType();
 
   const getGreeting = (): string => {
     const hour = new Date().getHours();
@@ -37,11 +38,7 @@ export function WelcomeSection(): React.JSX.Element {
         <div className="welcome-info">
           <div className="user-badge-container">
             <span 
-              className="user-type-badge"
-              style={{ 
-                backgroundColor: getUserTypeBadgeColor(),
-                color: 'white'
-              }}
+              className={`dashboard-welcome-badge ${getUserTypeBadgeBackgroundClass(userType || undefined)}`}
             >
               {getUserTypeLabel()}
             </span>

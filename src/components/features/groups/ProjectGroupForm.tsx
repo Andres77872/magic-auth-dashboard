@@ -146,7 +146,7 @@ export function ProjectGroupForm({
         <h3>Permissions</h3>
         
         {errors.permissions && (
-          <div className="form-error" style={{ marginBottom: '1rem' }}>
+          <div className="form-error mb-4">
             {errors.permissions}
           </div>
         )}
@@ -200,10 +200,9 @@ export function ProjectGroupForm({
                 {permission}
                 <button
                   type="button"
-                  className="permission-remove"
+                  className="permission-remove-btn"
                   onClick={() => handleRemovePermission(permission)}
                   disabled={isLoading}
-                  style={{ marginLeft: '8px', fontSize: '12px' }}
                 >
                   ×
                 </button>

@@ -87,6 +87,9 @@
   --color-primary-700: var(--color-blue-700);
   --color-primary-800: var(--color-blue-800);
   --color-primary-900: var(--color-blue-900);
+  --color-primary: var(--color-primary-500);
+  --color-primary-background: var(--color-primary-50);
+  --color-primary-border: var(--color-primary-200);
 
   /* Success Colors */
   --color-success: var(--color-green-500);
@@ -102,6 +105,9 @@
   --color-error: var(--color-red-500);
   --color-error-light: var(--color-red-100);
   --color-error-dark: var(--color-red-700);
+  --color-error-background: var(--color-red-50);
+  --color-error-border: var(--color-red-200);
+  --color-danger: var(--color-red-500);
 
   /* Info Colors */
   --color-info: var(--color-cyan-500);
@@ -114,9 +120,57 @@
   --color-background: white;
   --color-background-subtle: var(--color-gray-50);
   --color-background-muted: var(--color-gray-100);
+  
+  /* Surface Colors */
+  --color-surface: white;
+  --color-surface-hover: var(--color-gray-50);
+  --color-surface-secondary: var(--color-gray-50);
+  --color-surface-tertiary: var(--color-gray-100);
+
+  /* Primary Background Colors */
+  --color-primary-bg: var(--color-primary-50);
+  --color-primary-hover: var(--color-primary-600);
+
+  /* Info Background Colors */
+  --color-info-bg: var(--color-cyan-50);
+  --color-info-border: var(--color-cyan-200);
+
+  /* Warning Background Colors */
+  --color-warning-bg: var(--color-yellow-50);
+  --color-warning-border: var(--color-yellow-200);
+
+  /* Error Background Colors */
+  --color-error-bg: var(--color-red-50);
+
+  /* Success Background Colors */
+  --color-success-50: var(--color-green-50);
+  --color-success-100: var(--color-green-100);
+  --color-success-600: var(--color-green-600);
+  --color-success-700: var(--color-green-700);
+
+  /* Warning Color Scale */
+  --color-warning-50: var(--color-yellow-50);
+  --color-warning-100: var(--color-yellow-100);
+  --color-warning-600: var(--color-yellow-600);
+  --color-warning-700: var(--color-yellow-700);
+
+  /* Error Color Scale */
+  --color-error-50: var(--color-red-50);
+  --color-error-100: var(--color-red-100);
+  --color-error-600: var(--color-red-600);
+  --color-error-700: var(--color-red-700);
+
+  /* Info Color Scale */
+  --color-info-50: var(--color-cyan-50);
+  --color-info-100: var(--color-cyan-100);
+  --color-info-600: var(--color-cyan-600);
+  --color-info-700: var(--color-cyan-700);
 
   /* Text Colors */
   --color-text: var(--color-gray-900);
+  --color-text-primary: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+  --color-text-tertiary: var(--color-gray-500);
   --color-text-muted: var(--color-gray-600);
   --color-text-subtle: var(--color-gray-500);
 
@@ -124,6 +178,7 @@
   --color-border: var(--color-gray-200);
   --color-border-muted: var(--color-gray-100);
   --color-border-strong: var(--color-gray-300);
+  --color-border-hover: var(--color-gray-300);
 
   /* === STATE COLORS === */
   

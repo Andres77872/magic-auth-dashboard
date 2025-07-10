@@ -4,6 +4,7 @@ import { UserForm } from '@/components/features/users/UserForm';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { UserFormData } from '@/types/user.types';
+import '@/styles/pages/user-form.css';
 
 export function UserCreatePage(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,27 +28,29 @@ export function UserCreatePage(): React.JSX.Element {
           });
           break;
         case 'admin':
+          // Admin users can be assigned to multiple projects
           response = await userService.createAdminUser({
             username: formData.username,
             password: formData.password,
             email: formData.email,
-            assigned_project_ids: [], // TODO: Implement project assignment
+            assigned_project_ids: [], // TODO: Convert project hashes to IDs if needed
           });
           break;
         case 'consumer':
         default:
-          // Create consumer user without project_hash (now optional)
-          const consumerData: any = {
+          // Validate that a group is assigned
+          if (!formData.assignedGroup) {
+            setError('Consumer users must be assigned to a user group');
+            setIsLoading(false);
+            return;
+          }
+          
+          const consumerData = {
             username: formData.username,
             password: formData.password,
             email: formData.email,
+            user_group_hash: formData.assignedGroup,
           };
-          
-          // Only include project_hash if it's available from context
-          // TODO: Add logic to get project_hash from current context if needed
-          // if (currentProjectHash) {
-          //   consumerData.project_hash = currentProjectHash;
-          // }
           
           response = await userService.createConsumerUser(consumerData);
           break;
@@ -78,9 +81,9 @@ export function UserCreatePage(): React.JSX.Element {
 
   return (
     <div className="user-create-page">
-      <div className="page-header">
-        <div className="page-title-section">
-          <button onClick={handleGoBack} className="back-button">
+      <div className="user-form-page-header">
+        <div className="user-form-title-section">
+          <button onClick={handleGoBack} className="user-form-back-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15,18 9,12 15,6"/>
             </svg>
@@ -91,14 +94,14 @@ export function UserCreatePage(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="page-content">
+      <div className="user-form-content">
         {error && (
-          <div className="error-banner">
-            <div className="error-content">
-              <span className="error-message">{error}</span>
+          <div className="user-form-error-banner">
+            <div className="user-form-error-content">
+              <span className="user-form-error-message">{error}</span>
               <button 
                 onClick={() => setError(null)}
-                className="error-dismiss"
+                className="user-form-error-dismiss"
               >
                 ×
               </button>

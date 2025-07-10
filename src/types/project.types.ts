@@ -1,4 +1,5 @@
 import type { ApiResponse, PaginatedResponse } from './api.types';
+import type { UserGroup } from './group.types';
 
 export interface ProjectDetails {
   project_hash: string;
@@ -109,5 +110,28 @@ export interface ProjectMembersResponse extends ApiResponse {
     admin_users: number;
     consumer_users: number;
     active_members: number;
+  };
+}
+
+// Project Group interfaces (for user groups assigned to projects)
+export interface ProjectGroupsResponse extends ApiResponse {
+  user_groups: UserGroup[];
+  pagination: {
+    limit: number;
+    offset: number;
+    total: number;
+    has_more: boolean;
+  };
+}
+
+export interface AssignGroupToProjectRequest {
+  group_hash: string;
+}
+
+export interface AssignGroupToProjectResponse extends ApiResponse {
+  assignment: {
+    group_hash: string;
+    project_hash: string;
+    assigned_at: string;
   };
 } 

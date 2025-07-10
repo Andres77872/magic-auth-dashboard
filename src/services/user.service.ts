@@ -10,7 +10,7 @@ import type {
   UserListResponse,
   AdminUserListResponse
 } from '@/types/user.types';
-import type { User } from '@/types/auth.types';
+import type { User, UserProfileResponse } from '@/types/auth.types';
 import type { ApiResponse } from '@/types/api.types';
 import type { RegisterRequest, RegisterResponse } from '@/types/auth.types';
 
@@ -54,7 +54,7 @@ class UserService {
       }
     });
     
-    const response = await apiClient.get<UserListResponse>('/users', cleanParams);
+    const response = await apiClient.get<UserListResponse>('/users/list', cleanParams);
     return response as UserListResponse;
   }
 
@@ -72,9 +72,10 @@ class UserService {
     return response as AdminUserListResponse;
   }
 
-  // Get user by hash
-  async getUserByHash(userHash: string): Promise<ApiResponse<User>> {
-    return await apiClient.get<User>(`/users/${userHash}`);
+  // Get user by hash - Updated to handle new API response structure
+  async getUserByHash(userHash: string): Promise<UserProfileResponse> {
+    const response = await apiClient.get<UserProfileResponse>(`/users/${userHash}`);
+    return response as UserProfileResponse;
   }
 
   // Update user

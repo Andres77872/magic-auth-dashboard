@@ -79,32 +79,17 @@ export const GroupForm: React.FC<GroupFormProps> = ({
     >
       <form onSubmit={handleSubmit} className="group-form">
         {errors.general && (
-          <div 
-            className="error-banner" 
-            style={{ 
-              padding: '0.75rem',
-              marginBottom: '1rem',
-              backgroundColor: 'var(--color-danger-light)',
-              border: '1px solid var(--color-danger)',
-              borderRadius: '4px',
-              color: 'var(--color-danger-dark)'
-            }}
-          >
+          <div className="error-banner">
             {errors.general}
           </div>
         )}
 
-        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+        <div className="group-form-group-spaced">
           <label 
             htmlFor="group_name"
-            style={{ 
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontSize: '0.875rem',
-              fontWeight: '500'
-            }}
+            className="group-form-label"
           >
-            Group Name <span style={{ color: 'var(--color-danger)' }}>*</span>
+            Group Name <span className="text-error">*</span>
           </label>
           <Input
             id="group_name"
@@ -115,27 +100,15 @@ export const GroupForm: React.FC<GroupFormProps> = ({
             error={errors.group_name}
             required
           />
-          <div 
-            className="field-hint"
-            style={{ 
-              fontSize: '0.75rem',
-              color: 'var(--color-text-secondary)',
-              marginTop: '0.25rem'
-            }}
-          >
+          <div className="field-hint">
             Choose a descriptive name for your group (3-50 characters)
           </div>
         </div>
 
-        <div className="form-group" style={{ marginBottom: '2rem' }}>
+        <div className="group-form-group-description">
           <label 
             htmlFor="description"
-            style={{ 
-              display: 'block',
-              marginBottom: '0.5rem',
-              fontSize: '0.875rem',
-              fontWeight: '500'
-            }}
+            className="group-form-label"
           >
             Description
           </label>
@@ -147,23 +120,12 @@ export const GroupForm: React.FC<GroupFormProps> = ({
             rows={3}
             error={errors.description}
           />
-          <div 
-            className="field-hint"
-            style={{ 
-              fontSize: '0.75rem',
-              color: 'var(--color-text-secondary)',
-              marginTop: '0.25rem'
-            }}
-          >
+          <div className="field-hint">
             Optional description to help others understand this group's purpose
           </div>
         </div>
 
-        <div className="form-actions" style={{ 
-          display: 'flex', 
-          gap: '1rem', 
-          justifyContent: 'flex-end' 
-        }}>
+        <div className="form-actions">
           <Button
             type="button"
             variant="outline"

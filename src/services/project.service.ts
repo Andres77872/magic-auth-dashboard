@@ -6,7 +6,10 @@ import type {
   ProjectListParams,
   ProjectListResponse,
   ProjectDetailsResponse,
-  ProjectMembersResponse
+  ProjectMembersResponse,
+  ProjectGroupsResponse,
+  AssignGroupToProjectRequest,
+  AssignGroupToProjectResponse
 } from '@/types/project.types';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
 
@@ -118,6 +121,43 @@ class ProjectService {
     archived: boolean
   ): Promise<ApiResponse<ProjectDetails>> {
     return await apiClient.patch<ProjectDetails>(`/projects/${projectHash}/archive`, { archived });
+  }
+
+  // Get project groups (user groups assigned to project)
+  async getProjectGroups(
+    projectHash: string, 
+    params: PaginationParams = {}
+  ): Promise<ProjectGroupsResponse> {
+    // Filter out undefined values from params
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    const response = await apiClient.get<ProjectGroupsResponse>(`/projects/${projectHash}/groups`, cleanParams);
+    return response as ProjectGroupsResponse;
+  }
+
+  // Assign group to project
+  async assignGroupToProject(
+    projectHash: string, 
+    groupHash: string
+  ): Promise<AssignGroupToProjectResponse> {
+    const response = await apiClient.post<AssignGroupToProjectResponse>(
+      `/projects/${projectHash}/groups`, 
+      { group_hash: groupHash }
+    );
+    return response as AssignGroupToProjectResponse;
+  }
+
+  // Remove group from project
+  async removeGroupFromProject(
+    projectHash: string, 
+    groupHash: string
+  ): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(`/projects/${projectHash}/groups/${groupHash}`);
   }
 }
 

@@ -6,7 +6,7 @@ import { PermissionTable } from '@/components/features/rbac/PermissionTable';
 import { PermissionForm } from '@/components/features/rbac/PermissionForm';
 import { PermissionCategories } from '@/components/features/rbac/PermissionCategories';
 import type { Permission } from '@/types/rbac.types';
-import './PermissionsPage.css';
+import '@/styles/pages/PermissionsPage.css';
 
 export const PermissionsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();

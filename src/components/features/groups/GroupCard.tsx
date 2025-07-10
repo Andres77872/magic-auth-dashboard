@@ -35,29 +35,17 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
         </Button>
       }
     >
-      <div className="group-stats" style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: '0.75rem' 
-      }}>
-        <div className="stat-item" style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center' 
-        }}>
+      <div className="group-stats">
+        <div className="stat-item">
           <span className="stat-label">Members</span>
           <Badge variant="secondary">
             {group.member_count || 0}
           </Badge>
         </div>
         
-        <div className="stat-item" style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center' 
-        }}>
+        <div className="stat-item">
           <span className="stat-label">Created</span>
-          <span className="stat-value" style={{ fontSize: '0.875rem' }}>
+          <span className="stat-value text-sm">
             {formatDate(group.created_at)}
           </span>
         </div>

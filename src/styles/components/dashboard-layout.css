@@ -251,7 +251,7 @@
   background-color: var(--color-gray-100);
 }
 
-.user-avatar {
+.dashboard-user-avatar {
   width: 32px;
   height: 32px;
   background-color: var(--color-gray-200);
@@ -269,10 +269,14 @@
   text-align: left;
 }
 
-.user-type-badge {
+.dashboard-user-badge {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   line-height: 1;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .dropdown-arrow {
@@ -383,94 +387,7 @@
   padding: 0 var(--spacing-4);
 }
 
-.nav-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-1);
-}
 
-.nav-item {
-  position: relative;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-3);
-  border-radius: var(--border-radius-md);
-  text-decoration: none;
-  color: var(--color-gray-600);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  transition: all var(--transition-fast);
-  position: relative;
-}
-
-.nav-link:hover {
-  background-color: var(--color-gray-100);
-  color: var(--color-gray-900);
-}
-
-.nav-link.active {
-  background-color: var(--color-primary-100);
-  color: var(--color-primary-700);
-}
-
-.nav-icon {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-label {
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.nav-indicator {
-  position: absolute;
-  left: -var(--spacing-4);
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 24px;
-  background-color: var(--color-primary-600);
-  border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
-}
-
-.nav-section {
-  margin-top: var(--spacing-6);
-  border-top: 1px solid var(--color-gray-100);
-  padding-top: var(--spacing-6);
-}
-
-.nav-section-title {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-gray-500);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--spacing-3);
-  padding: 0 var(--spacing-3);
-}
-
-.nav-quick-actions .nav-link {
-  font-size: var(--font-size-xs);
-  padding: var(--spacing-2) var(--spacing-3);
-}
-
-.nav-quick-action svg {
-  width: 16px;
-  height: 16px;
-}
 
 /* === MAIN CONTENT STYLES === */
 .main-content {

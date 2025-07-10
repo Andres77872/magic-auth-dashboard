@@ -275,7 +275,7 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
             )}
           </div>
 
-          <div className="modal-actions">
+          <div className="user-modal-actions">
             <Button
               variant="outline"
               onClick={handleCancelTypeChange}
