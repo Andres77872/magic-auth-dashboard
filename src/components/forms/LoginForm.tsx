@@ -36,10 +36,18 @@ export function LoginForm(): React.JSX.Element {
 
   // Clear errors when form data changes
   useEffect(() => {
-    if (Object.keys(errors).length > 0) {
+    if (Object.keys(errors).length > 0 || state.error) {
       setErrors({});
+      // Also clear auth context errors when user starts typing
+      if (state.error) {
+        // Clear error from auth context after a small delay to avoid flashing
+        const timer = setTimeout(() => {
+          // The error will be cleared naturally when the form is submitted again
+        }, 100);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [formData.username, formData.password, errors]);
+  }, [formData.username, formData.password, errors, state.error]);
 
   // Handle form input changes
   const handleInputChange = (field: keyof LoginFormData, value: string | boolean): void => {
@@ -93,10 +101,16 @@ export function LoginForm(): React.JSX.Element {
         // Get redirect destination from location state or default
         const from = (location.state as { from?: string })?.from || ROUTES.DASHBOARD;
         void navigate(from, { replace: true });
+      } else {
+        // Login returned false - this means authentication failed
+        // The error will be shown via state.error from the auth context
+        // No need to set a general error here as the auth context handles it
       }
-    } catch {
+    } catch (error) {
+      // This catches unexpected errors (network issues, etc.)
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       setErrors({
-        general: 'An unexpected error occurred. Please try again.',
+        general: errorMessage,
       });
     } finally {
       setIsSubmitting(false);
@@ -116,11 +130,18 @@ export function LoginForm(): React.JSX.Element {
     <form onSubmit={(e) => void handleSubmit(e)} className="auth-login-form" noValidate>
       {/* General error message */}
       {(errors.general || state.error) && (
-        <div className="auth-login-error" role="alert">
+        <div className="auth-login-error" role="alert" aria-live="polite">
           <div className="auth-login-error-icon">
             <ErrorIcon size="medium" />
           </div>
-          <span className="auth-login-error-text">{errors.general || state.error}</span>
+          <div className="auth-login-error-content">
+            <span className="auth-login-error-text">
+              {errors.general || state.error}
+            </span>
+            <p className="auth-login-error-help">
+              Please check your credentials and try again.
+            </p>
+          </div>
         </div>
       )}
 

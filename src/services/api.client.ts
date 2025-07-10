@@ -85,10 +85,18 @@ class ApiClient {
       // Handle specific HTTP status codes
       switch (response.status) {
         case HTTP_STATUS.UNAUTHORIZED:
-          // Clear stored auth data on 401
-          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-          window.location.href = '/login';
+          // Check if this is a login endpoint - if so, just throw error instead of redirecting
+          const isLoginEndpoint = response.url.includes('/auth/login');
+          
+          if (isLoginEndpoint) {
+            // For login failures, return the error response to be handled by the login form
+            throw new Error(data.message || 'Invalid username or password');
+          } else {
+            // For other 401s (expired sessions, etc.), clear auth data and redirect
+            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+            window.location.href = '/login';
+          }
           break;
         case HTTP_STATUS.FORBIDDEN:
           throw new Error('Access denied. Insufficient permissions.');
