@@ -11,7 +11,6 @@ interface PermissionTableProps {
 
 export const PermissionTable: React.FC<PermissionTableProps> = ({
   permissions,
-  projectHash,
   loading,
   onEdit,
   onDelete

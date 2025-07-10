@@ -4,11 +4,7 @@ import type { StatCardData } from '@/types/dashboard.types';
 import { 
   GroupIcon, 
   ProjectIcon, 
-  SettingsIcon, 
-  ArrowUpIcon, 
-  ArrowDownIcon, 
-  HorizontalLineIcon, 
-  ArrowRightIcon 
+  SettingsIcon 
 } from '@/components/icons';
 
 interface StatCardProps {

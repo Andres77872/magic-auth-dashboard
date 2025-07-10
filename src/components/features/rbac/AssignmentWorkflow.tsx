@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import type { User } from '@/types/auth.types';
-import type { Role, UserRoleAssignment, PermissionConflict } from '@/types/rbac.types';
+import type { Role, PermissionConflict } from '@/types/rbac.types';
 import type { ProjectDetails } from '@/types/project.types';
 
 interface AssignmentWorkflowProps {
@@ -28,16 +28,11 @@ interface AssignmentPlan {
 }
 
 export default function AssignmentWorkflow({
-  projectHash,
-  currentProject,
   users,
   roles,
   selectedUsers,
-  selectedUser,
   onUserSelection,
-  onSingleUserSelection,
   assignmentHook,
-  effectivePermissionsHook,
   loading
 }: AssignmentWorkflowProps): React.JSX.Element {
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('select-users');

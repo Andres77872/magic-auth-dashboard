@@ -1,10 +1,6 @@
 import React from 'react';
 
-interface UserRoleMatrixProps {
-  [key: string]: any;
-}
-
-export default function UserRoleMatrix(props: UserRoleMatrixProps): React.JSX.Element {
+export default function UserRoleMatrix(): React.JSX.Element {
   return (
     <div className="user-role-matrix">
       <h3>User-Role Matrix</h3>

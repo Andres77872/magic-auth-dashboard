@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { rbacService } from '@/services/rbac.service';
 import type {
   UserEffectivePermissions,
   EffectivePermission,
-  PermissionConflict,
-  Permission,
-  Role
+  PermissionConflict
 } from '@/types/rbac.types';
 
 interface EffectivePermissionsState {
@@ -258,7 +256,7 @@ export function useEffectivePermissions({
     let lowSeverity = 0;
     let affectedUsers = 0;
     
-    state.conflictsByUser.forEach((conflicts, userHash) => {
+    state.conflictsByUser.forEach((conflicts) => {
       if (conflicts.length > 0) {
         affectedUsers++;
         totalConflicts += conflicts.length;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { rbacService } from '@/services/rbac.service';
 import type {
   UserRoleAssignment,
@@ -7,8 +7,7 @@ import type {
   AssignmentValidationResult,
   BulkAssignmentRequest,
   BulkAssignmentResult,
-  AssignmentHistory,
-  UserSelectOption
+  AssignmentHistory
 } from '@/types/rbac.types';
 
 interface UserRoleAssignmentState {

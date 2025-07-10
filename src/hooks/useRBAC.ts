@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { rbacService } from '@/services/rbac.service';
+// import { rbacService } from '@/services/rbac.service';
 import type { Permission, Role } from '@/types/rbac.types';
 
 export interface RBACHealthStatus {
@@ -122,8 +122,8 @@ export function useRBAC(initialProjectHash?: string | null): UseRBACReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      // Call the actual initialization endpoint
-      const response = await rbacService.getProjectRBACsummary?.(currentProject);
+      // TODO: Implement the actual initialization endpoint when available
+      // const response = await rbacService.initializeProjectRBAC(currentProject, config);
       
       // For now, return a mock response
       const mockSummary: RBACProjectSummary = {

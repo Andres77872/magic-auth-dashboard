@@ -8,7 +8,6 @@ import type {
   ProjectDetailsResponse,
   ProjectMembersResponse,
   ProjectGroupsResponse,
-  AssignGroupToProjectRequest,
   AssignGroupToProjectResponse
 } from '@/types/project.types';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';

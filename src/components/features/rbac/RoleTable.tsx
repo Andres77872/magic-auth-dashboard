@@ -11,7 +11,6 @@ interface RoleTableProps {
 
 export const RoleTable: React.FC<RoleTableProps> = ({
   roles,
-  projectHash,
   loading,
   onEdit,
   onDelete

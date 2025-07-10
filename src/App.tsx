@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts';
-import { ErrorBoundary, ComingSoon } from '@/components/common';
+import { ErrorBoundary } from '@/components/common';
 import {
   RootOnlyRoute,
   AdminRoute,

@@ -1,10 +1,6 @@
 import React from 'react';
 
-interface BulkAssignmentToolProps {
-  [key: string]: any;
-}
-
-export default function BulkAssignmentTool(props: BulkAssignmentToolProps): React.JSX.Element {
+export default function BulkAssignmentTool(): React.JSX.Element {
   return (
     <div className="bulk-assignment-tool">
       <h3>Bulk Assignment Tool</h3>

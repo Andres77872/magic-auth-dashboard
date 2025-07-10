@@ -1,10 +1,6 @@
 import React from 'react';
 
-interface RoleConflictResolverProps {
-  [key: string]: any;
-}
-
-export default function RoleConflictResolver(props: RoleConflictResolverProps): React.JSX.Element {
+export default function RoleConflictResolver(): React.JSX.Element {
   return (
     <div className="role-conflict-resolver">
       <h3>Role Conflict Resolver</h3>

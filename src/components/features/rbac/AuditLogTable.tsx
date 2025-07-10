@@ -6,11 +6,7 @@ interface AuditLogTableProps {
   onPageChange: (offset: number) => void;
 }
 
-export const AuditLogTable: React.FC<AuditLogTableProps> = ({
-  projectHash,
-  filters,
-  onPageChange
-}) => {
+export const AuditLogTable: React.FC<AuditLogTableProps> = () => {
   return (
     <div className="audit-log-table">
       <div className="table-placeholder">

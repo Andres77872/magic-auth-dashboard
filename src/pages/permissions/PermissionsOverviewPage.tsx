@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useProjects } from '@/hooks/useProjects';
 import { RBACDashboard } from '@/components/features/rbac/RBACDashboard';
 import { ProjectPermissionsSummary } from '@/components/features/rbac/ProjectPermissionsSummary';

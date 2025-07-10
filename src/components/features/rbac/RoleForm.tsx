@@ -11,7 +11,6 @@ interface RoleFormProps {
 
 export const RoleForm: React.FC<RoleFormProps> = ({
   mode,
-  projectHash,
   initialData,
   onSubmit,
   onCancel

@@ -1,6 +1,6 @@
 import React from 'react';
 import { LoginForm } from '@/components/forms';
-import { LogoIcon, CheckIcon, SecurityIcon, UserIcon, ProjectIcon, HealthIcon } from '@/components/icons';
+import { LogoIcon, SecurityIcon, UserIcon, ProjectIcon, HealthIcon } from '@/components/icons';
 
 export function LoginPage(): React.JSX.Element {
   return (

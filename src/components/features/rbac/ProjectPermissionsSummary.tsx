@@ -53,7 +53,7 @@ export const ProjectPermissionsSummary: React.FC<ProjectPermissionsSummaryProps>
           <h4>Recent Activity</h4>
           <div className="activity-list">
             {summary?.recent_activity.length ? (
-              summary.recent_activity.slice(0, 3).map((activity, index) => (
+              summary.recent_activity.slice(0, 3).map((_, index) => (
                 <div key={index} className="activity-item">
                   {/* Activity content would go here */}
                   <span>Activity item {index + 1}</span>

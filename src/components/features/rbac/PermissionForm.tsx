@@ -12,7 +12,6 @@ interface PermissionFormProps {
 
 export const PermissionForm: React.FC<PermissionFormProps> = ({
   mode,
-  projectHash,
   initialData,
   categories,
   onSubmit,

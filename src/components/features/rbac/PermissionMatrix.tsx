@@ -1,10 +1,6 @@
 import React from 'react';
 
-interface PermissionMatrixProps {
-  [key: string]: any;
-}
-
-export default function PermissionMatrix(props: PermissionMatrixProps): React.JSX.Element {
+export default function PermissionMatrix(): React.JSX.Element {
   return (
     <div className="permission-matrix">
       <h3>Permission Matrix</h3>

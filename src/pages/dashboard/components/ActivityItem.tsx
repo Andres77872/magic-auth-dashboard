@@ -3,10 +3,6 @@ import type { Activity } from './RecentActivityFeed';
 import { getSeverityClass, getUserTypeBadgeClass } from '@/utils/userTypeStyles';
 import { 
   UserIcon, 
-  PlusIcon, 
-  ChevronIcon, 
-  DeleteIcon, 
-  EditIcon, 
   ProjectIcon, 
   GroupIcon, 
   SecurityIcon, 

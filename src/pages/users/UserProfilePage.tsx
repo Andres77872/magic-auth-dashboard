@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Badge, LoadingSpinner } from '@/components/common';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import type { UserType, UserProfileResponse, UserGroupAssignment, UserProjectAccess } from '@/types/auth.types';
+import type { UserType, UserProfileResponse } from '@/types/auth.types';
 import '@/styles/pages/user-profile.css';
 import '@/styles/pages/user-profile.css';
 
@@ -309,7 +309,7 @@ export function UserProfilePage(): React.JSX.Element {
           <Card title={`Assigned Projects (${userProjects.length})`} padding="large">
             {userProjects.length > 0 ? (
               <div className="projects-list">
-                {userProjects.map((project, index) => (
+                {userProjects.map((project) => (
                   <div key={project.project_hash} className="project-item">
                     <div className="project-header">
                       <h4>{project.project_name}</h4>
@@ -329,7 +329,7 @@ export function UserProfilePage(): React.JSX.Element {
                       <div className="project-access-groups">
                         <h5>Access Groups:</h5>
                         <div className="access-groups-list">
-                          {project.access_groups.map((group, groupIndex) => (
+                          {project.access_groups.map((group) => (
                             <div key={group.group_hash} className="access-group">
                               <span className="group-name">{group.group_name}</span>
                               <span className="group-permissions">
@@ -372,7 +372,7 @@ export function UserProfilePage(): React.JSX.Element {
           <Card title={`User Groups (${userGroups.length})`} padding="large">
             {userGroups.length > 0 ? (
               <div className="groups-list">
-                {userGroups.map((group, index) => (
+                {userGroups.map((group) => (
                   <div key={group.group_hash} className="group-item">
                     <div className="group-header">
                       <h4>{group.group_name}</h4>

@@ -1,10 +1,6 @@
 import React from 'react';
 
-interface EffectivePermissionsProps {
-  [key: string]: any;
-}
-
-export default function EffectivePermissions(props: EffectivePermissionsProps): React.JSX.Element {
+export default function EffectivePermissions(): React.JSX.Element {
   return (
     <div className="effective-permissions">
       <h3>Effective Permissions</h3>

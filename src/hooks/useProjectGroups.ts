@@ -3,8 +3,7 @@ import { projectGroupService } from '@/services';
 import type { 
   ProjectGroup, 
   CreateProjectGroupRequest,
-  ProjectGroupListResponse,
-  ProjectGroupDetailsResponse
+  ProjectGroupListResponse
 } from '@/services/project-group.service';
 import type { PaginationResponse, PaginationParams } from '@/types/api.types';
 

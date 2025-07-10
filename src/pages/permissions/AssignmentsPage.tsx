@@ -31,7 +31,7 @@ export default function AssignmentsPage(): React.JSX.Element {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
   // Hooks for data management
-  const { projects, isLoading: projectsLoading, fetchProjects } = useProjects();
+  const { projects, isLoading: projectsLoading } = useProjects();
   const { users, isLoading: usersLoading, fetchUsers } = useUsers();
   const { roles, loading: rolesLoading, refreshRoles } = useRoles(projectHash || '');
   
