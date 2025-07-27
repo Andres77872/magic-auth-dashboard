@@ -8,30 +8,8 @@
 @import './tokens/breakpoints.css';
 @import './tokens/z-index.css';
 
-/* Import component styles */
-@import './components/buttons.css';
-@import './components/forms.css';
-@import './components/modals.css';
-@import './components/tables.css';
-@import './components/cards.css';
-@import './components/badges.css';
-@import './components/toasts.css';
-@import './components/loading-spinner.css';
-@import './components/dashboard-layout.css';
-@import './components/dashboard-overview.css';
-@import './components/navigation.css';
-@import './components/coming-soon.css';
-@import './components/profile.css';
-@import './components/ui-components.css';
-@import './components/system-page.css';
-@import './components/error-boundary.css';
-@import './components/user-management.css';
-@import './components/analytics.css';
-@import './components/route-guards.css';
-@import './components/groups.css';
-@import './components/projects.css';
-@import './components/layout-patterns.css';
-@import './components/dynamic-styles.css';
+/* Import all component styles (consolidated) */
+@import './components/index.css';
 
 /* Import utilities */
 @import './utilities.css';

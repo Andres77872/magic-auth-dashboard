@@ -458,7 +458,7 @@ export function UserForm({
               )}
               
               {errors.assignedProjects && (
-                <p className="field-error-text" style={{ color: 'var(--color-error)', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: 500 }}>
+                <p className="field-error-text">
                   {errors.assignedProjects}
                 </p>
               )}
@@ -497,7 +497,7 @@ export function UserForm({
               </div>
 
               {errors.assignedGroup && (
-                <p className="field-error-text" style={{ color: 'var(--color-error)', fontSize: '0.75rem', marginTop: '0.5rem', fontWeight: 500 }}>
+                <p className="field-error-text">
                   {errors.assignedGroup}
                 </p>
               )}

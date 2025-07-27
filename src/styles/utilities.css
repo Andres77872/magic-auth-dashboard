@@ -308,11 +308,10 @@
 /* === SPECIFIC SIZING UTILITIES === */
 /* Common hardcoded values that appear in inline styles */
 
-.max-w-300 { max-width: 300px; }
-.cursor-pointer { cursor: pointer; }
+.min-w-400 { min-width: 400px; }
 
 /* === COMMON LAYOUT PATTERNS === */
-/* These classes replace common hardcoded inline styles */
+/* Moved detailed layout patterns to layout-patterns.css to avoid duplication */
 
 .flex-between {
   display: flex;
@@ -342,49 +341,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.flex-col-gap-3 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-3);
-}
-
-.flex-col-gap-4 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
-}
-
-.flex-gap-2 {
-  display: flex;
-  gap: var(--spacing-2);
-}
-
-.flex-gap-3 {
-  display: flex;
-  gap: var(--spacing-3);
-}
-
-.flex-gap-4 {
-  display: flex;
-  gap: var(--spacing-4);
-}
-
-.flex-wrap-gap-3 {
-  display: flex;
-  gap: var(--spacing-3);
-  flex-wrap: wrap;
-}
-
-.grid-gap-4 {
-  display: grid;
-  gap: var(--spacing-4);
-}
-
-.grid-gap-6 {
-  display: grid;
-  gap: var(--spacing-6);
 }
 
 /* === USER TYPE BADGE UTILITIES === */
@@ -450,6 +406,14 @@
 .severity-warning { color: var(--color-warning); }
 .severity-info { color: var(--color-info); }
 .severity-success { color: var(--color-success); }
+
+/* === FIELD ERROR UTILITIES === */
+.field-error-text {
+  color: var(--color-error);
+  font-size: var(--font-size-2xs);
+  margin-top: var(--spacing-1);
+  font-weight: var(--font-weight-medium);
+}
 
 /* === RESPONSIVE UTILITIES === */
 @media (max-width: 640px) {
