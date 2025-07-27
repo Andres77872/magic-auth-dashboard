@@ -1,0 +1,35 @@
+/* Component Styles Index - Single Import for All Components */
+
+/* === CORE UI COMPONENTS === */
+@import './buttons.css';
+@import './forms.css';
+@import './modals.css';
+@import './tables.css';
+@import './cards.css';
+@import './badges.css';
+@import './toasts.css';
+@import './loading-spinner.css';
+
+/* === LAYOUT COMPONENTS === */
+@import './dashboard-layout.css';
+@import './navigation.css';
+@import './layout-patterns.css';
+
+/* === PAGE COMPONENTS === */
+@import './dashboard-overview.css';
+@import './analytics.css';
+@import './user-management.css';
+@import './groups.css';
+@import './projects.css';
+@import './profile.css';
+@import './system-page.css';
+
+/* === SPECIALIZED COMPONENTS === */
+@import './route-guards.css';
+@import './error-boundary.css';
+@import './coming-soon.css';
+@import './assign-project-modal.css';
+
+/* === UTILITY COMPONENTS === */
+@import './ui-components.css';
+@import './dynamic-styles.css';
