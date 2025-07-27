@@ -60,7 +60,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.E
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div 
-          className={`mobile-overlay ${mobileMenuOpen ? 'show' : ''}`}
+          className="mobile-overlay" 
           onClick={handleOverlayClick}
           aria-hidden="true"
         />
