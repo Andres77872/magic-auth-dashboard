@@ -19,6 +19,7 @@ export function Footer(): React.JSX.Element {
               className="footer-link"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Open documentation in new tab"
             >
               Documentation
             </a>
@@ -27,14 +28,25 @@ export function Footer(): React.JSX.Element {
               className="footer-link"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="Open support page in new tab"
             >
               Support
             </a>
             <a 
               href="mailto:admin@magicauth.com" 
               className="footer-link"
+              aria-label="Send email to admin"
             >
               Contact
+            </a>
+            <a 
+              href="/privacy" 
+              className="footer-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="View privacy policy"
+            >
+              Privacy
             </a>
           </div>
         </div>
