@@ -186,19 +186,15 @@
   color: var(--color-text-primary);
 }
 
-.user-actions-menu .menu-trigger:focus {
+.user-actions-menu .menu-trigger:focus-visible {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-background);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
-.user-actions-menu .menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: var(--z-index-dropdown);
-  min-width: 180px;
-  margin-top: 4px;
+/* Portal dropdown styles */
+.menu-dropdown {
+  min-width: 200px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
@@ -206,7 +202,7 @@
   overflow: hidden;
 }
 
-.user-actions-menu .menu-item {
+.menu-item {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
@@ -221,23 +217,19 @@
   transition: all 0.2s ease;
 }
 
-.user-actions-menu .menu-item:hover {
+.menu-item:hover,
+.menu-item:focus-visible {
   background: var(--color-surface-hover);
   color: var(--color-text-primary);
-}
-
-.user-actions-menu .menu-item:focus {
   outline: none;
-  background: var(--color-surface-hover);
-  color: var(--color-text-primary);
 }
 
-.user-actions-menu .menu-item.destructive {
+.menu-item.destructive {
   color: var(--color-error);
 }
 
-.user-actions-menu .menu-item.destructive:hover {
-  background: var(--color-error-background);
+.menu-item.destructive:hover {
+  background: var(--color-error-light);
   color: var(--color-error);
 }
 

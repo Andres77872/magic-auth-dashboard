@@ -117,12 +117,12 @@
   /* === COMPONENT COLORS === */
   
   /* Background Colors */
-  --color-background: white;
+  --color-background: var(--color-gray-50);
   --color-background-subtle: var(--color-gray-50);
   --color-background-muted: var(--color-gray-100);
   
   /* Surface Colors */
-  --color-surface: white;
+  --color-surface: var(--color-background);
   --color-surface-hover: var(--color-gray-50);
   --color-surface-secondary: var(--color-gray-50);
   --color-surface-tertiary: var(--color-gray-100);

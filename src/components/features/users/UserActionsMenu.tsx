@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { usePermissions, useUserType, useAuth } from '@/hooks';
 import { Modal, Select, Button } from '@/components/common';
@@ -14,12 +15,15 @@ interface UserActionsMenuProps {
 
 export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuStyles, setMenuStyles] = useState<{ top: number; left: number; minWidth: number } | null>(null);
   const [showChangeTypeModal, setShowChangeTypeModal] = useState(false);
   const [selectedUserType, setSelectedUserType] = useState<UserType>(user.user_type);
   const [isChangingType, setIsChangingType] = useState(false);
   const [changeTypeError, setChangeTypeError] = useState('');
   
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const firstItemRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const { canCreateUser, canCreateAdmin, canCreateRoot } = usePermissions();
   const { userType: currentUserType } = useUserType();
@@ -39,17 +43,93 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
     return true;
   });
 
-  // Close menu when clicking outside
+  const updateMenuPosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    const menu = menuRef.current;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Default placement: bottom-right of trigger
+    let top = rect.bottom + 6; // small offset
+    let left = rect.right - 240; // assume ~240px width
+    const minWidth = 200;
+
+    // Flip vertically if would overflow bottom
+    if (top + 280 > viewportHeight) {
+      top = rect.top - 6 - 280; // approximate height
+      if (top < 8) top = 8;
+    }
+
+    // Ensure within viewport horizontally
+    if (left + 240 > viewportWidth) {
+      left = viewportWidth - 248; // padding
+    }
+    if (left < 8) left = 8;
+
+    setMenuStyles({ top, left, minWidth });
+
+    // If we know the actual menu size, refine after mount
+    if (menu) {
+      const menuRect = menu.getBoundingClientRect();
+      let adjustedLeft = left;
+      let adjustedTop = top;
+      if (adjustedLeft + menuRect.width > viewportWidth) {
+        adjustedLeft = Math.max(8, viewportWidth - menuRect.width - 8);
+      }
+      if (adjustedTop + menuRect.height > viewportHeight) {
+        adjustedTop = Math.max(8, viewportHeight - menuRect.height - 8);
+      }
+      setMenuStyles({ top: adjustedTop, left: adjustedLeft, minWidth });
+    }
+  }, []);
+
+  // Close menu when clicking outside and keep positioned on scroll/resize
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        menuRef.current &&
+        triggerRef.current &&
+        !menuRef.current.contains(target) &&
+        !triggerRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    const handleScroll = () => {
+      if (isOpen) updateMenuPosition();
+    };
+
+    document.addEventListener('mousedown', handleClickOutside, true);
+    document.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleScroll);
+    // capture scroll on all ancestors
+    document.addEventListener('scroll', handleScroll, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleScroll);
+      document.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen, updateMenuPosition]);
+
+  // When opened, position and focus first item
+  useEffect(() => {
+    if (isOpen) {
+      updateMenuPosition();
+      // Slight delay so menu exists
+      setTimeout(() => firstItemRef.current?.focus(), 0);
+    }
+  }, [isOpen, updateMenuPosition]);
 
   const canEditUser = (targetUser: User) => {
     // Basic permission check - admins can't edit root users
@@ -149,25 +229,31 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
 
   return (
     <>
-      <div className="user-actions-menu" ref={menuRef}>
+      <div className="user-actions-menu">
         <button
           type="button"
-          className="actions-trigger"
-          onClick={() => setIsOpen(!isOpen)}
+          className="menu-trigger"
+          ref={triggerRef}
+          onClick={() => setIsOpen((v) => !v)}
           aria-expanded={isOpen}
           aria-haspopup="true"
           aria-label={`Actions for ${user.username}`}
         >
           <MoreIcon size="small" />
         </button>
-
-        {isOpen && (
-          <div className="actions-dropdown" role="menu">
+        {isOpen && menuStyles && createPortal(
+          <div
+            className="menu-dropdown"
+            role="menu"
+            ref={menuRef}
+            style={{ position: 'fixed', top: menuStyles.top, left: menuStyles.left, minWidth: menuStyles.minWidth, zIndex: 1000 }}
+          >
             <button
               type="button"
-              className="action-item"
+              className="menu-item"
               role="menuitem"
               onClick={handleViewDetails}
+              ref={firstItemRef}
             >
               <ViewIcon size="small" />
               View Details
@@ -176,7 +262,7 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
             {canEditUser(user) && (
               <button
                 type="button"
-                className="action-item"
+                className="menu-item"
                 role="menuitem"
                 onClick={handleEditUser}
               >
@@ -188,7 +274,7 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
             {canChangeUserType(user) && (
               <button
                 type="button"
-                className="action-item"
+                className="menu-item"
                 role="menuitem"
                 onClick={handleChangeUserType}
               >
@@ -200,7 +286,7 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
             {canEditUser(user) && (
               <button
                 type="button"
-                className="action-item"
+                className="menu-item"
                 role="menuitem"
                 onClick={handleResetPassword}
               >
@@ -212,7 +298,7 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
             {canEditUser(user) && (
               <button
                 type="button"
-                className="action-item"
+                className="menu-item"
                 role="menuitem"
                 onClick={handleChangeStatus}
               >
@@ -221,12 +307,12 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
               </button>
             )}
 
-            <div className="action-divider" />
+            <div className="user-menu-divider" />
 
             {canDeleteUser(user) && (
               <button
                 type="button"
-                className="action-item action-item-danger"
+                className="menu-item destructive"
                 role="menuitem"
                 onClick={handleDeleteUser}
               >
@@ -234,7 +320,8 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
                 Delete User
               </button>
             )}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
 

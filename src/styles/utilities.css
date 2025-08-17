@@ -244,7 +244,7 @@
 .text-warning { color: var(--color-warning); }
 
 /* Background utilities */
-.bg-white { background-color: white; }
+.bg-white { background-color: var(--color-surface); }
 .bg-gray-50 { background-color: var(--color-gray-50); }
 .bg-gray-100 { background-color: var(--color-gray-100); }
 .bg-primary { background-color: var(--color-primary); }
