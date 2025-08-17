@@ -49,13 +49,13 @@ export function SystemHealthPanel({
 
   if (error) {
     return (
-      <div className="system-health-panel">
-        <div className="health-header">
-          <h2>System Health Monitor</h2>
+      <section className="system-health-panel" aria-labelledby="system-health-title">
+        <header className="health-header">
+          <h2 id="system-health-title">System Health Monitor</h2>
           <p>Real-time monitoring of system components</p>
-        </div>
+        </header>
         
-        <div className="health-error">
+        <div className="health-error" role="status" aria-live="polite">
           <div className="error-content">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10"/>
@@ -73,16 +73,16 @@ export function SystemHealthPanel({
             </button>
           </div>
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="system-health-panel">
-      <div className="health-header">
+    <section className="system-health-panel" aria-labelledby="system-health-title">
+      <header className="health-header">
         <div className="header-content">
           <div className="header-text">
-            <h2>System Health Monitor</h2>
+            <h2 id="system-health-title">System Health Monitor</h2>
             <p>Real-time monitoring of critical system components</p>
           </div>
           
@@ -112,7 +112,7 @@ export function SystemHealthPanel({
         </div>
 
         {health && (
-          <div className="overall-status">
+          <div className="overall-status" role="status" aria-live="polite">
             <div className="status-indicator">
               <div 
                 className="status-light status-light-dynamic"
@@ -133,11 +133,11 @@ export function SystemHealthPanel({
             </div>
           </div>
         )}
-      </div>
+      </header>
 
       <div className="health-content">
         {isLoading && !health && (
-          <div className="health-loading">
+          <div className="health-loading" role="status" aria-live="polite">
             <div className="loading-indicators">
               {[...Array(3)].map((_, index) => (
                 <div key={`loading-${index}`} className="health-indicator-skeleton">
@@ -156,7 +156,7 @@ export function SystemHealthPanel({
         )}
 
         {health && (
-          <div className="health-indicators">
+          <ul className="health-indicators" role="list">
             <HealthIndicator
               title="Database"
               component={health.components.database}
@@ -171,11 +171,11 @@ export function SystemHealthPanel({
               title="Authentication"
               component={health.components.authentication}
             />
-          </div>
+          </ul>
         )}
       </div>
 
-      <div className="health-footer">
+      <footer className="health-footer">
         <p className="auto-refresh-note">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/>
@@ -183,8 +183,8 @@ export function SystemHealthPanel({
           </svg>
           Auto-refreshes every 10 seconds
         </p>
-      </div>
-    </div>
+      </footer>
+    </section>
   );
 }
 

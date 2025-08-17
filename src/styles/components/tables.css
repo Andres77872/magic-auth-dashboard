@@ -1,9 +1,9 @@
 /* === TABLE COMPONENT === */
 .table-wrapper {
-  background: white;
+  background: var(--color-surface);
   border-radius: var(--border-radius-lg);
-  overflow: hidden;
-  border: var(--border-width-1) solid var(--color-gray-200);
+  overflow: clip;
+  border: var(--border-card);
 }
 
 .table-container {
@@ -22,15 +22,18 @@
 }
 
 .table-header {
-  background-color: var(--color-gray-50);
-  border-bottom: var(--border-width-1) solid var(--color-gray-200);
+  background-color: var(--color-surface-secondary);
+  border-bottom: var(--border-divider);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .table-header-cell {
   padding: var(--spacing-3) var(--spacing-4);
   text-align: left;
   font-weight: var(--font-weight-medium);
-  color: var(--color-gray-700);
+  color: var(--color-text-secondary);
   border: none;
 }
 
@@ -69,12 +72,23 @@
 .table-align-right { text-align: right; }
 
 .table-row {
-  border-bottom: var(--border-width-1) solid var(--color-gray-200);
+  border-bottom: var(--border-divider);
   transition: background-color var(--transition-fast);
 }
 
 .table-row:hover {
-  background-color: var(--color-gray-50);
+  background-color: var(--color-hover-subtle);
+}
+
+/* Zebra rows for readability */
+.table tbody tr:nth-child(odd) {
+  background-color: var(--color-background-subtle);
+}
+
+@media (prefers-color-scheme: dark) {
+  .table tbody tr:nth-child(odd) {
+    background-color: var(--color-gray-800);
+  }
 }
 
 .table-cell {
@@ -87,5 +101,5 @@
 .table-empty {
   text-align: center;
   padding: var(--spacing-8);
-  color: var(--color-gray-500);
-} 
+  color: var(--color-text-tertiary);
+}

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Select, Input, Button } from '@/components/common';
-import type { ActivityFilters } from './RecentActivityFeed';
+import type { ActivityFilters } from '@/types/analytics.types';
 
 interface ActivityFilterProps {
   filters: ActivityFilters;

@@ -83,40 +83,39 @@ export function QuickActionsPanel(): React.JSX.Element {
 
   if (quickActions.length === 0) {
     return (
-      <div className="quick-actions-panel">
-        <div className="quick-actions-header">
-          <h2>Quick Actions</h2>
+      <section className="quick-actions-panel" aria-labelledby="quick-actions-title">
+        <header className="quick-actions-header">
+          <h2 id="quick-actions-title">Quick Actions</h2>
           <p>No actions available for your user type</p>
-        </div>
-      </div>
+        </header>
+      </section>
     );
   }
 
   return (
-    <div className="quick-actions-panel">
-      <div className="quick-actions-header">
-        <h2>Quick Actions</h2>
+    <section className="quick-actions-panel" aria-labelledby="quick-actions-title">
+      <header className="quick-actions-header">
+        <h2 id="quick-actions-title">Quick Actions</h2>
         <p>Streamlined access to common administrative tasks</p>
-      </div>
+      </header>
 
-      <div className="quick-actions-grid">
+      <ul className="quick-actions-grid" role="list">
         {quickActions.map((action) => (
-          <QuickActionCard
-            key={action.id}
-            action={action}
-          />
+          <li key={action.id}>
+            <QuickActionCard action={action} />
+          </li>
         ))}
-      </div>
+      </ul>
 
-      <div className="quick-actions-footer">
+      <footer className="quick-actions-footer">
         <p className="actions-note">
           {isRoot 
             ? 'You have full system access as a ROOT user' 
             : 'Contact your administrator for additional permissions'
           }
         </p>
-      </div>
-    </div>
+      </footer>
+    </section>
   );
 }
 

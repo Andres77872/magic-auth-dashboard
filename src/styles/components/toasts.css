@@ -4,8 +4,8 @@
   align-items: flex-start;
   gap: var(--spacing-3);
   padding: var(--spacing-4);
-  background: white;
-  border: var(--border-width-1) solid var(--color-gray-200);
+  background: var(--color-surface);
+  border: var(--border-card);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
   min-width: 320px;
@@ -55,7 +55,7 @@
   margin: 0;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--color-gray-900);
+  color: var(--color-text-primary);
   line-height: var(--line-height-relaxed);
 }
 
@@ -73,7 +73,7 @@
 .toast-close {
   background: none;
   border: none;
-  color: var(--color-gray-400);
+  color: var(--color-text-tertiary);
   cursor: pointer;
   padding: var(--spacing-1);
   border-radius: var(--border-radius-sm);
@@ -82,6 +82,6 @@
 }
 
 .toast-close:hover {
-  color: var(--color-gray-600);
-  background-color: var(--color-gray-100);
+  color: var(--color-text-secondary);
+  background-color: var(--color-hover-muted);
 } 

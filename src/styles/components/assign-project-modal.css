@@ -54,7 +54,7 @@
 
 .select-all-btn:hover:not(:disabled) {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .select-all-btn:disabled {
@@ -184,6 +184,7 @@
   color: var(--color-text-secondary);
   line-height: 1.5;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;

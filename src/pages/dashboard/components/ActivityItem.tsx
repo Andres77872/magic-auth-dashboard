@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Activity } from './RecentActivityFeed';
+import type { Activity } from '@/types/analytics.types';
 import { getSeverityClass, getUserTypeBadgeClass } from '@/utils/userTypeStyles';
 import { 
   UserIcon, 

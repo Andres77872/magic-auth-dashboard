@@ -9,7 +9,7 @@
 }
 
 .error-boundary-content {
-  background: white;
+  background: var(--color-surface);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
   padding: var(--spacing-8);
@@ -37,7 +37,7 @@
   gap: var(--spacing-2);
   padding: var(--spacing-3) var(--spacing-6);
   background: var(--color-primary-500);
-  color: white;
+  color: var(--color-text-on-primary);
   border: none;
   border-radius: var(--border-radius-md);
   cursor: pointer;

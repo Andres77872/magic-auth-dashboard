@@ -1,7 +1,5 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 if you are not sure how is the response for an API endpoint make a curl fetch to review the response to
 

@@ -257,7 +257,7 @@
 
 /* Card-like containers */
 .card-container {
-  background: white;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
@@ -290,7 +290,7 @@
 }
 
 .modal-container {
-  background: white;
+  background: var(--color-surface);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-xl);
   max-width: 90vw;

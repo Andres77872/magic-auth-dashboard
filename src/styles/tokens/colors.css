@@ -126,6 +126,8 @@
   --color-surface-hover: var(--color-gray-50);
   --color-surface-secondary: var(--color-gray-50);
   --color-surface-tertiary: var(--color-gray-100);
+  /* Inverted Surfaces (e.g., tooltips, overlays that need contrast) */
+  --color-surface-inverted: var(--color-gray-900);
 
   /* Primary Background Colors */
   --color-primary-bg: var(--color-primary-50);
@@ -173,6 +175,9 @@
   --color-text-tertiary: var(--color-gray-500);
   --color-text-muted: var(--color-gray-600);
   --color-text-subtle: var(--color-gray-500);
+  /* Text on contrasting backgrounds */
+  --color-text-inverted: white;
+  --color-text-on-primary: white;
 
   /* Border Colors */
   --color-border: var(--color-gray-200);
@@ -206,22 +211,45 @@
 /* === DARK MODE COLORS === */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Override semantic colors for dark mode */
+    /* Base surfaces and background */
     --color-background: var(--color-gray-900);
     --color-background-subtle: var(--color-gray-800);
-    --color-background-muted: var(--color-gray-700);
-    
+    --color-background-muted: var(--color-gray-800);
+
+    /* Ensure cards, tables and panels are dark surfaces (avoid white blocks) */
+    --color-surface: var(--color-gray-800);
+    --color-surface-hover: var(--color-gray-700);
+    --color-surface-secondary: var(--color-gray-800);
+    --color-surface-tertiary: var(--color-gray-700);
+
+    /* Typography */
     --color-text: var(--color-gray-100);
+    --color-text-primary: var(--color-gray-100);
+    --color-text-secondary: var(--color-gray-300);
+    --color-text-tertiary: var(--color-gray-400);
     --color-text-muted: var(--color-gray-300);
     --color-text-subtle: var(--color-gray-400);
-    
+    --color-text-inverted: var(--color-gray-900);
+    --color-text-on-primary: white;
+
+    /* Borders */
     --color-border: var(--color-gray-700);
     --color-border-muted: var(--color-gray-800);
     --color-border-strong: var(--color-gray-600);
-    
+
+    /* Interaction */
     --color-hover-subtle: var(--color-gray-800);
     --color-hover-muted: var(--color-gray-700);
-    
-    --color-active: var(--color-gray-800);
+    --color-active: var(--color-gray-700);
+
+    /* Focus rings tuned for dark backgrounds */
+    --color-focus-ring: rgba(59, 130, 246, 0.25);
+    --color-focus-ring-primary: rgba(59, 130, 246, 0.25);
+    --color-focus-ring-error: rgba(239, 68, 68, 0.25);
+    --color-focus-ring-success: rgba(34, 197, 94, 0.25);
+    --color-focus-ring-warning: rgba(245, 158, 11, 0.25);
+
+    /* Inverted surface for tooltips/popovers */
+    --color-surface-inverted: var(--color-gray-100);
   }
-} 
+}

@@ -29,17 +29,18 @@
 .input-control {
   width: 100%;
   padding: var(--spacing-3);
-  border: var(--border-width-1) solid var(--color-gray-300);
-  border-radius: var(--border-radius-md);
+  border: var(--border-input);
+  border-radius: var(--border-radius-input);
   font-size: var(--font-size-base);
-  transition: all var(--transition-fast);
-  background-color: white;
+  transition: var(--transition-input);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
 }
 
 .input-control:focus {
   outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
+  border: var(--border-input-focus);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .input-error .input-control {
@@ -48,11 +49,11 @@
 
 .input-error .input-control:focus {
   border-color: var(--color-error);
-  box-shadow: 0 0 0 3px var(--color-focus-ring-error);
+  box-shadow: var(--shadow-focus-error);
 }
 
 .input-control:disabled {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-background-muted);
   cursor: not-allowed;
 }
 
@@ -87,7 +88,7 @@
 
 .input-helper-text {
   font-size: var(--font-size-sm);
-  color: var(--color-gray-600);
+  color: var(--color-text-secondary);
 }
 
 /* === SELECT COMPONENT === */
@@ -105,7 +106,7 @@
 .select-label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--color-gray-700);
+  color: var(--color-text-primary);
 }
 
 .select-trigger {
@@ -113,17 +114,17 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-3);
-  border: var(--border-width-1) solid var(--color-gray-300);
-  border-radius: var(--border-radius-md);
-  background-color: white;
+  border: var(--border-input);
+  border-radius: var(--border-radius-input);
+  background-color: var(--color-surface);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: var(--transition-input);
 }
 
 .select-trigger:focus {
   outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
+  border: var(--border-input-focus);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .select-error .select-trigger {
@@ -131,12 +132,12 @@
 }
 
 .select-disabled .select-trigger {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-background-muted);
   cursor: not-allowed;
 }
 
 .select-value {
-  color: var(--color-gray-900);
+  color: var(--color-text-primary);
   flex: 1;
   text-align: left;
 }
@@ -155,9 +156,9 @@
   top: 100%;
   left: 0;
   right: 0;
-  background: white;
-  border: var(--border-width-1) solid var(--color-gray-200);
-  border-radius: var(--border-radius-md);
+  background: var(--color-surface);
+  border: var(--border-card);
+  border-radius: var(--border-radius-input);
   box-shadow: var(--shadow-lg);
   z-index: var(--z-index-dropdown);
   margin-top: var(--spacing-1);
@@ -167,13 +168,13 @@
 
 .select-search {
   padding: var(--spacing-2);
-  border-bottom: var(--border-width-1) solid var(--color-gray-200);
+  border-bottom: var(--border-divider);
 }
 
 .select-search-input {
   width: 100%;
   padding: var(--spacing-2);
-  border: var(--border-width-1) solid var(--color-gray-300);
+  border: var(--border-input);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
 }
@@ -190,7 +191,7 @@
 }
 
 .select-option:hover {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-hover-muted);
 }
 
 .select-option-highlighted {
@@ -200,7 +201,7 @@
 
 .select-option-selected {
   background-color: var(--color-primary-500);
-  color: white;
+  color: var(--color-text-on-primary);
 }
 
 .select-option-disabled {
@@ -250,19 +251,19 @@
   width: 100%;
   min-height: 120px;
   padding: var(--spacing-3);
-  border: var(--border-width-1) solid var(--color-gray-300);
-  border-radius: var(--border-radius-md);
+  border: var(--border-input);
+  border-radius: var(--border-radius-input);
   font-size: var(--font-size-base);
   font-family: inherit;
-  transition: all var(--transition-fast);
-  background-color: white;
+  transition: var(--transition-input);
+  background-color: var(--color-surface);
   resize: vertical;
 }
 
 .textarea-control:focus {
   outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
+  border: var(--border-input-focus);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .textarea-error .textarea-control {
@@ -275,7 +276,7 @@
 }
 
 .textarea-control:disabled {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-background-muted);
   cursor: not-allowed;
 }
 
@@ -286,5 +287,5 @@
 
 .textarea-helper-text {
   font-size: var(--font-size-sm);
-  color: var(--color-gray-600);
+  color: var(--color-text-secondary);
 } 

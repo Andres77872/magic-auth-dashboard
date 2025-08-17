@@ -92,7 +92,7 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
 
   if (error) {
     return (
-      <div className="statistics-grid-error">
+      <section className="statistics-grid-error" aria-live="polite" aria-atomic="true">
         <div className="error-content">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/>
@@ -108,31 +108,32 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
             Try Again
           </button>
         </div>
-      </div>
+      </section>
     );
   }
 
   const statCards = generateStatCards();
 
   return (
-    <div className="statistics-grid">
-      <div className="statistics-header">
-        <h2>System Overview</h2>
+    <section className="statistics-grid" aria-labelledby="statistics-title">
+      <header className="statistics-header">
+        <h2 id="statistics-title">System Overview</h2>
         <p>Real-time statistics and key metrics</p>
-      </div>
+      </header>
 
-      <div className="statistics-cards">
+      <ul className="statistics-cards" role="list">
         {statCards.map((cardData, index) => (
-          <StatCard
-            key={`stat-${index}`}
-            data={cardData}
-            isLoading={isLoading}
-          />
+          <li key={`stat-${index}`}>
+            <StatCard
+              data={cardData}
+              isLoading={isLoading}
+            />
+          </li>
         ))}
-      </div>
+      </ul>
 
       {isLoading && statCards.length === 0 && (
-        <div className="statistics-loading">
+        <div className="statistics-loading" role="status" aria-live="polite">
           <div className="loading-cards">
             {[...Array(4)].map((_, index) => (
               <div key={`loading-${index}`} className="stat-card-skeleton">
@@ -149,7 +150,7 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

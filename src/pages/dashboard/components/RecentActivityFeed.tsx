@@ -4,34 +4,7 @@ import { ActivityFilter } from './ActivityFilter';
 import { useRecentActivity } from '@/hooks/dashboard/useRecentActivity';
 import { useUserType } from '@/hooks';
 import { LoadingSpinner } from '@/components/common';
-
-export interface Activity {
-  id: string;
-  type: 'user_created' | 'user_updated' | 'user_deleted' | 'login' | 'logout' | 
-        'project_created' | 'project_updated' | 'project_deleted' |
-        'group_created' | 'group_updated' | 'permission_changed' | 'system_event';
-  title: string;
-  description: string;
-  user: {
-    user_hash: string;
-    username: string;
-    user_type: string;
-  };
-  timestamp: string;
-  severity: 'info' | 'warning' | 'critical';
-  metadata?: Record<string, any>;
-}
-
-export interface ActivityFilters {
-  type?: string;
-  userType?: string;
-  severity?: string;
-  dateRange?: {
-    start: string;
-    end: string;
-  };
-  search?: string;
-}
+import type { ActivityFilters } from '@/types/analytics.types';
 
 export function RecentActivityFeed(): React.JSX.Element {
   const [filters, setFilters] = useState<ActivityFilters>({});

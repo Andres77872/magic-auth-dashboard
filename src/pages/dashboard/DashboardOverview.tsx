@@ -13,14 +13,14 @@ export function DashboardOverview(): React.JSX.Element {
   const { isRoot } = useUserType();
 
   return (
-    <div className="dashboard-overview">
+    <main className="dashboard-overview" role="main">
       {/* Welcome Section */}
-      <section className="dashboard-section welcome-section-container">
+      <section className="dashboard-section welcome-section-container" aria-label="Welcome">
         <WelcomeSection />
       </section>
 
       {/* Statistics Grid */}
-      <section className="dashboard-section statistics-section">
+      <section className="dashboard-section statistics-section" aria-label="Statistics">
         <StatisticsGrid 
           stats={stats}
           isLoading={statsLoading}
@@ -29,13 +29,13 @@ export function DashboardOverview(): React.JSX.Element {
       </section>
 
       {/* Quick Actions Panel */}
-      <section className="dashboard-section quick-actions-section">
+      <section className="dashboard-section quick-actions-section" aria-label="Quick actions">
         <QuickActionsPanel />
       </section>
 
       {/* System Health Panel (ROOT only) */}
       {isRoot && (
-        <section className="dashboard-section system-health-section">
+        <section className="dashboard-section system-health-section" aria-label="System health">
           <SystemHealthPanel
             health={health}
             isLoading={healthLoading}
@@ -47,7 +47,7 @@ export function DashboardOverview(): React.JSX.Element {
 
       {/* Error Recovery Section */}
       {(statsError || healthError) && (
-        <section className="dashboard-section error-recovery-section">
+        <section className="dashboard-section error-recovery-section" aria-label="Error recovery">
           <div className="error-recovery-panel">
             <h3>Data Refresh Options</h3>
             <p>Some dashboard data failed to load. You can manually refresh individual sections.</p>
@@ -74,7 +74,7 @@ export function DashboardOverview(): React.JSX.Element {
           </div>
         </section>
       )}
-    </div>
+    </main>
   );
 }
 

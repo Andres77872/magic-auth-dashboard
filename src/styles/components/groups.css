@@ -2,7 +2,7 @@
 
 /* Group Form Styles */
 .group-form-container {
-  background: white;
+  background: var(--color-surface);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-sm);
   padding: var(--spacing-8);
@@ -56,17 +56,17 @@
 .form-input {
   width: 100%;
   padding: var(--spacing-3);
-  border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-md);
+  border: var(--border-input);
+  border-radius: var(--border-radius-input);
   font-size: var(--font-size-base);
-  transition: all var(--transition-fast);
-  background-color: white;
+  transition: var(--transition-input);
+  background-color: var(--color-surface);
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
+  border: var(--border-input-focus);
+  box-shadow: var(--shadow-focus-primary);
 }
 
 .form-input.error {
@@ -117,7 +117,7 @@
 
 /* Group Card Styles */
 .group-card {
-  background: white;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-6);
@@ -162,7 +162,7 @@
 
 /* Group Filter Styles */
 .group-filters {
-  background: white;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-6);
@@ -172,7 +172,7 @@
 .group-filters-container {
   margin-bottom: var(--spacing-6);
   padding: var(--spacing-4);
-  background: var(--color-background-secondary);
+  background: var(--color-background-subtle);
   border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border);
 }
@@ -279,7 +279,7 @@
 }
 
 .detail-item {
-  background: white;
+  background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius-md);
   padding: var(--spacing-4);
@@ -315,7 +315,7 @@
   font-size: var(--font-size-xs);
   padding: var(--spacing-1) var(--spacing-2);
   background: var(--color-error);
-  color: white;
+  color: var(--color-text-inverted);
   border: none;
   border-radius: var(--border-radius-sm);
   cursor: pointer;
@@ -332,7 +332,7 @@
   height: 24px;
   border-radius: 50%;
   background: var(--color-primary-500);
-  color: white;
+  color: var(--color-text-inverted);
   display: flex;
   align-items: center;
   justify-content: center;
