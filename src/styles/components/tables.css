@@ -58,6 +58,28 @@
   justify-content: space-between;
 }
 
+/* Make sortable headers keyboard accessible without changing visuals */
+.table-header-button {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: inherit;
+}
+
+.table-header-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
+  border-radius: var(--border-radius-sm);
+}
+
 .table-sort-icon {
   opacity: 0.4;
   transition: opacity var(--transition-fast);

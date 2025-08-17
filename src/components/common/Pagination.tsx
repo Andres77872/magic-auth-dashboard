@@ -8,6 +8,8 @@ interface PaginationProps {
   itemsPerPage: number;
   onPageChange: (page: number) => void;
   className?: string;
+  itemLabelSingular?: string;
+  itemLabelPlural?: string;
 }
 
 export function Pagination({
@@ -17,6 +19,8 @@ export function Pagination({
   itemsPerPage,
   onPageChange,
   className = '',
+  itemLabelSingular = 'item',
+  itemLabelPlural = 'items',
 }: PaginationProps): React.JSX.Element {
   
   const startItem = ((currentPage - 1) * itemsPerPage) + 1;
@@ -81,8 +85,8 @@ export function Pagination({
   return (
     <div className={`pagination ${className}`}>
       <div className="pagination-info">
-        <span className="pagination-text">
-          Showing {startItem} to {endItem} of {totalItems} users
+        <span className="pagination-text" aria-live="polite">
+          Showing {startItem} to {endItem} of {totalItems} {totalItems === 1 ? itemLabelSingular : itemLabelPlural}
         </span>
       </div>
 

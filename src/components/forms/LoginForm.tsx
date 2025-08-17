@@ -149,6 +149,7 @@ export function LoginForm(): React.JSX.Element {
           placeholder="Enter your username"
           leftIcon={<UserIcon size="medium" />}
           autoComplete="username"
+          autoFocus
           disabled={isSubmitting}
           fullWidth
           required
@@ -172,6 +173,7 @@ export function LoginForm(): React.JSX.Element {
               className="auth-login-password-toggle"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
               disabled={isSubmitting}
               tabIndex={-1}
             >

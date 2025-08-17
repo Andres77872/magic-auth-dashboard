@@ -19,6 +19,7 @@ export interface TableProps<T> {
   emptyMessage?: string;
   className?: string;
   maxHeight?: string;
+  caption?: string;
 }
 
 type SortState<T> = {
@@ -34,6 +35,7 @@ export function Table<T extends Record<string, any>>({
   emptyMessage = 'No data available',
   className = '',
   maxHeight,
+  caption,
 }: TableProps<T>): React.JSX.Element {
   const [sortState, setSortState] = useState<SortState<T>>({
     key: null,
@@ -87,22 +89,45 @@ export function Table<T extends Record<string, any>>({
         className="table-container table-container-dynamic"
         style={{ '--dynamic-table-height': maxHeight } as React.CSSProperties}
       >
-        <table className="table">
+        <table className="table" aria-busy={isLoading || undefined}>
+          {caption && <caption className="sr-only">{caption}</caption>}
           <thead className="table-header">
             <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.key as string}
-                  className={`table-header-cell ${column.sortable ? 'table-sortable' : ''} table-align-${column.align || 'left'} table-column-dynamic`}
-                  style={{ '--dynamic-column-width': column.width } as React.CSSProperties}
-                  onClick={() => handleSort(column)}
-                >
-                  <div className="table-header-content">
-                    <span>{column.header}</span>
-                    {getSortIcon(column)}
-                  </div>
-                </th>
-              ))}
+              {columns.map((column) => {
+                const isActive = sortState.key === column.key;
+                const ariaSort = column.sortable
+                  ? isActive
+                    ? (sortState.direction === 'asc' ? 'ascending' : 'descending')
+                    : 'none'
+                  : undefined;
+                return (
+                  <th
+                    key={column.key as string}
+                    scope="col"
+                    role={column.sortable ? 'columnheader' : undefined}
+                    aria-sort={ariaSort as React.AriaAttributes['aria-sort']}
+                    className={`table-header-cell ${column.sortable ? 'table-sortable' : ''} table-align-${column.align || 'left'} table-column-dynamic`}
+                    style={{ '--dynamic-column-width': column.width } as React.CSSProperties}
+                  >
+                    {column.sortable ? (
+                      <button
+                        type="button"
+                        className="table-header-button"
+                        onClick={() => handleSort(column)}
+                        aria-label={`Sort by ${column.header}`}
+                        aria-pressed={isActive}
+                      >
+                        <span>{column.header}</span>
+                        {getSortIcon(column)}
+                      </button>
+                    ) : (
+                      <div className="table-header-content">
+                        <span>{column.header}</span>
+                      </div>
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="table-body">

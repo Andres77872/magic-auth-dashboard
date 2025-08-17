@@ -58,6 +58,7 @@ export function NavigationItem({
         onFocus={() => collapsed && setShowTooltip(true)}
         onBlur={() => setShowTooltip(false)}
         aria-label={collapsed ? item.label : undefined}
+        aria-current={isActive ? 'page' : undefined}
         title={collapsed ? item.label : undefined}
       >
         <span className="nav-icon">
