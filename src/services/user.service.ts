@@ -95,7 +95,7 @@ class UserService {
 
   // Activate/Deactivate user
   async toggleUserStatus(userHash: string, isActive: boolean): Promise<ApiResponse<User>> {
-    return await apiClient.patch<User>(`/users/${userHash}/status`, { is_active: isActive });
+    return await apiClient.put<User>(`/users/${userHash}/status`, { is_active: isActive });
   }
 
   // Reset user password

@@ -103,7 +103,7 @@ class GroupService {
 
   // Get groups for a specific user
   async getUserGroups(userHash: string): Promise<ApiResponse<UserGroup[]>> {
-    return await apiClient.get<UserGroup[]>(`/admin/users/${userHash}/groups`);
+    return await apiClient.get<UserGroup[]>(`/admin/user-groups/users/${userHash}/groups`);
   }
 
   // Grant user group access to project

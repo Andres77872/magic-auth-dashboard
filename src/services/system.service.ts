@@ -80,7 +80,7 @@ class SystemService {
   }
 
   async getCacheStatus(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/cache/status');
+    return await apiClient.get<any>('/system/cache/stats');
   }
 
   // Session Management

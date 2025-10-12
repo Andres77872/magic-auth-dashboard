@@ -74,28 +74,37 @@ class AdminService {
   // Bulk Operations
   async bulkUpdateUsers(
     userHashes: string[],
-    updates: any
+    options: {
+      is_active?: boolean;
+      user_type?: 'root' | 'admin' | 'consumer';
+      force_password_reset?: boolean;
+    }
   ): Promise<ApiResponse<{ updated_count: number; errors: any[] }>> {
     return await apiClient.post<{ updated_count: number; errors: any[] }>(
       '/admin/users/bulk-update',
-      { user_hashes: userHashes, updates }
+      { user_hashes: userHashes, ...options }
     );
   }
 
-  async bulkDeleteUsers(userHashes: string[]): Promise<ApiResponse<{ deleted_count: number }>> {
+  async bulkDeleteUsers(
+    userHashes: string[],
+    confirmDeletion: boolean = true
+  ): Promise<ApiResponse<{ deleted_count: number }>> {
     return await apiClient.post<{ deleted_count: number }>(
       '/admin/users/bulk-delete',
-      { user_hashes: userHashes }
+      { user_hashes: userHashes, confirm_deletion: confirmDeletion }
     );
   }
 
   // Bulk Role Assignment
   async bulkAssignRoles(
-    assignments: Array<{ user_hash: string; role_id: number; project_hash: string }>
+    projectHash: string,
+    userHashes: string[],
+    roleNames: string[]
   ): Promise<ApiResponse<{ assigned_count: number; errors: any[] }>> {
     return await apiClient.post<{ assigned_count: number; errors: any[] }>(
-      '/admin/roles/bulk-assign',
-      { assignments }
+      `/admin/projects/${projectHash}/bulk-assign-roles`,
+      { user_hashes: userHashes, role_names: roleNames }
     );
   }
 
