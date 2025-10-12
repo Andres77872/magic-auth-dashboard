@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/contexts';
-import { ErrorBoundary } from '@/components/common';
+import { AuthProvider, ToastProvider } from '@/contexts';
+import { ErrorBoundary, ToastContainer } from '@/components/common';
 import {
   RootOnlyRoute,
   AdminRoute,
@@ -53,8 +53,10 @@ function App(): React.JSX.Element {
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
-          <div className="app">
-            <Routes>
+          <ToastProvider>
+            <ToastContainer />
+            <div className="app">
+              <Routes>
               {/* Public routes */}
               <Route
                 path={ROUTES.LOGIN}
@@ -354,8 +356,9 @@ function App(): React.JSX.Element {
                   </div>
                 }
               />
-            </Routes>
-          </div>
+              </Routes>
+            </div>
+          </ToastProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

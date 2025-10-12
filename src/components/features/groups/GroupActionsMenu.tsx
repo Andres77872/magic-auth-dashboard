@@ -1,5 +1,7 @@
 import React from 'react';
-import { Button } from '@/components/common';
+import { ActionsMenu } from '@/components/common';
+import type { ActionMenuItem } from '@/components/common';
+import { ViewIcon, EditIcon, DeleteIcon } from '@/components/icons';
 import type { UserGroup } from '@/types/group.types';
 import { ROUTES } from '@/utils/routes';
 
@@ -24,32 +26,33 @@ export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({ group }) => 
     }
   };
 
+  const menuItems: ActionMenuItem[] = [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <ViewIcon size="small" />,
+      onClick: handleViewDetails,
+    },
+    {
+      key: 'edit',
+      label: 'Edit',
+      icon: <EditIcon size="small" />,
+      onClick: handleEdit,
+    },
+    {
+      key: 'delete',
+      label: 'Delete',
+      icon: <DeleteIcon size="small" />,
+      onClick: handleDelete,
+      destructive: true,
+    },
+  ];
+
   return (
-    <div className="group-actions-menu">
-      <div className="actions-inline">
-        <Button
-          variant="outline"
-          size="small"
-          onClick={handleViewDetails}
-        >
-          View
-        </Button>
-        <Button
-          variant="outline"
-          size="small"
-          onClick={handleEdit}
-        >
-          Edit
-        </Button>
-        <Button
-          variant="outline"
-          size="small"
-          onClick={handleDelete}
-          className="actions-menu-item-danger"
-        >
-          Delete
-        </Button>
-      </div>
-    </div>
+    <ActionsMenu
+      items={menuItems}
+      ariaLabel={`Actions for ${group.group_name}`}
+      placement="bottom-right"
+    />
   );
 }; 

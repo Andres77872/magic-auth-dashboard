@@ -4,7 +4,7 @@
   margin: 0 auto;
 }
 
-.page-header {
+.project-list-page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -12,29 +12,31 @@
   gap: var(--spacing-4);
 }
 
-.header-content h1 {
+.project-list-page-header-content h1 {
   margin: 0 0 var(--spacing-2) 0;
   color: var(--color-text-primary);
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
 }
 
-.header-content p {
+.project-list-page-header-content p {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-base);
 }
 
-.header-actions {
+.project-list-page-header-actions {
   display: flex;
   gap: var(--spacing-3);
 }
 
 .content-card {
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
+  border-radius: var(--border-radius-lg);
   border: 1px solid var(--color-border);
   padding: var(--spacing-6);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal);
 }
 
 .filters-section {
@@ -66,19 +68,19 @@
   min-height: 200px;
 }
 
-.empty-state {
+.project-list-empty-state {
   text-align: center;
   padding: var(--spacing-8);
   color: var(--color-text-secondary);
 }
 
-.empty-state h3 {
+.project-list-empty-state h3 {
   margin: 0 0 var(--spacing-2) 0;
   color: var(--color-text-primary);
   font-size: var(--font-size-lg);
 }
 
-.empty-state p {
+.project-list-empty-state p {
   margin: 0 0 var(--spacing-4) 0;
 }
 
@@ -137,21 +139,42 @@
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--spacing-4);
+  gap: var(--spacing-6);
   margin-bottom: var(--spacing-6);
 }
 
+/* Article wrapper for semantic HTML */
 .project-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: block;
+  height: 100%;
+  transition: all var(--transition-normal);
+  isolation: isolate;
+  position: relative;
+}
+
+.project-card .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .project-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.project-card:hover .card {
+  box-shadow: var(--shadow-xl);
+}
+
+.project-card:focus-within {
+  outline: 3px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-lg);
 }
 
 .project-card-header {
   margin-bottom: var(--spacing-4);
+  flex-shrink: 0;
 }
 
 .project-card-title {
@@ -177,6 +200,8 @@
 
 .project-card-body {
   margin-bottom: var(--spacing-4);
+  flex: 1;
+  overflow: hidden;
 }
 
 .project-description {
@@ -184,16 +209,27 @@
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .project-card-footer {
   border-top: 1px solid var(--color-border);
   padding-top: var(--spacing-3);
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .project-stats {
   display: flex;
   gap: var(--spacing-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .stat-item {
@@ -272,7 +308,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 10;
+  z-index: var(--z-index-dropdown);
 }
 
 .dropdown-menu {
@@ -281,11 +317,11 @@
   right: 0;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg);
   padding: var(--spacing-2);
   min-width: 150px;
-  z-index: 20;
+  z-index: var(--z-index-popover);
 }
 
 .dropdown-item {
@@ -296,19 +332,20 @@
   border: none;
   text-align: left;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
-  transition: background-color 0.2s ease;
+  transition: all var(--transition-fast);
 }
 
 .dropdown-item:hover {
   background-color: var(--color-gray-50);
 }
 
-.dropdown-item:focus {
-  outline: 2px solid var(--color-primary);
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--color-primary-500);
   outline-offset: -2px;
+  background-color: var(--color-primary-50);
 }
 
 @media (max-width: 768px) {
@@ -316,7 +353,7 @@
     padding: var(--spacing-4);
   }
   
-  .page-header {
+  .project-list-page-header {
     flex-direction: column;
     align-items: stretch;
     gap: var(--spacing-3);

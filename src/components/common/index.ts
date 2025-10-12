@@ -1,6 +1,10 @@
 export { ErrorBoundary } from './ErrorBoundary';
 export { LoadingSpinner } from './LoadingSpinner';
 export { ComingSoon } from './ComingSoon';
+export { EmptyState } from './EmptyState';
+export { ToastContainer } from './ToastContainer';
+export { Skeleton } from './Skeleton';
+export { ProgressBar } from './ProgressBar';
 
 // New UI Components - Milestone 3.3
 export { default as Button } from './Button';
@@ -14,6 +18,7 @@ export { default as Card } from './Card';
 export { default as Badge } from './Badge';
 export { default as Toast } from './Toast';
 export { default as Pagination } from './Pagination';
+export { ActionsMenu } from './ActionsMenu';
 
 // Export types
 export type { ButtonProps } from './Button';
@@ -25,4 +30,8 @@ export type { ConfirmDialogProps } from './ConfirmDialog';
 export type { TableProps, TableColumn } from './Table';
 export type { CardProps } from './Card';
 export type { BadgeProps } from './Badge';
-export type { ToastProps } from './Toast'; 
+export type { ToastProps } from './Toast';
+export type { EmptyStateProps } from './EmptyState';
+export type { SkeletonProps } from './Skeleton';
+export type { ProgressBarProps } from './ProgressBar';
+export type { ActionsMenuProps, ActionMenuItem } from './ActionsMenu'; 

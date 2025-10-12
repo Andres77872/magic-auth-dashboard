@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LoadingSpinner } from './LoadingSpinner';
+import { Skeleton } from './Skeleton';
+import { EmptyState } from './EmptyState';
 import { ChevronIcon } from '@/components/icons';
 
 export interface TableColumn<T> {
@@ -17,9 +18,12 @@ export interface TableProps<T> {
   onSort?: (key: keyof T, direction: 'asc' | 'desc') => void;
   isLoading?: boolean;
   emptyMessage?: string;
+  emptyIcon?: React.ReactNode;
+  emptyAction?: React.ReactNode;
   className?: string;
   maxHeight?: string;
   caption?: string;
+  skeletonRows?: number;
 }
 
 type SortState<T> = {
@@ -33,9 +37,12 @@ export function Table<T extends Record<string, any>>({
   onSort,
   isLoading = false,
   emptyMessage = 'No data available',
+  emptyIcon,
+  emptyAction,
   className = '',
   maxHeight,
   caption,
+  skeletonRows = 5,
 }: TableProps<T>): React.JSX.Element {
   const [sortState, setSortState] = useState<SortState<T>>({
     key: null,
@@ -132,15 +139,28 @@ export function Table<T extends Record<string, any>>({
           </thead>
           <tbody className="table-body">
             {isLoading ? (
-              <tr className="table-loading-row">
-                <td colSpan={columns.length} className="table-loading-cell">
-                  <LoadingSpinner size="md" message="Loading data..." />
-                </td>
-              </tr>
+              Array.from({ length: skeletonRows }).map((_, index) => (
+                <tr key={`skeleton-${index}`} className="table-row">
+                  {columns.map((column) => (
+                    <td key={column.key as string} className="table-cell">
+                      <Skeleton variant="text" />
+                    </td>
+                  ))}
+                </tr>
+              ))
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="table-empty">
-                  {emptyMessage}
+                  {emptyIcon || emptyAction ? (
+                    <EmptyState
+                      icon={emptyIcon || <span>📭</span>}
+                      title={emptyMessage}
+                      description=""
+                      action={emptyAction}
+                    />
+                  ) : (
+                    emptyMessage
+                  )}
                 </td>
               </tr>
             ) : (

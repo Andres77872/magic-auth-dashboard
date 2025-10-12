@@ -73,6 +73,39 @@ class AuthService {
     const response = await apiClient.post<LoginResponse>('/auth/refresh');
     return response as LoginResponse;
   }
+
+  // Switch project for multi-project users
+  async switchProject(projectHash: string): Promise<LoginResponse> {
+    const response = await apiClient.post<LoginResponse>(
+      '/auth/switch-project',
+      { project_hash: projectHash }
+    );
+    
+    if (response.success && response.data) {
+      const loginData = response.data as LoginResponse;
+      if ('session_token' in loginData) {
+        // Update token with new project context
+        apiClient.setAuthToken(loginData.session_token);
+      }
+    }
+    
+    return response as LoginResponse;
+  }
+
+  // Middleware access check (HEAD request)
+  async checkAccess(): Promise<boolean> {
+    try {
+      const response = await fetch(`${apiClient['baseURL']}/access`, {
+        method: 'HEAD',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('magic_auth_token')}`
+        }
+      });
+      return response.status === 204;
+    } catch (error) {
+      return false;
+    }
+  }
 }
 
 export const authService = new AuthService();

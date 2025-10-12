@@ -43,7 +43,7 @@ export function ProjectAnalyticsCard({ project, onClick }: ProjectAnalyticsCardP
       className={`project-analytics-card ${onClick ? 'clickable' : ''}`}
       onClick={onClick}
     >
-      <div className="card-header">
+      <div className="analytics-card-header">
         <div className="project-info">
           <h3 className="project-name">{project.name}</h3>
           <div className="project-id">ID: {project.id}</div>

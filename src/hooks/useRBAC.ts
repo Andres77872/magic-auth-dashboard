@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-// import { rbacService } from '@/services/rbac.service';
+import { rbacService } from '@/services/rbac.service';
 import type { Permission, Role } from '@/types/rbac.types';
 
 export interface RBACHealthStatus {
@@ -10,19 +10,26 @@ export interface RBACHealthStatus {
   issues: string[];
 }
 
+// API Response from /rbac/projects/{project_hash}/summary
 export interface RBACProjectSummary {
+  success: boolean;
   project: {
     project_hash: string;
     project_name: string;
   };
-  statistics: {
+  rbac_summary: {
     total_permissions: number;
     total_roles: number;
-    total_assignments: number;
-    permission_categories: string[];
+    total_user_assignments: number;
+    permissions_by_category: Record<string, string[]>;
+    roles_by_priority: Array<{
+      group_name: string;
+      priority: number;
+      is_active: boolean;
+    }>;
+    active_roles: number;
+    categories: string[];
   };
-  health: RBACHealthStatus;
-  recent_activity: any[];
 }
 
 export interface AuditEntry {
@@ -76,41 +83,84 @@ export function useRBAC(initialProjectHash?: string | null): UseRBACReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      // In a real implementation, you would call the actual API endpoints
-      // For now, we'll simulate the response structure
-      const mockSummary: RBACProjectSummary = {
-        project: {
-          project_hash: projectHash,
-          project_name: 'Current Project'
-        },
-        statistics: {
-          total_permissions: 0,
-          total_roles: 0,
-          total_assignments: 0,
-          permission_categories: []
-        },
-        health: {
-          configured: false,
-          rolesCount: 0,
-          permissionsCount: 0,
-          usersWithRoles: 0,
+      // Fetch real RBAC data from API
+      const summaryResponse = await rbacService.getRBACSummary(projectHash);
+      
+      if (summaryResponse.success && summaryResponse.rbac_summary) {
+        // Fetch permissions and roles in parallel
+        const [permissionsResponse, rolesResponse] = await Promise.all([
+          rbacService.getPermissions(projectHash),
+          rbacService.getRoles(projectHash)
+        ]);
+        
+        const permissions = (permissionsResponse as any).permissions || [];
+        const roles = (rolesResponse as any).roles || [];
+        
+        // Build health status from summary data
+        const healthStatus: RBACHealthStatus = {
+          configured: true,
+          rolesCount: summaryResponse.rbac_summary.total_roles,
+          permissionsCount: summaryResponse.rbac_summary.total_permissions,
+          usersWithRoles: summaryResponse.rbac_summary.total_user_assignments,
           issues: []
-        },
-        recent_activity: []
-      };
-
-      setState(prev => ({ 
-        ...prev, 
-        loading: false, 
-        summary: mockSummary,
-        healthStatus: mockSummary.health
-      }));
+        };
+        
+        setState(prev => ({ 
+          ...prev, 
+          loading: false, 
+          summary: summaryResponse as RBACProjectSummary,
+          healthStatus,
+          permissions,
+          roles
+        }));
+      } else {
+        // RBAC not initialized - this is a normal state, not an error
+        setState(prev => ({ 
+          ...prev, 
+          loading: false,
+          summary: null,
+          healthStatus: {
+            configured: false,
+            rolesCount: 0,
+            permissionsCount: 0,
+            usersWithRoles: 0,
+            issues: ['RBAC system not initialized for this project']
+          },
+          permissions: [],
+          roles: [],
+          error: null
+        }));
+      }
     } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        loading: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch RBAC data'
-      }));
+      // Only set error for unexpected failures
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch RBAC data';
+      
+      // Check if it's a 404 or "not found" type error (RBAC not initialized)
+      if (errorMessage.toLowerCase().includes('not found') || 
+          errorMessage.toLowerCase().includes('404') ||
+          errorMessage.toLowerCase().includes('not initialized')) {
+        setState(prev => ({ 
+          ...prev, 
+          loading: false,
+          summary: null,
+          healthStatus: {
+            configured: false,
+            rolesCount: 0,
+            permissionsCount: 0,
+            usersWithRoles: 0,
+            issues: ['RBAC system not initialized for this project']
+          },
+          permissions: [],
+          roles: [],
+          error: null
+        }));
+      } else {
+        setState(prev => ({ 
+          ...prev, 
+          loading: false, 
+          error: errorMessage
+        }));
+      }
     }
   }, []);
 
@@ -122,39 +172,22 @@ export function useRBAC(initialProjectHash?: string | null): UseRBACReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      // TODO: Implement the actual initialization endpoint when available
-      // const response = await rbacService.initializeProjectRBAC(currentProject, config);
+      // Call the real initialization endpoint
+      const response = await rbacService.initializeRBAC(
+        currentProject, 
+        config.create_default_permissions,
+        config.create_default_roles
+      );
       
-      // For now, return a mock response
-      const mockSummary: RBACProjectSummary = {
-        project: {
-          project_hash: currentProject,
-          project_name: 'Current Project'
-        },
-        statistics: {
-          total_permissions: config.create_default_permissions ? 10 : 0,
-          total_roles: config.create_default_roles ? 4 : 0,
-          total_assignments: 0,
-          permission_categories: config.permission_categories || ['general', 'admin', 'user']
-        },
-        health: {
-          configured: true,
-          rolesCount: config.create_default_roles ? 4 : 0,
-          permissionsCount: config.create_default_permissions ? 10 : 0,
-          usersWithRoles: 0,
-          issues: []
-        },
-        recent_activity: []
-      };
-
-      setState(prev => ({ 
-        ...prev, 
-        loading: false, 
-        summary: mockSummary,
-        healthStatus: mockSummary.health
-      }));
-      
-      return mockSummary;
+      if (response.success) {
+        // After successful initialization, fetch the updated summary
+        await fetchRBACData(currentProject);
+        
+        // Return the initialized data
+        return response as unknown as RBACProjectSummary;
+      } else {
+        throw new Error(response.message || 'Failed to initialize RBAC');
+      }
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
@@ -163,7 +196,7 @@ export function useRBAC(initialProjectHash?: string | null): UseRBACReturn {
       }));
       throw error;
     }
-  }, [currentProject]);
+  }, [currentProject, fetchRBACData]);
 
   const refreshRBACData = useCallback(async () => {
     if (currentProject) {

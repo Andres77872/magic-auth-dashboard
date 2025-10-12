@@ -28,7 +28,7 @@
   bottom: 0;
   background-color: var(--color-overlay-light);
   backdrop-filter: blur(2px);
-  z-index: 9999;
+  z-index: var(--z-index-overlay);
   min-height: 100vh;
 }
 
@@ -264,12 +264,6 @@
 }
 
 /* === ACCESSIBILITY === */
-.magic-loading-spinner__spinner,
-.magic-loading-spinner__dots,
-.magic-loading-spinner__pulse {
-  /* Respect user's motion preferences */
-}
-
 @media (prefers-reduced-motion: reduce) {
   .magic-loading-spinner__circle {
     animation-duration: 1.5s;

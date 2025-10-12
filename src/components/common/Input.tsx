@@ -4,11 +4,13 @@ import { LoadingSpinner } from './LoadingSpinner';
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  success?: boolean;
   helperText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   isLoading?: boolean;
   fullWidth?: boolean;
+  validationState?: 'success' | 'error' | 'warning' | null;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -16,11 +18,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     {
       label,
       error,
+      success = false,
       helperText,
       leftIcon,
       rightIcon,
       isLoading = false,
       fullWidth = false,
+      validationState = null,
       className = '',
       id,
       ...props
@@ -30,6 +34,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const [focused, setFocused] = useState(false);
     const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
 
+    const finalValidationState = error ? 'error' : validationState;
+
     const wrapperClasses = [
       'input-wrapper',
       fullWidth ? 'input-full-width' : '',
@@ -37,6 +43,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       focused ? 'input-focused' : '',
       isLoading ? 'input-loading' : '',
       className,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const inputClasses = [
+      'input-control',
+      finalValidationState ? `validation-${finalValidationState}` : '',
+      success ? 'validation-success' : '',
     ]
       .filter(Boolean)
       .join(' ');
@@ -56,7 +70,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
-            className="input-control"
+            className={inputClasses}
             onFocus={(e) => {
               setFocused(true);
               props.onFocus?.(e);
@@ -83,8 +97,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error && (
-          <div id={`${inputId}-error`} className="input-error-text" role="alert">
+          <div id={`${inputId}-error`} className="validation-message validation-message-error" role="alert">
             {error}
+          </div>
+        )}
+        
+        {!error && success && (
+          <div className="validation-message validation-message-success">
+            Looks good!
           </div>
         )}
         

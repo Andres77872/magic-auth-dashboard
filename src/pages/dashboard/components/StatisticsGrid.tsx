@@ -64,6 +64,17 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
           type: 'neutral',
         },
       },
+      {
+        title: 'Project Groups',
+        value: stats.projectGroups.toLocaleString(),
+        icon: 'groups',
+        color: 'info',
+        clickable: false,
+        change: {
+          value: 0,
+          type: 'neutral',
+        },
+      },
     ];
 
     // Add ROOT-only statistics

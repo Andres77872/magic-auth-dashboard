@@ -63,7 +63,7 @@
   right: 0;
   bottom: 0;
   background-color: var(--color-modal-backdrop);
-  z-index: var(--z-index-modal-backdrop);
+  z-index: 150; /* Between header (200) and modal (1050) */
   display: none;
 }
 
@@ -93,7 +93,10 @@
   background: var(--color-surface);
   border-bottom: var(--border-divider);
   box-shadow: var(--shadow-sm);
-  z-index: var(--z-index-sticky);
+  z-index: 200; /* Highest z-index for main dashboard header */
+  /* Ensure header stays on top */
+  position: relative;
+  isolation: isolate;
 }
 
 .header-content {
@@ -330,6 +333,10 @@
   overflow: hidden;
   transition: width var(--transition-normal);
   width: var(--sidebar-width);
+  /* Ensure sidebar has proper stacking */
+  position: relative;
+  z-index: 10;
+  isolation: isolate;
 }
 
 .dashboard-sidebar.collapsed {
@@ -373,10 +380,15 @@
 .main-content {
   grid-area: main;
   background-color: var(--color-background-subtle);
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-4);
+  /* Prevent content from going under header */
+  min-height: 0;
+  /* Create proper stacking context */
+  position: relative;
+  isolation: isolate;
 }
 
 .content-header {
@@ -384,6 +396,9 @@
   border-bottom: var(--border-divider);
   padding: var(--spacing-4) var(--spacing-6);
   flex-shrink: 0;
+  /* Ensure it doesn't cause layout issues */
+  position: relative;
+  z-index: 5;
 }
 
 .content-container {
@@ -392,6 +407,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-6);
+  /* Ensure proper spacing and prevent DOM overlap */
+  min-width: 0;
+  /* No overflow here - handled by parent .main-content */
 }
 
 /* === BREADCRUMBS STYLES === */

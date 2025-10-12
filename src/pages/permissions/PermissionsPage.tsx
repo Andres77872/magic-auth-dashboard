@@ -187,7 +187,7 @@ export const PermissionsPage: React.FC = () => {
               </div>
 
               {error && (
-                <div className="error-message">
+                <div className="permissions-page-error-message">
                   Error loading permissions: {error}
                 </div>
               )}

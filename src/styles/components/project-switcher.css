@@ -1,0 +1,93 @@
+/* ============================================
+   Project Switcher Component Styles
+   ============================================ */
+
+.project-switcher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  min-width: 250px;
+}
+
+.project-switcher-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.project-switcher-label svg {
+  color: var(--primary-color);
+}
+
+.project-switcher-select {
+  width: 100%;
+}
+
+.project-switcher-select select {
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.project-switcher-select select:hover:not(:disabled) {
+  border-color: var(--primary-color);
+}
+
+.project-switcher-select select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.project-switcher-error {
+  font-size: var(--font-size-xs);
+  color: var(--danger-color);
+  margin: 0;
+}
+
+/* Compact version for header */
+.header-project-switcher {
+  min-width: 200px;
+  padding: var(--spacing-sm);
+  background: transparent;
+  border: none;
+}
+
+.header-project-switcher .project-switcher-label {
+  display: none;
+}
+
+.header-project-switcher .project-switcher-select select {
+  background: var(--bg-secondary);
+  font-size: var(--font-size-xs);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .project-switcher {
+    min-width: 100%;
+  }
+  
+  .header-project-switcher {
+    display: none;
+  }
+}
+
+/* Loading state */
+.project-switcher .loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-sm);
+}

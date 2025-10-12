@@ -47,12 +47,12 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                 </span>
               </td>
               <td>
-                <button onClick={() => onEdit(role)} className="btn btn-sm">
+                <button onClick={() => onEdit(role)} className="btn btn-small">
                   Edit
                 </button>
                 <button 
                   onClick={() => onDelete(role.id)} 
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-small btn-danger"
                 >
                   Delete
                 </button>

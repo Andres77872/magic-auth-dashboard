@@ -1,27 +1,36 @@
 /* Z-Index Design Tokens */
 :root {
   /* === Z-INDEX LAYERING SYSTEM === */
+  /* Organized from lowest to highest to prevent DOM overlap */
   
-  /* Base Layers */
+  /* Base Layers (0-99) */
   --z-index-auto: auto;
   --z-index-base: 0;
   --z-index-below: -1;
   
-  /* Content Layers */
-  --z-index-dropdown: 1000;
-  --z-index-sticky: 1020;
-  --z-index-fixed: 1030;
-  --z-index-overlay: 1040;
+  /* Layout Layers (100-999) */
+  --z-index-sidebar: 10;            /* Sidebar navigation */
+  --z-index-page-header: 100;       /* Page-level sticky headers */
+  --z-index-mobile-overlay: 150;    /* Mobile menu overlay */
+  --z-index-dashboard-header: 200;  /* Main dashboard header (highest in layout) */
   
-  /* Modal Layers */
-  --z-index-modal-backdrop: 1040;
-  --z-index-modal: 1050;
-  --z-index-popover: 1060;
+  /* Component Layers (1000-1099) */
+  --z-index-bulk-actions: 10;       /* Bulk actions bar inside tables */
+  --z-index-table-header: 20;       /* Sticky table headers */
+  --z-index-dropdown: 1000;         /* Dropdown menus */
+  --z-index-sticky: 1020;           /* Generic sticky elements */
+  --z-index-fixed: 1030;            /* Fixed position elements */
+  --z-index-overlay: 1040;          /* General overlays */
   
-  /* Top Layers */
-  --z-index-tooltip: 1070;
-  --z-index-toast: 1080;
-  --z-index-debug: 9999;
+  /* Modal Layers (1045-1099) */
+  --z-index-modal-backdrop: 1045;   /* Modal backdrop */
+  --z-index-modal: 1050;            /* Modal content */
+  --z-index-popover: 1060;          /* Popovers and tooltips */
+  
+  /* Top Layers (1070+) */
+  --z-index-tooltip: 1070;          /* Tooltips */
+  --z-index-toast: 1080;            /* Toast notifications */
+  --z-index-debug: 9999;            /* Debug overlays */
 }
 
 /* === CONTEXTUAL Z-INDEX === */

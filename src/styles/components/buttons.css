@@ -9,7 +9,7 @@
   font-family: inherit;
   font-weight: var(--font-weight-medium);
   text-decoration: none;
-  transition: var(--transition-button);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
@@ -19,20 +19,25 @@
 
 .btn:disabled {
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.5;
+  filter: grayscale(30%);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 /* Button Variants */
 .btn-primary {
-  background-color: var(--color-primary-500);
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-600) 100%);
   color: var(--color-text-on-primary);
-  border-color: var(--color-primary-500);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  border-color: transparent;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25), 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--color-primary-600);
-  border-color: var(--color-primary-600);
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-700) 100%);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35), 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .btn-secondary {
@@ -109,14 +114,21 @@
   align-items: center;
 }
 
-.btn-icon-left {
-  margin-right: var(--spacing-1);
-}
-
-.btn-icon-right {
-  margin-left: var(--spacing-1);
-}
+/* Icon spacing is handled by parent .btn gap property
+   .btn-icon-left and .btn-icon-right classes remain for backward compatibility
+   but no longer apply any styles - spacing is controlled by .btn gap */
 
 .btn-loading .btn-content {
   opacity: 0;
+}
+
+.btn-label {
+  display: inline-block;
+}
+
+/* Hide button labels on small screens to save space */
+@media (max-width: 640px) {
+  .btn-label {
+    display: none;
+  }
 } 

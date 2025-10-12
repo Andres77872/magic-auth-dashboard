@@ -1,14 +1,21 @@
 /* === TABLE COMPONENT === */
 .table-wrapper {
   background: var(--color-surface);
-  border-radius: var(--border-radius-lg);
-  overflow: clip;
-  border: var(--border-card);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.03),
+    0 4px 12px rgba(0, 0, 0, 0.04);
+  /* Prevent extra height */
+  display: flex;
+  flex-direction: column;
 }
 
 .table-container {
   overflow-x: auto;
-  overflow-y: auto;
+  overflow-y: visible;
+  position: relative;
 }
 
 .table-container[data-max-height] {
@@ -22,18 +29,19 @@
 }
 
 .table-header {
-  background-color: var(--color-surface-secondary);
-  border-bottom: var(--border-divider);
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  background: linear-gradient(to bottom, var(--color-surface-secondary), var(--color-surface));
+  border-bottom: 2px solid var(--color-border);
+  position: relative;
 }
 
 .table-header-cell {
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-4) var(--spacing-5);
   text-align: left;
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   border: none;
 }
 
@@ -95,11 +103,14 @@
 
 .table-row {
   border-bottom: var(--border-divider);
-  transition: background-color var(--transition-fast);
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s ease-in-out, border-left-color 0.15s ease-in-out;
+  position: relative;
 }
 
 .table-row:hover {
   background-color: var(--color-hover-subtle);
+  border-left-color: var(--color-primary-500);
 }
 
 /* Zebra rows for readability */
@@ -107,16 +118,29 @@
   background-color: var(--color-background-subtle);
 }
 
+/* Enhanced dark mode contrast for better readability */
 @media (prefers-color-scheme: dark) {
   .table tbody tr:nth-child(odd) {
-    background-color: var(--color-gray-800);
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+  
+  .table tbody tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .table-row:hover {
+    background-color: rgba(59, 130, 246, 0.1) !important;
   }
 }
 
 .table-cell {
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-4) var(--spacing-5);
   border: none;
   vertical-align: middle;
+  font-size: var(--font-size-sm);
+  /* Ensure proper text wrapping and prevent overflow */
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .table-loading,

@@ -35,6 +35,16 @@ class AdminService {
     return await apiClient.get<any>('/admin/system/overview');
   }
 
+  // Admin Health Check
+  async getAdminHealth(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/admin/health');
+  }
+
+  // Get Activity Types
+  async getActivityTypes(): Promise<ApiResponse<{ activity_types: string[] }>> {
+    return await apiClient.get<{ activity_types: string[] }>('/admin/activity/types');
+  }
+
   // Export Data
   async exportUsers(format: 'csv' | 'json' = 'csv'): Promise<ApiResponse<{ download_url: string }>> {
     return await apiClient.get<{ download_url: string }>(`/admin/export/users?format=${format}`);
@@ -75,6 +85,27 @@ class AdminService {
   async bulkDeleteUsers(userHashes: string[]): Promise<ApiResponse<{ deleted_count: number }>> {
     return await apiClient.post<{ deleted_count: number }>(
       '/admin/users/bulk-delete',
+      { user_hashes: userHashes }
+    );
+  }
+
+  // Bulk Role Assignment
+  async bulkAssignRoles(
+    assignments: Array<{ user_hash: string; role_id: number; project_hash: string }>
+  ): Promise<ApiResponse<{ assigned_count: number; errors: any[] }>> {
+    return await apiClient.post<{ assigned_count: number; errors: any[] }>(
+      '/admin/roles/bulk-assign',
+      { assignments }
+    );
+  }
+
+  // Bulk Group Assignment
+  async bulkAssignGroups(
+    groupHash: string,
+    userHashes: string[]
+  ): Promise<ApiResponse<{ assigned_count: number; errors: any[] }>> {
+    return await apiClient.post<{ assigned_count: number; errors: any[] }>(
+      `/admin/user-groups/${groupHash}/members/bulk`,
       { user_hashes: userHashes }
     );
   }

@@ -60,7 +60,7 @@ export const ProjectCreatePage: React.FC = () => {
 
       <Card className="content-card">
         {error && (
-          <div className="error-message">
+          <div className="project-create-error-message">
             <p>{error}</p>
           </div>
         )}

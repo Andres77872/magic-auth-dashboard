@@ -32,21 +32,30 @@
 
 .content-card {
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
+  border-radius: var(--border-radius-lg);
   border: 1px solid var(--color-border);
   padding: var(--spacing-6);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal);
 }
 
-.error-message {
+.project-create-error-message {
   margin-bottom: var(--spacing-4);
   padding: var(--spacing-3);
   background: var(--color-error-light);
-  border: 1px solid var(--color-error);
-  border-radius: var(--radius-md);
+  border: 2px solid var(--color-error);
+  border-radius: var(--border-radius-md);
   color: var(--color-error-dark);
+  animation: shake 0.3s ease-in-out;
 }
 
-.error-message p {
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.project-create-error-message p {
   margin: 0;
   font-size: var(--font-size-sm);
 }
@@ -65,8 +74,8 @@
   color: var(--color-text-primary);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--spacing-2);
+  border-bottom: 2px solid var(--color-border);
+  padding-bottom: var(--spacing-3);
 }
 
 .form-grid {
@@ -74,7 +83,45 @@
   gap: var(--spacing-4);
 }
 
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-4);
+  min-height: 400px;
+  padding: var(--spacing-8);
+}
 
+.loading-container p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  margin: 0;
+}
+
+.error-container {
+  text-align: center;
+  padding: var(--spacing-8);
+}
+
+.error-container h2 {
+  color: var(--color-error);
+  margin-bottom: var(--spacing-4);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.error-container p {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-6);
+}
+
+.form-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  justify-content: center;
+  margin-top: var(--spacing-4);
+}
 
 @media (max-width: 768px) {
   .project-create-page {

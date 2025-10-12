@@ -1,8 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Table, Badge, Button } from '@/components/common';
+import { Table, Badge } from '@/components/common';
 import { UserActionsMenu } from './UserActionsMenu';
+import { UserAvatar } from './UserAvatar';
+import { BulkActionsBar } from './BulkActionsBar';
+import { UserTableSkeleton } from './UserTableSkeleton';
 import { usePermissions } from '@/hooks';
-import { CheckIcon, ErrorIcon, GroupIcon, DeleteIcon, ProjectIcon, WarningIcon } from '@/components/icons';
+import { GroupIcon, ProjectIcon, WarningIcon } from '@/components/icons';
+import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
 import type { TableColumn } from '@/components/common';
 import type { User, UserType } from '@/types/auth.types';
 
@@ -42,29 +46,6 @@ export function UserTable({
 
   const selectedUserHashes = Array.from(selectedUsers);
   const isSomeSelected = selectedUsers.size > 0;
-
-  const getUserTypeBadgeVariant = (userType: UserType) => {
-    switch (userType) {
-      case 'root':
-        return 'error';
-      case 'admin':
-        return 'warning';
-      case 'consumer':
-        return 'info';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const handleSelectUser = (userHash: string) => {
     const newSelected = new Set(selectedUsers);
@@ -150,15 +131,14 @@ export function UserTable({
       sortable: false,
       width: '50px',
       render: (_, user) => (
-        <div className="bulk-select-cell">
-          <input
-            type="checkbox"
-            checked={selectedUsers.has(user.user_hash)}
-            onChange={() => handleSelectUser(user.user_hash)}
-            disabled={isLoading || !isUserOperable(user)}
-            aria-label={`Select ${user.username}`}
-          />
-        </div>
+        <input
+          type="checkbox"
+          checked={selectedUsers.has(user.user_hash)}
+          onChange={() => handleSelectUser(user.user_hash)}
+          disabled={isLoading || !isUserOperable(user)}
+          aria-label={`Select ${user.username}`}
+          className="bulk-select-checkbox"
+        />
       ),
     },
     {
@@ -167,12 +147,16 @@ export function UserTable({
       sortable: true,
       render: (value, user) => (
         <div className="user-info">
-                                <div className="user-table-avatar">
-            {user.username.charAt(0).toUpperCase()}
-          </div>
+          <UserAvatar 
+            username={user.username} 
+            userType={user.user_type}
+            size="small"
+          />
           <div className="user-details">
             <div className="user-name">{value as string}</div>
-            <div className="user-hash">{user.user_hash}</div>
+            <div className="user-hash" title={user.user_hash}>
+              {truncateHash(user.user_hash)}
+            </div>
           </div>
         </div>
       ),
@@ -190,7 +174,7 @@ export function UserTable({
       header: 'User Type',
       sortable: true,
       render: (value, user) => (
-        <div className="user-type-info">
+        <>
           <Badge 
             variant={getUserTypeBadgeVariant(value as UserType)}
             size="small"
@@ -198,11 +182,11 @@ export function UserTable({
             {(value as string).toUpperCase()}
           </Badge>
           {user.user_type_info?.error && (
-            <div className="user-type-error" title={user.user_type_info.error}>
+            <span className="user-type-error" title={user.user_type_info.error}>
               <WarningIcon size="small" />
-            </div>
+            </span>
           )}
-        </div>
+        </>
       ),
     },
     {
@@ -210,25 +194,23 @@ export function UserTable({
       header: 'Groups',
       sortable: false,
       render: (_, user) => (
-        <div className="user-groups">
-          {user.groups && user.groups.length > 0 ? (
-            <div className="group-list">
-              {user.groups.slice(0, 2).map(group => (
-                <Badge key={group.group_hash} variant="secondary" size="small">
-                  <GroupIcon size="small" />
-                  {group.group_name}
-                </Badge>
-              ))}
-              {user.groups.length > 2 && (
-                <Badge variant="secondary" size="small">
-                  +{user.groups.length - 2} more
-                </Badge>
-              )}
-            </div>
-          ) : (
-            <span className="no-groups">No groups</span>
-          )}
-        </div>
+        user.groups && user.groups.length > 0 ? (
+          <>
+            {user.groups.slice(0, 2).map(group => (
+              <Badge key={group.group_hash} variant="secondary" size="small">
+                <GroupIcon size="small" />
+                {group.group_name}
+              </Badge>
+            ))}
+            {user.groups.length > 2 && (
+              <Badge variant="secondary" size="small">
+                +{user.groups.length - 2} more
+              </Badge>
+            )}
+          </>
+        ) : (
+          <span className="no-groups">No groups</span>
+        )
       ),
     },
     {
@@ -236,25 +218,23 @@ export function UserTable({
       header: 'Projects',
       sortable: false,
       render: (_, user) => (
-        <div className="user-projects">
-          {user.projects && user.projects.length > 0 ? (
-            <div className="project-list">
-              {user.projects.slice(0, 2).map(project => (
-                <Badge key={project.project_hash} variant="info" size="small">
-                  <ProjectIcon size="small" />
-                  {project.project_name}
-                </Badge>
-              ))}
-              {user.projects.length > 2 && (
-                <Badge variant="secondary" size="small">
-                  +{user.projects.length - 2} more
-                </Badge>
-              )}
-            </div>
-          ) : (
-            <span className="no-projects">No projects</span>
-          )}
-        </div>
+        user.projects && user.projects.length > 0 ? (
+          <>
+            {user.projects.slice(0, 2).map(project => (
+              <Badge key={project.project_hash} variant="info" size="small">
+                <ProjectIcon size="small" />
+                {project.project_name}
+              </Badge>
+            ))}
+            {user.projects.length > 2 && (
+              <Badge variant="secondary" size="small">
+                +{user.projects.length - 2} more
+              </Badge>
+            )}
+          </>
+        ) : (
+          <span className="no-projects">No projects</span>
+        )
       ),
     },
     {
@@ -272,7 +252,7 @@ export function UserTable({
       header: 'Created At',
       sortable: true,
       render: (value) => (
-        <span className="user-date">{formatDate(value as string)}</span>
+        <span className="user-date">{formatDateTime(value as string)}</span>
       ),
     },
     {
@@ -294,87 +274,34 @@ export function UserTable({
     onSort?.(key, direction);
   };
 
+  // Show skeleton while loading initial data
+  if (isLoading && users.length === 0) {
+    return <UserTableSkeleton rows={10} />;
+  }
+
   return (
-    <div className="user-table-container">
-      {/* Bulk Actions Toolbar */}
+    <>
       {isSomeSelected && (
-        <div className="bulk-actions-toolbar">
-          <div className="bulk-actions-info">
-            <span className="selected-count">
-              {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''} selected
-            </span>
-          </div>
-          
-          <div className="bulk-actions-buttons">
-            {onBulkUpdateStatus && (
-              <>
-                <Button
-                  variant="outline"
-                  size="small"
-                  onClick={handleBulkActivate}
-                  disabled={isBulkLoading}
-                >
-                  <CheckIcon size="small" />
-                  Activate
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="small"
-                  onClick={handleBulkDeactivate}
-                  disabled={isBulkLoading}
-                >
-                  <ErrorIcon size="small" />
-                  Deactivate
-                </Button>
-              </>
-            )}
-            
-            {onBulkAssignGroup && (
-              <Button
-                variant="outline"
-                size="small"
-                onClick={handleBulkAssignGroup}
-                disabled={isBulkLoading}
-              >
-                <GroupIcon size="small" />
-                Assign Group
-              </Button>
-            )}
-            
-            {onBulkDelete && (
-              <Button
-                variant="danger"
-                size="small"
-                onClick={handleBulkDelete}
-                disabled={isBulkLoading}
-              >
-                <DeleteIcon size="small" />
-                Delete
-              </Button>
-            )}
-            
-            <Button
-              variant="outline"
-              size="small"
-              onClick={() => setSelectedUsers(new Set())}
-              disabled={isBulkLoading}
-            >
-              Clear Selection
-            </Button>
-          </div>
-        </div>
+        <BulkActionsBar
+          selectedCount={selectedUsers.size}
+          onActivate={onBulkUpdateStatus ? handleBulkActivate : undefined}
+          onDeactivate={onBulkUpdateStatus ? handleBulkDeactivate : undefined}
+          onAssignGroup={onBulkAssignGroup ? handleBulkAssignGroup : undefined}
+          onDelete={onBulkDelete ? handleBulkDelete : undefined}
+          onClearSelection={() => setSelectedUsers(new Set())}
+          isLoading={isBulkLoading}
+        />
       )}
 
       <Table
         columns={columns}
         data={users}
-        isLoading={isLoading || isBulkLoading}
+        isLoading={isBulkLoading}
         onSort={handleSort}
         emptyMessage="No users found"
         className={`user-table ${isSomeSelected ? 'has-selection' : ''}`}
       />
-    </div>
+    </>
   );
 }
 

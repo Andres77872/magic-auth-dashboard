@@ -39,12 +39,12 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
               </td>
               <td>{permission.description}</td>
               <td>
-                <button onClick={() => onEdit(permission)} className="btn btn-sm">
+                <button onClick={() => onEdit(permission)} className="btn btn-small">
                   Edit
                 </button>
                 <button 
                   onClick={() => onDelete(permission.id)} 
-                  className="btn btn-sm btn-danger"
+                  className="btn btn-small btn-danger"
                 >
                   Delete
                 </button>

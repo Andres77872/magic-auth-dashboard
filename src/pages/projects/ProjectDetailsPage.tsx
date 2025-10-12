@@ -88,10 +88,10 @@ export const ProjectDetailsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="project-create-page">
+      <div className="project-create-page" role="main" aria-busy="true">
         <div className="loading-container">
-          <LoadingSpinner />
-          <p>Loading project details...</p>
+          <LoadingSpinner aria-label="Loading project details" />
+          <p aria-live="polite">Loading project details...</p>
         </div>
       </div>
     );
@@ -99,19 +99,23 @@ export const ProjectDetailsPage: React.FC = () => {
 
   if (error || !project) {
     return (
-      <div className="project-create-page">
+      <div className="project-create-page" role="main" aria-labelledby="error-title">
         <Card>
           <div className="error-container">
-            <h2>Error</h2>
-            <p>{error || 'Project not found'}</p>
+            <h2 id="error-title" className="text-error">Error</h2>
+            <p role="alert" className="text-secondary">{error || 'Project not found'}</p>
             <div className="form-actions">
-              <Button onClick={() => navigate(ROUTES.PROJECTS)}>
+              <Button 
+                onClick={() => navigate(ROUTES.PROJECTS)}
+                aria-label="Return to projects list"
+              >
                 Back to Projects
               </Button>
               {projectHash && (
                 <Button 
                   variant="outline" 
                   onClick={() => window.location.reload()}
+                  aria-label="Retry loading project"
                 >
                   Retry
                 </Button>
@@ -131,17 +135,18 @@ export const ProjectDetailsPage: React.FC = () => {
   ];
 
   return (
-    <div className="project-create-page">
+    <div className="project-create-page" role="main" aria-labelledby="project-title">
       {successMessage && (
-        <div className="success-message">
+        <div className="success-message" role="status" aria-live="polite">
           <Card>
             <div className="flex items-center gap-2 text-success">
-              <span>✅</span>
+              <span aria-hidden="true">✅</span>
               <span>{successMessage}</span>
               <Button 
                 variant="ghost" 
                 size="small" 
                 onClick={() => setSuccessMessage(null)}
+                aria-label="Dismiss success message"
               >
                 ×
               </Button>
@@ -150,50 +155,62 @@ export const ProjectDetailsPage: React.FC = () => {
         </div>
       )}
 
-      <div className="page-header">
+      <header className="page-header">
         <div className="header-content">
           <div className="flex items-center gap-2">
-            <h1>{project.project_name}</h1>
+            <h1 id="project-title">{project.project_name}</h1>
             {project.is_active !== false ? (
-              <Badge variant="success">Active</Badge>
+              <Badge variant="success" aria-label="Status: Active">Active</Badge>
             ) : (
-              <Badge variant="warning">Archived</Badge>
+              <Badge variant="warning" aria-label="Status: Archived">Archived</Badge>
             )}
           </div>
-          <p>{project.project_description || 'No description provided'}</p>
+          <p className="text-secondary">{project.project_description || 'No description provided'}</p>
         </div>
-        <div className="header-actions">
+        <nav className="header-actions" aria-label="Project actions">
           <Button 
             variant="outline"
             onClick={() => navigate(`${ROUTES.PROJECTS_EDIT}/${projectHash}`)}
+            aria-label="Edit project details"
           >
             Edit Project
           </Button>
           <Button 
             variant="outline"
             onClick={() => navigate(ROUTES.PROJECTS)}
+            aria-label="Return to projects list"
           >
             Back to Projects
           </Button>
-        </div>
-      </div>
+        </nav>
+      </header>
 
       <Card>
         <div className="tab-container">
-          <div className="tab-header">
+          <div className="tab-header" role="tablist" aria-label="Project sections">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`tabpanel-${tab.id}`}
+                id={`tab-${tab.id}`}
+                tabIndex={activeTab === tab.id ? 0 : -1}
               >
-                <span className="tab-icon">{tab.icon}</span>
+                <span className="tab-icon" aria-hidden="true">{tab.icon}</span>
                 <span className="tab-label">{tab.label}</span>
               </button>
             ))}
           </div>
 
-          <div className="tab-content">
+          <div 
+            className="tab-content" 
+            role="tabpanel" 
+            id={`tabpanel-${activeTab}`}
+            aria-labelledby={`tab-${activeTab}`}
+          >
             {activeTab === 'overview' && (
               <ProjectOverviewTab 
                 project={project} 

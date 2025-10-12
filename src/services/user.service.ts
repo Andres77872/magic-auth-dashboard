@@ -26,6 +26,11 @@ class UserService {
     return response as UpdateProfileResponse;
   }
 
+  // Get user access summary
+  async getUserAccessSummary(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/users/access-summary');
+  }
+
   // Create ROOT user (ROOT only)
   async createRootUser(userData: CreateRootUserRequest): Promise<CreateRootUserResponse> {
     const response = await apiClient.post<CreateRootUserResponse>('/user-types/root', userData);
@@ -101,6 +106,94 @@ class UserService {
   // Change user type (ROOT only)
   async changeUserType(userHash: string, newType: string): Promise<ApiResponse<User>> {
     return await apiClient.patch<User>(`/users/${userHash}/type`, { user_type: newType });
+  }
+
+  // Get user type information
+  async getUserTypeInfo(userHash: string): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>(`/user-types/${userHash}/info`);
+  }
+
+  // Update user type with project assignment
+  async updateUserType(
+    userHash: string,
+    userType: string,
+    assignedProjectId?: number
+  ): Promise<ApiResponse<any>> {
+    return await apiClient.put<any>(
+      `/user-types/${userHash}/type`,
+      { user_type: userType, assigned_project_id: assignedProjectId }
+    );
+  }
+
+  // Get admin user's assigned projects
+  async getAdminProjects(userHash: string): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>(`/user-types/admin/${userHash}/projects`);
+  }
+
+  // Update admin user's projects (multi-project assignment)
+  async updateAdminProjects(
+    userHash: string,
+    projectIds: number[]
+  ): Promise<ApiResponse<any>> {
+    return await apiClient.put<any>(
+      `/user-types/admin/${userHash}/projects`,
+      { assigned_project_ids: projectIds }
+    );
+  }
+
+  // Add admin to a project
+  async addAdminToProject(
+    userHash: string,
+    projectId: number
+  ): Promise<ApiResponse<any>> {
+    return await apiClient.post<any>(
+      `/user-types/admin/${userHash}/projects/add`,
+      { project_id: projectId }
+    );
+  }
+
+  // Remove admin from a project
+  async removeAdminFromProject(
+    userHash: string,
+    projectId: number
+  ): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(
+      `/user-types/admin/${userHash}/projects/${projectId}`
+    );
+  }
+
+  // Get user type statistics
+  async getUserTypeStats(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/user-types/stats');
+  }
+
+  // List users by type (ROOT, ADMIN, CONSUMER)
+  async getUsersByType(
+    userType: 'root' | 'admin' | 'consumer',
+    params: { limit?: number; offset?: number } = {}
+  ): Promise<ApiResponse<any[]>> {
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    return await apiClient.get<any[]>(
+      `/user-types/users/${userType}`,
+      cleanParams
+    );
+  }
+
+  // Update admin user's single project (legacy endpoint)
+  async updateAdminProject(
+    userHash: string,
+    assignedProjectId: number
+  ): Promise<ApiResponse<any>> {
+    return await apiClient.put<any>(
+      `/user-types/admin/${userHash}/project`,
+      { assigned_project_id: assignedProjectId }
+    );
   }
 }
 

@@ -166,7 +166,7 @@ export const RolesPage: React.FC = () => {
             </div>
 
             {error && (
-              <div className="error-message">
+              <div className="roles-page-error-message">
                 Error loading roles: {error}
               </div>
             )}

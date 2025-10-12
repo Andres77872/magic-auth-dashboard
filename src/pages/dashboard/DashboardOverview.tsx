@@ -5,12 +5,20 @@ import {
   QuickActionsPanel, 
   SystemHealthPanel 
 } from './components';
-import { useSystemStats, useSystemHealth, useUserType } from '@/hooks';
+import { useSystemStats, useSystemHealth, useUserType, useAdminStats } from '@/hooks';
 
 export function DashboardOverview(): React.JSX.Element {
   const { stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useSystemStats();
   const { health, isLoading: healthLoading, error: healthError, refetch: refetchHealth } = useSystemHealth();
+  // NEW: Real admin statistics from API (replaces mock data)
+  const { stats: adminStats, isLoading: adminLoading, error: adminError } = useAdminStats();
   const { isRoot } = useUserType();
+  
+  // Admin stats can be used for enhanced dashboard display:
+  // - adminStats.totals.users, adminStats.totals.projects
+  // - adminStats.user_breakdown (root/admin/consumer counts)
+  // - adminStats.growth (7-day growth metrics)
+  // - adminStats.system_health (database/redis health)
 
   return (
     <main className="dashboard-overview" role="main">
@@ -26,6 +34,19 @@ export function DashboardOverview(): React.JSX.Element {
           isLoading={statsLoading}
           error={statsError}
         />
+        {/* TODO: Update StatisticsGrid component to accept adminStats prop */}
+        {/* This will enable showing: user breakdown, growth metrics, system health */}
+        {adminStats && !adminLoading && !adminError && (
+          <div className="admin-stats-preview" style={{ marginTop: '1rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
+            <h4>Admin Stats Available (Example):</h4>
+            <p>Total Users: {adminStats.totals.users}</p>
+            <p>Total Projects: {adminStats.totals.projects}</p>
+            <p>Active Sessions: {adminStats.totals.active_sessions}</p>
+            <p>Root Users: {adminStats.user_breakdown.root_users}</p>
+            <p>Admin Users: {adminStats.user_breakdown.admin_users}</p>
+            <p>Consumer Users: {adminStats.user_breakdown.consumer_users}</p>
+          </div>
+        )}
       </section>
 
       {/* Quick Actions Panel */}

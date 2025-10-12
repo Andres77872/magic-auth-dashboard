@@ -41,6 +41,22 @@ export interface CreatePermissionResponse extends ApiResponse {
   permission: Permission;
 }
 
+export interface CreateRoleRequest {
+  group_name: string;
+  description: string;
+  permission_ids?: number[];
+  priority?: number;
+  is_active?: boolean;
+}
+
+export interface UpdateRoleRequest {
+  group_name?: string;
+  description?: string;
+  permission_ids?: number[];
+  priority?: number;
+  is_active?: boolean;
+}
+
 export interface AssignRoleRequest {
   role_id: number;
 }

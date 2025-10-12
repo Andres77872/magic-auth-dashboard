@@ -3,7 +3,7 @@ import { ActivityItem } from './ActivityItem';
 import { ActivityFilter } from './ActivityFilter';
 import { useRecentActivity } from '@/hooks/dashboard/useRecentActivity';
 import { useUserType } from '@/hooks';
-import { LoadingSpinner } from '@/components/common';
+import { Skeleton, EmptyState } from '@/components/common';
 import type { ActivityFilters } from '@/types/analytics.types';
 
 export function RecentActivityFeed(): React.JSX.Element {
@@ -130,19 +130,32 @@ export function RecentActivityFeed(): React.JSX.Element {
       <div className="activity-feed-container">
         {isLoading && activities.length === 0 ? (
           <div className="activity-loading">
-            <LoadingSpinner size="md" variant="subtle" message="Loading activity feed..." />
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={`skeleton-${index}`} className="activity-item-skeleton">
+                <div className="flex items-center gap-3 mb-2">
+                  <Skeleton variant="avatar" />
+                  <div className="flex-1">
+                    <Skeleton variant="title" width="40%" />
+                    <Skeleton variant="text" width="60%" />
+                  </div>
+                </div>
+                <Skeleton variant="line" count={2} />
+              </div>
+            ))}
           </div>
         ) : activities.length === 0 ? (
-          <div className="activity-empty">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
-              <line x1="9" y1="9" x2="9.01" y2="9"/>
-              <line x1="15" y1="9" x2="15.01" y2="9"/>
-            </svg>
-            <h3>No Activity Found</h3>
-            <p>No recent activity matches your current filters.</p>
-          </div>
+          <EmptyState
+            icon={
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                <line x1="15" y1="9" x2="15.01" y2="9"/>
+              </svg>
+            }
+            title="No Activity Found"
+            description="No recent activity matches your current filters. Try adjusting the filters or check back later."
+          />
         ) : (
           <>
             <div className="activity-list">
@@ -156,7 +169,12 @@ export function RecentActivityFeed(): React.JSX.Element {
 
             {loadingMore && (
               <div className="activity-loading-more">
-                <LoadingSpinner size="sm" message="Loading more..." />
+                <div className="loading-dots">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <span className="text-sm text-secondary">Loading more...</span>
               </div>
             )}
 

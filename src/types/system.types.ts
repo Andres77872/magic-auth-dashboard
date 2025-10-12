@@ -1,19 +1,18 @@
 import type { ApiResponse } from './api.types';
 
 export interface SystemInfo {
+  name: string;
   version: string;
-  environment: string;
-  database_status: string;
-  cache_status: string;
+  architecture: string;
+  status: string;
 }
 
 export interface SystemStatistics {
   total_users: number;
   total_projects: number;
-  active_sessions: number;
-  root_users: number;
-  admin_users: number;
-  consumer_users: number;
+  total_user_groups: number;
+  total_project_groups: number;
+  authentication_type: string;
 }
 
 export interface SystemInfoResponse extends ApiResponse {
@@ -23,7 +22,8 @@ export interface SystemInfoResponse extends ApiResponse {
 }
 
 export interface HealthComponent {
-  status: 'healthy' | 'warning' | 'critical';
+  status: 'healthy' | 'warning' | 'critical' | 'unhealthy' | 'degraded';
+  message?: string;
   response_time_ms?: number;
   additional_info?: string;
   connection_pool?: string;

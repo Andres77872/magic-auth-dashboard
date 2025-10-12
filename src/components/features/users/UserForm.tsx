@@ -327,12 +327,15 @@ export function UserForm({
                 value={formData.username}
                 onChange={(e) => handleInputChange('username', e.target.value)}
                 error={errors.username}
+                success={mode === 'create' && usernameAvailable === true}
+                validationState={mode === 'create' ? (usernameAvailable === true ? 'success' : usernameAvailable === false ? 'error' : null) : null}
                 required
-                disabled={isLoading || mode === 'edit'} // Username can't be changed in edit mode
+                disabled={isLoading || mode === 'edit'}
+                isLoading={mode === 'create' && checkingAvailability}
                 helperText={mode === 'create' ? 
                   (usernameAvailable === true ? 'Username is available' : 
                    usernameAvailable === false ? 'Username is taken' : 
-                   'Checking availability...') : undefined
+                   checkingAvailability ? 'Checking availability...' : 'Enter a unique username') : 'Username cannot be changed'
                 }
               />
             </div>
@@ -345,11 +348,14 @@ export function UserForm({
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 error={errors.email}
+                success={mode === 'create' && !!formData.email && emailAvailable === true}
+                validationState={mode === 'create' && formData.email ? (emailAvailable === true ? 'success' : emailAvailable === false ? 'error' : null) : null}
                 disabled={isLoading}
-                helperText={mode === 'create' ? 
+                isLoading={mode === 'create' && checkingAvailability && formData.email.length > 0}
+                helperText={mode === 'create' && formData.email ? 
                   (emailAvailable === true ? 'Email is available' : 
-                   emailAvailable === false ? 'Email is taken' : 
-                   'Checking availability...') : undefined
+                   emailAvailable === false ? 'Email is already in use' : 
+                   checkingAvailability ? 'Checking availability...' : 'Optional but recommended') : 'Optional but recommended'
                 }
                 ref={emailInputRef}
               />

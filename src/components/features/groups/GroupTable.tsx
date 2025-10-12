@@ -1,5 +1,8 @@
 import React from 'react';
-import { Table, Badge } from '@/components/common';
+import { Table, Badge, Button } from '@/components/common';
+import { GroupIcon } from '@/components/icons';
+import { ROUTES } from '@/utils/routes';
+import { formatDate, formatCount } from '@/utils/component-utils';
 import type { UserGroup } from '@/types/group.types';
 import { GroupActionsMenu } from './GroupActionsMenu';
 
@@ -10,14 +13,6 @@ interface GroupTableProps {
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
 }
-
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
 
 export const GroupTable: React.FC<GroupTableProps> = ({
   groups,
@@ -48,7 +43,7 @@ export const GroupTable: React.FC<GroupTableProps> = ({
       sortable: true,
       render: (_value: any, group: UserGroup) => (
         <Badge variant="secondary">
-          {group.member_count || 0} member{(group.member_count || 0) !== 1 ? 's' : ''}
+          {formatCount(group.member_count || 0, 'member')}
         </Badge>
       )
     },
@@ -67,10 +62,6 @@ export const GroupTable: React.FC<GroupTableProps> = ({
     }
   ];
 
-  if (loading) {
-    return <div className="table-loading">Loading groups...</div>;
-  }
-
   return (
     <Table
       data={groups}
@@ -78,6 +69,16 @@ export const GroupTable: React.FC<GroupTableProps> = ({
       onSort={onSort}
       isLoading={loading}
       emptyMessage="No groups found"
+      emptyIcon={<GroupIcon size="large" />}
+      emptyAction={
+        <Button
+          variant="primary"
+          onClick={() => window.location.href = ROUTES.GROUPS_CREATE}
+        >
+          Create Group
+        </Button>
+      }
+      skeletonRows={6}
     />
   );
 }; 

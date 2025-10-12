@@ -9,6 +9,7 @@
   align-items: flex-start;
 }
 
+/* .flex-between-center - Use .flex-between from utilities.css instead */
 .flex-between-center {
   display: flex;
   justify-content: space-between;
@@ -263,17 +264,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.card-padding {
-  padding: var(--spacing-6);
-}
-
-.card-padding-sm {
-  padding: var(--spacing-4);
-}
-
-.card-padding-lg {
-  padding: var(--spacing-8);
-}
+/* Card padding classes moved to cards.css to avoid duplication */
 
 /* Modal-like patterns */
 .modal-backdrop {

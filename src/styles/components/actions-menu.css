@@ -1,0 +1,213 @@
+/* ============================================================
+   ACTIONS MENU COMPONENT
+   Consolidated dropdown menu styles used across the application
+   ============================================================ */
+
+.actions-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Menu Trigger Button */
+.menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--border-radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.menu-trigger:hover {
+  background-color: var(--color-gray-50);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.menu-trigger:active {
+  background-color: var(--color-gray-100);
+}
+
+.menu-trigger:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.menu-trigger[aria-expanded="true"] {
+  background-color: var(--color-gray-100);
+  color: var(--color-text-primary);
+}
+
+.menu-trigger-label {
+  user-select: none;
+}
+
+/* Menu Dropdown */
+.menu-dropdown {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-2);
+  min-width: 200px;
+  max-width: 280px;
+  z-index: var(--z-index-popover);
+  animation: menuSlideIn 0.15s ease-out;
+}
+
+/* When not using portal (inline dropdown) */
+.actions-menu .menu-dropdown:not([style*="position: fixed"]) {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+}
+
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Menu Items */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  width: 100%;
+  padding: var(--spacing-2-5) var(--spacing-3);
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.menu-item:hover:not(:disabled) {
+  background-color: var(--color-gray-50);
+}
+
+.menu-item:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: -2px;
+  background-color: var(--color-primary-50);
+}
+
+.menu-item:active:not(:disabled) {
+  background-color: var(--color-gray-100);
+}
+
+.menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Destructive menu items */
+.menu-item.destructive {
+  color: var(--color-error);
+}
+
+.menu-item.destructive:hover:not(:disabled) {
+  background-color: var(--color-error-light);
+  color: var(--color-error-dark);
+}
+
+.menu-item.destructive:focus-visible {
+  outline-color: var(--color-error);
+  background-color: var(--color-error-light);
+}
+
+/* Menu item icon */
+.menu-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.menu-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Menu divider */
+.menu-divider,
+.user-menu-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--spacing-2) 0;
+}
+
+/* Legacy support for existing component styles */
+.user-actions-menu,
+.project-actions-menu,
+.group-actions-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Dropdown overlay for inline menus */
+.dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-index-dropdown);
+  background: transparent;
+}
+
+/* Inline actions (buttons displayed side by side) */
+.actions-inline {
+  display: flex;
+  gap: var(--spacing-2);
+  align-items: center;
+}
+
+.actions-menu-item-danger {
+  color: var(--color-error) !important;
+  border-color: var(--color-error) !important;
+}
+
+.actions-menu-item-danger:hover {
+  background-color: var(--color-error-light) !important;
+  border-color: var(--color-error-dark) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .menu-dropdown {
+    max-width: calc(100vw - 32px);
+  }
+  
+  .menu-trigger-label {
+    display: none;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .menu-dropdown {
+    animation: none !important;
+  }
+}

@@ -95,6 +95,46 @@ class SystemService {
   async terminateAllSessions(): Promise<ApiResponse<{ terminated_count: number }>> {
     return await apiClient.post<{ terminated_count: number }>('/system/sessions/terminate-all');
   }
+
+  // Simple ping endpoint
+  async pingSystem(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/system/ping');
+  }
+
+  // Group system health
+  async getGroupSystemHealth(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/system/groups/health');
+  }
+
+  // Group system statistics
+  async getGroupSystemStats(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/system/groups/stats');
+  }
+
+  // Performance metrics
+  async getPerformanceMetrics(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/system/performance');
+  }
+
+  // System diagnostics
+  async getSystemDiagnostics(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/system/diagnostics');
+  }
+
+  // Cache statistics
+  async getCacheStats(): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>('/system/cache/stats');
+  }
+
+  // Invalidate user cache
+  async invalidateUserCache(userHash: string): Promise<ApiResponse<void>> {
+    return await apiClient.post<void>(`/system/cache/invalidate/user/${userHash}`);
+  }
+
+  // Invalidate project cache
+  async invalidateProjectCache(projectId: number): Promise<ApiResponse<void>> {
+    return await apiClient.post<void>(`/system/cache/invalidate/project/${projectId}`);
+  }
 }
 
 export const systemService = new SystemService();

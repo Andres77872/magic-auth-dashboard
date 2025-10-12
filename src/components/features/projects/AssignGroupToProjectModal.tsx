@@ -109,15 +109,15 @@ export function AssignGroupToProjectModal({
 
         <div className="project-list-container">
           {fetchingGroups ? (
-            <div className="loading-state">
+            <div className="assign-modal-loading-state">
               <div className="loading-spinner">
                 <LoadingIcon size="large" />
               </div>
               <p>Loading groups...</p>
             </div>
           ) : error ? (
-            <div className="error-state">
-              <div className="error-icon">
+            <div className="assign-modal-error-state">
+              <div className="assign-modal-error-icon">
                 <ErrorIcon size="large" />
               </div>
               <p>{error}</p>
@@ -126,8 +126,8 @@ export function AssignGroupToProjectModal({
               </Button>
             </div>
           ) : filteredGroups.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">
+            <div className="assign-modal-empty-state">
+              <div className="assign-modal-empty-icon">
                 <HealthIcon size="large" />
               </div>
               <p>

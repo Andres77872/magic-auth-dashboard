@@ -14,9 +14,12 @@ export interface SelectProps {
   placeholder?: string;
   label?: string;
   error?: string;
+  success?: boolean;
   disabled?: boolean;
   searchable?: boolean;
   fullWidth?: boolean;
+  validationState?: 'success' | 'error' | 'warning' | null;
+  helperText?: string;
   className?: string;
 }
 
@@ -27,9 +30,12 @@ export function Select({
   placeholder = 'Select an option',
   label,
   error,
+  success = false,
   disabled = false,
   searchable = false,
   fullWidth = false,
+  validationState = null,
+  helperText,
   className = '',
 }: SelectProps): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false);
@@ -114,6 +120,8 @@ export function Select({
     }
   };
 
+  const finalValidationState = error ? 'error' : validationState;
+
   const selectClasses = [
     'select-wrapper',
     fullWidth ? 'select-full-width' : '',
@@ -121,6 +129,14 @@ export function Select({
     disabled ? 'select-disabled' : '',
     isOpen ? 'select-open' : '',
     className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const triggerClasses = [
+    'select-trigger',
+    finalValidationState ? `validation-${finalValidationState}` : '',
+    success ? 'validation-success' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -136,7 +152,7 @@ export function Select({
       )}
 
       <div
-        className="select-trigger"
+        className={triggerClasses}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         onKeyDown={handleKeyDown}
         tabIndex={disabled ? -1 : 0}
@@ -144,6 +160,7 @@ export function Select({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-labelledby={label ? `${selectId}-label` : undefined}
+        aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}
         id={selectId}
       >
         <span className="select-value">
@@ -197,12 +214,24 @@ export function Select({
       )}
 
       {error && (
-        <div className="select-error-text" role="alert">
+        <div id={`${selectId}-error`} className="validation-message validation-message-error" role="alert">
           {error}
+        </div>
+      )}
+
+      {!error && success && (
+        <div className="validation-message validation-message-success">
+          Looks good!
+        </div>
+      )}
+
+      {!error && helperText && (
+        <div id={`${selectId}-helper`} className="select-helper-text">
+          {helperText}
         </div>
       )}
     </div>
   );
 }
 
-export default Select; 
+export default Select;

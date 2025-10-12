@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Button, Pagination } from '@/components/common';
+import { Button, Pagination, EmptyState } from '@/components/common';
 import { useGroups } from '@/hooks';
 import { GroupTable } from '@/components/features/groups/GroupTable';
 import { GroupCard } from '@/components/features/groups/GroupCard';
 import { GroupFilter } from '@/components/features/groups/GroupFilter';
+import { GroupIcon } from '@/components/icons';
 import { ROUTES } from '@/utils/routes';
 import type { GroupListParams } from '@/types/group.types';
 
@@ -89,7 +90,7 @@ export const GroupListPage: React.FC = () => {
       />
 
       {error && (
-        <div className="error-message">
+        <div className="group-list-error-banner">
           {error}
         </div>
       )}
@@ -112,16 +113,19 @@ export const GroupListPage: React.FC = () => {
         )}
 
         {!isLoading && groups.length === 0 && (
-          <div className="empty-state">
-            <h3>No groups found</h3>
-            <p>Create your first group to get started with group management.</p>
-            <Button
-              variant="primary"
-              onClick={() => window.location.href = ROUTES.GROUPS_CREATE}
-            >
-              Create Group
-            </Button>
-          </div>
+          <EmptyState
+            icon={<GroupIcon size="large" />}
+            title="No groups found"
+            description="Create your first group to get started with group management and organize your users effectively."
+            action={
+              <Button
+                variant="primary"
+                onClick={() => window.location.href = ROUTES.GROUPS_CREATE}
+              >
+                Create Group
+              </Button>
+            }
+          />
         )}
       </div>
 

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, Badge, LoadingSpinner } from '@/components/common';
+import { Card, Badge, Skeleton, EmptyState } from '@/components/common';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
+import { UserIcon, ErrorIcon } from '@/components/icons';
 import type { UserType, UserProfileResponse } from '@/types/auth.types';
-import '@/styles/pages/user-profile.css';
 import '@/styles/pages/user-profile.css';
 
 export function UserProfilePage(): React.JSX.Element {
@@ -113,8 +113,27 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="user-profile-loading">
-            <LoadingSpinner size="lg" variant="primary" message="Loading user profile..." centered />
+          <div className="profile-grid">
+            <Card padding="large">
+              <div className="flex items-center gap-4 mb-4">
+                <Skeleton variant="avatar-lg" />
+                <div className="flex-1">
+                  <Skeleton variant="title" width="40%" />
+                  <Skeleton variant="text" width="30%" />
+                </div>
+              </div>
+              <div className="user-details-grid">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="detail-item">
+                    <Skeleton variant="text" width="50%" />
+                  </div>
+                ))}
+              </div>
+            </Card>
+            <Card padding="large">
+              <Skeleton variant="title" />
+              <Skeleton variant="line" count={4} />
+            </Card>
           </div>
         </div>
       </div>
@@ -136,18 +155,16 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="user-profile-error-state">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="15" y1="9" x2="9" y2="15"/>
-              <line x1="9" y1="9" x2="15" y2="15"/>
-            </svg>
-            <h3>Failed to Load User Profile</h3>
-            <p>{error}</p>
-            <button onClick={() => userHash && fetchUser(userHash)} className="btn btn-primary">
-              Try Again
-            </button>
-          </div>
+          <EmptyState
+            icon={<ErrorIcon size="large" />}
+            title="Failed to Load User Profile"
+            description={error}
+            action={
+              <button onClick={() => userHash && fetchUser(userHash)} className="btn btn-primary">
+                Try Again
+              </button>
+            }
+          />
         </div>
       </div>
     );
@@ -168,10 +185,16 @@ export function UserProfilePage(): React.JSX.Element {
           </div>
         </div>
         <div className="page-content">
-          <div className="user-profile-error-state">
-            <h3>User Not Found</h3>
-            <p>The user you're looking for doesn't exist or has been deleted.</p>
-          </div>
+          <EmptyState
+            icon={<UserIcon size="large" />}
+            title="User Not Found"
+            description="The user you're looking for doesn't exist or has been deleted."
+            action={
+              <button onClick={handleGoBack} className="btn btn-primary">
+                Back to Users
+              </button>
+            }
+          />
         </div>
       </div>
     );

@@ -1,5 +1,10 @@
 import { apiClient } from './api.client';
-import type { Role, ProjectRolesResponse } from '@/types/rbac.types';
+import type { 
+  Role, 
+  ProjectRolesResponse,
+  CreateRoleRequest,
+  UpdateRoleRequest
+} from '@/types/rbac.types';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
 
 export interface RoleListParams extends PaginationParams {
@@ -8,20 +13,9 @@ export interface RoleListParams extends PaginationParams {
   sort_order?: 'asc' | 'desc';
 }
 
-export interface CreateRoleData {
-  group_name: string; // API expects group_name
-  description: string;
-  priority?: number;
-  permission_ids?: number[];
-}
-
-export interface RoleUpdateData {
-  group_name?: string; // API expects group_name
-  description?: string;
-  priority?: number;
-  permission_ids?: number[];
-  is_active?: boolean;
-}
+// Type aliases for backward compatibility - use shared types from rbac.types.ts
+export type CreateRoleData = CreateRoleRequest;
+export type RoleUpdateData = UpdateRoleRequest;
 
 class RoleService {
   async getRoles(

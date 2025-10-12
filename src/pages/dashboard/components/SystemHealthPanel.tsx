@@ -23,13 +23,15 @@ export function SystemHealthPanel({
     return <></>;
   }
 
-  const getOverallStatusColor = (status?: 'healthy' | 'warning' | 'critical') => {
+  const getOverallStatusColor = (status?: 'healthy' | 'warning' | 'critical' | 'degraded' | 'unhealthy') => {
     switch (status) {
       case 'healthy':
         return 'var(--color-success)';
       case 'warning':
+      case 'degraded':
         return 'var(--color-warning)';
       case 'critical':
+      case 'unhealthy':
         return 'var(--color-error)';
       default:
         return 'var(--color-gray-500)';
@@ -163,13 +165,13 @@ export function SystemHealthPanel({
             />
             
             <HealthIndicator
-              title="Cache System"
-              component={health.components.cache}
+              title="Redis Cache"
+              component={health.components.redis}
             />
             
             <HealthIndicator
-              title="Authentication"
-              component={health.components.authentication}
+              title="Group System"
+              component={health.components.group_system}
             />
           </ul>
         )}

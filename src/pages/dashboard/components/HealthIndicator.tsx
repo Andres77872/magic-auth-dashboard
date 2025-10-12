@@ -7,7 +7,7 @@ interface HealthIndicatorProps {
 }
 
 export function HealthIndicator({ title, component }: HealthIndicatorProps): React.JSX.Element {
-  const getStatusIcon = (status: 'healthy' | 'warning' | 'critical') => {
+  const getStatusIcon = (status: HealthComponent['status']) => {
     switch (status) {
       case 'healthy':
         return (
@@ -16,6 +16,7 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
           </svg>
         );
       case 'warning':
+      case 'degraded':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -24,6 +25,7 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
           </svg>
         );
       case 'critical':
+      case 'unhealthy':
         return (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <circle cx="12" cy="12" r="10"/>
@@ -34,25 +36,35 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
     }
   };
 
-  const getStatusColor = (status: 'healthy' | 'warning' | 'critical') => {
+  const getStatusColor = (status: HealthComponent['status']) => {
     switch (status) {
       case 'healthy':
         return 'var(--color-success)';
       case 'warning':
+      case 'degraded':
         return 'var(--color-warning)';
       case 'critical':
+      case 'unhealthy':
         return 'var(--color-error)';
+      default:
+        return 'var(--color-gray-500)';
     }
   };
 
-  const getStatusText = (status: 'healthy' | 'warning' | 'critical') => {
+  const getStatusText = (status: HealthComponent['status']) => {
     switch (status) {
       case 'healthy':
         return 'Healthy';
       case 'warning':
         return 'Warning';
+      case 'degraded':
+        return 'Degraded';
       case 'critical':
         return 'Critical';
+      case 'unhealthy':
+        return 'Unhealthy';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -87,6 +99,13 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
       </div>
 
       <div className="health-details">
+        {component.message && (
+          <div className="health-metric">
+            <span className="metric-label">Status:</span>
+            <span className="metric-value">{component.message}</span>
+          </div>
+        )}
+
         {component.response_time_ms !== undefined && (
           <div className="health-metric">
             <span className="metric-label">Response Time:</span>

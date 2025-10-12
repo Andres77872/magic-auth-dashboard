@@ -6,8 +6,10 @@ export interface DashboardStats {
   activeProjects: number;
   activeSessions: number;
   userGroups: number;
+  projectGroups: number;
   systemVersion: string;
   environment: string;
+  authType: string;
   rootUsers?: number;
   adminUsers?: number;
   consumerUsers?: number;
@@ -37,12 +39,12 @@ export interface QuickAction {
 }
 
 export interface SystemHealthData {
-  status: 'healthy' | 'warning' | 'critical';
+  status: 'healthy' | 'warning' | 'critical' | 'degraded' | 'unhealthy';
   timestamp: string;
   components: {
     database: HealthComponent;
-    cache: HealthComponent;
-    authentication: HealthComponent;
+    redis: HealthComponent;
+    group_system: HealthComponent;
   };
 }
 

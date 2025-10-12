@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useRBAC } from '@/hooks/useRBAC';
 import type { RBACInitConfig } from '@/hooks/useRBAC';
+import { useToast } from '@/contexts/ToastContext';
 
 interface QuickActionsProps {
   projectHash: string;
+  onNavigate?: (path: string) => void;
 }
 
 export const QuickActions: React.FC<QuickActionsProps> = ({ projectHash }) => {
-  const { initializeProjectRBAC, summary, loading } = useRBAC(projectHash);
+  const { initializeProjectRBAC, loading, healthStatus, refreshRBACData } = useRBAC(projectHash);
   const [initializing, setInitializing] = useState(false);
+  const { addToast } = useToast();
 
   const handleInitializeRBAC = async () => {
     setInitializing(true);
@@ -20,14 +23,25 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ projectHash }) => {
         default_roles: ['Admin', 'Manager', 'Member', 'Viewer']
       };
       await initializeProjectRBAC(config);
+      addToast({
+        message: 'RBAC system initialized successfully!',
+        variant: 'success',
+        duration: 4000
+      });
+      await refreshRBACData();
     } catch (error) {
       console.error('Failed to initialize RBAC:', error);
+      addToast({
+        message: error instanceof Error ? error.message : 'Failed to initialize RBAC',
+        variant: 'error',
+        duration: 5000
+      });
     } finally {
       setInitializing(false);
     }
   };
 
-  const isConfigured = summary?.health.configured;
+  const isConfigured = healthStatus?.configured;
 
   return (
     <div className="quick-actions">

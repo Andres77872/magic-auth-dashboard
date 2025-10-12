@@ -6,6 +6,8 @@ import type {
   PermissionCheckResponse,
   UserPermissionsResponse,
   CreatePermissionRequest,
+  CreateRoleRequest,
+  UpdateRoleRequest,
   AssignRoleRequest,
   ProjectPermissionsResponse,
   BulkAssignmentRequest,
@@ -94,7 +96,7 @@ class RBACService {
 
   async createRole(
     projectHash: string,
-    roleData: { role_name: string; description: string; permission_ids: number[] }
+    roleData: CreateRoleRequest
   ): Promise<ApiResponse<Role>> {
     return await apiClient.post<Role>(
       `/rbac/projects/${projectHash}/roles`,
@@ -105,7 +107,7 @@ class RBACService {
   async updateRole(
     projectHash: string,
     roleId: number,
-    data: { role_name?: string; description?: string; permission_ids?: number[] }
+    data: UpdateRoleRequest
   ): Promise<ApiResponse<Role>> {
     return await apiClient.put<Role>(
       `/rbac/projects/${projectHash}/roles/${roleId}`,
@@ -180,6 +182,51 @@ class RBACService {
   // Permission Matrix
   async getPermissionMatrix(projectHash: string): Promise<ApiResponse<any>> {
     return await apiClient.get<any>(`/rbac/projects/${projectHash}/matrix`);
+  }
+
+  // RBAC Initialization
+  async initializeRBAC(
+    projectHash: string,
+    createDefaultPermissions: boolean = true,
+    createDefaultRoles: boolean = true
+  ): Promise<ApiResponse<any>> {
+    const params: Record<string, any> = {
+      create_default_permissions: createDefaultPermissions,
+      create_default_roles: createDefaultRoles
+    };
+    
+    const queryString = new URLSearchParams(
+      Object.entries(params).map(([k, v]) => [k, String(v)])
+    ).toString();
+    
+    return await apiClient.post<any>(
+      `/rbac/projects/${projectHash}/initialize?${queryString}`,
+      {},
+      false // Need auth
+    );
+  }
+
+  // RBAC Audit Log
+  async getRBACAudit(
+    projectHash: string,
+    params: PaginationParams & { action_type?: string } = {}
+  ): Promise<ApiResponse<any[]>> {
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    return await apiClient.get<any[]>(
+      `/rbac/projects/${projectHash}/audit`,
+      cleanParams
+    );
+  }
+
+  // RBAC Summary
+  async getRBACSummary(projectHash: string): Promise<any> {
+    return await apiClient.get<any>(`/rbac/projects/${projectHash}/summary`);
   }
 
   // User Role History
@@ -389,6 +436,24 @@ class RBACService {
     }>(
       `/rbac/assignments/analytics`,
       cleanParams
+    );
+  }
+
+  // Export RBAC Configuration
+  async exportRBACConfig(projectHash: string): Promise<ApiResponse<any>> {
+    return await apiClient.get<any>(
+      `/rbac/projects/${projectHash}/export`
+    );
+  }
+
+  // Import RBAC Configuration
+  async importRBACConfig(
+    projectHash: string,
+    config: any
+  ): Promise<ApiResponse<any>> {
+    return await apiClient.post<any>(
+      `/rbac/projects/${projectHash}/import`,
+      { config }
     );
   }
 }

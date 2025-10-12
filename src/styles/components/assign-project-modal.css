@@ -7,20 +7,20 @@
 .assign-project-content {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--spacing-5);
 }
 
 /* Selection Header */
 .selection-header {
   background: var(--color-surface-secondary);
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--border-radius-md);
   border: 1px solid var(--color-border);
 }
 
 .selection-count {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--color-text-primary);
 }
@@ -28,7 +28,7 @@
 /* Project Controls */
 .project-controls {
   display: flex;
-  gap: 1rem;
+  gap: var(--spacing-4);
   align-items: center;
 }
 
@@ -41,15 +41,15 @@
 }
 
 .select-all-btn {
-  padding: 0.5rem 1rem;
-  font-size: 0.813rem;
+  padding: var(--spacing-2) var(--spacing-4);
+  font-size: var(--font-size-sm);
   font-weight: 500;
   color: var(--color-primary);
   background: var(--color-primary-bg);
   border: 1px solid var(--color-primary-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--border-radius-md);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--transition-fast);
 }
 
 .select-all-btn:hover:not(:disabled) {
@@ -62,63 +62,69 @@
   cursor: not-allowed;
 }
 
+.select-all-btn:focus-visible {
+  outline: 3px solid var(--color-primary-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--color-focus-ring-primary);
+}
+
 /* Project List Container */
 .project-list-container {
   min-height: 300px;
   max-height: 450px;
   overflow-y: auto;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--border-radius-lg);
   background: var(--color-surface);
 }
 
 /* Loading/Error/Empty States */
-.loading-state,
-.error-state,
-.empty-state {
+.assign-modal-loading-state,
+.assign-modal-error-state,
+.assign-modal-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 300px;
   text-align: center;
-  gap: 1rem;
-  padding: 2rem;
+  gap: var(--spacing-4);
+  padding: var(--spacing-8);
 }
 
 .loading-spinner {
   animation: spin 1s linear infinite;
 }
 
-.error-icon,
-.empty-icon {
+.assign-modal-error-icon,
+.assign-modal-empty-icon {
   color: var(--color-text-tertiary);
   opacity: 0.5;
 }
 
-.error-icon {
+.assign-modal-error-icon {
   color: var(--color-error);
 }
 
 /* Project List */
 .project-list {
-  padding: 0.5rem;
+  padding: var(--spacing-2);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
 }
 
 /* Project Item */
 .project-item {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
   background: var(--color-surface);
   border: 2px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--border-radius-lg);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--transition-fast);
   position: relative;
   overflow: hidden;
 }
@@ -146,10 +152,16 @@
   background: var(--color-primary);
 }
 
+.project-item:focus-within {
+  outline: 3px solid var(--color-primary-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--color-focus-ring-primary);
+}
+
 /* Project Checkbox */
 .project-checkbox {
   flex-shrink: 0;
-  margin-top: 0.125rem;
+  margin-top: var(--spacing-0-5);
 }
 
 .project-checkbox input[type="checkbox"],
@@ -167,8 +179,8 @@
 }
 
 .project-name {
-  margin: 0 0 0.25rem 0;
-  font-size: 0.938rem;
+  margin: 0 0 var(--spacing-1) 0;
+  font-size: var(--font-size-base);
   font-weight: 600;
   color: var(--color-text-primary);
   line-height: 1.4;
@@ -179,8 +191,8 @@
 }
 
 .project-description {
-  margin: 0 0 0.5rem 0;
-  font-size: 0.813rem;
+  margin: 0 0 var(--spacing-2) 0;
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   line-height: 1.5;
   display: -webkit-box;
@@ -194,20 +206,20 @@
 .project-meta {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-size: 0.75rem;
+  gap: var(--spacing-4);
+  font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
 }
 
 .project-members {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--spacing-1);
 }
 
 .project-status {
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--radius-full);
+  padding: var(--spacing-0-5) var(--spacing-2);
+  border-radius: var(--border-radius-full);
   font-weight: 500;
 }
 
@@ -225,8 +237,8 @@
 .modal-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  padding-top: 1rem;
+  gap: var(--spacing-4);
+  padding-top: var(--spacing-4);
   border-top: 1px solid var(--color-border);
 }
 
@@ -259,12 +271,12 @@
 
 .project-list-container::-webkit-scrollbar-track {
   background: var(--color-surface-secondary);
-  border-radius: var(--radius-md);
+  border-radius: var(--border-radius-md);
 }
 
 .project-list-container::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--border-radius-md);
 }
 
 .project-list-container::-webkit-scrollbar-thumb:hover {

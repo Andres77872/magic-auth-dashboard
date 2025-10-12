@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { systemService } from '@/services';
 import { useAuth, useUserType } from '@/hooks';
 import type { SystemHealthData } from '@/types/dashboard.types';
+import type { HealthComponent } from '@/types/system.types';
 
 interface UseSystemHealthReturn {
   health: SystemHealthData | null;
@@ -29,31 +30,39 @@ export function useSystemHealth(): UseSystemHealthReturn {
       
       const response = await systemService.getSystemHealth();
       
-      if (response.success && response.data) {
-        const data = response.data as any;
+      if (response.success) {
+        // Helper function to map status
+        const mapStatus = (status: string): HealthComponent['status'] => {
+          const statusMap: Record<string, HealthComponent['status']> = {
+            'healthy': 'healthy',
+            'warning': 'warning',
+            'critical': 'critical',
+            'unhealthy': 'unhealthy',
+            'degraded': 'degraded'
+          };
+          return statusMap[status] || 'critical';
+        };
         
-        // Map the API response to our expected format
+        // Data is at the top level of response, not nested under 'data'
         setHealth({
-          status: data.status === 'healthy' ? 'healthy' : 
-                  data.status === 'warning' ? 'warning' : 'critical',
-          timestamp: data.timestamp,
+          status: mapStatus(response.status),
+          timestamp: response.timestamp,
           components: {
             database: {
-              status: data.components?.database?.status === 'healthy' ? 'healthy' :
-                      data.components?.database?.status === 'warning' ? 'warning' : 'critical',
-              response_time_ms: data.components?.database?.response_time_ms,
-              connection_pool: data.components?.database?.connection_pool,
+              status: mapStatus(response.components?.database?.status),
+              message: response.components?.database?.message,
+              response_time_ms: response.components?.database?.response_time_ms,
+              connection_pool: response.components?.database?.connection_pool,
             },
-            cache: {
-              status: data.components?.cache?.status === 'healthy' ? 'healthy' :
-                      data.components?.cache?.status === 'warning' ? 'warning' : 'critical',
-              response_time_ms: data.components?.cache?.response_time_ms,
-              memory_usage: data.components?.cache?.memory_usage,
+            redis: {
+              status: mapStatus(response.components?.redis?.status),
+              message: response.components?.redis?.message,
+              response_time_ms: response.components?.redis?.response_time_ms,
+              memory_usage: response.components?.redis?.memory_usage,
             },
-            authentication: {
-              status: data.components?.authentication?.status === 'healthy' ? 'healthy' :
-                      data.components?.authentication?.status === 'warning' ? 'warning' : 'critical',
-              active_sessions: data.components?.authentication?.active_sessions,
+            group_system: {
+              status: mapStatus(response.components?.group_system?.status),
+              message: response.components?.group_system?.message,
             },
           },
         });

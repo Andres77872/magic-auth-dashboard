@@ -3,11 +3,15 @@ import React, { forwardRef, useState, useEffect, useRef } from 'react';
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
   error?: string;
+  success?: boolean;
   helperText?: string;
   autoResize?: boolean;
   minRows?: number;
   maxRows?: number;
   fullWidth?: boolean;
+  validationState?: 'success' | 'error' | 'warning' | null;
+  showCharCount?: boolean;
+  maxLength?: number;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
@@ -15,11 +19,14 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     {
       label,
       error,
+      success = false,
       helperText,
       autoResize = false,
       minRows = 3,
       maxRows = 10,
       fullWidth = false,
+      validationState = null,
+      showCharCount = false,
       className = '',
       id,
       ...props
@@ -27,8 +34,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     ref
   ) => {
     const [focused, setFocused] = useState(false);
+    const [charCount, setCharCount] = useState(0);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+
+    const finalValidationState = error ? 'error' : validationState;
 
     // Auto-resize functionality
     useEffect(() => {
@@ -64,6 +74,14 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
       .filter(Boolean)
       .join(' ');
 
+    const textareaClasses = [
+      'textarea-control',
+      finalValidationState ? `validation-${finalValidationState}` : '',
+      success ? 'validation-success' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+
     return (
       <div className={wrapperClasses}>
         {label && (
@@ -84,7 +102,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
               }
             }}
             id={textareaId}
-            className="textarea-control"
+            className={textareaClasses}
             rows={autoResize ? minRows : props.rows || 3}
             onFocus={(e) => {
               setFocused(true);
@@ -93,6 +111,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             onBlur={(e) => {
               setFocused(false);
               props.onBlur?.(e);
+            }}
+            onChange={(e) => {
+              setCharCount(e.target.value.length);
+              props.onChange?.(e);
             }}
             aria-describedby={
               error ? `${textareaId}-error` : helperText ? `${textareaId}-helper` : undefined
@@ -103,14 +125,26 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         </div>
 
         {error && (
-          <div id={`${textareaId}-error`} className="textarea-error-text" role="alert">
+          <div id={`${textareaId}-error`} className="validation-message validation-message-error" role="alert">
             {error}
+          </div>
+        )}
+        
+        {!error && success && (
+          <div className="validation-message validation-message-success">
+            Looks good!
           </div>
         )}
         
         {!error && helperText && (
           <div id={`${textareaId}-helper`} className="textarea-helper-text">
             {helperText}
+          </div>
+        )}
+
+        {showCharCount && props.maxLength && (
+          <div className="textarea-char-count">
+            {charCount} / {props.maxLength}
           </div>
         )}
       </div>

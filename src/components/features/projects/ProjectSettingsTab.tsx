@@ -171,7 +171,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
     <div className="project-settings-container">
       {error && (
         <Card className="error-card">
-          <div className="error-message">
+          <div className="project-settings-error-message">
             ⚠️ {error}
             <Button 
               variant="ghost" 

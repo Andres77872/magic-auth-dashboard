@@ -104,6 +104,45 @@ class GroupService {
   async getUserGroups(userHash: string): Promise<ApiResponse<UserGroup[]>> {
     return await apiClient.get<UserGroup[]>(`/admin/users/${userHash}/groups`);
   }
+
+  // Grant user group access to project
+  async grantGroupProjectAccess(
+    groupHash: string,
+    projectHash: string
+  ): Promise<ApiResponse<any>> {
+    return await apiClient.post<any>(
+      `/admin/user-groups/${groupHash}/projects`,
+      { project_hash: projectHash }
+    );
+  }
+
+  // Revoke user group access from project
+  async revokeGroupProjectAccess(
+    groupHash: string,
+    projectHash: string
+  ): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(
+      `/admin/user-groups/${groupHash}/projects/${projectHash}`
+    );
+  }
+
+  // Get projects accessible by a user group
+  async getGroupProjects(
+    groupHash: string,
+    params: PaginationParams = {}
+  ): Promise<ApiResponse<any[]>> {
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    return await apiClient.get<any[]>(
+      `/admin/user-groups/${groupHash}/projects`,
+      cleanParams
+    );
+  }
 }
 
 export const groupService = new GroupService();

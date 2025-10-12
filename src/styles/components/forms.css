@@ -11,8 +11,10 @@
 
 .input-label {
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-gray-700);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+  margin-bottom: var(--spacing-1);
 }
 
 .input-required {
@@ -28,19 +30,30 @@
 
 .input-control {
   width: 100%;
-  padding: var(--spacing-3);
-  border: var(--border-input);
-  border-radius: var(--border-radius-input);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 2px solid var(--color-border);
+  border-radius: 10px;
   font-size: var(--font-size-base);
-  transition: var(--transition-input);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: var(--color-surface);
   color: var(--color-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.input-control:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-primary-300);
+  background-color: var(--color-surface);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .input-control:focus {
   outline: none;
-  border: var(--border-input-focus);
-  box-shadow: var(--shadow-focus-primary);
+  border-color: var(--color-primary-500);
+  box-shadow: 
+    0 0 0 4px var(--color-focus-ring-primary),
+    0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+  background-color: var(--color-surface);
 }
 
 .input-error .input-control {
@@ -55,6 +68,12 @@
 .input-control:disabled {
   background-color: var(--color-background-muted);
   cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.input-control:focus-visible {
+  outline: 3px solid var(--color-primary-500);
+  outline-offset: 2px;
 }
 
 .input-icon {
@@ -81,10 +100,7 @@
   padding-right: var(--spacing-10);
 }
 
-.input-error-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-error);
-}
+/* Validation messages are defined in utilities.css as .validation-message-* */
 
 .input-helper-text {
   font-size: var(--font-size-sm);
@@ -216,10 +232,7 @@
   font-size: var(--font-size-sm);
 }
 
-.select-error-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-error);
-}
+/* Select validation messages use .validation-message-* from utilities.css */
 
 /* === TEXTAREA COMPONENT === */
 .textarea-wrapper {
@@ -280,10 +293,7 @@
   cursor: not-allowed;
 }
 
-.textarea-error-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-error);
-}
+/* Textarea validation messages use .validation-message-* from utilities.css */
 
 .textarea-helper-text {
   font-size: var(--font-size-sm);
