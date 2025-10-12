@@ -1,7 +1,7 @@
 /* === CARD COMPONENT === */
 .card {
   background: var(--color-surface);
-  border-radius: 16px;
+  border-radius: var(--border-radius-2xl);
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -69,6 +69,7 @@
   padding: var(--spacing-6);
 }
 
+/* Padding variants */
 .card-padding-none .card-content {
   padding: 0;
 }
@@ -84,6 +85,7 @@
 .card-padding-lg .card-content {
   padding: var(--spacing-8);
 }
+
 
 .card-header {
   display: flex;

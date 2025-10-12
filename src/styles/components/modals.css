@@ -18,9 +18,10 @@
   overscroll-behavior: contain;
 }
 
-.modal-content {
+/* Modal dialog container */
+.modal {
   background: var(--color-surface);
-  border-radius: 16px;
+  border-radius: var(--border-radius-2xl);
   box-shadow: 
     0 20px 60px rgba(0, 0, 0, 0.3), 
     0 10px 30px rgba(0, 0, 0, 0.2),
@@ -34,9 +35,10 @@
   position: relative;
 }
 
-.modal-small { max-width: 400px; }
-.modal-medium { max-width: 600px; }
-.modal-large { max-width: 800px; }
+/* Modal size variants */
+.modal-sm { max-width: 400px; }
+.modal-md { max-width: 600px; }
+.modal-lg { max-width: 800px; }
 .modal-xl { max-width: 1200px; }
 
 .modal-header {
@@ -78,7 +80,8 @@
   box-shadow: 0 0 0 4px var(--color-focus-ring-primary);
 }
 
-.modal-body {
+/* Modal content area */
+.modal-content {
   padding: var(--spacing-6);
   flex: 1;
   overflow-y: auto;
@@ -87,7 +90,17 @@
   max-height: calc(90vh - 10rem);
 }
 
+/* Legacy alias for backwards compatibility */
+.modal-body {
+  padding: var(--spacing-6);
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  max-height: calc(90vh - 10rem);
+}
+
 /* === CONFIRM DIALOG === */
+.confirm-dialog .modal-content,
 .confirm-dialog .modal-body {
   padding: 0;
 }
@@ -159,16 +172,19 @@
 }
 
 /* === MODAL USER INFO === */
+.modal-content .user-info,
 .modal-body .user-info {
   margin-bottom: var(--spacing-4);
 }
 
+.modal-content .user-info h4,
 .modal-body .user-info h4 {
   margin: 0 0 var(--spacing-2) 0;
   font-size: var(--font-size-lg);
   color: var(--color-text-primary);
 }
 
+.modal-content .user-info p,
 .modal-body .user-info p {
   margin: 0;
   font-size: var(--font-size-base);
@@ -234,13 +250,13 @@
 /* === ACCESSIBILITY === */
 @media (prefers-reduced-motion: reduce) {
   .modal-overlay,
-  .modal-content {
+  .modal {
     animation-duration: 0.01ms !important;
   }
 }
 
 @media (prefers-contrast: high) {
-  .modal-content {
+  .modal {
     border: 2px solid var(--color-text-primary);
   }
   

@@ -33,11 +33,11 @@ export function ConfirmDialog({
   const getIcon = () => {
     switch (variant) {
       case 'danger':
-        return <ErrorIcon size="large" className="confirm-icon confirm-icon-danger" />;
+        return <ErrorIcon size="lg" className="confirm-icon confirm-icon-danger" />;
       case 'warning':
-        return <WarningIcon size="large" className="confirm-icon confirm-icon-warning" />;
+        return <WarningIcon size="lg" className="confirm-icon confirm-icon-warning" />;
       case 'info':
-        return <InfoIcon size="large" className="confirm-icon confirm-icon-info" />;
+        return <InfoIcon size="lg" className="confirm-icon confirm-icon-info" />;
       default:
         return null;
     }
@@ -61,7 +61,7 @@ export function ConfirmDialog({
       isOpen={isOpen}
       onClose={onClose}
       title={title}
-      size="small"
+      size="sm"
       className="confirm-dialog"
       closeOnBackdropClick={!isLoading}
       closeOnEscape={!isLoading}

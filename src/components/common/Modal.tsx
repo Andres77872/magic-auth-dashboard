@@ -7,7 +7,7 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'small' | 'medium' | 'large' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   closeOnBackdropClick?: boolean;
   closeOnEscape?: boolean;
   showCloseButton?: boolean;
@@ -19,7 +19,7 @@ export function Modal({
   onClose,
   title,
   children,
-  size = 'medium',
+  size = 'md',
   closeOnBackdropClick = true,
   closeOnEscape = true,
   showCloseButton = true,
@@ -91,7 +91,7 @@ export function Modal({
   };
 
   const modalClasses = [
-    'modal-content',
+    'modal',
     `modal-${size}`,
     className,
   ]
@@ -122,13 +122,13 @@ export function Modal({
                 onClick={onClose}
                 aria-label="Close modal"
               >
-                <CloseIcon size="large" />
+                <CloseIcon size={20} aria-hidden="true" />
               </button>
             )}
           </div>
         )}
         
-        <div className="modal-body">
+        <div className="modal-content">
           {children}
         </div>
       </div>

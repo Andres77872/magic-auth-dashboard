@@ -1,37 +1,25 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface ErrorIconProps {
-  size?: 'small' | 'medium' | 'large';
-  className?: string;
-}
+export interface ErrorIconProps extends Omit<IconProps, 'name'> {}
 
+/**
+ * Error Icon - loads error.svg
+ * Used for: Error states, validation failures, alerts
+ */
 export function ErrorIcon({ 
-  size = 'medium', 
-  className = '' 
+  size = 'md', 
+  className = '',
+  ...props
 }: ErrorIconProps): React.JSX.Element {
-  const sizeMap = {
-    small: 16,
-    medium: 20,
-    large: 24,
-  };
-
-  const iconSize = sizeMap[size];
-
   return (
-    <svg 
-      width={iconSize} 
-      height={iconSize} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2"
+    <Icon
+      name="error"
+      size={size}
       className={`icon error-icon ${className}`}
       aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="15" y1="9" x2="9" y2="15"/>
-      <line x1="9" y1="9" x2="15" y2="15"/>
-    </svg>
+      {...props}
+    />
   );
 }
 

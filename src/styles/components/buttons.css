@@ -90,22 +90,33 @@
 }
 
 /* Button Sizes */
-.btn-small {
+.btn-xs {
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--font-size-xs);
+  height: 28px;
+}
+
+.btn-sm {
   padding: var(--spacing-1) var(--spacing-3);
   font-size: var(--font-size-sm);
+  height: 32px;
 }
 
-.btn-medium {
+.btn-md {
   padding: var(--spacing-2) var(--spacing-4);
   font-size: var(--font-size-base);
+  height: 40px;
 }
 
-.btn-large {
+.btn-lg {
   padding: var(--spacing-3) var(--spacing-6);
   font-size: var(--font-size-lg);
+  height: 48px;
 }
 
-.btn-full-width {
+
+.btn-full-width,
+.w-full {
   width: 100%;
 }
 
@@ -114,12 +125,19 @@
   align-items: center;
 }
 
-/* Icon spacing is handled by parent .btn gap property
-   .btn-icon-left and .btn-icon-right classes remain for backward compatibility
-   but no longer apply any styles - spacing is controlled by .btn gap */
+/* Icon spacing is handled by parent .btn gap property */
+.btn-icon {
+  flex-shrink: 0;
+}
 
-.btn-loading .btn-content {
+/* Loading state */
+.btn.is-loading .btn-label {
   opacity: 0;
+}
+
+.btn.is-loading {
+  cursor: wait;
+  position: relative;
 }
 
 .btn-label {

@@ -91,7 +91,7 @@ export function UserFilter({ onFiltersChange, initialFilters = {} }: UserFilterP
             placeholder="Search by username or email..."
             value={searchInput}
             onChange={handleSearchChange}
-            leftIcon={<SearchIcon size="small" />}
+            leftIcon={<SearchIcon size="sm" />}
             className="search-input"
           />
         </div>
@@ -120,7 +120,7 @@ export function UserFilter({ onFiltersChange, initialFilters = {} }: UserFilterP
               className="clear-filters-btn"
               title="Clear all filters"
             >
-              <CloseIcon size="small" />
+              <CloseIcon size="sm" />
               Clear
             </button>
           )}

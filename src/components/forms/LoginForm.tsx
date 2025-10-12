@@ -124,7 +124,7 @@ export function LoginForm(): React.JSX.Element {
       {(errors.general || state.error) && (
         <div className="auth-login-error" role="alert" aria-live="polite">
           <div className="auth-login-error-icon">
-            <ErrorIcon size="medium" />
+            <ErrorIcon size="md" />
           </div>
           <div className="auth-login-error-content">
             <span className="auth-login-error-text">
@@ -147,7 +147,7 @@ export function LoginForm(): React.JSX.Element {
           onChange={(e) => handleInputChange('username', e.target.value)}
           error={errors.username}
           placeholder="Enter your username"
-          leftIcon={<UserIcon size="medium" />}
+          leftIcon={<UserIcon size="md" />}
           autoComplete="username"
           autoFocus
           disabled={isSubmitting}
@@ -166,7 +166,7 @@ export function LoginForm(): React.JSX.Element {
           onChange={(e) => handleInputChange('password', e.target.value)}
           error={errors.password}
           placeholder="Enter your password"
-          leftIcon={<LockIcon size="medium" />}
+          leftIcon={<LockIcon size="md" />}
           rightIcon={
             <button
               type="button"
@@ -177,7 +177,7 @@ export function LoginForm(): React.JSX.Element {
               disabled={isSubmitting}
               tabIndex={-1}
             >
-              <EyeIcon size="medium" isVisible={showPassword} />
+              <EyeIcon size="md" isVisible={showPassword} />
             </button>
           }
           autoComplete="current-password"
@@ -207,7 +207,7 @@ export function LoginForm(): React.JSX.Element {
         <Button
           type="submit"
           variant="primary"
-          size="large"
+          size="lg"
           fullWidth
           isLoading={isSubmitting}
           disabled={isSubmitting || !formData.username || !formData.password}

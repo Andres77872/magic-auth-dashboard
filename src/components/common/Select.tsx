@@ -167,7 +167,7 @@ export function Select({
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <span className={`select-arrow ${isOpen ? 'select-arrow-up' : ''}`}>
-          <ChevronIcon size="small" direction={isOpen ? "up" : "down"} />
+          <ChevronIcon size="sm" direction={isOpen ? "up" : "down"} />
         </span>
       </div>
 

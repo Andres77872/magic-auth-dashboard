@@ -150,7 +150,7 @@ export function UserTable({
           <UserAvatar 
             username={user.username} 
             userType={user.user_type}
-            size="small"
+            size="sm"
           />
           <div className="user-details">
             <div className="user-name">{value as string}</div>
@@ -177,13 +177,13 @@ export function UserTable({
         <>
           <Badge 
             variant={getUserTypeBadgeVariant(value as UserType)}
-            size="small"
+            size="sm"
           >
             {(value as string).toUpperCase()}
           </Badge>
           {user.user_type_info?.error && (
             <span className="user-type-error" title={user.user_type_info.error}>
-              <WarningIcon size="small" />
+              <WarningIcon size={16} aria-hidden="true" />
             </span>
           )}
         </>
@@ -197,13 +197,13 @@ export function UserTable({
         user.groups && user.groups.length > 0 ? (
           <>
             {user.groups.slice(0, 2).map(group => (
-              <Badge key={group.group_hash} variant="secondary" size="small">
-                <GroupIcon size="small" />
+              <Badge key={group.group_hash} variant="secondary" size="sm">
+                <GroupIcon size={14} aria-hidden="true" />
                 {group.group_name}
               </Badge>
             ))}
             {user.groups.length > 2 && (
-              <Badge variant="secondary" size="small">
+              <Badge variant="secondary" size="sm">
                 +{user.groups.length - 2} more
               </Badge>
             )}
@@ -221,13 +221,13 @@ export function UserTable({
         user.projects && user.projects.length > 0 ? (
           <>
             {user.projects.slice(0, 2).map(project => (
-              <Badge key={project.project_hash} variant="info" size="small">
-                <ProjectIcon size="small" />
+              <Badge key={project.project_hash} variant="info" size="sm">
+                <ProjectIcon size={14} aria-hidden="true" />
                 {project.project_name}
               </Badge>
             ))}
             {user.projects.length > 2 && (
-              <Badge variant="secondary" size="small">
+              <Badge variant="secondary" size="sm">
                 +{user.projects.length - 2} more
               </Badge>
             )}
@@ -242,7 +242,7 @@ export function UserTable({
       header: 'Status',
       sortable: true,
       render: (value) => (
-        <Badge variant={value ? 'success' : 'secondary'} size="small" dot>
+        <Badge variant={value ? 'success' : 'secondary'} size="sm" dot>
           {value ? 'Active' : 'Inactive'}
         </Badge>
       ),

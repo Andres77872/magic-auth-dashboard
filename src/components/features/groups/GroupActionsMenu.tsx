@@ -30,19 +30,19 @@ export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({ group }) => 
     {
       key: 'view',
       label: 'View Details',
-      icon: <ViewIcon size="small" />,
+      icon: <ViewIcon size="sm" />,
       onClick: handleViewDetails,
     },
     {
       key: 'edit',
       label: 'Edit',
-      icon: <EditIcon size="small" />,
+      icon: <EditIcon size="sm" />,
       onClick: handleEdit,
     },
     {
       key: 'delete',
       label: 'Delete',
-      icon: <DeleteIcon size="small" />,
+      icon: <DeleteIcon size="sm" />,
       onClick: handleDelete,
       destructive: true,
     },

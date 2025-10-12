@@ -1,37 +1,25 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface LogoutIconProps {
-  size?: 'small' | 'medium' | 'large';
-  className?: string;
-}
+export interface LogoutIconProps extends Omit<IconProps, 'name'> {}
 
+/**
+ * Logout Icon - loads logout.svg
+ * Used for: Logout action, sign out
+ */
 export function LogoutIcon({ 
-  size = 'medium', 
-  className = '' 
+  size = 'md', 
+  className = '',
+  ...props
 }: LogoutIconProps): React.JSX.Element {
-  const sizeMap = {
-    small: 16,
-    medium: 20,
-    large: 24,
-  };
-
-  const iconSize = sizeMap[size];
-
   return (
-    <svg 
-      width={iconSize} 
-      height={iconSize} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2"
+    <Icon
+      name="logout"
+      size={size}
       className={`icon logout-icon ${className}`}
       aria-hidden="true"
-    >
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-      <polyline points="16,17 21,12 16,7"/>
-      <line x1="21" y1="12" x2="9" y2="12"/>
-    </svg>
+      {...props}
+    />
   );
 }
 

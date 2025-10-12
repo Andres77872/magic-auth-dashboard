@@ -5,12 +5,13 @@ export interface CardProps {
   title?: string;
   subtitle?: string;
   actions?: React.ReactNode;
-  padding?: 'none' | 'small' | 'medium' | 'large';
-  shadow?: boolean;
-  border?: boolean;
-  hover?: boolean;
+  padding?: 'none' | 'sm' | 'md' | 'lg';
+  elevated?: boolean;
+  clickable?: boolean;
   className?: string;
   onClick?: () => void;
+  role?: string;
+  tabIndex?: number;
 }
 
 export function Card({
@@ -18,32 +19,34 @@ export function Card({
   title,
   subtitle,
   actions,
-  padding = 'medium',
-  shadow = true,
-  border = true,
-  hover = false,
+  padding = 'md',
+  elevated = false,
+  clickable = false,
   className = '',
   onClick,
+  role,
+  tabIndex,
 }: CardProps): React.JSX.Element {
   const cardClasses = [
     'card',
-    `card-padding-${padding}`,
-    shadow ? 'card-shadow' : '',
-    border ? 'card-border' : '',
-    hover ? 'card-hover' : '',
-    onClick ? 'card-clickable' : '',
+    padding !== 'md' ? `card-padding-${padding}` : '',
+    elevated ? 'card-elevated' : '',
+    (clickable || onClick) ? 'card-clickable' : '',
     className,
   ]
     .filter(Boolean)
     .join(' ');
 
-  const CardWrapper = onClick ? 'button' : 'div';
+  const CardWrapper = (clickable || onClick) ? 'button' : 'div';
 
   return (
     <CardWrapper
       className={cardClasses}
       onClick={onClick}
-      type={onClick ? 'button' : undefined}
+      type={(clickable || onClick) ? 'button' : undefined}
+      role={role}
+      tabIndex={(clickable || onClick) ? (tabIndex ?? 0) : undefined}
+      aria-label={title || undefined}
     >
       {(title || subtitle || actions) && (
         <div className="card-header">

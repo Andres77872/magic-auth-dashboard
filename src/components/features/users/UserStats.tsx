@@ -52,28 +52,28 @@ export function UserStats({ users, isLoading }: UserStatsProps): React.JSX.Eleme
   return (
     <div className="user-stats-container">
       <StatCard
-        icon={<UserIcon size="medium" />}
+        icon={<UserIcon size="md" />}
         label="Total Users"
         value={totalUsers}
         variant="default"
         isLoading={isLoading}
       />
       <StatCard
-        icon={<CheckIcon size="medium" />}
+        icon={<CheckIcon size="md" />}
         label="Active Users"
         value={activeUsers}
         variant="success"
         isLoading={isLoading}
       />
       <StatCard
-        icon={<WarningIcon size="medium" />}
+        icon={<WarningIcon size="md" />}
         label="Inactive Users"
         value={inactiveUsers}
         variant="warning"
         isLoading={isLoading}
       />
       <StatCard
-        icon={<GroupIcon size="medium" />}
+        icon={<GroupIcon size="md" />}
         label="Admin Users"
         value={usersByType.admin}
         variant="info"

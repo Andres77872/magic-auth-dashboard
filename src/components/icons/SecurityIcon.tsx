@@ -1,41 +1,28 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface SecurityIconProps {
-  size?: 'small' | 'medium' | 'large' | number;
-  color?: string;
-  className?: string;
-  'aria-label'?: string;
-}
+export interface SecurityIconProps extends Omit<IconProps, 'name'> {}
 
-const sizeMap = {
-  small: 16,
-  medium: 20,
-  large: 24,
-} as const;
-
+/**
+ * Security Icon - loads security.svg
+ * Used for: Security features, protection, shield
+ */
 export function SecurityIcon({
-  size = 'medium',
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,
+  ...props
 }: SecurityIconProps): React.JSX.Element {
-  const iconSize = typeof size === 'number' ? size : sizeMap[size];
-  
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Icon
+      name="security"
+      size={size}
+      color={color}
       className={`security-icon ${className}`}
       aria-label={ariaLabel || 'Security'}
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
+      {...props}
+    />
   );
 }
 

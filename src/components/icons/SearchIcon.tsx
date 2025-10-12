@@ -1,42 +1,28 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface SearchIconProps {
-  size?: 'small' | 'medium' | 'large' | number;
-  color?: string;
-  className?: string;
-  'aria-label'?: string;
-}
+export interface SearchIconProps extends Omit<IconProps, 'name'> {}
 
-const sizeMap = {
-  small: 16,
-  medium: 20,
-  large: 24,
-} as const;
-
+/**
+ * Search Icon - loads search.svg
+ * Used for: Search functionality, find features
+ */
 export function SearchIcon({
-  size = 'medium',
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,
+  ...props
 }: SearchIconProps): React.JSX.Element {
-  const iconSize = typeof size === 'number' ? size : sizeMap[size];
-  
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Icon
+      name="search"
+      size={size}
+      color={color}
       className={`search-icon ${className}`}
       aria-label={ariaLabel || 'Search'}
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="M21 21l-4.35-4.35" />
-    </svg>
+      {...props}
+    />
   );
 }
 

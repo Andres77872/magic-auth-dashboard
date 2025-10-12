@@ -341,7 +341,7 @@ export const GroupDetailsPage: React.FC = () => {
                       <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{user.user_type}</div>
                     </div>
                     <Button
-                      size="small"
+                      size="sm"
                       onClick={() => handleAddMember(user)}
                       disabled={isAdding === user.user_hash}
                       isLoading={isAdding === user.user_hash}

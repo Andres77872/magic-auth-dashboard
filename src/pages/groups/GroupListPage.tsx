@@ -60,14 +60,14 @@ export const GroupListPage: React.FC = () => {
           <div className="view-toggle">
             <Button
               variant={viewMode === 'table' ? 'primary' : 'outline'}
-              size="small"
+              size="sm"
               onClick={() => setViewMode('table')}
             >
               Table
             </Button>
             <Button
               variant={viewMode === 'grid' ? 'primary' : 'outline'}
-              size="small"
+              size="sm"
               onClick={() => setViewMode('grid')}
             >
               Grid
@@ -114,7 +114,7 @@ export const GroupListPage: React.FC = () => {
 
         {!isLoading && groups.length === 0 && (
           <EmptyState
-            icon={<GroupIcon size="large" />}
+            icon={<GroupIcon size="lg" />}
             title="No groups found"
             description="Create your first group to get started with group management and organize your users effectively."
             action={

@@ -1,3 +1,14 @@
+/**
+ * DashboardLayout Component
+ * 
+ * Main application layout following Design System patterns:
+ * - CSS Grid-based responsive layout
+ * - Mobile-first design with collapsible sidebar
+ * - WCAG 2.2 AA accessibility compliance
+ * - Skip-to-content link for keyboard navigation
+ * 
+ * @see docs/DESIGN_SYSTEM/DASHBOARD_PATTERNS.md
+ */
 import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { useAuth, useUserType } from '@/hooks';
@@ -12,15 +23,19 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.Element {
+  // State management
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Hooks
   const { isAuthenticated, isLoading } = useAuth();
   const { userType } = useUserType();
   const location = useLocation();
 
-  // Handle responsive sidebar behavior
+  // Handle responsive behavior - close mobile menu on desktop resize
   useEffect(() => {
     const handleResize = () => {
+      // Close mobile menu when entering desktop viewport
       if (window.innerWidth >= 1024) {
         setMobileMenuOpen(false);
       }
@@ -40,6 +55,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.E
     setMobileMenuOpen(false);
   };
 
+  // Loading state - full screen spinner
   if (isLoading) {
     return (
       <LoadingSpinner 
@@ -51,22 +67,36 @@ export function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.E
     );
   }
 
+  // Auth check - route guards handle redirects
   if (!isAuthenticated) {
-    return <></>; // Route guards will handle redirect
+    return <></>;
   }
 
   return (
-    <div className="dashboard-layout" data-sidebar-collapsed={sidebarCollapsed}>
-      {/* Mobile overlay */}
+    <div 
+      className="dashboard-layout" 
+      data-sidebar-collapsed={sidebarCollapsed}
+    >
+      {/* Skip to content link - WCAG 2.2 keyboard navigation */}
+      <a 
+        href="#main-content" 
+        className="skip-to-content"
+        aria-label="Skip to main content"
+      >
+        Skip to main content
+      </a>
+
+      {/* Mobile menu overlay backdrop */}
       {mobileMenuOpen && (
         <div 
           className="mobile-overlay" 
           onClick={handleOverlayClick}
           aria-hidden="true"
+          role="presentation"
         />
       )}
 
-      {/* Header */}
+      {/* Header - Contains logo, navigation toggle, and user menu */}
       <Header
         sidebarCollapsed={sidebarCollapsed}
         mobileMenuOpen={mobileMenuOpen}
@@ -74,7 +104,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.E
         onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
       />
 
-      {/* Sidebar */}
+      {/* Sidebar - Main navigation menu */}
       <Sidebar
         collapsed={sidebarCollapsed}
         mobileMenuOpen={mobileMenuOpen}
@@ -88,29 +118,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.E
         aria-label="Main content"
         id="main-content"
       >
-        {/* Breadcrumbs */}
+        {/* Breadcrumb navigation */}
         <div className="content-header">
           <Breadcrumbs />
         </div>
 
-        {/* Page content */}
+        {/* Page content container */}
         <div className="content-container">
           {children || <Outlet />}
         </div>
       </main>
 
-      {/* Footer */}
+      {/* Footer - Copyright and links */}
       <Footer />
-
-      {/* Skip to content link for accessibility */}
-      <a 
-        href="#main-content" 
-        className="skip-to-content"
-        onFocus={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-        onBlur={(e) => e.currentTarget.style.transform = 'translateY(-100%)'}
-      >
-        Skip to main content
-      </a>
     </div>
   );
 }

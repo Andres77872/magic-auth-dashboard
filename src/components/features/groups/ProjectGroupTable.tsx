@@ -54,12 +54,12 @@ export function ProjectGroupTable({
       render: (_value: any, group: ProjectGroup) => (
         <div className="flex flex-wrap gap-1">
           {group.permissions.slice(0, 3).map((permission, index) => (
-            <Badge key={index} variant="secondary" size="small">
+            <Badge key={index} variant="secondary" size="sm">
               {permission}
             </Badge>
           ))}
           {group.permissions.length > 3 && (
-            <Badge variant="secondary" size="small">
+            <Badge variant="secondary" size="sm">
               +{group.permissions.length - 3} more
             </Badge>
           )}
@@ -71,7 +71,7 @@ export function ProjectGroupTable({
       header: 'Projects',
       sortable: true,
       render: (_value: any, group: ProjectGroup) => (
-        <Badge variant="info" size="small">
+        <Badge variant="info" size="sm">
           {group.project_count} project{group.project_count !== 1 ? 's' : ''}
         </Badge>
       ),

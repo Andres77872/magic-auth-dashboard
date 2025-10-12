@@ -10,15 +10,15 @@ interface QuickActionCardProps {
 export function QuickActionCard({ action }: QuickActionCardProps): React.JSX.Element {
   const getIcon = (iconName: string) => {
     const icons: Record<string, React.ReactElement> = {
-      'user-plus': <UserIcon size="large" />,
-      'folder-plus': <ProjectIcon size="large" />,
-      'users': <GroupIcon size="large" />,
-      'settings': <SettingsIcon size="large" />,
-      'bar-chart': <HealthIcon size="large" />,
-      'shield': <SecurityIcon size="large" />,
+      'user-plus': <UserIcon size="lg" />,
+      'folder-plus': <ProjectIcon size="lg" />,
+      'users': <GroupIcon size="lg" />,
+      'settings': <SettingsIcon size="lg" />,
+      'bar-chart': <HealthIcon size="lg" />,
+      'shield': <SecurityIcon size="lg" />,
     };
 
-    return icons[iconName] || <UserIcon size="large" />;
+    return icons[iconName] || <UserIcon size="lg" />;
   };
 
   return (
@@ -34,7 +34,7 @@ export function QuickActionCard({ action }: QuickActionCardProps): React.JSX.Ele
         </div>
         
         <div className="action-arrow">
-          <ChevronIcon size="medium" direction="right" />
+          <ChevronIcon size="md" direction="right" />
         </div>
       </div>
     </Link>

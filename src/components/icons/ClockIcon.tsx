@@ -1,42 +1,28 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface ClockIconProps {
-  size?: 'small' | 'medium' | 'large' | number;
-  color?: string;
-  className?: string;
-  'aria-label'?: string;
-}
+export interface ClockIconProps extends Omit<IconProps, 'name'> {}
 
-const sizeMap = {
-  small: 16,
-  medium: 20,
-  large: 24,
-} as const;
-
+/**
+ * Clock Icon - loads clock.svg
+ * Used for: Time indicators, timestamps, activity logs
+ */
 export function ClockIcon({
-  size = 'medium',
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,
+  ...props
 }: ClockIconProps): React.JSX.Element {
-  const iconSize = typeof size === 'number' ? size : sizeMap[size];
-  
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Icon
+      name="clock"
+      size={size}
+      color={color}
       className={`clock-icon ${className}`}
       aria-label={ariaLabel || 'Clock'}
-    >
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="12,6 12,12 16,14"/>
-    </svg>
+      {...props}
+    />
   );
 }
 

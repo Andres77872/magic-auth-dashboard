@@ -83,7 +83,7 @@ export function GroupMembersTable({
       sortable: true,
       width: '120px',
       render: (value) => (
-        <Badge variant={getUserTypeBadgeVariant(value as UserType | null)} size="small">
+        <Badge variant={getUserTypeBadgeVariant(value as UserType | null)} size="sm">
           {(value ? String(value) : 'N/A').toUpperCase()}
         </Badge>
       ),
@@ -107,7 +107,7 @@ export function GroupMembersTable({
       render: (_, member) => (
         <Button
           variant="outline"
-          size="small"
+          size="sm"
           onClick={() => onRemove(member)}
           disabled={removingMember === member.user_hash}
           isLoading={removingMember === member.user_hash}

@@ -144,7 +144,7 @@ export const ProjectDetailsPage: React.FC = () => {
               <span>{successMessage}</span>
               <Button 
                 variant="ghost" 
-                size="small" 
+                size="sm" 
                 onClick={() => setSuccessMessage(null)}
                 aria-label="Dismiss success message"
               >

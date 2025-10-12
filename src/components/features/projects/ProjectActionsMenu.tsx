@@ -37,20 +37,20 @@ export const ProjectActionsMenu: React.FC<ProjectActionsMenuProps> = ({
     {
       key: 'view',
       label: 'View Details',
-      icon: <ViewIcon size="small" />,
+      icon: <ViewIcon size="sm" />,
       onClick: handleViewDetails,
     },
     {
       key: 'edit',
       label: 'Edit Project',
-      icon: <EditIcon size="small" />,
+      icon: <EditIcon size="sm" />,
       onClick: handleEditProject,
       hidden: !canEdit,
     },
     {
       key: 'archive',
       label: 'Archive',
-      icon: <SettingsIcon size="small" />,
+      icon: <SettingsIcon size="sm" />,
       onClick: handleArchiveProject,
       hidden: !canArchive,
     },

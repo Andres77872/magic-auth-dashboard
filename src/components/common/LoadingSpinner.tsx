@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface LoadingSpinnerProps {
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'small' | 'medium' | 'large';
   variant?: 'default' | 'primary' | 'subtle' | 'dots' | 'pulse';
   message?: string;
   showMessage?: boolean;
@@ -10,6 +10,13 @@ interface LoadingSpinnerProps {
   className?: string;
   'aria-label'?: string;
 }
+
+// Map legacy size names to new convention
+const sizeMap: Record<string, string> = {
+  small: 'sm',
+  medium: 'md',
+  large: 'lg',
+};
 
 export function LoadingSpinner({
   size = 'md',
@@ -21,8 +28,11 @@ export function LoadingSpinner({
   className = '',
   'aria-label': ariaLabel,
 }: LoadingSpinnerProps): React.JSX.Element {
+  // Normalize size to new convention
+  const normalizedSize = sizeMap[size] || size;
+  
   const baseClass = 'magic-loading-spinner';
-  const sizeClass = `${baseClass}--${size}`;
+  const sizeClass = `${baseClass}--${normalizedSize}`;
   const variantClass = `${baseClass}--${variant}`;
   const centeredClass = centered ? `${baseClass}--centered` : '';
   const fullScreenClass = fullScreen ? `${baseClass}--fullscreen` : '';

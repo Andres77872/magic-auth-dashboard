@@ -78,7 +78,7 @@ export function UserMenu(): React.JSX.Element {
         </div>
         <ChevronIcon 
           className={`chevron ${isOpen ? 'open' : ''}`}
-          size="small"
+          size="sm"
           direction={isOpen ? "up" : "down"}
         />
       </button>
@@ -114,7 +114,7 @@ export function UserMenu(): React.JSX.Element {
               role="menuitem"
               onClick={() => setIsOpen(false)}
             >
-              <UserIcon size="small" />
+              <UserIcon size="sm" />
               <span>Profile</span>
             </Link>
 
@@ -124,7 +124,7 @@ export function UserMenu(): React.JSX.Element {
               role="menuitem"
               onClick={() => setIsOpen(false)}
             >
-              <SettingsIcon size="small" />
+              <SettingsIcon size="sm" />
               <span>Settings</span>
             </button>
 
@@ -136,7 +136,7 @@ export function UserMenu(): React.JSX.Element {
               role="menuitem"
               onClick={handleLogoutClick}
             >
-              <LogoutIcon size="small" />
+              <LogoutIcon size="sm" />
               <span>Sign Out</span>
             </button>
           </div>

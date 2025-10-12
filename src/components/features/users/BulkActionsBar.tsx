@@ -38,12 +38,12 @@ export function BulkActionsBar({
         {onActivate && (
           <Button
             variant="outline"
-            size="small"
+            size="sm"
             onClick={onActivate}
             disabled={isLoading}
             aria-label={`Activate ${selectedCount} selected users`}
           >
-            <CheckIcon size="small" />
+            <CheckIcon size={16} />
             <span className="btn-label">Activate</span>
           </Button>
         )}
@@ -51,12 +51,12 @@ export function BulkActionsBar({
         {onDeactivate && (
           <Button
             variant="outline"
-            size="small"
+            size="sm"
             onClick={onDeactivate}
             disabled={isLoading}
             aria-label={`Deactivate ${selectedCount} selected users`}
           >
-            <ErrorIcon size="small" />
+            <ErrorIcon size={16} />
             <span className="btn-label">Deactivate</span>
           </Button>
         )}
@@ -64,12 +64,12 @@ export function BulkActionsBar({
         {onAssignGroup && (
           <Button
             variant="outline"
-            size="small"
+            size="sm"
             onClick={onAssignGroup}
             disabled={isLoading}
             aria-label={`Assign group to ${selectedCount} selected users`}
           >
-            <GroupIcon size="small" />
+            <GroupIcon size={16} />
             <span className="btn-label">Assign Group</span>
           </Button>
         )}
@@ -77,24 +77,24 @@ export function BulkActionsBar({
         {onDelete && (
           <Button
             variant="danger"
-            size="small"
+            size="sm"
             onClick={onDelete}
             disabled={isLoading}
             aria-label={`Delete ${selectedCount} selected users`}
           >
-            <DeleteIcon size="small" />
+            <DeleteIcon size={16} />
             <span className="btn-label">Delete</span>
           </Button>
         )}
         
         <Button
           variant="ghost"
-          size="small"
+          size="sm"
           onClick={onClearSelection}
           disabled={isLoading}
           aria-label="Clear selection"
         >
-          <CloseIcon size="small" />
+          <CloseIcon size={16} />
           <span className="btn-label">Clear</span>
         </Button>
       </div>

@@ -1,42 +1,28 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface PlusIconProps {
-  size?: 'small' | 'medium' | 'large' | number;
-  color?: string;
-  className?: string;
-  'aria-label'?: string;
-}
+export interface PlusIconProps extends Omit<IconProps, 'name'> {}
 
-const sizeMap = {
-  small: 16,
-  medium: 20,
-  large: 24,
-} as const;
-
+/**
+ * Plus Icon - loads plus.svg
+ * Used for: Add new items, create actions
+ */
 export function PlusIcon({
-  size = 'medium',
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,
+  ...props
 }: PlusIconProps): React.JSX.Element {
-  const iconSize = typeof size === 'number' ? size : sizeMap[size];
-  
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Icon
+      name="plus"
+      size={size}
+      color={color}
       className={`plus-icon ${className}`}
       aria-label={ariaLabel || 'Plus'}
-    >
-      <line x1="12" y1="5" x2="12" y2="19"/>
-      <line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
+      {...props}
+    />
   );
 }
 

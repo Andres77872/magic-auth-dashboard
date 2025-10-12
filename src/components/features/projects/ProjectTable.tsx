@@ -100,7 +100,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
         onSort={onSort}
         isLoading={isLoading}
         emptyMessage="No projects found"
-        emptyIcon={<ProjectIcon size="large" />}
+        emptyIcon={<ProjectIcon size="lg" />}
         emptyAction={
           <Link to={ROUTES.PROJECTS_CREATE}>
             <Button variant="primary">Create Your First Project</Button>

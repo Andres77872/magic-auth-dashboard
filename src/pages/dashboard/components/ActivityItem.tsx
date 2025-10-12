@@ -18,40 +18,40 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
   const getActivityIcon = (type: Activity['type']) => {
     const icons: Record<Activity['type'], React.ReactElement> = {
       'user_created': (
-        <UserIcon size="medium" className="activity-icon-component" />
+        <UserIcon size="md" className="activity-icon-component" />
       ),
       'user_updated': (
-        <UserIcon size="medium" className="activity-icon-component" />
+        <UserIcon size="md" className="activity-icon-component" />
       ),
       'user_deleted': (
-        <UserIcon size="medium" className="activity-icon-component" />
+        <UserIcon size="md" className="activity-icon-component" />
       ),
       'login': (
-        <UserIcon size="medium" className="activity-icon-component" />
+        <UserIcon size="md" className="activity-icon-component" />
       ),
       'logout': (
-        <UserIcon size="medium" className="activity-icon-component" />
+        <UserIcon size="md" className="activity-icon-component" />
       ),
       'project_created': (
-        <ProjectIcon size="medium" className="activity-icon-component" />
+        <ProjectIcon size="md" className="activity-icon-component" />
       ),
       'project_updated': (
-        <ProjectIcon size="medium" className="activity-icon-component" />
+        <ProjectIcon size="md" className="activity-icon-component" />
       ),
       'project_deleted': (
-        <ProjectIcon size="medium" className="activity-icon-component" />
+        <ProjectIcon size="md" className="activity-icon-component" />
       ),
       'group_created': (
-        <GroupIcon size="medium" className="activity-icon-component" />
+        <GroupIcon size="md" className="activity-icon-component" />
       ),
       'group_updated': (
-        <GroupIcon size="medium" className="activity-icon-component" />
+        <GroupIcon size="md" className="activity-icon-component" />
       ),
       'permission_changed': (
-        <SecurityIcon size="medium" className="activity-icon-component" />
+        <SecurityIcon size="md" className="activity-icon-component" />
       ),
       'system_event': (
-        <SettingsIcon size="medium" className="activity-icon-component" />
+        <SettingsIcon size="md" className="activity-icon-component" />
       ),
     };
 
@@ -123,7 +123,7 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
                 className="metadata-toggle"
                 onClick={toggleMetadata}
               >
-                <MoreIcon size="small" />
+                <MoreIcon size="sm" />
                 Details
               </button>
               <div 

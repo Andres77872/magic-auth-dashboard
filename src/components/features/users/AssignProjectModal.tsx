@@ -123,7 +123,7 @@ export function AssignProjectModal({
       isOpen={isOpen}
       onClose={handleCancel}
       title={`Assign ${allowMultiple ? 'Projects' : 'Project'} to ${userName}`}
-      size="large"
+      size="lg"
       className="assign-project-modal"
       closeOnBackdropClick={!isLoading}
       closeOnEscape={!isLoading}
@@ -151,7 +151,7 @@ export function AssignProjectModal({
               placeholder="Search projects..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={<SearchIcon size="small" />}
+              leftIcon={<SearchIcon size="sm" />}
               disabled={fetchingProjects}
             />
           </div>
@@ -175,19 +175,19 @@ export function AssignProjectModal({
           {fetchingProjects ? (
             <div className="loading-state">
               <div className="loading-spinner">
-                <LoadingIcon size="large" />
+                <LoadingIcon size="lg" />
               </div>
               <p>Loading projects...</p>
             </div>
           ) : error ? (
             <div className="error-state">
               <div className="error-icon">
-                <ErrorIcon size="large" />
+                <ErrorIcon size="lg" />
               </div>
               <p>{error}</p>
               <Button
                 variant="outline"
-                size="small"
+                size="sm"
                 onClick={fetchProjects}
               >
                 Retry
@@ -196,7 +196,7 @@ export function AssignProjectModal({
           ) : filteredProjects.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">
-                <HealthIcon size="large" />
+                <HealthIcon size="lg" />
               </div>
               <p>
                 {searchTerm ? 'No projects match your search.' : 'No projects available.'}

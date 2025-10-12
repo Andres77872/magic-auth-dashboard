@@ -3,8 +3,8 @@ import { LoadingSpinner } from './LoadingSpinner';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'small' | 'medium' | 'large';
-  isLoading?: boolean;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
@@ -15,8 +15,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     {
       children,
       variant = 'primary',
-      size = 'medium',
-      isLoading = false,
+      size = 'md',
+      loading = false,
       leftIcon,
       rightIcon,
       fullWidth = false,
@@ -29,8 +29,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const baseClasses = 'btn';
     const variantClasses = `btn-${variant}`;
     const sizeClasses = `btn-${size}`;
-    const fullWidthClasses = fullWidth ? 'btn-full-width' : '';
-    const loadingClasses = isLoading ? 'btn-loading' : '';
+    const fullWidthClasses = fullWidth ? 'w-full' : '';
+    const loadingClasses = loading ? 'is-loading' : '';
 
     const buttonClasses = [
       baseClasses,
@@ -47,13 +47,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={buttonClasses}
-        disabled={disabled || isLoading}
+        disabled={disabled || loading}
+        aria-busy={loading}
         {...props}
       >
-        {isLoading && <LoadingSpinner size="xs" />}
-        {!isLoading && leftIcon && <span className="btn-icon btn-icon-left">{leftIcon}</span>}
-        <span className="btn-content">{children}</span>
-        {!isLoading && rightIcon && <span className="btn-icon btn-icon-right">{rightIcon}</span>}
+        {loading && <LoadingSpinner size="xs" aria-hidden="true" />}
+        {!loading && leftIcon && <span className="btn-icon-left" aria-hidden="true">{leftIcon}</span>}
+        {children && <span>{children}</span>}
+        {!loading && rightIcon && <span className="btn-icon-right" aria-hidden="true">{rightIcon}</span>}
       </button>
     );
   }

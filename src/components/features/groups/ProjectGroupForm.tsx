@@ -185,7 +185,7 @@ export function ProjectGroupForm({
               type="button"
               onClick={handleAddCustomPermission}
               disabled={!newPermission.trim() || isLoading}
-              size="small"
+              size="sm"
             >
               Add
             </Button>
@@ -196,7 +196,7 @@ export function ProjectGroupForm({
           <h4>Selected Permissions ({formData.permissions.length})</h4>
           <div className="permission-badges">
             {formData.permissions.map(permission => (
-              <Badge key={permission} variant="secondary" size="small">
+              <Badge key={permission} variant="secondary" size="sm">
                 {permission}
                 <button
                   type="button"

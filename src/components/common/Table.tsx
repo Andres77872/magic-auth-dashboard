@@ -73,11 +73,11 @@ export function Table<T extends Record<string, any>>({
     return (
       <span className={`table-sort-icon ${isActive ? 'table-sort-active' : ''}`}>
         {isActive && sortState.direction === 'asc' ? (
-          <ChevronIcon size="small" direction="up" />
+          <ChevronIcon size="sm" direction="up" />
         ) : isActive && sortState.direction === 'desc' ? (
-          <ChevronIcon size="small" direction="down" />
+          <ChevronIcon size="sm" direction="down" />
         ) : (
-          <ChevronIcon size="small" direction="up" className="inactive-sort" />
+          <ChevronIcon size="sm" direction="up" className="inactive-sort" />
         )}
       </span>
     );

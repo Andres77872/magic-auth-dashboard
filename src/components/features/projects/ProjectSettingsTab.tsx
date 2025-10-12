@@ -175,7 +175,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
             ⚠️ {error}
             <Button 
               variant="ghost" 
-              size="small" 
+              size="sm" 
               onClick={() => setError(null)}
               className="float-right"
             >
@@ -268,7 +268,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
             setDeleteConfirmation('');
           }}
           title="Delete Project"
-          size="medium"
+          size="md"
         >
           <div className="project-modal-content-wide">
             <div className="alert-danger">
@@ -324,7 +324,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
             setSelectedNewOwner('');
           }}
           title="Transfer Project Ownership"
-          size="medium"
+          size="md"
         >
           <div className="project-modal-content-wide">
             <p className="project-modal-description">

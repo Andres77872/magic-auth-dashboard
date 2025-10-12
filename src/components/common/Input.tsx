@@ -8,7 +8,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   helperText?: string;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  isLoading?: boolean;
+  loading?: boolean;
   fullWidth?: boolean;
   validationState?: 'success' | 'error' | 'warning' | null;
 }
@@ -22,7 +22,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       helperText,
       leftIcon,
       rightIcon,
-      isLoading = false,
+      loading = false,
       fullWidth = false,
       validationState = null,
       className = '',
@@ -38,10 +38,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const wrapperClasses = [
       'input-wrapper',
-      fullWidth ? 'input-full-width' : '',
-      error ? 'input-error' : '',
-      focused ? 'input-focused' : '',
-      isLoading ? 'input-loading' : '',
+      fullWidth ? 'w-full' : '',
+      error ? 'has-error' : '',
+      focused ? 'is-focused' : '',
+      loading ? 'is-loading' : '',
       className,
     ]
       .filter(Boolean)
@@ -86,13 +86,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           
-          {isLoading && (
+          {loading && (
             <span className="input-icon input-icon-right">
-              <LoadingSpinner size="xs" />
+              <LoadingSpinner size="xs" aria-hidden="true" />
             </span>
           )}
-          {!isLoading && rightIcon && (
-            <span className="input-icon input-icon-right">{rightIcon}</span>
+          {!loading && rightIcon && (
+            <span className="input-icon input-icon-right" aria-hidden="true">{rightIcon}</span>
           )}
         </div>
 

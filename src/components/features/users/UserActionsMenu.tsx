@@ -5,7 +5,7 @@ import { Modal, Select, Button, ActionsMenu } from '@/components/common';
 import type { ActionMenuItem } from '@/components/common';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import { ViewIcon, EditIcon, GroupIcon, LockIcon, CheckIcon, DeleteIcon, WarningIcon, ProjectIcon } from '@/components/icons';
+import { ViewIcon, EditIcon, GroupIcon, LockIcon, CheckIcon, DeleteIcon, WarningIcon, ProjectIcon, ErrorIcon } from '@/components/icons';
 import type { User, UserType } from '@/types/auth.types';
 import { AdminProjectsManager } from './AdminProjectsManager';
 
@@ -139,48 +139,48 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
     {
       key: 'view',
       label: 'View Details',
-      icon: <ViewIcon size="small" />,
+      icon: <ViewIcon size="sm" />,
       onClick: handleViewDetails,
     },
     {
       key: 'edit',
       label: 'Edit User',
-      icon: <EditIcon size="small" />,
+      icon: <EditIcon size="sm" />,
       onClick: handleEditUser,
       hidden: !canEditUser(user),
     },
     {
       key: 'change-type',
       label: 'Change User Type',
-      icon: <GroupIcon size="small" />,
+      icon: <GroupIcon size="sm" />,
       onClick: handleChangeUserType,
       hidden: !canChangeUserType(user),
     },
     {
       key: 'manage-projects',
       label: 'Manage Projects',
-      icon: <ProjectIcon size="small" />,
+      icon: <ProjectIcon size="sm" />,
       onClick: handleManageProjects,
       hidden: user.user_type !== 'admin' || currentUserType !== 'root',
     },
     {
       key: 'reset-password',
       label: 'Reset Password',
-      icon: <LockIcon size="small" />,
+      icon: <LockIcon size="sm" />,
       onClick: handleResetPassword,
       hidden: !canEditUser(user),
     },
     {
       key: 'change-status',
       label: 'Change Status',
-      icon: <CheckIcon size="small" />,
+      icon: <CheckIcon size="sm" />,
       onClick: handleChangeStatus,
       hidden: !canEditUser(user),
     },
     {
       key: 'delete',
       label: 'Delete User',
-      icon: <DeleteIcon size="small" />,
+      icon: <DeleteIcon size="sm" />,
       onClick: handleDeleteUser,
       destructive: true,
       hidden: !canDeleteUser(user),
@@ -209,19 +209,19 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
         isOpen={showChangeTypeModal}
         onClose={handleCancelTypeChange}
         title="Change User Type"
-        size="medium"
+        size="md"
         className="change-user-type-modal"
         closeOnBackdropClick={!isChangingType}
         closeOnEscape={!isChangingType}
       >
-        <>
+        <div className="modal-body">
           <div className="user-info">
             <h4>User: {user.username}</h4>
             <p>Current Type: <strong>{user.user_type.toUpperCase()}</strong></p>
           </div>
 
           <div className="warning-section">
-            <WarningIcon size="large" />
+            <WarningIcon size={24} />
             <p>Changing a user's type will immediately affect their permissions and access level.</p>
           </div>
 
@@ -235,27 +235,30 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
           />
           
           {changeTypeError && (
-            <p className="user-type-change-error">{changeTypeError}</p>
+            <div className="form-error" role="alert">
+              <ErrorIcon size="sm" aria-hidden="true" />
+              {changeTypeError}
+            </div>
           )}
+        </div>
 
-          <div className="modal-actions">
-            <Button
-              variant="outline"
-              onClick={handleCancelTypeChange}
-              disabled={isChangingType}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleConfirmTypeChange}
-              isLoading={isChangingType}
-              disabled={selectedUserType === user.user_type}
-            >
-              Change User Type
-            </Button>
-          </div>
-        </>
+        <div className="modal-footer">
+          <Button
+            variant="outline"
+            onClick={handleCancelTypeChange}
+            disabled={isChangingType}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleConfirmTypeChange}
+            loading={isChangingType}
+            disabled={selectedUserType === user.user_type}
+          >
+            Change User Type
+          </Button>
+        </div>
       </Modal>
     </>
   );

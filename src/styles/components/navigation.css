@@ -4,6 +4,9 @@
   flex-direction: column;
   height: 100%;
   padding: var(--spacing-4) 0;
+  /* Ensure navigation is above any background elements */
+  position: relative;
+  z-index: 1;
 }
 
 .nav-list {
@@ -24,10 +27,13 @@
   padding: var(--spacing-3) var(--spacing-4);
   text-decoration: none;
   color: var(--color-text-secondary);
-  border-radius: 10px;
+  border-radius: var(--border-radius-lg);
   margin: 0 var(--spacing-2);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  /* Ensure proper click handling */
+  pointer-events: auto;
+  z-index: 1;
 }
 
 .nav-link:hover {

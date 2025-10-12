@@ -3,7 +3,7 @@ import React from 'react';
 export interface BadgeProps {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-  size?: 'small' | 'medium' | 'large';
+  size?: 'sm' | 'md' | 'lg';
   dot?: boolean;
   className?: string;
 }
@@ -11,7 +11,7 @@ export interface BadgeProps {
 export function Badge({
   children,
   variant = 'primary',
-  size = 'medium',
+  size = 'md',
   dot = false,
   className = '',
 }: BadgeProps): React.JSX.Element {

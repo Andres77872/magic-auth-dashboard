@@ -17,7 +17,7 @@ export function NotificationBell({ count = 0 }: NotificationBellProps): React.JS
         aria-label={`Notifications${count > 0 ? ` (${count} unread)` : ''}`}
         aria-expanded={isOpen}
       >
-        <NotificationIcon size="medium" />
+        <NotificationIcon size="md" />
         {count > 0 && (
           <span className="notification-badge" aria-hidden="true">
             {count > 99 ? '99+' : count}

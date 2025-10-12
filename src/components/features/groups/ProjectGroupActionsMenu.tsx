@@ -46,21 +46,21 @@ export function ProjectGroupActionsMenu({
       <div className="actions-inline">
         <Button
           variant="outline"
-          size="small"
+          size="sm"
           onClick={handleViewDetails}
         >
           View
         </Button>
         <Button
           variant="outline"
-          size="small"
+          size="sm"
           onClick={handleEdit}
         >
           Edit
         </Button>
         <Button
           variant="outline"
-          size="small"
+          size="sm"
           onClick={handleDelete}
           className="actions-menu-item-danger"
         >

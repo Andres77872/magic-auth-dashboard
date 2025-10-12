@@ -29,16 +29,17 @@ export function NavigationItem({
 
   // Get icon component based on icon name
   const getIcon = (iconName: string) => {
+    const iconSize = 20; // MD size from design system
     const icons: Record<string, React.ReactElement> = {
-      dashboard: <DashboardIcon size="medium" />,
-      users: <UserIcon size="medium" />,
-      folder: <ProjectIcon size="medium" />,
-      'users-group': <GroupIcon size="medium" />,
-      shield: <SecurityIcon size="medium" />,
-      settings: <SettingsIcon size="medium" />,
+      dashboard: <DashboardIcon size={iconSize} aria-hidden="true" />,
+      users: <UserIcon size={iconSize} aria-hidden="true" />,
+      folder: <ProjectIcon size={iconSize} aria-hidden="true" />,
+      'users-group': <GroupIcon size={iconSize} aria-hidden="true" />,
+      shield: <SecurityIcon size={iconSize} aria-hidden="true" />,
+      settings: <SettingsIcon size={iconSize} aria-hidden="true" />,
     };
 
-    return icons[iconName] || <DashboardIcon size="medium" />;
+    return icons[iconName] || <DashboardIcon size={iconSize} aria-hidden="true" />;
   };
 
   return (
@@ -70,8 +71,8 @@ export function NavigationItem({
         )}
 
         {!collapsed && hasChildren && (
-          <span className="nav-arrow">
-            <ChevronIcon size="small" direction="down" />
+          <span className="nav-arrow" aria-hidden="true">
+            <ChevronIcon size={16} />
           </span>
         )}
       </Link>

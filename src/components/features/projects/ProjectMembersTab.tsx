@@ -176,7 +176,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
       render: (_, member) => (
         <Button
           variant="outline"
-          size="small"
+          size="sm"
           onClick={() => setConfirmDelete(member)}
           disabled={isRemoving === member.user_hash}
           isLoading={isRemoving === member.user_hash}
@@ -284,7 +284,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
                     </div>
                   </div>
                   <Button
-                    size="small"
+                    size="sm"
                     onClick={() => handleAddMember(user)}
                     disabled={isAdding === user.user_hash}
                     isLoading={isAdding === user.user_hash}

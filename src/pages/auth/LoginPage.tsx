@@ -24,7 +24,7 @@ export function LoginPage(): React.JSX.Element {
             <header className="brand-header">
               <h1 className="brand-title">Magic Auth</h1>
               <div className="brand-subtitle-wrapper">
-                <SecurityIcon size="small" className="brand-shield-icon" />
+                <SecurityIcon size="sm" className="brand-shield-icon" />
                 <h2 className="brand-subtitle">Admin Dashboard</h2>
               </div>
             </header>
@@ -37,7 +37,7 @@ export function LoginPage(): React.JSX.Element {
               <div className="feature-list" role="list" aria-label="Key Features">
                 <div className="feature-item" role="listitem">
                   <div className="feature-icon" aria-hidden="true">
-                    <UserIcon size="small" />
+                    <UserIcon size="sm" />
                   </div>
                   <div className="feature-content">
                     <span className="feature-text">3-Tier User Management</span>
@@ -46,7 +46,7 @@ export function LoginPage(): React.JSX.Element {
                 </div>
                 <div className="feature-item" role="listitem">
                   <div className="feature-icon" aria-hidden="true">
-                    <SecurityIcon size="small" />
+                    <SecurityIcon size="sm" />
                   </div>
                   <div className="feature-content">
                     <span className="feature-text">Role-Based Access Control</span>
@@ -55,7 +55,7 @@ export function LoginPage(): React.JSX.Element {
                 </div>
                 <div className="feature-item" role="listitem">
                   <div className="feature-icon" aria-hidden="true">
-                    <ProjectIcon size="small" />
+                    <ProjectIcon size="sm" />
                   </div>
                   <div className="feature-content">
                     <span className="feature-text">Project Management</span>
@@ -64,7 +64,7 @@ export function LoginPage(): React.JSX.Element {
                 </div>
                 <div className="feature-item" role="listitem">
                   <div className="feature-icon" aria-hidden="true">
-                    <HealthIcon size="small" />
+                    <HealthIcon size="sm" />
                   </div>
                   <div className="feature-content">
                     <span className="feature-text">System Health Monitoring</span>
@@ -105,7 +105,7 @@ export function LoginPage(): React.JSX.Element {
                 Sign in to access the Magic Auth Dashboard
               </p>
               <div className="form-security-badge" aria-label="Secure connection">
-                <SecurityIcon size="small" />
+                <SecurityIcon size="sm" />
                 <span>Secure Connection</span>
               </div>
             </header>

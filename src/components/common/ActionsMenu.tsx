@@ -33,7 +33,7 @@ export interface ActionsMenuProps {
 export function ActionsMenu({
   items,
   triggerLabel,
-  triggerIcon = <MoreIcon size="small" />,
+  triggerIcon = <MoreIcon size="sm" />,
   triggerClassName,
   menuClassName,
   placement = 'bottom-right',

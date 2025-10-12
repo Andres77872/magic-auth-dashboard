@@ -3,7 +3,7 @@
   display: inline-flex;
   align-items: center;
   padding: var(--spacing-1) var(--spacing-3);
-  border-radius: 20px;
+  border-radius: var(--border-radius-full);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-semibold);
   text-transform: uppercase;

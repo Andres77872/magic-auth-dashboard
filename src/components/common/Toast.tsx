@@ -48,13 +48,13 @@ export function Toast({
   const getIcon = () => {
     switch (variant) {
       case 'success':
-        return <CheckIcon size="medium" />;
+        return <CheckIcon size="md" />;
       case 'error':
-        return <ErrorIcon size="medium" />;
+        return <ErrorIcon size="md" />;
       case 'warning':
-        return <WarningIcon size="medium" />;
+        return <WarningIcon size="md" />;
       case 'info':
-        return <InfoIcon size="medium" />;
+        return <InfoIcon size="md" />;
     }
   };
 
@@ -92,7 +92,7 @@ export function Toast({
         aria-label="Close notification"
         type="button"
       >
-        <CloseIcon size="small" />
+        <CloseIcon size="sm" />
       </button>
     </div>
   );

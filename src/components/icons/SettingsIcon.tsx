@@ -1,42 +1,28 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface SettingsIconProps {
-  size?: 'small' | 'medium' | 'large' | number;
-  color?: string;
-  className?: string;
-  'aria-label'?: string;
-}
+export interface SettingsIconProps extends Omit<IconProps, 'name'> {}
 
-const sizeMap = {
-  small: 16,
-  medium: 20,
-  large: 24,
-} as const;
-
+/**
+ * Settings Icon - loads settings.svg
+ * Used for: Settings pages, configuration, preferences
+ */
 export function SettingsIcon({
-  size = 'medium',
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,
+  ...props
 }: SettingsIconProps): React.JSX.Element {
-  const iconSize = typeof size === 'number' ? size : sizeMap[size];
-  
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Icon
+      name="settings"
+      size={size}
+      color={color}
       className={`settings-icon ${className}`}
       aria-label={ariaLabel || 'Settings'}
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
+      {...props}
+    />
   );
 }
 

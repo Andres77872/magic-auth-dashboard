@@ -16,16 +16,16 @@ export function StatCard({ data, isLoading = false }: StatCardProps): React.JSX.
   const getIcon = (iconName: string) => {
     const icons: Record<string, React.ReactElement> = {
       users: (
-        <GroupIcon size="large" className="stat-icon-component" />
+        <GroupIcon size="lg" className="stat-icon-component" />
       ),
       projects: (
-        <ProjectIcon size="large" className="stat-icon-component" />
+        <ProjectIcon size="lg" className="stat-icon-component" />
       ),
       sessions: (
-        <SettingsIcon size="large" className="stat-icon-component" />
+        <SettingsIcon size="lg" className="stat-icon-component" />
       ),
       groups: (
-        <GroupIcon size="large" className="stat-icon-component" />
+        <GroupIcon size="lg" className="stat-icon-component" />
       ),
     };
 

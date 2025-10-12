@@ -1,33 +1,15 @@
 /* Dashboard Layout Styles */
 
-/* Utility Classes */
-.mobile-only {
-  display: block;
+/* CSS Variables for Layout */
+:root {
+  --header-height: 4rem;
+  --sidebar-width: 16rem;
+  --sidebar-width-collapsed: 4rem;
+  --footer-height: 3rem;
+  --mobile-breakpoint: 1024px;
 }
 
-.desktop-only {
-  display: none;
-}
-
-.tablet-and-up {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .tablet-and-up {
-    display: block;
-  }
-}
-
-@media (min-width: 1024px) {
-  .mobile-only {
-    display: none;
-  }
-  
-  .desktop-only {
-    display: flex;
-  }
-}
+/* === MAIN LAYOUT GRID === */
 .dashboard-layout {
   display: grid;
   grid-template-areas: 
@@ -44,16 +26,7 @@
   grid-template-columns: var(--sidebar-width-collapsed) 1fr;
 }
 
-/* CSS Variables for Layout */
-:root {
-  --header-height: 4rem;
-  --sidebar-width: 16rem;
-  --sidebar-width-collapsed: 4rem;
-  --footer-height: 3rem;
-  --mobile-breakpoint: 1024px;
-}
-
-/* Dashboard Loading State - Now handled by LoadingSpinner component */
+/* === LAYOUT OVERLAYS === */
 
 /* Mobile Overlay */
 .mobile-overlay {
@@ -63,14 +36,14 @@
   right: 0;
   bottom: 0;
   background-color: var(--color-modal-backdrop);
-  z-index: 150; /* Between header (200) and modal (1050) */
-  display: none;
+  z-index: var(--z-index-mobile-overlay);
+  /* Always hidden on desktop, shown via inline rendering in JSX on mobile */
 }
 
 /* Skip to Content Link */
 .skip-to-content {
-  position: absolute;
-  top: -100%;
+  position: fixed;
+  top: var(--spacing-2);
   left: var(--spacing-4);
   background: var(--color-primary-600);
   color: var(--color-text-on-primary);
@@ -79,24 +52,33 @@
   text-decoration: none;
   font-weight: var(--font-weight-medium);
   z-index: var(--z-index-tooltip);
-  transform: translateY(-100%);
-  transition: transform var(--transition-fast);
+  opacity: 0;
+  transform: translateY(-200%);
+  transition: all var(--transition-fast);
+  pointer-events: none;
 }
 
 .skip-to-content:focus {
+  opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
 }
 
-/* === HEADER STYLES === */
+/* ========================================
+   HEADER COMPONENT
+   ======================================== */
+
 .dashboard-header {
   grid-area: header;
   background: var(--color-surface);
   border-bottom: var(--border-divider);
   box-shadow: var(--shadow-sm);
-  z-index: 200; /* Highest z-index for main dashboard header */
+  z-index: var(--z-index-dashboard-header);
   /* Ensure header stays on top */
   position: relative;
   isolation: isolate;
+  /* Prevent header elements from extending beyond bounds */
+  overflow: visible;
 }
 
 .header-content {
@@ -111,6 +93,10 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-4);
+  /* Prevent elements from extending beyond header area */
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .mobile-menu-toggle,
@@ -125,6 +111,10 @@
   border-radius: var(--border-radius-md);
   cursor: pointer;
   transition: background-color var(--transition-fast);
+  flex-shrink: 0;
+  /* Prevent click area from extending beyond bounds */
+  position: relative;
+  z-index: 1;
 }
 
 .mobile-menu-toggle:hover,
@@ -132,12 +122,39 @@
   background-color: var(--color-gray-100);
 }
 
+.mobile-menu-toggle {
+  flex-direction: column;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2);
+}
+
+/* Explicitly hide mobile toggle on desktop and show desktop toggle */
+@media (min-width: 1024px) {
+  .mobile-menu-toggle {
+    display: none !important;
+  }
+  
+  .sidebar-toggle {
+    display: flex !important;
+  }
+}
+
+/* Hide desktop toggle on mobile and show mobile toggle */
+@media (max-width: 1023px) {
+  .sidebar-toggle {
+    display: none !important;
+  }
+  
+  .mobile-menu-toggle {
+    display: flex !important;
+  }
+}
+
 .hamburger-line {
   display: block;
   width: 18px;
   height: 2px;
   background-color: var(--color-text-secondary);
-  margin: var(--spacing-1) 0;
   transition: all var(--transition-fast);
 }
 
@@ -213,7 +230,10 @@
   line-height: 1;
 }
 
-/* === USER MENU STYLES === */
+/* ========================================
+   USER MENU DROPDOWN
+   ======================================== */
+
 .user-menu {
   position: relative;
 }
@@ -325,7 +345,10 @@
   background-color: var(--color-error-light);
 }
 
-/* === SIDEBAR STYLES === */
+/* ========================================
+   SIDEBAR NAVIGATION
+   ======================================== */
+
 .dashboard-sidebar {
   grid-area: sidebar;
   background: var(--color-surface);
@@ -335,7 +358,7 @@
   width: var(--sidebar-width);
   /* Ensure sidebar has proper stacking */
   position: relative;
-  z-index: 10;
+  z-index: var(--z-index-sidebar);
   isolation: isolate;
 }
 
@@ -348,6 +371,9 @@
   flex-direction: column;
   height: 100%;
   padding: var(--spacing-4) 0;
+  /* Ensure proper stacking and click handling */
+  position: relative;
+  z-index: 1;
 }
 
 .sidebar-footer {
@@ -368,7 +394,10 @@
   color: var(--color-text-tertiary);
 }
 
-/* === NAVIGATION MENU STYLES === */
+/* ========================================
+   NAVIGATION MENU
+   ======================================== */
+
 .navigation-menu {
   flex: 1;
   padding: 0 var(--spacing-4);
@@ -376,7 +405,10 @@
 
 
 
-/* === MAIN CONTENT STYLES === */
+/* ========================================
+   MAIN CONTENT AREA
+   ======================================== */
+
 .main-content {
   grid-area: main;
   background-color: var(--color-background-subtle);
@@ -412,7 +444,10 @@
   /* No overflow here - handled by parent .main-content */
 }
 
-/* === BREADCRUMBS STYLES === */
+/* ========================================
+   BREADCRUMBS NAVIGATION
+   ======================================== */
+
 .breadcrumbs {
   display: flex;
   align-items: center;
@@ -455,7 +490,10 @@
   flex-shrink: 0;
 }
 
-/* === FOOTER STYLES === */
+/* ========================================
+   FOOTER COMPONENT
+   ======================================== */
+
 .dashboard-footer {
   grid-area: footer;
   background: var(--color-surface);
@@ -491,7 +529,12 @@
   color: var(--color-primary-600);
 }
 
-/* === RESPONSIVE DESIGN === */
+/* ========================================
+   RESPONSIVE DESIGN
+   Mobile-first breakpoints
+   ======================================== */
+
+/* Tablet and Mobile (max-width: 1024px) */
 @media (max-width: 1024px) {
   .dashboard-layout {
     grid-template-areas: 
@@ -502,10 +545,6 @@
     grid-template-rows: var(--header-height) 1fr var(--footer-height);
   }
 
-  .mobile-overlay {
-    display: block;
-  }
-
   .dashboard-sidebar {
     position: fixed;
     top: var(--header-height);
@@ -514,7 +553,8 @@
     width: var(--sidebar-width);
     transform: translateX(-100%);
     transition: transform var(--transition-normal);
-    z-index: var(--z-index-modal);
+    /* Use proper z-index for mobile sidebar, below overlay */
+    z-index: calc(var(--z-index-mobile-overlay) - 10);
     grid-area: unset;
   }
 
@@ -562,7 +602,10 @@
   }
 }
 
-/* === PRINT STYLES === */
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
 @media print {
   .dashboard-header,
   .dashboard-sidebar,
@@ -581,7 +624,12 @@
   }
 }
 
-/* === ACCESSIBILITY === */
+/* ========================================
+   ACCESSIBILITY ENHANCEMENTS
+   WCAG 2.2 AA Compliance
+   ======================================== */
+
+/* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .dashboard-layout,
   .dashboard-sidebar,
@@ -593,7 +641,7 @@
   }
 }
 
-/* === HIGH CONTRAST === */
+/* High contrast mode support */
 @media (prefers-contrast: high) {
   .dashboard-header,
   .dashboard-sidebar,

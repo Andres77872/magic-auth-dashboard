@@ -1,18 +1,9 @@
-import React from 'react';
+import React, { type CSSProperties } from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface ChevronIconProps {
-  size?: 'small' | 'medium' | 'large' | number;
-  color?: string;
-  className?: string;
+export interface ChevronIconProps extends Omit<IconProps, 'name'> {
   direction?: 'up' | 'down' | 'left' | 'right';
-  'aria-label'?: string;
 }
-
-const sizeMap = {
-  small: 16,
-  medium: 20,
-  large: 24,
-} as const;
 
 const rotationMap = {
   up: '180deg',
@@ -21,32 +12,37 @@ const rotationMap = {
   right: '-90deg',
 } as const;
 
+/**
+ * Chevron Icon - loads chevron.svg
+ * Used for: Expandable sections, dropdowns, navigation
+ * Supports directional rotation: up, down, left, right
+ */
 export function ChevronIcon({
-  size = 'medium',
+  size = 'md',
   color = 'currentColor',
   className = '',
   direction = 'down',
   'aria-label': ariaLabel,
+  style,
+  ...props
 }: ChevronIconProps): React.JSX.Element {
-  const iconSize = typeof size === 'number' ? size : sizeMap[size];
   const rotation = rotationMap[direction];
   
+  const combinedStyle: CSSProperties = {
+    transform: `rotate(${rotation})`,
+    ...style,
+  };
+  
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Icon
+      name="chevron"
+      size={size}
+      color={color}
       className={`chevron-icon ${className}`}
-      style={{ transform: `rotate(${rotation})` }}
+      style={combinedStyle}
       aria-label={ariaLabel || `Chevron ${direction}`}
-    >
-      <polyline points="6,9 12,15 18,9" />
-    </svg>
+      {...props}
+    />
   );
 }
 

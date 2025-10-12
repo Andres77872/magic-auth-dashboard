@@ -169,7 +169,7 @@ function ProjectGroupCard({ group, onEdit, onDelete, onView }: ProjectGroupCardP
           {group.group_name}
         </h3>
         <div className="card-actions">
-          <Button size="small" variant="outline" onClick={() => onEdit(group)}>
+          <Button size="sm" variant="outline" onClick={() => onEdit(group)}>
             Edit
           </Button>
         </div>
@@ -197,7 +197,7 @@ function ProjectGroupCard({ group, onEdit, onDelete, onView }: ProjectGroupCardP
           Created {new Date(group.created_at).toLocaleDateString()}
         </small>
         <Button 
-          size="small" 
+          size="sm" 
           variant="outline" 
           onClick={() => onDelete(group)}
           className="text-error"

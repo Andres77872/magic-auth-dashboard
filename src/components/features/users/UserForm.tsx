@@ -4,7 +4,7 @@ import { usePermissions, useUserType, useAuth } from '@/hooks';
 import { authService } from '@/services';
 import AssignProjectModal from './AssignProjectModal';
 import AssignGroupModal from './AssignGroupModal';
-import { WarningIcon, InfoIcon, ProjectIcon } from '@/components/icons';
+import { WarningIcon, InfoIcon, ProjectIcon, GroupIcon } from '@/components/icons';
 import type { UserFormData, UserFormErrors } from '@/types/user.types';
 import type { UserType, User } from '@/types/auth.types';
 
@@ -255,13 +255,13 @@ export function UserForm({
 
   return (
     <>
-      <Card title={mode === 'create' ? 'Create New User' : 'Edit User'} padding="large">
+      <Card title={mode === 'create' ? 'Create New User' : 'Edit User'} padding="lg">
         <form onSubmit={handleSubmit} className="user-form">
           {/* Security Warning for ROOT users */}
           {mode === 'create' && formData.userType === 'root' && (
             <div className="security-warning">
               <div className="warning-icon">
-                <WarningIcon size="medium" />
+                <WarningIcon size={24} aria-hidden="true" />
               </div>
               <div className="warning-content">
                 <h4>Creating ROOT User</h4>
@@ -274,7 +274,7 @@ export function UserForm({
           {isEditingSelf && (
             <div className="info-banner">
               <div className="info-icon">
-                <InfoIcon size="medium" />
+                <InfoIcon size={24} aria-hidden="true" />
               </div>
               <div className="info-content">
                 <p>You are editing your own account. Some restrictions apply for security reasons.</p>
@@ -331,7 +331,7 @@ export function UserForm({
                 validationState={mode === 'create' ? (usernameAvailable === true ? 'success' : usernameAvailable === false ? 'error' : null) : null}
                 required
                 disabled={isLoading || mode === 'edit'}
-                isLoading={mode === 'create' && checkingAvailability}
+                loading={mode === 'create' && checkingAvailability}
                 helperText={mode === 'create' ? 
                   (usernameAvailable === true ? 'Username is available' : 
                    usernameAvailable === false ? 'Username is taken' : 
@@ -351,7 +351,7 @@ export function UserForm({
                 success={mode === 'create' && !!formData.email && emailAvailable === true}
                 validationState={mode === 'create' && formData.email ? (emailAvailable === true ? 'success' : emailAvailable === false ? 'error' : null) : null}
                 disabled={isLoading}
-                isLoading={mode === 'create' && checkingAvailability && formData.email.length > 0}
+                loading={mode === 'create' && checkingAvailability && formData.email.length > 0}
                 helperText={mode === 'create' && formData.email ? 
                   (emailAvailable === true ? 'Email is available' : 
                    emailAvailable === false ? 'Email is already in use' : 
@@ -428,7 +428,7 @@ export function UserForm({
                       <div className="project-tags">
                         {formData.assignedProjects.slice(0, 3).map((projectHash, index) => (
                           <span key={projectHash} className="project-tag">
-                            <ProjectIcon size="small" />
+                            <ProjectIcon size="sm" />
                             Project {index + 1}
                           </span>
                         ))}
@@ -451,8 +451,8 @@ export function UserForm({
                   variant="outline"
                   onClick={() => setShowProjectModal(true)}
                   disabled={isLoading}
+                  leftIcon={<ProjectIcon size={16} />}
                 >
-                  <ProjectIcon size="small" />
                   {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
                 </Button>
               </div>
@@ -496,8 +496,8 @@ export function UserForm({
                   variant="outline"
                   onClick={() => setShowGroupModal(true)}
                   disabled={isLoading}
+                  leftIcon={<GroupIcon size={16} />}
                 >
-                  <ProjectIcon size="small" />
                   {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
                 </Button>
               </div>
@@ -515,8 +515,8 @@ export function UserForm({
             <Button
               type="submit"
               variant="primary"
-              size="large"
-              isLoading={isLoading}
+              size="lg"
+              loading={isLoading}
               disabled={checkingAvailability || (mode === 'create' && (usernameAvailable === false || emailAvailable === false))}
             >
               {submitButtonText || (mode === 'create' ? 'Create User' : 'Update User')}
@@ -535,15 +535,15 @@ export function UserForm({
             setRootConfirmationError('');
           }}
           title="Confirm ROOT User Creation"
-          size="medium"
+          size="md"
           className="root-confirmation-modal"
           closeOnBackdropClick={!isLoading}
           closeOnEscape={!isLoading}
         >
-          <div className="root-confirmation-content">
+          <div className="modal-body">
             <div className="warning-section">
               <div className="warning-icon">
-                <WarningIcon size="large" className="confirm-icon confirm-icon-warning" />
+                <WarningIcon size={32} className="confirm-icon confirm-icon-warning" aria-hidden="true" />
               </div>
               <div className="warning-message">
                 <p>You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>
@@ -562,27 +562,27 @@ export function UserForm({
                 fullWidth
               />
             </div>
-            
-            <div className="confirmation-actions">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowRootConfirmation(false);
-                  setRootConfirmationPassword('');
-                  setRootConfirmationError('');
-                }}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleRootConfirmation}
-                isLoading={isLoading}
-              >
-                Create ROOT User
-              </Button>
-            </div>
+          </div>
+
+          <div className="modal-footer">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowRootConfirmation(false);
+                setRootConfirmationPassword('');
+                setRootConfirmationError('');
+              }}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleRootConfirmation}
+              loading={isLoading}
+            >
+              Create ROOT User
+            </Button>
           </div>
         </Modal>
       )}

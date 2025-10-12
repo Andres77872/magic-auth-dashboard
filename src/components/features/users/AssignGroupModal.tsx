@@ -79,7 +79,7 @@ export function AssignGroupModal({
       isOpen={isOpen}
       onClose={handleCancel}
       title={`Assign Group to ${userName}`}
-      size="large"
+      size="lg"
       className="assign-project-modal"
       closeOnBackdropClick={!isLoading}
       closeOnEscape={!isLoading}
@@ -97,7 +97,7 @@ export function AssignGroupModal({
               placeholder="Search groups..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={<SearchIcon size="small" />}
+              leftIcon={<SearchIcon size="sm" />}
               disabled={fetchingGroups}
             />
           </div>
@@ -107,24 +107,24 @@ export function AssignGroupModal({
           {fetchingGroups ? (
             <div className="loading-state">
               <div className="loading-spinner">
-                <LoadingIcon size="large" />
+                <LoadingIcon size="lg" />
               </div>
               <p>Loading groups...</p>
             </div>
           ) : error ? (
             <div className="error-state">
               <div className="error-icon">
-                <ErrorIcon size="large" />
+                <ErrorIcon size="lg" />
               </div>
               <p>{error}</p>
-              <Button variant="outline" size="small" onClick={fetchGroups}>
+              <Button variant="outline" size="sm" onClick={fetchGroups}>
                 Retry
               </Button>
             </div>
           ) : filteredGroups.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">
-                <HealthIcon size="large" />
+                <HealthIcon size="lg" />
               </div>
               <p>{searchTerm ? 'No groups match your search.' : 'No user groups available.'}</p>
             </div>

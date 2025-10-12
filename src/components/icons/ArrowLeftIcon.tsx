@@ -1,41 +1,28 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface ArrowLeftIconProps {
-  size?: 'small' | 'medium' | 'large' | number;
-  color?: string;
-  className?: string;
-  'aria-label'?: string;
-}
+export interface ArrowLeftIconProps extends Omit<IconProps, 'name'> {}
 
-const sizeMap = {
-  small: 16,
-  medium: 20,
-  large: 24,
-} as const;
-
+/**
+ * Arrow Left Icon - loads arrow-left.svg
+ * Used for: Back navigation, previous actions
+ */
 export function ArrowLeftIcon({
-  size = 'medium',
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,
+  ...props
 }: ArrowLeftIconProps): React.JSX.Element {
-  const iconSize = typeof size === 'number' ? size : sizeMap[size];
-  
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Icon
+      name="arrow-left"
+      size={size}
+      color={color}
       className={`arrow-left-icon ${className}`}
       aria-label={ariaLabel || 'Arrow left'}
-    >
-      <polyline points="15,18 9,12 15,6"/>
-    </svg>
+      {...props}
+    />
   );
 }
 

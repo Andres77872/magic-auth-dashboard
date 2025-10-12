@@ -1,37 +1,25 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface WarningIconProps {
-  size?: 'small' | 'medium' | 'large';
-  className?: string;
-}
+export interface WarningIconProps extends Omit<IconProps, 'name'> {}
 
+/**
+ * Warning Icon - loads warning.svg
+ * Used for: Warning messages, caution, alerts
+ */
 export function WarningIcon({ 
-  size = 'medium', 
-  className = '' 
+  size = 'md', 
+  className = '',
+  ...props
 }: WarningIconProps): React.JSX.Element {
-  const sizeMap = {
-    small: 16,
-    medium: 20,
-    large: 24,
-  };
-
-  const iconSize = sizeMap[size];
-
   return (
-    <svg 
-      width={iconSize} 
-      height={iconSize} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2"
+    <Icon
+      name="warning"
+      size={size}
       className={`icon warning-icon ${className}`}
       aria-hidden="true"
-    >
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/>
-      <line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
+      {...props}
+    />
   );
 }
 

@@ -98,7 +98,7 @@ export function Pagination({
           disabled={currentPage === 1}
           aria-label="Previous page"
         >
-          <ChevronIcon size="small" direction="left" />
+          <ChevronIcon size="sm" direction="left" />
           Previous
         </button>
 
@@ -130,7 +130,7 @@ export function Pagination({
           aria-label="Next page"
         >
           Next
-          <ChevronIcon size="small" direction="right" />
+          <ChevronIcon size="sm" direction="right" />
         </button>
       </div>
     </div>

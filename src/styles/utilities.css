@@ -423,6 +423,37 @@
 }
 
 /* === RESPONSIVE UTILITIES === */
+
+/* Visibility utilities for responsive design */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+.tablet-and-up {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .tablet-and-up {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none;
+  }
+  
+  .desktop-only {
+    display: flex;
+  }
+}
+
+/* Responsive display modifiers */
 @media (max-width: 640px) {
   .sm\:hidden { display: none; }
   .sm\:block { display: block; }

@@ -156,7 +156,7 @@ export function UserProfilePage(): React.JSX.Element {
         </div>
         <div className="page-content">
           <EmptyState
-            icon={<ErrorIcon size="large" />}
+            icon={<ErrorIcon size="lg" />}
             title="Failed to Load User Profile"
             description={error}
             action={
@@ -186,7 +186,7 @@ export function UserProfilePage(): React.JSX.Element {
         </div>
         <div className="page-content">
           <EmptyState
-            icon={<UserIcon size="large" />}
+            icon={<UserIcon size="lg" />}
             title="User Not Found"
             description="The user you're looking for doesn't exist or has been deleted."
             action={
@@ -250,7 +250,7 @@ export function UserProfilePage(): React.JSX.Element {
                   <h2>{user.username}</h2>
                   <Badge
                     variant={getUserTypeBadgeVariant(user.user_type)}
-                    size="medium"
+                    size="md"
                   >
                     {user.user_type.toUpperCase()}
                   </Badge>
@@ -270,7 +270,7 @@ export function UserProfilePage(): React.JSX.Element {
 
                 <div className="detail-item">
                   <label>Account Status</label>
-                  <Badge variant={user.is_active ? 'success' : 'secondary'} size="small" dot>
+                  <Badge variant={user.is_active ? 'success' : 'secondary'} size="sm" dot>
                     {user.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
@@ -336,7 +336,7 @@ export function UserProfilePage(): React.JSX.Element {
                   <div key={project.project_hash} className="project-item">
                     <div className="project-header">
                       <h4>{project.project_name}</h4>
-                      <Badge variant="info" size="small">
+                      <Badge variant="info" size="sm">
                         {project.effective_permissions.length} permissions
                       </Badge>
                     </div>
@@ -370,7 +370,7 @@ export function UserProfilePage(): React.JSX.Element {
                         <h5>Effective Permissions:</h5>
                         <div className="permissions-list">
                           {project.effective_permissions.map((permission, permIndex) => (
-                            <Badge key={permIndex} variant="secondary" size="small">
+                            <Badge key={permIndex} variant="secondary" size="sm">
                               {permission}
                             </Badge>
                           ))}
@@ -399,7 +399,7 @@ export function UserProfilePage(): React.JSX.Element {
                   <div key={group.group_hash} className="group-item">
                     <div className="group-header">
                       <h4>{group.group_name}</h4>
-                      <Badge variant="info" size="small">
+                      <Badge variant="info" size="sm">
                         {group.projects_count} projects
                       </Badge>
                     </div>
@@ -440,7 +440,7 @@ export function UserProfilePage(): React.JSX.Element {
               <div className="permissions-list">
                 {permissions.map((permission, index) => (
                   <div key={index} className="permission-item">
-                    <Badge variant="info" size="small">
+                    <Badge variant="info" size="sm">
                       {permission}
                     </Badge>
                   </div>

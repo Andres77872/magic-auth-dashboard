@@ -128,7 +128,7 @@ export function AdminProjectsManager({
         isOpen={isOpen}
         onClose={onClose}
         title={`Manage Projects for ${username}`}
-        size="large"
+        size="lg"
         className="admin-projects-manager-modal"
       >
         {isLoading ? (
@@ -142,14 +142,14 @@ export function AdminProjectsManager({
             <div className="projects-section">
               <div className="section-header">
                 <h3>
-                  <ProjectIcon size="medium" />
+                  <ProjectIcon size="md" />
                   Assigned Projects ({assignedProjects.length})
                 </h3>
               </div>
 
               {assignedProjects.length === 0 ? (
                 <div className="empty-state">
-                  <ProjectIcon size="large" />
+                  <ProjectIcon size="lg" />
                   <p>No projects assigned yet</p>
                   <p className="empty-state-hint">
                     Select projects from the available list below
@@ -160,7 +160,7 @@ export function AdminProjectsManager({
                   {assignedProjects.map(project => (
                     <div key={project.project_id} className="project-card assigned">
                       <div className="project-card-header">
-                        <ProjectIcon size="small" />
+                        <ProjectIcon size="sm" />
                         <div className="project-info">
                           <h4>{project.name}</h4>
                           {project.description && (
@@ -170,16 +170,16 @@ export function AdminProjectsManager({
                       </div>
                       <div className="project-card-footer">
                         <Badge variant="success">
-                          <CheckIcon size="small" />
+                          <CheckIcon size="sm" />
                           Assigned
                         </Badge>
                         <Button
                           variant="ghost"
-                          size="small"
+                          size="sm"
                           onClick={() => handleRemoveProject(project)}
                           disabled={isSaving}
                         >
-                          <DeleteIcon size="small" />
+                          <DeleteIcon size="sm" />
                           Remove
                         </Button>
                       </div>
@@ -193,14 +193,14 @@ export function AdminProjectsManager({
             <div className="projects-section">
               <div className="section-header">
                 <h3>
-                  <PlusIcon size="medium" />
+                  <PlusIcon size="md" />
                   Available Projects ({availableProjects.length})
                 </h3>
               </div>
 
               {availableProjects.length === 0 ? (
                 <div className="empty-state">
-                  <CheckIcon size="large" />
+                  <CheckIcon size="lg" />
                   <p>All projects are already assigned</p>
                 </div>
               ) : (
@@ -208,7 +208,7 @@ export function AdminProjectsManager({
                   {availableProjects.map(project => (
                     <div key={project.project_id} className="project-card available">
                       <div className="project-card-header">
-                        <ProjectIcon size="small" />
+                        <ProjectIcon size="sm" />
                         <div className="project-info">
                           <h4>{project.name}</h4>
                           {project.description && (
@@ -219,11 +219,11 @@ export function AdminProjectsManager({
                       <div className="project-card-footer">
                         <Button
                           variant="primary"
-                          size="small"
+                          size="sm"
                           onClick={() => handleAddProject(project.project_id)}
                           disabled={isSaving}
                         >
-                          <PlusIcon size="small" />
+                          <PlusIcon size="sm" />
                           Add Project
                         </Button>
                       </div>

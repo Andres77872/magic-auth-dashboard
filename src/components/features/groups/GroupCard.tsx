@@ -28,7 +28,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
       actions={
         <Button 
           variant="outline" 
-          size="small"
+          size="sm"
           onClick={handleViewDetails}
         >
           View Details

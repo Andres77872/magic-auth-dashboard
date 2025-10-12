@@ -82,7 +82,7 @@ export const GroupFilter: React.FC<GroupFilterProps> = ({
           variant="outline"
           onClick={onClear}
           disabled={!hasActiveFilters}
-          size="medium"
+          size="md"
         >
           Clear Filters
         </Button>

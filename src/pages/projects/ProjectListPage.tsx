@@ -77,7 +77,7 @@ export const ProjectListPage: React.FC = () => {
           <div className="view-switcher" role="group" aria-label="View mode selection">
             <Button
               variant={viewMode === 'list' ? 'primary' : 'outline'}
-              size="small"
+              size="sm"
               onClick={() => setViewMode('list')}
               aria-pressed={viewMode === 'list'}
               aria-label="Switch to list view"
@@ -86,7 +86,7 @@ export const ProjectListPage: React.FC = () => {
             </Button>
             <Button
               variant={viewMode === 'grid' ? 'primary' : 'outline'}
-              size="small"
+              size="sm"
               onClick={() => setViewMode('grid')}
               aria-pressed={viewMode === 'grid'}
               aria-label="Switch to grid view"
@@ -99,7 +99,7 @@ export const ProjectListPage: React.FC = () => {
         <section className="projects-content" aria-label="Projects list" aria-live="polite">
           {!isLoading && projects.length === 0 ? (
             <EmptyState
-              icon={<ProjectIcon size="large" aria-hidden="true" />}
+              icon={<ProjectIcon size="lg" aria-hidden="true" />}
               title="No Projects Found"
               description={
                 filters.search

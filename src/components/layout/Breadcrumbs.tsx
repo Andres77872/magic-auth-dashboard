@@ -107,7 +107,7 @@ export function Breadcrumbs(): React.JSX.Element {
             {index < breadcrumbs.length - 1 && (
               <ChevronIcon 
                 className="breadcrumb-separator" 
-                size="small"
+                size="sm"
                 direction="right"
                 aria-hidden="true"
               />

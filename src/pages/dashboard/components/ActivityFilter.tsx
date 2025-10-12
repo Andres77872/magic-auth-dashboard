@@ -171,7 +171,7 @@ export function ActivityFilter({
           {hasActiveFilters && (
             <Button
               variant="outline"
-              size="small"
+              size="sm"
               onClick={handleClearFilters}
             >
               Clear Filters
@@ -229,7 +229,7 @@ export function ActivityFilter({
               </div>
               <Button
                 variant="primary"
-                size="small"
+                size="sm"
                 onClick={handleCustomDateRange}
                 disabled={!customDateRange.start || !customDateRange.end}
               >

@@ -18,7 +18,7 @@ export function UserEmptyState({
   if (hasFilters) {
     return (
       <EmptyState
-        icon={<SearchIcon size="large" />}
+        icon={<SearchIcon size="lg" />}
         title="No users found"
         description="No users match your current filters. Try adjusting your search criteria."
         action={
@@ -34,7 +34,7 @@ export function UserEmptyState({
 
   return (
     <EmptyState
-      icon={<UserIcon size="large" />}
+      icon={<UserIcon size="lg" />}
       title="No users yet"
       description={
         canCreateUser
@@ -44,7 +44,7 @@ export function UserEmptyState({
       action={
         canCreateUser && onCreateUser ? (
           <Button variant="primary" onClick={onCreateUser}>
-            <UserIcon size="small" />
+            <UserIcon size="sm" />
             Create First User
           </Button>
         ) : undefined

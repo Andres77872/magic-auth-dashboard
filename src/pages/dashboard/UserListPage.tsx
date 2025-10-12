@@ -64,7 +64,7 @@ export function UserListPage(): React.JSX.Element {
         <div className="user-list-page-header-content">
           <div className="user-list-page-title-section">
             <h1 className="user-list-page-title">
-              <UserIcon size="medium" />
+              <UserIcon size="md" />
               User Management
             </h1>
             <p className="user-list-page-subtitle">
@@ -74,22 +74,22 @@ export function UserListPage(): React.JSX.Element {
           <div className="user-list-page-actions">
             <Button
               variant="outline"
-              size="medium"
+              size="md"
               onClick={handleRefresh}
               disabled={isLoading}
               aria-label="Refresh user list"
             >
-              <RefreshIcon size="small" className={isLoading ? 'spinning' : ''} />
+              <RefreshIcon size="sm" className={isLoading ? 'spinning' : ''} />
               <span className="btn-label">Refresh</span>
             </Button>
             {canCreateUser && (
               <Button
                 variant="primary"
-                size="medium"
+                size="md"
                 onClick={handleCreateUser}
                 aria-label="Create new user"
               >
-                <UserIcon size="small" />
+                <UserIcon size="sm" />
                 <span className="btn-label">Create User</span>
               </Button>
             )}
@@ -118,7 +118,7 @@ export function UserListPage(): React.JSX.Element {
           <div className="error-banner" role="alert">
             <div className="error-content">
               <div className="error-icon">
-                <UserIcon size="medium" />
+                <UserIcon size="md" />
               </div>
               <div className="error-details">
                 <span className="error-title">Failed to load users</span>
@@ -126,7 +126,7 @@ export function UserListPage(): React.JSX.Element {
               </div>
               <Button
                 variant="outline"
-                size="small"
+                size="sm"
                 onClick={handleRetry}
                 disabled={isLoading}
               >

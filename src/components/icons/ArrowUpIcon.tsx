@@ -1,42 +1,28 @@
 import React from 'react';
+import { Icon, type IconProps } from './Icon';
 
-export interface ArrowUpIconProps {
-  size?: 'small' | 'medium' | 'large' | number;
-  color?: string;
-  className?: string;
-  'aria-label'?: string;
-}
+export interface ArrowUpIconProps extends Omit<IconProps, 'name'> {}
 
-const sizeMap = {
-  small: 16,
-  medium: 20,
-  large: 24,
-} as const;
-
+/**
+ * Arrow Up Icon - loads arrow-up.svg
+ * Used for: Upload actions, sorting
+ */
 export function ArrowUpIcon({
-  size = 'medium',
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,
+  ...props
 }: ArrowUpIconProps): React.JSX.Element {
-  const iconSize = typeof size === 'number' ? size : sizeMap[size];
-  
   return (
-    <svg
-      width={iconSize}
-      height={iconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Icon
+      name="arrow-up"
+      size={size}
+      color={color}
       className={`arrow-up-icon ${className}`}
       aria-label={ariaLabel || 'Arrow up'}
-    >
-      <polyline points="23,6 13.5,15.5 8.5,10.5 1,18"/>
-      <polyline points="17,6 23,6 23,12"/>
-    </svg>
+      {...props}
+    />
   );
 }
 
