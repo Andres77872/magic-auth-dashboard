@@ -1,5 +1,5 @@
 import React from 'react';
-import { Table, Badge } from '@/components/common';
+import { Table, Badge, Button } from '@/components/common';
 import type { TableColumn } from '@/components/common/Table';
 import type { UserType } from '@/types/auth.types';
 
@@ -19,12 +19,16 @@ interface GroupMembersTableProps {
   members: GroupMember[];
   isLoading?: boolean;
   className?: string;
+  onRemove?: (member: GroupMember) => void;
+  removingMember?: string | null;
 }
 
 export function GroupMembersTable({
   members,
   isLoading = false,
   className = '',
+  onRemove,
+  removingMember,
 }: GroupMembersTableProps): React.JSX.Element {
   const getUserTypeBadgeVariant = (userType?: UserType | null) => {
     switch (userType) {
@@ -92,6 +96,27 @@ export function GroupMembersTable({
       render: (value) => <span>{formatDate(value as string | null)}</span>,
     },
   ];
+
+  // Add actions column if onRemove is provided
+  if (onRemove) {
+    columns.push({
+      key: 'user_hash',
+      header: 'Actions',
+      sortable: false,
+      width: '100px',
+      render: (_, member) => (
+        <Button
+          variant="outline"
+          size="small"
+          onClick={() => onRemove(member)}
+          disabled={removingMember === member.user_hash}
+          isLoading={removingMember === member.user_hash}
+        >
+          Remove
+        </Button>
+      ),
+    });
+  }
 
   return (
     <Table

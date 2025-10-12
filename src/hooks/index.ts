@@ -23,6 +23,7 @@ export { default as useUserProfile } from './useUserProfile';
 export { default as useUserActions } from './useUserActions';
 export { default as useProjectMembers } from './useProjectMembers';
 export { default as useGroupMembers } from './useGroupMembers';
+export { useUsersByGroup } from './useUsersByGroup';
 
 // RBAC Management hooks
 export { default as useRBACPermissions } from './useRBACPermissions';

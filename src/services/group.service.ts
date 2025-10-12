@@ -52,7 +52,7 @@ class GroupService {
   async getGroupMembers(
     groupHash: string,
     params: PaginationParams = {}
-  ): Promise<ApiResponse<any[]>> {
+  ): Promise<any> {
     // Filter out undefined values from params
     const cleanParams: Record<string, any> = {};
     Object.entries(params).forEach(([key, value]) => {
@@ -61,7 +61,8 @@ class GroupService {
       }
     });
     
-    return await apiClient.get<any[]>(
+    // The API returns members directly in the response, not wrapped in data
+    return await apiClient.get<any>(
       `/admin/user-groups/${groupHash}/members`, 
       cleanParams
     );
