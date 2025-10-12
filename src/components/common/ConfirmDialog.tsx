@@ -86,7 +86,7 @@ export function ConfirmDialog({
           <Button
             variant={getConfirmButtonVariant()}
             onClick={handleConfirm}
-            isLoading={isLoading}
+            loading={isLoading}
           >
             {confirmText}
           </Button>

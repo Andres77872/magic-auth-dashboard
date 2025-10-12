@@ -216,7 +216,7 @@ export function ProjectGroupForm({
         <Button
           type="submit"
           variant="primary"
-          isLoading={isLoading}
+          loading={isLoading}
           disabled={isLoading}
         >
           {group ? 'Update Project Group' : 'Create Project Group'}

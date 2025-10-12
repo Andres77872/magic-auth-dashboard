@@ -115,7 +115,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
         </Button>
         <Button
           type="submit"
-          isLoading={isSubmitting}
+          loading={isSubmitting}
           disabled={isSubmitting}
         >
           {mode === 'create' ? 'Create Project' : 'Update Project'}

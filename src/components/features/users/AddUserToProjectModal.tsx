@@ -328,7 +328,7 @@ export function AddUserToProjectModal({
             <Button
               variant="primary"
               onClick={handleAdd}
-              isLoading={isSubmitting}
+              loading={isSubmitting}
               disabled={isLoadingProjects || !selectedProject}
             >
               Add to Project

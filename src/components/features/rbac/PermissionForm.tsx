@@ -190,7 +190,7 @@ export const PermissionForm: React.FC<PermissionFormProps> = ({
           <Button
             type="submit"
             variant="primary"
-            isLoading={isSubmitting}
+            loading={isSubmitting}
             disabled={!isFormValid || isSubmitting}
           >
             {mode === 'create' ? 'Create Permission' : 'Update Permission'}

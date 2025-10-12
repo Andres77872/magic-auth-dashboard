@@ -209,7 +209,7 @@ export function LoginForm(): React.JSX.Element {
           variant="primary"
           size="lg"
           fullWidth
-          isLoading={isSubmitting}
+          loading={isSubmitting}
           disabled={isSubmitting || !formData.username || !formData.password}
         >
           {isSubmitting ? 'Signing in...' : 'Sign In'}

@@ -222,7 +222,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
           <Button
             variant={project.is_active !== false ? "secondary" : "primary"}
             onClick={() => setShowArchiveConfirm(true)}
-            isLoading={isArchiving}
+            loading={isArchiving}
           >
             {project.is_active !== false ? "Archive Project" : "Unarchive Project"}
           </Button>
@@ -306,7 +306,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
                 variant="danger"
                 onClick={handleDelete}
                 disabled={deleteConfirmation !== project.project_name || isDeleting}
-                isLoading={isDeleting}
+                loading={isDeleting}
               >
                 Delete Project
               </Button>
@@ -361,7 +361,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
                 variant="primary"
                 onClick={handleTransferOwnership}
                 disabled={!selectedNewOwner || isTransferring}
-                isLoading={isTransferring}
+                loading={isTransferring}
               >
                 Transfer Ownership
               </Button>

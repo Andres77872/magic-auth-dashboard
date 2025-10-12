@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { projectService } from '@/services';
-import type { ApiResponse, PaginationParams } from '@/types/api.types';
+import type { PaginationParams } from '@/types/api.types';
 
 interface ProjectMember {
   user_hash: string;

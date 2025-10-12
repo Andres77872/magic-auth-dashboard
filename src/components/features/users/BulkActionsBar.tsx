@@ -43,8 +43,8 @@ export function BulkActionsBar({
             disabled={isLoading}
             aria-label={`Activate ${selectedCount} selected users`}
           >
-            <CheckIcon size={16} />
-            <span className="btn-label">Activate</span>
+            <CheckIcon size={14} />
+            Activate
           </Button>
         )}
         
@@ -56,8 +56,8 @@ export function BulkActionsBar({
             disabled={isLoading}
             aria-label={`Deactivate ${selectedCount} selected users`}
           >
-            <ErrorIcon size={16} />
-            <span className="btn-label">Deactivate</span>
+            <ErrorIcon size={14} />
+            Deactivate
           </Button>
         )}
         
@@ -69,8 +69,8 @@ export function BulkActionsBar({
             disabled={isLoading}
             aria-label={`Assign group to ${selectedCount} selected users`}
           >
-            <GroupIcon size={16} />
-            <span className="btn-label">Assign Group</span>
+            <GroupIcon size={14} />
+            Assign Group
           </Button>
         )}
         
@@ -82,8 +82,8 @@ export function BulkActionsBar({
             disabled={isLoading}
             aria-label={`Delete ${selectedCount} selected users`}
           >
-            <DeleteIcon size={16} />
-            <span className="btn-label">Delete</span>
+            <DeleteIcon size={14} />
+            Delete
           </Button>
         )}
         
@@ -94,8 +94,8 @@ export function BulkActionsBar({
           disabled={isLoading}
           aria-label="Clear selection"
         >
-          <CloseIcon size={16} />
-          <span className="btn-label">Clear</span>
+          <CloseIcon size={14} />
+          Clear
         </Button>
       </div>
     </div>

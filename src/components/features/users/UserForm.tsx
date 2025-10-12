@@ -428,7 +428,7 @@ export function UserForm({
                       <div className="project-tags">
                         {formData.assignedProjects.slice(0, 3).map((projectHash, index) => (
                           <span key={projectHash} className="project-tag">
-                            <ProjectIcon size="sm" />
+                            <ProjectIcon size={14} />
                             Project {index + 1}
                           </span>
                         ))}
@@ -451,8 +451,8 @@ export function UserForm({
                   variant="outline"
                   onClick={() => setShowProjectModal(true)}
                   disabled={isLoading}
-                  leftIcon={<ProjectIcon size={16} />}
                 >
+                  <ProjectIcon size={16} />
                   {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
                 </Button>
               </div>
@@ -496,8 +496,8 @@ export function UserForm({
                   variant="outline"
                   onClick={() => setShowGroupModal(true)}
                   disabled={isLoading}
-                  leftIcon={<GroupIcon size={16} />}
                 >
+                  <GroupIcon size={16} />
                   {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
                 </Button>
               </div>

@@ -348,7 +348,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({
           <Button
             type="submit"
             variant="primary"
-            isLoading={isSubmitting}
+            loading={isSubmitting}
             disabled={!isFormValid || isSubmitting}
           >
             {mode === 'create' ? 'Create Role' : 'Update Role'}

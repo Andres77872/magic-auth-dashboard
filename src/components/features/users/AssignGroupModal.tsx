@@ -166,7 +166,7 @@ export function AssignGroupModal({
           <Button
             variant="primary"
             onClick={handleConfirm}
-            isLoading={isLoading}
+            loading={isLoading}
             disabled={fetchingGroups || !selectedGroup}
           >
             {selectedGroup ? 'Assign Group' : 'Select a Group'}

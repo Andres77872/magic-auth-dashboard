@@ -4,14 +4,14 @@ import type { UserType } from '@/types/auth.types';
 interface UserAvatarProps {
   username: string;
   userType?: UserType;
-  size?: 'small' | 'medium' | 'large';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
 const sizeClasses = {
-  small: 'user-avatar-sm',
-  medium: 'user-avatar-md',
-  large: 'user-avatar-lg',
+  sm: 'user-avatar-sm',
+  md: 'user-avatar-md',
+  lg: 'user-avatar-lg',
 };
 
 const typeColorClasses = {
@@ -23,7 +23,7 @@ const typeColorClasses = {
 export function UserAvatar({ 
   username, 
   userType, 
-  size = 'medium',
+  size = 'md',
   className = '' 
 }: UserAvatarProps): React.JSX.Element {
   const initials = username

@@ -110,7 +110,7 @@ export function GroupMembersTable({
           size="sm"
           onClick={() => onRemove(member)}
           disabled={removingMember === member.user_hash}
-          isLoading={removingMember === member.user_hash}
+          loading={removingMember === member.user_hash}
         >
           Remove
         </Button>

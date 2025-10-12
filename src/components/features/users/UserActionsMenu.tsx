@@ -139,48 +139,48 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
     {
       key: 'view',
       label: 'View Details',
-      icon: <ViewIcon size="sm" />,
+      icon: <ViewIcon size={16} />,
       onClick: handleViewDetails,
     },
     {
       key: 'edit',
       label: 'Edit User',
-      icon: <EditIcon size="sm" />,
+      icon: <EditIcon size={16} />,
       onClick: handleEditUser,
       hidden: !canEditUser(user),
     },
     {
       key: 'change-type',
       label: 'Change User Type',
-      icon: <GroupIcon size="sm" />,
+      icon: <GroupIcon size={16} />,
       onClick: handleChangeUserType,
       hidden: !canChangeUserType(user),
     },
     {
       key: 'manage-projects',
       label: 'Manage Projects',
-      icon: <ProjectIcon size="sm" />,
+      icon: <ProjectIcon size={16} />,
       onClick: handleManageProjects,
       hidden: user.user_type !== 'admin' || currentUserType !== 'root',
     },
     {
       key: 'reset-password',
       label: 'Reset Password',
-      icon: <LockIcon size="sm" />,
+      icon: <LockIcon size={16} />,
       onClick: handleResetPassword,
       hidden: !canEditUser(user),
     },
     {
       key: 'change-status',
       label: 'Change Status',
-      icon: <CheckIcon size="sm" />,
+      icon: <CheckIcon size={16} />,
       onClick: handleChangeStatus,
       hidden: !canEditUser(user),
     },
     {
       key: 'delete',
       label: 'Delete User',
-      icon: <DeleteIcon size="sm" />,
+      icon: <DeleteIcon size={16} />,
       onClick: handleDeleteUser,
       destructive: true,
       hidden: !canDeleteUser(user),
@@ -236,7 +236,7 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
           
           {changeTypeError && (
             <div className="form-error" role="alert">
-              <ErrorIcon size="sm" aria-hidden="true" />
+              <ErrorIcon size={14} aria-hidden="true" />
               {changeTypeError}
             </div>
           )}

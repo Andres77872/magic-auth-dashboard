@@ -98,12 +98,20 @@ class AdminService {
 
   // Bulk Role Assignment
   async bulkAssignRoles(
-    projectHash: string,
-    userHashes: string[],
-    roleNames: string[]
+    assignmentsOrProjectHash: Array<{ user_hash: string; role_id: number; project_hash: string }> | string,
+    userHashes?: string[],
+    roleNames?: string[]
   ): Promise<ApiResponse<{ assigned_count: number; errors: any[] }>> {
+    // If first parameter is an array, use the assignments format
+    if (Array.isArray(assignmentsOrProjectHash)) {
+      return await apiClient.post<{ assigned_count: number; errors: any[] }>(
+        '/admin/bulk-assign-roles',
+        { assignments: assignmentsOrProjectHash }
+      );
+    }
+    // Otherwise, use the project-specific format
     return await apiClient.post<{ assigned_count: number; errors: any[] }>(
-      `/admin/projects/${projectHash}/bulk-assign-roles`,
+      `/admin/projects/${assignmentsOrProjectHash}/bulk-assign-roles`,
       { user_hashes: userHashes, role_names: roleNames }
     );
   }

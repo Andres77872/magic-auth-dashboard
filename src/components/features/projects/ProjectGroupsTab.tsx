@@ -140,7 +140,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({ project }) =
           size="sm"
           onClick={() => setConfirmRemove(group)}
           disabled={isRemoving === group.group_hash}
-          isLoading={isRemoving === group.group_hash}
+          loading={isRemoving === group.group_hash}
         >
           Remove
         </Button>

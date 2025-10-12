@@ -344,7 +344,7 @@ export const GroupDetailsPage: React.FC = () => {
                       size="sm"
                       onClick={() => handleAddMember(user)}
                       disabled={isAdding === user.user_hash}
-                      isLoading={isAdding === user.user_hash}
+                      loading={isAdding === user.user_hash}
                     >
                       Add
                     </Button>

@@ -114,7 +114,7 @@ export function UserProfilePage(): React.JSX.Element {
         </div>
         <div className="page-content">
           <div className="profile-grid">
-            <Card padding="large">
+            <Card padding="lg">
               <div className="flex items-center gap-4 mb-4">
                 <Skeleton variant="avatar-lg" />
                 <div className="flex-1">
@@ -130,7 +130,7 @@ export function UserProfilePage(): React.JSX.Element {
                 ))}
               </div>
             </Card>
-            <Card padding="large">
+            <Card padding="lg">
               <Skeleton variant="title" />
               <Skeleton variant="line" count={4} />
             </Card>
@@ -240,7 +240,7 @@ export function UserProfilePage(): React.JSX.Element {
       <div className="page-content">
         <div className="profile-grid">
           {/* User Information Card */}
-          <Card title="User Information" padding="large">
+          <Card title="User Information" padding="lg">
             <div className="user-profile-info">
                           <div className="profile-user-avatar-section">
               <div className="profile-user-avatar-large">
@@ -311,7 +311,7 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Statistics Card */}
-          <Card title="User Statistics" padding="large">
+          <Card title="User Statistics" padding="lg">
             <div className="statistics-grid">
               <div className="statistic-item">
                 <div className="statistic-value">{stats.total_accessible_projects}</div>
@@ -329,7 +329,7 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Projects Section */}
-          <Card title={`Assigned Projects (${userProjects.length})`} padding="large">
+          <Card title={`Assigned Projects (${userProjects.length})`} padding="lg">
             {userProjects.length > 0 ? (
               <div className="projects-list">
                 {userProjects.map((project) => (
@@ -392,7 +392,7 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Groups Section */}
-          <Card title={`User Groups (${userGroups.length})`} padding="large">
+          <Card title={`User Groups (${userGroups.length})`} padding="lg">
             {userGroups.length > 0 ? (
               <div className="groups-list">
                 {userGroups.map((group) => (
@@ -435,7 +435,7 @@ export function UserProfilePage(): React.JSX.Element {
           </Card>
 
           {/* Permissions Section */}
-          <Card title={`All Permissions (${permissions.length})`} padding="large">
+          <Card title={`All Permissions (${permissions.length})`} padding="lg">
             {permissions.length > 0 ? (
               <div className="permissions-list">
                 {permissions.map((permission, index) => (
