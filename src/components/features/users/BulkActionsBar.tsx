@@ -41,9 +41,9 @@ export function BulkActionsBar({
             size="sm"
             onClick={onActivate}
             disabled={isLoading}
+            leftIcon={<CheckIcon size={14} aria-hidden="true" />}
             aria-label={`Activate ${selectedCount} selected users`}
           >
-            <CheckIcon size={14} />
             Activate
           </Button>
         )}
@@ -54,9 +54,9 @@ export function BulkActionsBar({
             size="sm"
             onClick={onDeactivate}
             disabled={isLoading}
+            leftIcon={<ErrorIcon size={14} aria-hidden="true" />}
             aria-label={`Deactivate ${selectedCount} selected users`}
           >
-            <ErrorIcon size={14} />
             Deactivate
           </Button>
         )}
@@ -67,9 +67,9 @@ export function BulkActionsBar({
             size="sm"
             onClick={onAssignGroup}
             disabled={isLoading}
+            leftIcon={<GroupIcon size={14} aria-hidden="true" />}
             aria-label={`Assign group to ${selectedCount} selected users`}
           >
-            <GroupIcon size={14} />
             Assign Group
           </Button>
         )}
@@ -80,9 +80,9 @@ export function BulkActionsBar({
             size="sm"
             onClick={onDelete}
             disabled={isLoading}
+            leftIcon={<DeleteIcon size={14} aria-hidden="true" />}
             aria-label={`Delete ${selectedCount} selected users`}
           >
-            <DeleteIcon size={14} />
             Delete
           </Button>
         )}
@@ -92,9 +92,9 @@ export function BulkActionsBar({
           size="sm"
           onClick={onClearSelection}
           disabled={isLoading}
+          leftIcon={<CloseIcon size={14} aria-hidden="true" />}
           aria-label="Clear selection"
         >
-          <CloseIcon size={14} />
           Clear
         </Button>
       </div>

@@ -18,12 +18,14 @@ Authorization: Bearer YOUR_ADMIN_SESSION_TOKEN
 
 Update multiple users at once (status, user type, etc.).
 
-**Authentication:** Required (admin permission)
+**Authentication:** Required (admin or manage_users permission)
+
+**Limits:** Maximum 100 users per request
 
 **Request Body** (Form):
 - `user_hashes` (required): List of user hashes to update
 - `is_active` (optional): Set active status (true/false)
-- `user_type` (optional): Update user type (root/admin/consumer)
+- `user_type` (optional): Update user type. Valid values: `root`, `admin`, `consumer`
 - `force_password_reset` (optional): Force password reset on next login (true/false)
 
 **Example Request:**
@@ -68,17 +70,29 @@ curl -X POST "http://localhost:8000/admin/users/bulk-update" \
 }
 ```
 
+**Error Responses:**
+
+- **401 Unauthorized**: Invalid or missing session token
+- **403 Forbidden**: Requires admin or manage_users permission
+- **400 Bad Request**: 
+  - Missing user_hashes or no update fields provided
+  - Exceeded maximum user limit (100)
+  - Invalid user_type value (must be root, admin, or consumer)
+- **500 Internal Server Error**: Bulk update failed
+
 ---
 
 ### POST `/admin/users/bulk-delete`
 
 Soft delete multiple users at once.
 
-**Authentication:** Required (admin permission)
+**Authentication:** Required (admin or manage_users permission)
+
+**Limits:** Maximum 50 users per request
 
 **Request Body** (Form):
 - `user_hashes` (required): List of user hashes to delete
-- `confirm_deletion` (required): Must be `true` to confirm
+- `confirm_deletion` (required): Must be `true` to confirm deletion
 
 **Example Request:**
 ```bash
@@ -120,26 +134,38 @@ curl -X POST "http://localhost:8000/admin/users/bulk-delete" \
 }
 ```
 
+**Error Responses:**
+
+- **401 Unauthorized**: Invalid or missing session token
+- **403 Forbidden**: Requires admin or manage_users permission
+- **400 Bad Request**: 
+  - Missing user_hashes
+  - `confirm_deletion` not set to true
+  - Exceeded maximum user limit (50)
+- **500 Internal Server Error**: Bulk deletion failed
+
 ---
 
 ## 🎭 Bulk Role Assignments
 
 ### POST `/admin/projects/{project_hash}/bulk-assign-roles`
 
-Assign roles to multiple users within a project.
+Bulk assign roles to users in a specific project.
 
 **Authentication:** Required (admin permission)
 
+**Limits:** Maximum 100 users per request
+
 **Path Parameters:**
-- `project_hash`: Project identifier
+- `project_hash` (required): Project identifier
 
 **Request Body** (Form):
-- `user_hashes` (required): List of user hashes
+- `user_hashes` (required): List of user hashes to assign roles to
 - `role_names` (required): List of role names to assign
 
 **Example Request:**
 ```bash
-curl -X POST "http://localhost:8000/admin/projects/proj_xyz789.../bulk-assign-roles" \
+curl -X POST "http://localhost:8000/admin/projects/proj-abc123/bulk-assign-roles" \
   -H "Authorization: Bearer YOUR_ADMIN_SESSION_TOKEN" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "user_hashes=usr-abc123&user_hashes=usr-def456&role_names=editor&role_names=viewer"
@@ -151,7 +177,7 @@ curl -X POST "http://localhost:8000/admin/projects/proj_xyz789.../bulk-assign-ro
   "success": true,
   "message": "Bulk role assignment completed: 4 succeeded, 0 failed",
   "project": {
-    "project_hash": "proj_xyz789...",
+    "project_hash": "proj-abc123",
     "project_name": "My Project"
   },
   "roles_assigned": ["editor", "viewer"],
@@ -196,6 +222,17 @@ curl -X POST "http://localhost:8000/admin/projects/proj_xyz789.../bulk-assign-ro
 }
 ```
 
+**Error Responses:**
+
+- **401 Unauthorized**: Invalid or missing session token
+- **403 Forbidden**: Requires admin permission
+- **404 Not Found**: Project not found
+- **400 Bad Request**: 
+  - Missing required fields
+  - Exceeded maximum user limit (100)
+  - Invalid role names
+- **500 Internal Server Error**: Bulk role assignment failed
+
 ---
 
 ## 👥 Bulk Group Assignments
@@ -206,9 +243,11 @@ Assign multiple users to multiple user groups at once.
 
 **Authentication:** Required (admin permission)
 
+**Limits:** Maximum 100 users per request
+
 **Request Body** (Form):
 - `user_hashes` (required): List of user hashes
-- `group_names` (required): List of group names or hashes
+- `group_names` (required): List of group names
 
 **Example Request:**
 ```bash
@@ -265,6 +304,16 @@ curl -X POST "http://localhost:8000/admin/user-groups/bulk-assign" \
 }
 ```
 
+**Error Responses:**
+
+- **401 Unauthorized**: Invalid or missing session token
+- **403 Forbidden**: Requires admin permission
+- **400 Bad Request**: 
+  - Missing user_hashes or group_names
+  - Exceeded maximum user limit (100)
+  - Invalid group names
+- **500 Internal Server Error**: Bulk group assignment failed
+
 ---
 
 ## 🧪 Testing Bulk Operations
@@ -286,17 +335,17 @@ curl -X POST "http://localhost:8000/admin/users/bulk-update" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "user_hashes=USER_HASH_1&user_hashes=USER_HASH_2&is_active=true"
 
-echo -e "\n2. Bulk assign users to groups..."
+echo -e "\n2. Bulk assign roles to users in a project..."
+curl -X POST "http://localhost:8000/admin/projects/PROJECT_HASH/bulk-assign-roles" \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "user_hashes=USER_HASH_1&user_hashes=USER_HASH_2&role_names=editor&role_names=viewer"
+
+echo -e "\n3. Bulk assign users to groups..."
 curl -X POST "http://localhost:8000/admin/user-groups/bulk-assign" \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "user_hashes=USER_HASH_1&user_hashes=USER_HASH_2&group_names=developers"
-
-echo -e "\n3. Bulk assign roles in project..."
-curl -X POST "http://localhost:8000/admin/projects/PROJECT_HASH/bulk-assign-roles" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "user_hashes=USER_HASH_1&user_hashes=USER_HASH_2&role_names=editor"
 ```
 
 ---
@@ -304,9 +353,13 @@ curl -X POST "http://localhost:8000/admin/projects/PROJECT_HASH/bulk-assign-role
 ## 🎯 Best Practices
 
 ### Performance Optimization
-- **Batch Size**: Keep batches under 100 users for optimal performance
-- **Progress Tracking**: Monitor `failed_count` in responses
-- **Error Handling**: Check `failed_users` array for specific failures
+- **Batch Size Limits**:
+  - User updates: Maximum 100 users per request
+  - User deletions: Maximum 50 users per request  
+  - Role assignments: Maximum 100 users per request
+  - Group assignments: Maximum 100 users per request
+- **Progress Tracking**: Monitor `error_count` in responses
+- **Error Handling**: Check `errors` array for specific failures
 
 ### Safety Guidelines
 1. **Always confirm deletions**: Set `confirm_deletion=true`

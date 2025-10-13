@@ -21,6 +21,7 @@
 @import './dashboard-overview.css';
 @import './analytics.css';
 @import './user-management.css';
+@import './optimistic-loading.css';
 @import './groups.css';
 @import './projects.css';
 @import './profile.css';

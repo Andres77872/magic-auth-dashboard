@@ -16,11 +16,12 @@ export function ProtectedRoute({
   redirectTo = ROUTES.LOGIN,
   requireAuth = true,
 }: ProtectedRouteProps): React.JSX.Element {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
-  // Show loading spinner while checking authentication
-  if (isLoading) {
+  // Only show loading if we don't have user data yet
+  // This eliminates blink when we have cached auth state
+  if (isLoading && !user) {
     return (
       <div className="route-loading">
         <LoadingSpinner 

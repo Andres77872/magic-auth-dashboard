@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button, Card, EmptyState } from '@/components/common';
 import { ProjectTable, ProjectCard, ProjectFilter } from '@/components/features/projects';
 import { useProjects } from '@/hooks';
-import { ProjectIcon } from '@/components/icons';
+import { ProjectIcon, PlusIcon, RefreshIcon } from '@/components/icons';
 import { ROUTES } from '@/utils/routes';
 import '@/styles/pages/ProjectListPage.css';
 
@@ -42,7 +42,11 @@ export const ProjectListPage: React.FC = () => {
           <Card>
             <h2 id="error-title" className="text-error">Error Loading Projects</h2>
             <p role="alert" className="text-secondary">{error}</p>
-            <Button onClick={fetchProjects} aria-label="Retry loading projects">
+            <Button 
+              onClick={fetchProjects}
+              leftIcon={<RefreshIcon size={16} aria-hidden="true" />}
+              aria-label="Retry loading projects"
+            >
               Retry
             </Button>
           </Card>
@@ -60,7 +64,13 @@ export const ProjectListPage: React.FC = () => {
         </div>
         <div className="project-list-page-header-actions" aria-label="Project actions">
           <Link to={ROUTES.PROJECTS_CREATE}>
-            <Button aria-label="Create a new project">Create Project</Button>
+            <Button 
+              variant="primary"
+              leftIcon={<PlusIcon size={16} aria-hidden="true" />}
+              aria-label="Create a new project"
+            >
+              Create Project
+            </Button>
           </Link>
         </div>
       </header>
@@ -108,7 +118,11 @@ export const ProjectListPage: React.FC = () => {
               }
               action={
                 <Link to={ROUTES.PROJECTS_CREATE}>
-                  <Button variant="primary" aria-label="Create your first project">
+                  <Button 
+                    variant="primary"
+                    leftIcon={<PlusIcon size={16} aria-hidden="true" />}
+                    aria-label="Create your first project"
+                  >
                     Create Your First Project
                   </Button>
                 </Link>

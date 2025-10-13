@@ -5,6 +5,8 @@ import {
   QuickActionsPanel, 
   SystemHealthPanel 
 } from './components';
+import { Button } from '@/components/common';
+import { RefreshIcon } from '@/components/icons';
 import { useSystemStats, useSystemHealth, useUserType, useAdminStats } from '@/hooks';
 
 export function DashboardOverview(): React.JSX.Element {
@@ -74,22 +76,26 @@ export function DashboardOverview(): React.JSX.Element {
             <p>Some dashboard data failed to load. You can manually refresh individual sections.</p>
             <div className="recovery-actions">
               {statsError && (
-                <button 
+                <Button 
                   onClick={refetchStats}
-                  className="btn btn-outline"
+                  variant="outline"
                   disabled={statsLoading}
+                  leftIcon={<RefreshIcon size={16} aria-hidden="true" />}
+                  aria-label="Refresh dashboard statistics"
                 >
                   {statsLoading ? 'Refreshing...' : 'Refresh Statistics'}
-                </button>
+                </Button>
               )}
               {healthError && isRoot && (
-                <button 
+                <Button 
                   onClick={refetchHealth}
-                  className="btn btn-outline"
+                  variant="outline"
                   disabled={healthLoading}
+                  leftIcon={<RefreshIcon size={16} aria-hidden="true" />}
+                  aria-label="Refresh system health status"
                 >
                   {healthLoading ? 'Checking...' : 'Refresh Health Status'}
-                </button>
+                </Button>
               )}
             </div>
           </div>

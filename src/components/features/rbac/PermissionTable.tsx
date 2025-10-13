@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from '@/components/common';
+import { EditIcon, DeleteIcon } from '@/components/icons';
 import type { Permission } from '@/types/rbac.types';
 
 interface PermissionTableProps {
@@ -39,15 +41,26 @@ export const PermissionTable: React.FC<PermissionTableProps> = ({
               </td>
               <td>{permission.description}</td>
               <td>
-                <button onClick={() => onEdit(permission)} className="btn btn-small">
-                  Edit
-                </button>
-                <button 
-                  onClick={() => onDelete(permission.id)} 
-                  className="btn btn-small btn-danger"
-                >
-                  Delete
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <Button 
+                    onClick={() => onEdit(permission)} 
+                    size="sm"
+                    variant="outline"
+                    leftIcon={<EditIcon size={14} aria-hidden="true" />}
+                    aria-label={`Edit permission ${permission.permission_name}`}
+                  >
+                    Edit
+                  </Button>
+                  <Button 
+                    onClick={() => onDelete(permission.id)} 
+                    size="sm"
+                    variant="danger"
+                    leftIcon={<DeleteIcon size={14} aria-hidden="true" />}
+                    aria-label={`Delete permission ${permission.permission_name}`}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}

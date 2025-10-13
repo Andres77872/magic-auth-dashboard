@@ -1,22 +1,60 @@
-import { createContext, useReducer, useEffect } from 'react';
+import { createContext, useReducer, useEffect, useCallback, useRef } from 'react';
 import type { ReactNode, JSX } from 'react';
 import type { AuthState, AuthAction, User, UserType } from '@/types/auth.types';
 import { AuthActionType } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
+import { rbacService } from '@/services/rbac.service';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { handleApiError } from '@/utils/error-handler';
 import { hasPermission as checkPermission, canAccessRoute as checkRoute } from '@/utils/permissions';
+import { cache } from '@/utils/cache';
 
-// Initial authentication state
-const initialAuthState: AuthState = {
-  isAuthenticated: false,
-  user: null,
-  token: null,
-  currentProject: null,
-  accessibleProjects: [],
-  isLoading: true, // Start with loading true for token validation
-  error: null,
+// Try to restore auth state from localStorage immediately
+const getInitialAuthState = (): AuthState => {
+  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+  const projectStr = localStorage.getItem(STORAGE_KEYS.CURRENT_PROJECT);
+
+  // If we have stored data, start with it to eliminate blink
+  if (token && userDataStr) {
+    try {
+      const user = JSON.parse(userDataStr);
+      const currentProject = projectStr ? JSON.parse(projectStr) : null;
+      
+      return {
+        isAuthenticated: true,
+        user,
+        token,
+        currentProject,
+        accessibleProjects: [],
+        isLoading: true, // Still validate in background
+        error: null,
+        effectivePermissions: [],
+        permissionsLoading: false,
+      };
+    } catch (e) {
+      // If parsing fails, clear storage
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+    }
+  }
+
+  // Default initial state
+  return {
+    isAuthenticated: false,
+    user: null,
+    token: null,
+    currentProject: null,
+    accessibleProjects: [],
+    isLoading: true,
+    error: null,
+    effectivePermissions: [],
+    permissionsLoading: false,
+  };
 };
+
+const initialAuthState: AuthState = getInitialAuthState();
 
 // Authentication reducer
 function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -56,6 +94,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...initialAuthState,
         isLoading: false,
+        effectivePermissions: [],
+        permissionsLoading: false,
       };
 
     case AuthActionType.VALIDATE_TOKEN:
@@ -81,6 +121,26 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         error: null,
       };
 
+    case AuthActionType.LOAD_PERMISSIONS_START:
+      return {
+        ...state,
+        permissionsLoading: true,
+      };
+
+    case AuthActionType.LOAD_PERMISSIONS_SUCCESS:
+      return {
+        ...state,
+        effectivePermissions: action.payload.permissions,
+        permissionsLoading: false,
+      };
+
+    case AuthActionType.LOAD_PERMISSIONS_FAILURE:
+      return {
+        ...state,
+        permissionsLoading: false,
+        error: action.payload.error,
+      };
+
     default:
       return state;
   }
@@ -97,8 +157,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   userType: UserType | null;
+  currentProject: AuthState['currentProject'];
   hasPermission: (permission: string) => boolean;
   canAccessRoute: (routePath: string) => boolean;
+  loadUserPermissions: () => Promise<void>;
+  effectivePermissions: string[];
+  permissionsLoading: boolean;
 }
 
 // Create context
@@ -111,6 +175,8 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
+  const tokenValidationRef = useRef(false);
+  const permissionsLoadedRef = useRef(false);
 
   // Login function
   const login = async (
@@ -162,17 +228,25 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     } catch (error) {
       console.warn('Logout API call failed:', error);
     } finally {
-      // Clear all stored data
+      // Clear all stored data and cache
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_DATA);
       localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+      cache.clearAll();
+      tokenValidationRef.current = false;
+      permissionsLoadedRef.current = false;
       
       dispatch({ type: AuthActionType.LOGOUT });
     }
   };
 
-  // Token validation function
+  // Optimized token validation with caching
   const validateToken = async (): Promise<void> => {
+    // Prevent duplicate validation calls
+    if (tokenValidationRef.current) {
+      return;
+    }
+    
     const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     
     if (!token) {
@@ -183,10 +257,32 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       return;
     }
 
+    tokenValidationRef.current = true;
+
     try {
+      // Check cache first
+      const cacheKey = `auth:validation:${token}`;
+      const cachedValidation = cache.get<boolean>(cacheKey);
+      
+      if (cachedValidation === true) {
+        // Use cached state, token already validated
+        dispatch({
+          type: AuthActionType.VALIDATE_TOKEN,
+          payload: {
+            valid: true,
+            user: state.user || undefined,
+            project: state.currentProject || undefined,
+          },
+        });
+        return;
+      }
+
       const response = await authService.validateSession();
       
       if (response.success && response.valid) {
+        // Cache successful validation for 5 minutes
+        cache.set(cacheKey, true, 5 * 60 * 1000);
+        
         dispatch({
           type: AuthActionType.VALIDATE_TOKEN,
           payload: {
@@ -196,10 +292,11 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
           },
         });
       } else {
-        // Token is invalid, clear storage
+        // Token is invalid, clear everything
         localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.USER_DATA);
         localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+        cache.clearAll();
         
         dispatch({
           type: AuthActionType.VALIDATE_TOKEN,
@@ -212,11 +309,14 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_DATA);
       localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+      cache.clearAll();
       
       dispatch({
         type: AuthActionType.VALIDATE_TOKEN,
         payload: { valid: false },
       });
+    } finally {
+      tokenValidationRef.current = false;
     }
   };
 
@@ -225,10 +325,87 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     dispatch({ type: AuthActionType.CLEAR_ERROR });
   };
 
-  // Permission checking function
+  // Optimized RBAC permissions loading with caching
+  const loadUserPermissions = useCallback(async (): Promise<void> => {
+    if (!state.user || !state.currentProject) {
+      return;
+    }
+
+    // ROOT users have all permissions
+    if (state.user.user_type === 'root') {
+      return;
+    }
+
+    // Prevent duplicate permission loading
+    if (permissionsLoadedRef.current) {
+      return;
+    }
+
+    const cacheKey = `permissions:${state.user.user_hash}:${state.currentProject.project_hash}`;
+    
+    // Check cache first
+    const cachedPermissions = cache.get<string[]>(cacheKey);
+    if (cachedPermissions) {
+      dispatch({
+        type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
+        payload: { permissions: cachedPermissions },
+      });
+      return;
+    }
+
+    permissionsLoadedRef.current = true;
+    dispatch({ type: AuthActionType.LOAD_PERMISSIONS_START });
+
+    try {
+      const response = await rbacService.getUserEffectivePermissions(
+        state.user.user_hash,
+        state.currentProject.project_hash
+      );
+
+      if (response.success && response.effective_permissions) {
+        const permissionNames = response.effective_permissions.map(
+          (p) => p.permission_name
+        );
+        
+        // Cache permissions for 5 minutes
+        cache.set(cacheKey, permissionNames, 5 * 60 * 1000);
+        
+        dispatch({
+          type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
+          payload: { permissions: permissionNames },
+        });
+      } else {
+        dispatch({
+          type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
+          payload: { permissions: [] },
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to load user permissions:', error);
+      dispatch({
+        type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
+        payload: { permissions: [] },
+      });
+    } finally {
+      permissionsLoadedRef.current = false;
+    }
+  }, [state.user, state.currentProject]);
+
+  // Enhanced permission checking function with RBAC integration
   const hasPermission = (permission: string): boolean => {
     if (!state.user) return false;
     
+    // ROOT users have all permissions
+    if (state.user.user_type === 'root') {
+      return true;
+    }
+    
+    // Check RBAC permissions first (from loaded effective permissions)
+    if (state.effectivePermissions.includes(permission)) {
+      return true;
+    }
+    
+    // Fall back to user type-based permissions for system-level operations
     return checkPermission(state.user.user_type, permission);
   };
 
@@ -244,6 +421,13 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     validateToken();
   }, []);
 
+  // Load permissions when user and project are available
+  useEffect(() => {
+    if (state.isAuthenticated && state.user && state.currentProject) {
+      loadUserPermissions();
+    }
+  }, [state.isAuthenticated, state.user, state.currentProject, loadUserPermissions]);
+
   // Context value
   const contextValue: AuthContextType = {
     state,
@@ -255,8 +439,12 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     isAuthenticated: state.isAuthenticated,
     user: state.user,
     userType: state.user?.user_type || null,
+    currentProject: state.currentProject,
     hasPermission,
     canAccessRoute,
+    loadUserPermissions,
+    effectivePermissions: state.effectivePermissions,
+    permissionsLoading: state.permissionsLoading,
   };
 
   return (

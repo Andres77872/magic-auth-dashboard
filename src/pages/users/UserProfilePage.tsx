@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, Badge, Skeleton, EmptyState } from '@/components/common';
+import { Card, Badge, Skeleton, EmptyState, Button } from '@/components/common';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import { UserIcon, ErrorIcon } from '@/components/icons';
+import { UserIcon, ErrorIcon, RefreshIcon, EditIcon, ArrowLeftIcon } from '@/components/icons';
 import type { UserType, UserProfileResponse } from '@/types/auth.types';
 import '@/styles/pages/user-profile.css';
 
@@ -160,9 +160,14 @@ export function UserProfilePage(): React.JSX.Element {
             title="Failed to Load User Profile"
             description={error}
             action={
-              <button onClick={() => userHash && fetchUser(userHash)} className="btn btn-primary">
+              <Button 
+                onClick={() => userHash && fetchUser(userHash)}
+                variant="primary"
+                leftIcon={<RefreshIcon size={16} aria-hidden="true" />}
+                aria-label="Retry loading user profile"
+              >
                 Try Again
-              </button>
+              </Button>
             }
           />
         </div>
@@ -190,9 +195,14 @@ export function UserProfilePage(): React.JSX.Element {
             title="User Not Found"
             description="The user you're looking for doesn't exist or has been deleted."
             action={
-              <button onClick={handleGoBack} className="btn btn-primary">
+              <Button 
+                onClick={handleGoBack}
+                variant="primary"
+                leftIcon={<ArrowLeftIcon size={16} aria-hidden="true" />}
+                aria-label="Go back to users list"
+              >
                 Back to Users
-              </button>
+              </Button>
             }
           />
         </div>
@@ -227,13 +237,14 @@ export function UserProfilePage(): React.JSX.Element {
           <p>Detailed information about {user.username}</p>
         </div>
         <div className="page-actions">
-          <button onClick={handleEditUser} className="btn btn-primary">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
+          <Button 
+            onClick={handleEditUser}
+            variant="primary"
+            leftIcon={<EditIcon size={16} aria-hidden="true" />}
+            aria-label="Edit user profile"
+          >
             Edit User
-          </button>
+          </Button>
         </div>
       </div>
 

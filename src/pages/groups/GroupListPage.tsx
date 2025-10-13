@@ -4,7 +4,7 @@ import { useGroups } from '@/hooks';
 import { GroupTable } from '@/components/features/groups/GroupTable';
 import { GroupCard } from '@/components/features/groups/GroupCard';
 import { GroupFilter } from '@/components/features/groups/GroupFilter';
-import { GroupIcon } from '@/components/icons';
+import { GroupIcon, PlusIcon } from '@/components/icons';
 import { ROUTES } from '@/utils/routes';
 import type { GroupListParams } from '@/types/group.types';
 
@@ -76,7 +76,9 @@ export const GroupListPage: React.FC = () => {
           
           <Button
             variant="primary"
+            leftIcon={<PlusIcon size={16} aria-hidden="true" />}
             onClick={() => window.location.href = ROUTES.GROUPS_CREATE}
+            aria-label="Create new group"
           >
             Create Group
           </Button>
@@ -120,7 +122,9 @@ export const GroupListPage: React.FC = () => {
             action={
               <Button
                 variant="primary"
+                leftIcon={<PlusIcon size={16} aria-hidden="true" />}
                 onClick={() => window.location.href = ROUTES.GROUPS_CREATE}
+                aria-label="Create your first group"
               >
                 Create Group
               </Button>

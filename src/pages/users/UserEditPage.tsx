@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { UserForm } from '@/components/features/users/UserForm';
-import { LoadingSpinner } from '@/components/common';
+import { LoadingSpinner, Button } from '@/components/common';
+import { RefreshIcon } from '@/components/icons';
 import { userService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { UserFormData } from '@/types/user.types';
@@ -129,9 +130,14 @@ export function UserEditPage(): React.JSX.Element {
             </svg>
             <h3>Failed to Load User</h3>
             <p>{error}</p>
-            <button onClick={() => userHash && fetchUser(userHash)} className="btn btn-primary">
+            <Button 
+              onClick={() => userHash && fetchUser(userHash)}
+              variant="primary"
+              leftIcon={<RefreshIcon size={16} aria-hidden="true" />}
+              aria-label="Retry loading user"
+            >
               Try Again
-            </button>
+            </Button>
           </div>
         </div>
       </div>

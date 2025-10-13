@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProjects } from '@/hooks/useProjects';
 import { usePermissions } from '@/hooks/usePermissions';
+import { Button } from '@/components/common';
+import { PlusIcon } from '@/components/icons';
 import { PermissionTable } from '@/components/features/rbac/PermissionTable';
 import { PermissionForm } from '@/components/features/rbac/PermissionForm';
 import { PermissionCategories } from '@/components/features/rbac/PermissionCategories';
@@ -130,12 +132,15 @@ export const PermissionsPage: React.FC = () => {
             </div>
             
             {selectedProjectHash && (
-              <button 
-                className="btn btn-primary"
+              <Button 
+                variant="primary"
+                size="md"
                 onClick={handleCreatePermission}
+                leftIcon={<PlusIcon size={16} aria-hidden="true" />}
+                aria-label="Create new permission"
               >
                 Create Permission
-              </button>
+              </Button>
             )}
           </div>
         )}

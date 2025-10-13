@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useProjects } from '@/hooks/useProjects';
 import { useRoles } from '@/hooks/useRoles';
+import { Button } from '@/components/common';
+import { PlusIcon } from '@/components/icons';
 import { RoleTable } from '@/components/features/rbac/RoleTable';
 import { RoleForm } from '@/components/features/rbac/RoleForm';
 import type { Role } from '@/types/rbac.types';
@@ -124,12 +126,15 @@ export const RolesPage: React.FC = () => {
             </div>
             
             {selectedProjectHash && (
-              <button 
-                className="btn btn-primary"
+              <Button 
+                variant="primary"
+                size="md"
                 onClick={handleCreateRole}
+                leftIcon={<PlusIcon size={16} aria-hidden="true" />}
+                aria-label="Create new role"
               >
                 Create Role
-              </button>
+              </Button>
             )}
           </div>
         )}

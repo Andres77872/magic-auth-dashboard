@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from '@/components/common';
+import { EditIcon, DeleteIcon } from '@/components/icons';
 import type { Role } from '@/types/rbac.types';
 
 interface RoleTableProps {
@@ -47,15 +49,26 @@ export const RoleTable: React.FC<RoleTableProps> = ({
                 </span>
               </td>
               <td>
-                <button onClick={() => onEdit(role)} className="btn btn-small">
-                  Edit
-                </button>
-                <button 
-                  onClick={() => onDelete(role.id)} 
-                  className="btn btn-small btn-danger"
-                >
-                  Delete
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <Button 
+                    onClick={() => onEdit(role)} 
+                    size="sm"
+                    variant="outline"
+                    leftIcon={<EditIcon size={14} aria-hidden="true" />}
+                    aria-label={`Edit role ${role.group_name}`}
+                  >
+                    Edit
+                  </Button>
+                  <Button 
+                    onClick={() => onDelete(role.id)} 
+                    size="sm"
+                    variant="danger"
+                    leftIcon={<DeleteIcon size={14} aria-hidden="true" />}
+                    aria-label={`Delete role ${role.group_name}`}
+                  >
+                    Delete
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}

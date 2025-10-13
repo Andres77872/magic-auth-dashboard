@@ -47,7 +47,7 @@ curl -X GET "http://localhost:8000/projects?limit=10&offset=0" \
   "pagination": {
     "limit": 10,
     "offset": 0,
-    "total_count": 25,
+    "total": 25,
     "has_more": true
   },
   "user_access_level": "admin"
@@ -110,12 +110,10 @@ curl -X GET "http://localhost:8000/projects/abc123..." \
 {
   "success": true,
   "project": {
-    "project_id": 1,
     "project_hash": "abc123...",
     "project_name": "Main Project",
     "project_description": "Main application project",
-    "created_at": "2024-01-01T00:00:00Z",
-    "is_active": true
+    "created_at": "2024-01-01T00:00:00Z"
   },
   "user_access": {
     "permissions": ["admin", "read", "write", "delete"],
@@ -159,11 +157,9 @@ curl -X PUT "http://localhost:8000/projects/abc123..." \
   "success": true,
   "message": "Project updated successfully",
   "project": {
-    "project_id": 1,
     "project_hash": "abc123...",
     "project_name": "Updated Project Name",
-    "project_description": "Updated description",
-    "updated_by": 1
+    "project_description": "Updated description"
   }
 }
 ```
@@ -193,7 +189,7 @@ curl -X DELETE "http://localhost:8000/projects/abc123..." \
   "deleted_project": {
     "project_hash": "abc123...",
     "project_name": "My Project",
-    "deleted_by": 1
+    "project_description": null
   },
   "warning": "All user group access to this project has been revoked"
 }
@@ -369,9 +365,9 @@ curl -X GET "http://localhost:8000/projects/abc123.../activity?limit=20&days=7" 
     }
   ],
   "pagination": {
-    "total": 145,
     "limit": 20,
-    "offset": 0
+    "offset": 0,
+    "total": 145
   },
   "filters": {
     "activity_type": null,
@@ -488,9 +484,9 @@ curl -X GET "http://localhost:8000/projects/abc123.../members?limit=50&offset=0&
     }
   ],
   "pagination": {
-    "total": 15,
     "limit": 50,
     "offset": 0,
+    "total": 15,
     "has_more": false
   },
   "statistics": {
@@ -505,94 +501,49 @@ curl -X GET "http://localhost:8000/projects/abc123.../members?limit=50&offset=0&
 
 ---
 
-### POST `/projects/{project_hash}/members`
+## 🚫 REMOVED: Direct User Assignment
 
-Add a user as a member to a project.
+**Important:** Direct user-to-project assignment endpoints have been **REMOVED** to enforce proper group-based access control.
 
-**Authentication:** Required (project admin)
+### How to Add Users to Projects (Correct Method)
 
-**Path Parameters:**
-- `project_hash`: Project identifier
+Users can **ONLY** access projects through user groups. Follow this two-step process:
 
-**Request Body** (Form):
-- `user_hash` (required): Hash of the user to add
-- `role` (optional, default: "consumer"): Role to assign ("consumer" or "admin")
-
-**Example Request:**
+#### Step 1: Add User to a User Group
 ```bash
-curl -X POST "http://localhost:8000/projects/abc123.../members" \
-  -H "Authorization: Bearer YOUR_SESSION_TOKEN" \
+curl -X POST "http://localhost:8000/admin/user-groups/{group_hash}/members" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "user_hash=usr-def456&role=consumer"
+  -d "user_hash=usr-def456"
 ```
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "User 'jane_smith' added to project 'My Project' as consumer",
-  "member": {
-    "user_hash": "usr-def456",
-    "username": "jane_smith",
-    "email": "jane@example.com",
-    "user_type": "consumer",
-    "role": "consumer",
-    "permissions": ["read", "write"],
-    "groups": ["developers"],
-    "access_type": "consumer_access",
-    "added_by": "admin",
-    "added_at": "2024-01-15T10:30:00Z"
-  },
-  "project": {
-    "project_hash": "abc123...",
-    "project_name": "My Project",
-    "project_description": "Main application project"
-  }
-}
-```
-
----
-
-### DELETE `/projects/{project_hash}/members/{user_hash}`
-
-Remove a user from a project.
-
-**Authentication:** Required (project admin)
-
-**Path Parameters:**
-- `project_hash`: Project identifier
-- `user_hash`: Hash of the user to remove
-
-**Example Request:**
+#### Step 2: Grant User Group Access to Project
 ```bash
-curl -X DELETE "http://localhost:8000/projects/abc123.../members/usr-def456" \
-  -H "Authorization: Bearer YOUR_SESSION_TOKEN"
+curl -X POST "http://localhost:8000/projects/{project_hash}/groups" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "group_hash=grp-xyz789"
 ```
 
-**Response (200):**
-```json
-{
-  "success": true,
-  "message": "User jane_smith removed from project My Project",
-  "project": {
-    "project_hash": "abc123...",
-    "project_name": "My Project"
-  },
-  "removed_member": {
-    "user_hash": "usr-def456",
-    "username": "jane_smith",
-    "email": "jane@example.com"
-  }
-}
-```
+**Result:** All users in the group now have access to the project.
+
+### Why Group-Based Access?
+
+- ✅ **Centralized Control**: Manage access by teams/departments, not individuals
+- ✅ **Scalability**: Add 100 users to a project by adding one group
+- ✅ **Consistency**: Same permission set for all team members
+- ✅ **Audit Trail**: Clear tracking of who has access and why
+- ✅ **Flexibility**: Users can be in multiple groups for different projects
 
 ---
+
+## 👥 User Group Management for Projects
 
 ### GET `/projects/{project_hash}/groups`
 
 List all user groups that have access to a project.
 
-**Authentication:** Required (project access)
+**Authentication:** Required (admin permission)
 
 **Path Parameters:**
 - `project_hash`: Project identifier
@@ -620,9 +571,9 @@ curl -X GET "http://localhost:8000/projects/abc123.../groups" \
     }
   ],
   "pagination": {
-    "total": 3,
     "limit": 100,
     "offset": 0,
+    "total": 3,
     "has_more": false
   }
 }

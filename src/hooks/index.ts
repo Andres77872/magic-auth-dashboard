@@ -28,6 +28,9 @@ export { useUsersByGroup } from './useUsersByGroup';
 // RBAC Management hooks
 export { default as useRBACPermissions } from './useRBACPermissions';
 export { default as useRBACRoles } from './useRBACRoles';
+export { default as useRBACPermissionChecker } from './useRBACPermissionChecker';
+export { useOptimisticQuery, useOptimisticMutation } from './useOptimisticQuery';
+export { useUsersOptimized } from './useUsersOptimized';
 
 // Admin Operations hooks
 export { default as useAdminOperations } from './useAdminOperations'; 

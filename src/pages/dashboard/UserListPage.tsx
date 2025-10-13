@@ -77,20 +77,20 @@ export function UserListPage(): React.JSX.Element {
               size="md"
               onClick={handleRefresh}
               disabled={isLoading}
+              leftIcon={<RefreshIcon size="sm" className={isLoading ? 'spinning' : ''} aria-hidden="true" />}
               aria-label="Refresh user list"
             >
-              <RefreshIcon size="sm" className={isLoading ? 'spinning' : ''} />
-              <span className="btn-label">Refresh</span>
+              Refresh
             </Button>
             {canCreateUser && (
               <Button
                 variant="primary"
                 size="md"
                 onClick={handleCreateUser}
+                leftIcon={<UserIcon size="sm" aria-hidden="true" />}
                 aria-label="Create new user"
               >
-                <UserIcon size="sm" />
-                <span className="btn-label">Create User</span>
+                Create User
               </Button>
             )}
           </div>

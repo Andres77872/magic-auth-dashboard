@@ -55,8 +55,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps): React.JSX.E
     setMobileMenuOpen(false);
   };
 
-  // Loading state - full screen spinner
-  if (isLoading) {
+  // Only show loading spinner if we don't have user data
+  // This prevents blink when we have cached auth state
+  const { user } = useAuth();
+  if (isLoading && !user) {
     return (
       <LoadingSpinner 
         size="lg" 

@@ -139,6 +139,9 @@ export interface AuthState {
   accessibleProjects: Project[];
   isLoading: boolean;
   error: string | null;
+  // RBAC Integration
+  effectivePermissions: string[]; // List of permission names user has through roles
+  permissionsLoading: boolean;
 }
 
 export const AuthActionType = {
@@ -148,6 +151,9 @@ export const AuthActionType = {
   LOGOUT: 'LOGOUT',
   VALIDATE_TOKEN: 'VALIDATE_TOKEN',
   CLEAR_ERROR: 'CLEAR_ERROR',
+  LOAD_PERMISSIONS_START: 'LOAD_PERMISSIONS_START',
+  LOAD_PERMISSIONS_SUCCESS: 'LOAD_PERMISSIONS_SUCCESS',
+  LOAD_PERMISSIONS_FAILURE: 'LOAD_PERMISSIONS_FAILURE',
 } as const;
 
 export type AuthActionType = typeof AuthActionType[keyof typeof AuthActionType];
@@ -158,4 +164,7 @@ export type AuthAction =
   | { type: typeof AuthActionType.LOGIN_FAILURE; payload: { error: string } }
   | { type: typeof AuthActionType.LOGOUT }
   | { type: typeof AuthActionType.VALIDATE_TOKEN; payload: { valid: boolean; user?: User; project?: Project } }
-  | { type: typeof AuthActionType.CLEAR_ERROR }; 
+  | { type: typeof AuthActionType.CLEAR_ERROR }
+  | { type: typeof AuthActionType.LOAD_PERMISSIONS_START }
+  | { type: typeof AuthActionType.LOAD_PERMISSIONS_SUCCESS; payload: { permissions: string[] } }
+  | { type: typeof AuthActionType.LOAD_PERMISSIONS_FAILURE; payload: { error: string } }; 

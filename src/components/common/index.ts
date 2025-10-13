@@ -4,6 +4,8 @@ export { ComingSoon } from './ComingSoon';
 export { EmptyState } from './EmptyState';
 export { ToastContainer } from './ToastContainer';
 export { Skeleton } from './Skeleton';
+export { OptimisticContent } from './OptimisticContent';
+export { TableSkeleton } from './TableSkeleton';
 export { ProgressBar } from './ProgressBar';
 
 // New UI Components - Milestone 3.3
