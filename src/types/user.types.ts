@@ -70,6 +70,7 @@ export interface UserFormData {
   userType: UserType;
   assignedProjects?: string[];
   assignedGroup?: string;
+  globalRoleHash?: string;
 }
 
 export interface UserFormErrors {
@@ -80,6 +81,7 @@ export interface UserFormErrors {
   userType?: string;
   assignedProjects?: string;
   assignedGroup?: string;
+  globalRoleHash?: string;
 }
 
 export interface UserListParams {

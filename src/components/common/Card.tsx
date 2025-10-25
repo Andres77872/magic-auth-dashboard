@@ -65,4 +65,32 @@ export function Card({
   );
 }
 
+// Composable Card sub-components
+export interface CardHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function CardHeader({ children, className = '' }: CardHeaderProps): React.JSX.Element {
+  return <div className={`card-header ${className}`.trim()}>{children}</div>;
+}
+
+export interface CardTitleProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function CardTitle({ children, className = '' }: CardTitleProps): React.JSX.Element {
+  return <h3 className={`card-title ${className}`.trim()}>{children}</h3>;
+}
+
+export interface CardContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function CardContent({ children, className = '' }: CardContentProps): React.JSX.Element {
+  return <div className={`card-content ${className}`.trim()}>{children}</div>;
+}
+
 export default Card; 

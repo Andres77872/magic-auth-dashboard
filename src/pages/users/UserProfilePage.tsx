@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Badge, Skeleton, EmptyState, Button } from '@/components/common';
-import { userService } from '@/services';
+import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
+import { userService, globalRolesService, permissionAssignmentsService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import { UserIcon, ErrorIcon, RefreshIcon, EditIcon, ArrowLeftIcon } from '@/components/icons';
+import { UserIcon, ErrorIcon, RefreshIcon, EditIcon, ArrowLeftIcon, SecurityIcon, LockIcon } from '@/components/icons';
 import type { UserType, UserProfileResponse } from '@/types/auth.types';
+import type { GlobalRole } from '@/types/global-roles.types';
+import type { PermissionSource } from '@/types/permission-assignments.types';
 import '@/styles/pages/user-profile.css';
 
 export function UserProfilePage(): React.JSX.Element {
   const [profileData, setProfileData] = useState<UserProfileResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [globalRole, setGlobalRole] = useState<GlobalRole | null>(null);
+  const [permissionSources, setPermissionSources] = useState<{
+    from_role: PermissionSource[];
+    from_user_groups: PermissionSource[];
+    from_direct_assignment: PermissionSource[];
+  } | null>(null);
+  const [loadingGlobalData, setLoadingGlobalData] = useState(false);
   const navigate = useNavigate();
   const { userHash } = useParams<{ userHash: string }>();
 
@@ -54,6 +64,9 @@ export function UserProfilePage(): React.JSX.Element {
         };
 
         setProfileData(finalResponse);
+        
+        // Fetch global role and permission sources
+        fetchGlobalRoleData(hash);
       } else {
         setError(response.message || 'Failed to fetch user data');
       }
@@ -62,6 +75,34 @@ export function UserProfilePage(): React.JSX.Element {
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchGlobalRoleData = async (hash: string) => {
+    setLoadingGlobalData(true);
+    try {
+      // Fetch user's global role
+      const roleResponse = await globalRolesService.getUserRole(hash);
+      if (roleResponse.success && roleResponse.data) {
+        setGlobalRole(roleResponse.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch global role:', err);
+      // Non-critical error, don't show to user
+    }
+
+    try {
+      // Fetch permission sources (only for current user endpoint available)
+      // If viewing own profile, fetch sources
+      const sourcesResponse = await permissionAssignmentsService.getMyPermissionSources();
+      if (sourcesResponse.success && sourcesResponse.data) {
+        setPermissionSources(sourcesResponse.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch permission sources:', err);
+      // Non-critical error, don't show to user
+    } finally {
+      setLoadingGlobalData(false);
     }
   };
 
@@ -339,6 +380,137 @@ export function UserProfilePage(): React.JSX.Element {
             </div>
           </Card>
 
+          {/* Global Role Card */}
+          {globalRole || permissionSources ? (
+            <Card title="Global Permissions" padding="lg">
+              <div className="global-permissions-section">
+                {/* Global Role */}
+                {globalRole && (
+                  <div className="global-role-info">
+                    <div className="flex items-center gap-2 mb-3">
+                      <SecurityIcon size={20} />
+                      <h3 className="font-semibold">Global Role</h3>
+                    </div>
+                    <div className="role-display">
+                      <Badge variant="primary" size="lg">
+                        {globalRole.role_display_name}
+                      </Badge>
+                      {globalRole.role_description && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          {globalRole.role_description}
+                        </p>
+                      )}
+                      <div className="role-meta mt-2 text-xs text-muted-foreground">
+                        <span>Priority: {globalRole.role_priority}</span>
+                        {globalRole.is_system_role && (
+                          <Badge variant="secondary" size="sm" className="ml-2">
+                            System Role
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Permission Sources */}
+                {permissionSources && (
+                  <div className="permission-sources mt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <LockIcon size={20} />
+                      <h3 className="font-semibold">Permission Sources</h3>
+                    </div>
+                    <div className="sources-grid">
+                      <div className="source-card">
+                        <div className="source-header">
+                          <span className="source-icon">🛡️</span>
+                          <span className="source-label">From Role</span>
+                        </div>
+                        <div className="source-count">{permissionSources.from_role.length}</div>
+                        <div className="source-details">
+                          {permissionSources.from_role.slice(0, 3).map((source, idx) => (
+                            <div key={idx} className="source-item">
+                              <Badge variant="secondary" size="sm">
+                                {source.permission_group_name}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {source.permissions_count} permissions
+                              </span>
+                            </div>
+                          ))}
+                          {permissionSources.from_role.length > 3 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{permissionSources.from_role.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="source-card">
+                        <div className="source-header">
+                          <span className="source-icon">👥</span>
+                          <span className="source-label">From Groups</span>
+                        </div>
+                        <div className="source-count">{permissionSources.from_user_groups.length}</div>
+                        <div className="source-details">
+                          {permissionSources.from_user_groups.slice(0, 3).map((source, idx) => (
+                            <div key={idx} className="source-item">
+                              <Badge variant="info" size="sm">
+                                {source.user_group_name}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {source.permissions_count} permissions
+                              </span>
+                            </div>
+                          ))}
+                          {permissionSources.from_user_groups.length > 3 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{permissionSources.from_user_groups.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="source-card">
+                        <div className="source-header">
+                          <span className="source-icon">⚡</span>
+                          <span className="source-label">Direct Assignment</span>
+                        </div>
+                        <div className="source-count">{permissionSources.from_direct_assignment.length}</div>
+                        <div className="source-details">
+                          {permissionSources.from_direct_assignment.slice(0, 3).map((source, idx) => (
+                            <div key={idx} className="source-item">
+                              <Badge variant="success" size="sm">
+                                {source.permission_group_name}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {source.permissions_count} permissions
+                              </span>
+                            </div>
+                          ))}
+                          {permissionSources.from_direct_assignment.length > 3 && (
+                            <span className="text-xs text-muted-foreground">
+                              +{permissionSources.from_direct_assignment.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {loadingGlobalData && (
+                  <div className="loading-global-data">
+                    <Skeleton variant="text" count={3} />
+                  </div>
+                )}
+              </div>
+            </Card>
+          ) : loadingGlobalData ? (
+            <Card title="Global Permissions" padding="lg">
+              <Skeleton variant="text" count={5} />
+            </Card>
+          ) : null}
+
           {/* Projects Section */}
           <Card title={`Assigned Projects (${userProjects.length})`} padding="lg">
             {userProjects.length > 0 ? (
@@ -444,6 +616,12 @@ export function UserProfilePage(): React.JSX.Element {
               </div>
             )}
           </Card>
+
+          {/* Direct Permission Groups Management */}
+          <UserPermissionGroupsTab
+            userHash={user.user_hash}
+            username={user.username}
+          />
 
           {/* Permissions Section */}
           <Card title={`All Permissions (${permissions.length})`} padding="lg">

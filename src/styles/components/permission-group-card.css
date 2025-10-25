@@ -1,0 +1,89 @@
+.permission-group-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+
+.permission-group-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.permission-group-card.assigned {
+  border: 2px solid var(--success);
+  background: rgba(var(--success-rgb), 0.05);
+}
+
+.group-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.group-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.group-name-text {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0 0;
+  font-family: 'Courier New', monospace;
+}
+
+.group-info {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.group-description {
+  margin: 0.75rem 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.group-meta {
+  display: flex;
+  gap: 1rem;
+  margin: 0.75rem 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.group-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.group-actions button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex: 1;
+  min-width: fit-content;
+}
+
+@media (max-width: 768px) {
+  .group-actions {
+    flex-direction: column;
+  }
+  
+  .group-actions button {
+    width: 100%;
+  }
+}

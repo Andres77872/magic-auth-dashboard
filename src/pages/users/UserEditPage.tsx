@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { UserForm } from '@/components/features/users/UserForm';
 import { LoadingSpinner, Button } from '@/components/common';
 import { RefreshIcon } from '@/components/icons';
-import { userService } from '@/services';
+import { userService, globalRolesService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { UserFormData } from '@/types/user.types';
 import type { User } from '@/types/auth.types';
@@ -62,6 +62,24 @@ export function UserEditPage(): React.JSX.Element {
       const response = await userService.updateUser(userHash, updateData);
 
       if (response.success) {
+        // Update global role if specified
+        if (formData.globalRoleHash !== undefined) {
+          try {
+            if (formData.globalRoleHash) {
+              // Assign new role
+              await globalRolesService.assignRoleToUser(
+                userHash,
+                formData.globalRoleHash
+              );
+            }
+            // Note: Removing a role would require a delete endpoint
+            // which may not be available in the current API
+          } catch (roleError) {
+            console.error('Failed to update global role:', roleError);
+            // Continue anyway - user was updated successfully
+          }
+        }
+        
         // Navigate back to users list with success message
         navigate(ROUTES.USERS, {
           state: {

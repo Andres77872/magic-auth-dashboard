@@ -27,6 +27,16 @@ export function NavigationMenu({ userType, collapsed }: NavigationMenuProps): Re
 
   const filteredItems = getFilteredNavigationItems();
 
+  // Check if navigation item is active with exact matching only
+  // This prevents parent routes from matching child routes
+  const isItemActive = (itemPath: string) => {
+    const currentPath = location.pathname;
+    
+    // Only exact match - no substring matching
+    // This ensures /dashboard/permissions doesn't match /dashboard/permissions/role-management
+    return currentPath === itemPath;
+  };
+
   return (
     <nav className="navigation-menu" role="navigation" aria-label="Dashboard navigation">
       <ul className="nav-list">
@@ -34,7 +44,7 @@ export function NavigationMenu({ userType, collapsed }: NavigationMenuProps): Re
           <NavigationItem
             key={item.id}
             item={item}
-            isActive={location.pathname.startsWith(item.path)}
+            isActive={isItemActive(item.path)}
             collapsed={collapsed}
           />
         ))}

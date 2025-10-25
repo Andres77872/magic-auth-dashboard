@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserForm } from '@/components/features/users/UserForm';
-import { userService } from '@/services';
+import { userService, globalRolesService } from '@/services';
 import { ROUTES } from '@/utils/routes';
 import type { UserFormData } from '@/types/user.types';
 import '@/styles/pages/user-form.css';
@@ -57,6 +57,19 @@ export function UserCreatePage(): React.JSX.Element {
       }
 
       if (response.success) {
+        // Assign global role if specified
+        if (formData.globalRoleHash && response.user?.user_hash) {
+          try {
+            await globalRolesService.assignRoleToUser(
+              response.user.user_hash,
+              formData.globalRoleHash
+            );
+          } catch (roleError) {
+            console.error('Failed to assign global role:', roleError);
+            // Continue anyway - user was created successfully
+          }
+        }
+        
         // Navigate back to users list with success message
         navigate(ROUTES.USERS, { 
           state: { 

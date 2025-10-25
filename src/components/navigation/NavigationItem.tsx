@@ -8,7 +8,8 @@ import {
   GroupIcon, 
   SecurityIcon, 
   SettingsIcon, 
-  ChevronIcon 
+  ChevronIcon,
+  UserBadgeIcon
 } from '@/components/icons';
 
 interface NavigationItemProps {
@@ -36,6 +37,7 @@ export function NavigationItem({
       folder: <ProjectIcon size={iconSize} aria-hidden="true" />,
       'users-group': <GroupIcon size={iconSize} aria-hidden="true" />,
       shield: <SecurityIcon size={iconSize} aria-hidden="true" />,
+      'user-badge': <UserBadgeIcon size={iconSize} aria-hidden="true" />,
       settings: <SettingsIcon size={iconSize} aria-hidden="true" />,
     };
 

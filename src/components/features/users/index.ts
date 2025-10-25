@@ -5,5 +5,6 @@ export { AssignGroupModal } from './AssignGroupModal';
 export { AssignProjectModal } from './AssignProjectModal';
 export { AddUserToProjectModal } from './AddUserToProjectModal';
 export { AdminProjectsManager } from './AdminProjectsManager';
+export { UserPermissionGroupsTab } from './UserPermissionGroupsTab';
 
 export type { UserFilters } from './UserFilter'; 

@@ -38,6 +38,7 @@ export { default as ArrowLeftIcon } from './ArrowLeftIcon';
 export { default as ArrowRightIcon } from './ArrowRightIcon';
 export { default as CircleIcon } from './CircleIcon';
 export { default as SmileyIcon } from './SmileyIcon';
+export { default as UserBadgeIcon } from './UserBadgeIcon';
 
 // Export types
 export type { IconProps } from './Icon';
@@ -78,4 +79,5 @@ export type { HorizontalLineIconProps } from './HorizontalLineIcon';
 export type { ArrowLeftIconProps } from './ArrowLeftIcon';
 export type { ArrowRightIconProps } from './ArrowRightIcon';
 export type { CircleIconProps } from './CircleIcon';
-export type { SmileyIconProps } from './SmileyIcon'; 
+export type { SmileyIconProps } from './SmileyIcon';
+export type { UserBadgeIconProps } from './UserBadgeIcon'; 

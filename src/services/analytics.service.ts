@@ -257,6 +257,30 @@ export class AnalyticsService {
       };
     }
   }
+
+  /**
+   * Get analytics summary
+   * GET /analytics/summary
+   */
+  async getSummary(): Promise<{
+    users: { total: number; active: number; new: number };
+    projects: { total: number; active: number; archived: number };
+    activity: { total: number; today: number; thisWeek: number };
+    system: { health: string; uptime: string; load: number };
+  }> {
+    try {
+      const response = await apiClient.get<{
+        users: { total: number; active: number; new: number };
+        projects: { total: number; active: number; archived: number };
+        activity: { total: number; today: number; thisWeek: number };
+        system: { health: string; uptime: string; load: number };
+      }>('/analytics/summary');
+      return response.data as any;
+    } catch (error) {
+      console.error('Failed to fetch analytics summary:', error);
+      throw new Error('Failed to load analytics summary');
+    }
+  }
 }
 
 export const analyticsService = new AnalyticsService(); 

@@ -126,6 +126,19 @@ class AdminService {
       { user_hashes: userHashes }
     );
   }
+
+  /**
+   * Bulk assign multiple users to multiple groups
+   * POST /admin/user-groups/bulk-assign
+   */
+  async bulkAssignUsersToGroups(
+    assignments: Array<{ user_hash: string; group_hash: string }>
+  ): Promise<ApiResponse<{ assigned_count: number; errors: any[] }>> {
+    return await apiClient.post<{ assigned_count: number; errors: any[] }>(
+      '/admin/user-groups/bulk-assign',
+      { assignments }
+    );
+  }
 }
 
 export const adminService = new AdminService();

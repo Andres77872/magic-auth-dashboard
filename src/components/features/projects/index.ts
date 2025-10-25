@@ -7,4 +7,5 @@ export { ProjectOverviewTab } from './ProjectOverviewTab';
 export { ProjectMembersTab } from './ProjectMembersTab';
 export { ProjectSettingsTab } from './ProjectSettingsTab';
 export { ProjectGroupsTab } from './ProjectGroupsTab';
+export { ProjectPermissionsTab } from './ProjectPermissionsTab';
 export { AssignGroupToProjectModal } from './AssignGroupToProjectModal'; 

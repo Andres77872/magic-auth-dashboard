@@ -3,11 +3,15 @@ import { useParams } from 'react-router-dom';
 import { Card, Badge, Button, Modal, Input, LoadingSpinner, ConfirmDialog } from '@/components/common';
 import { groupService, userService } from '@/services';
 import { GroupMembersTable } from '@/components/features/groups/GroupMembersTable';
+import { GroupPermissionsTab } from '@/components/features/groups/GroupPermissionsTab';
 import type { GroupMember } from '@/components/features/groups/GroupMembersTable';
 import { ROUTES } from '@/utils/routes';
 import type { UserGroup } from '@/types/group.types';
 import type { User } from '@/types/auth.types';
 import { useUsersByGroup } from '@/hooks/useUsersByGroup';
+import '../../styles/pages/group-details.css';
+
+type TabType = 'members' | 'permissions';
 
 export const GroupDetailsPage: React.FC = () => {
   const { groupHash } = useParams<{ groupHash: string }>();
@@ -15,6 +19,7 @@ export const GroupDetailsPage: React.FC = () => {
   const [statistics, setStatistics] = useState<{ total_members: number; total_projects: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('members');
 
   // Use the new hook to fetch group members
   const { users: groupUsers, refetch: refetchMembers, error: membersError } = useUsersByGroup(groupHash);
@@ -267,34 +272,64 @@ export const GroupDetailsPage: React.FC = () => {
         </Card>
 
         <div className="mt-8">
-          <Card title="Members">
-            <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0 }}>Group Members ({members.length})</h3>
-              <Button onClick={() => setIsAddModalOpen(true)}>
-                Add Member
-              </Button>
+          {/* Tabs Navigation */}
+          <div className="tabs-container">
+            <div className="tabs-nav">
+              <button
+                className={`tab-button ${activeTab === 'members' ? 'active' : ''}`}
+                onClick={() => setActiveTab('members')}
+              >
+                Members ({members.length})
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'permissions' ? 'active' : ''}`}
+                onClick={() => setActiveTab('permissions')}
+              >
+                Permission Groups
+              </button>
             </div>
-            
-            {membersError && (
-              <div className="danger-text" style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee', borderRadius: '0.25rem' }}>
-                Error loading members: {membersError}
-              </div>
-            )}
-            
-            {members.length === 0 && !membersError && (
-              <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-                No members in this group. Click "Add Member" to get started.
-              </div>
-            )}
-            
-            {members.length > 0 && (
-              <GroupMembersTable 
-                members={members} 
-                onRemove={setConfirmRemove}
-                removingMember={isRemoving}
-              />
-            )}
-          </Card>
+
+            {/* Tab Content */}
+            <div className="tab-content">
+              {activeTab === 'members' && (
+                <Card title="Members">
+                  <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0 }}>Group Members ({members.length})</h3>
+                    <Button onClick={() => setIsAddModalOpen(true)}>
+                      Add Member
+                    </Button>
+                  </div>
+                  
+                  {membersError && (
+                    <div className="danger-text" style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee', borderRadius: '0.25rem' }}>
+                      Error loading members: {membersError}
+                    </div>
+                  )}
+                  
+                  {members.length === 0 && !membersError && (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+                      No members in this group. Click "Add Member" to get started.
+                    </div>
+                  )}
+                  
+                  {members.length > 0 && (
+                    <GroupMembersTable 
+                      members={members} 
+                      onRemove={setConfirmRemove}
+                      removingMember={isRemoving}
+                    />
+                  )}
+                </Card>
+              )}
+
+              {activeTab === 'permissions' && group && (
+                <GroupPermissionsTab
+                  groupHash={group.group_hash}
+                  groupName={group.group_name}
+                />
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Add Member Modal */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Input, Select, Button, Card, Modal } from '@/components/common';
-import { usePermissions, useUserType, useAuth } from '@/hooks';
+import { usePermissions, useUserType, useAuth, useGlobalRoles } from '@/hooks';
 import { authService } from '@/services';
 import AssignProjectModal from './AssignProjectModal';
 import AssignGroupModal from './AssignGroupModal';
@@ -32,6 +32,7 @@ export function UserForm({
   const { canCreateAdmin, canCreateRoot } = usePermissions();
   const { userType: currentUserType } = useUserType();
   const { user: currentUser } = useAuth();
+  const { roles: globalRoles, loadingRoles: loadingGlobalRoles, currentRole: userGlobalRole } = useGlobalRoles();
 
   const [formData, setFormData] = useState<UserFormData>({
     username: initialData?.username || '',
@@ -41,6 +42,7 @@ export function UserForm({
     userType: (initialData?.user_type as UserType) || 'consumer',
     assignedProjects: initialData?.projects?.map(p => p.project_hash) || [],
     assignedGroup: initialData?.groups?.[0]?.group_hash || '',
+    globalRoleHash: '', // Will be set from userGlobalRole
   });
 
   const [errors, setErrors] = useState<UserFormErrors>({});
@@ -59,6 +61,16 @@ export function UserForm({
   
   // Email input ref for auto-focus
   const emailInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Load user's current global role if in edit mode
+  useEffect(() => {
+    if (mode === 'edit' && initialData?.user_hash && userGlobalRole) {
+      setFormData(prev => ({
+        ...prev,
+        globalRoleHash: userGlobalRole.role_hash
+      }));
+    }
+  }, [mode, initialData?.user_hash, userGlobalRole]);
 
   // Check if editing own account
   const isEditingSelf = mode === 'edit' && currentUser && initialData?.user_hash === currentUser.user_hash;
@@ -374,6 +386,31 @@ export function UserForm({
               <p className="field-help-text">Select the user's access level</p>
               {isEditingSelf && currentUserType === 'root' && (
                 <p className="field-warning-text">You cannot change your own user type for security reasons</p>
+              )}
+            </div>
+
+            {/* Global Role Field */}
+            <div className="form-field">
+              <Select
+                label="Global Role"
+                options={[
+                  { value: '', label: 'No Global Role' },
+                  ...globalRoles.map(role => ({
+                    value: role.role_hash,
+                    label: role.role_display_name
+                  }))
+                ]}
+                value={formData.globalRoleHash || ''}
+                onChange={(value) => handleInputChange('globalRoleHash', value)}
+                disabled={isLoading || loadingGlobalRoles}
+              />
+              <p className="field-help-text">
+                {loadingGlobalRoles ? 'Loading global roles...' : 'Assign a global role for system-wide permissions'}
+              </p>
+              {formData.globalRoleHash && (
+                <p className="field-info-text">
+                  Global roles provide permissions across all projects
+                </p>
               )}
             </div>
 

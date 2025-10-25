@@ -33,7 +33,9 @@ import {
   PermissionsOverviewPage,
   RolesPage,
   PermissionsPage,
-  AuditPage
+  AuditPage,
+  GlobalRolesPage,
+  RoleManagementPage
 } from '@/pages/permissions';
 import AssignmentsPage from '@/pages/permissions/AssignmentsPage';
 import { DashboardLayout } from '@/components/layout';
@@ -328,6 +330,29 @@ function App(): React.JSX.Element {
                   <AdminRoute>
                     <DashboardLayout>
                       <AssignmentsPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+
+              {/* Global Roles Management (NEW) */}
+              <Route
+                path={ROUTES.GLOBAL_ROLES}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <GlobalRolesPage />
+                    </DashboardLayout>
+                  </AdminRoute>
+                }
+              />
+              
+              <Route
+                path={ROUTES.ROLE_MANAGEMENT}
+                element={
+                  <AdminRoute>
+                    <DashboardLayout>
+                      <RoleManagementPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }

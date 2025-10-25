@@ -11,6 +11,8 @@ export { permissionService } from './permission.service';
 export { systemService } from './system.service';
 export { adminService } from './admin.service';
 export { analyticsService } from './analytics.service';
+export { globalRolesService } from './global-roles.service';
+export { permissionAssignmentsService } from './permission-assignments.service';
 
 // Also export defaults for convenience
 export { default as ApiClient } from './api.client';
@@ -21,4 +23,6 @@ export { default as GroupService } from './group.service';
 export { default as ProjectGroupService } from './project-group.service';
 export { default as RbacService } from './rbac.service';
 export { default as SystemService } from './system.service';
-export { default as AdminService } from './admin.service'; 
+export { default as AdminService } from './admin.service';
+export { default as GlobalRolesService } from './global-roles.service';
+export { default as PermissionAssignmentsService } from './permission-assignments.service'; 

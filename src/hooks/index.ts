@@ -33,4 +33,8 @@ export { useOptimisticQuery, useOptimisticMutation } from './useOptimisticQuery'
 export { useUsersOptimized } from './useUsersOptimized';
 
 // Admin Operations hooks
-export { default as useAdminOperations } from './useAdminOperations'; 
+export { default as useAdminOperations } from './useAdminOperations';
+
+// Global Roles & Permission Assignments hooks (NEW)
+export { useGlobalRoles } from './useGlobalRoles';
+export { usePermissionAssignments } from './usePermissionAssignments'; 

@@ -9,4 +9,16 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  server: {
+    watch: {
+      ignored: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/docs/**',
+        '**/.git/**',
+        '**/.idea/**',
+        '**/.cursor/**'
+      ]
+    }
+  }
 })

@@ -8,6 +8,8 @@ export * from './system.types';
 export * from './group.types';
 export * from './dashboard.types';
 export * from './analytics.types';
+export * from './global-roles.types';
+export * from './permission-assignments.types';
 
 // Handle duplicate exports by re-exporting specific types with different names
 export type { UserProfileExtendedResponse as UserProfileExtended } from './user.types'; 
