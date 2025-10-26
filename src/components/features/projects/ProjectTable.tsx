@@ -1,9 +1,7 @@
 import React from 'react';
-import { Table, Pagination, Badge, Button } from '@/components/common';
+import { Table, Pagination, Badge } from '@/components/common';
 import { ProjectActionsMenu } from './ProjectActionsMenu';
 import { ProjectIcon } from '@/components/icons';
-import { Link } from 'react-router-dom';
-import { ROUTES } from '@/utils/routes';
 import { formatDate, getStatusBadgeVariant } from '@/utils/component-utils';
 import type { ProjectDetails } from '@/types/project.types';
 import type { PaginationResponse } from '@/types/api.types';
@@ -16,6 +14,9 @@ interface ProjectTableProps {
   sortBy: string | null;
   sortOrder: 'asc' | 'desc';
   isLoading?: boolean;
+  onEdit?: (project: ProjectDetails) => void;
+  onDelete?: () => void;
+  onArchive?: () => void;
 }
 
 export const ProjectTable: React.FC<ProjectTableProps> = ({
@@ -26,6 +27,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
   sortBy: _sortBy,
   sortOrder: _sortOrder,
   isLoading = false,
+  onEdit,
+  onDelete,
+  onArchive,
 }) => {
 
   const columns = [
@@ -87,7 +91,12 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       header: 'Actions',
       sortable: false,
       render: (_value: any, project: ProjectDetails) => (
-        <ProjectActionsMenu project={project} />
+        <ProjectActionsMenu
+          project={project}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onArchive={onArchive}
+        />
       ),
     },
   ];
@@ -101,11 +110,6 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
         isLoading={isLoading}
         emptyMessage="No projects found"
         emptyIcon={<ProjectIcon size="lg" />}
-        emptyAction={
-          <Link to={ROUTES.PROJECTS_CREATE}>
-            <Button variant="primary">Create Your First Project</Button>
-          </Link>
-        }
         skeletonRows={8}
       />
       

@@ -77,11 +77,14 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
     setRolesError(null);
     try {
       const response = await globalRolesService.getRoles();
-      if (response.success && response.data) {
-        setRoles(response.data);
+      // API returns roles in response.roles, not response.data
+      if (response.success) {
+        const rolesData = (response as any).roles || response.data || [];
+        setRoles(rolesData);
       }
     } catch (err) {
       setRolesError(err instanceof Error ? err.message : 'Failed to fetch roles');
+      console.error('Failed to fetch roles:', err);
     } finally {
       setLoadingRoles(false);
     }
@@ -93,11 +96,14 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
     setGroupsError(null);
     try {
       const response = await globalRolesService.getPermissionGroups();
-      if (response.success && response.data) {
-        setPermissionGroups(response.data);
+      // API returns permission_groups in response, not response.data
+      if (response.success) {
+        const groupsData = (response as any).permission_groups || response.data || [];
+        setPermissionGroups(groupsData);
       }
     } catch (err) {
       setGroupsError(err instanceof Error ? err.message : 'Failed to fetch permission groups');
+      console.error('Failed to fetch permission groups:', err);
     } finally {
       setLoadingGroups(false);
     }
@@ -109,11 +115,14 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
     setPermissionsError(null);
     try {
       const response = await globalRolesService.getPermissions();
-      if (response.success && response.data) {
-        setPermissions(response.data);
+      // API returns permissions in response, not response.data
+      if (response.success) {
+        const permissionsData = (response as any).permissions || response.data || [];
+        setPermissions(permissionsData);
       }
     } catch (err) {
       setPermissionsError(err instanceof Error ? err.message : 'Failed to fetch permissions');
+      console.error('Failed to fetch permissions:', err);
     } finally {
       setLoadingPermissions(false);
     }
@@ -123,8 +132,10 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
   const fetchMyPermissions = useCallback(async () => {
     try {
       const response = await globalRolesService.getMyPermissions();
-      if (response.success && response.data) {
-        setMyPermissions(response.data);
+      // API returns permissions array directly
+      if (response.success) {
+        const perms = (response as any).permissions || response.data || [];
+        setMyPermissions(perms);
       }
     } catch (err) {
       console.error('Failed to fetch my permissions:', err);
@@ -135,8 +146,10 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
   const fetchMyRole = useCallback(async () => {
     try {
       const response = await globalRolesService.getMyRole();
-      if (response.success && response.data) {
-        setCurrentRole(response.data);
+      // API returns role object directly
+      if (response.success) {
+        const roleData = (response as any).role || response.data || null;
+        setCurrentRole(roleData);
       }
     } catch (err) {
       console.error('Failed to fetch my role:', err);
@@ -181,11 +194,12 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
   }, [fetchRoles]);
 
   const getRole = useCallback(async (roleHash: string): Promise<GlobalRole> => {
-    const response = await globalRolesService.getRole(roleHash);
-    if (!response.success || !response.data) {
+    const response: any = await globalRolesService.getRole(roleHash);
+    const roleData = response.role || response.data;
+    if (!response.success || !roleData) {
       throw new Error('Failed to fetch role');
     }
-    return response.data;
+    return roleData;
   }, []);
 
   // Permission Group Management
@@ -202,11 +216,12 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
   }, [fetchPermissionGroups]);
 
   const getPermissionGroup = useCallback(async (groupHash: string): Promise<GlobalPermissionGroup> => {
-    const response = await globalRolesService.getPermissionGroup(groupHash);
-    if (!response.success || !response.data) {
+    const response: any = await globalRolesService.getPermissionGroup(groupHash);
+    const permissionGroupData = response.permission_group || response.data;
+    if (!response.success || !permissionGroupData) {
       throw new Error('Failed to fetch permission group');
     }
-    return response.data;
+    return permissionGroupData;
   }, []);
 
   const assignPermissionGroupToRole = useCallback(async (roleHash: string, groupHash: string) => {
@@ -249,20 +264,22 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
   }, []);
 
   const getUserRole = useCallback(async (userHash: string): Promise<GlobalRole> => {
-    const response = await globalRolesService.getUserRole(userHash);
-    if (!response.success || !response.data) {
+    const response: any = await globalRolesService.getUserRole(userHash);
+    const roleData = response.role || response.data;
+    if (!response.success || !roleData) {
       throw new Error('Failed to fetch user role');
     }
-    return response.data;
+    return roleData;
   }, []);
 
   const getMyRole = useCallback(async (): Promise<GlobalRole> => {
-    const response = await globalRolesService.getMyRole();
-    if (!response.success || !response.data) {
+    const response: any = await globalRolesService.getMyRole();
+    const roleData = response.role || response.data;
+    if (!response.success || !roleData) {
       throw new Error('Failed to fetch my role');
     }
-    setCurrentRole(response.data);
-    return response.data;
+    setCurrentRole(roleData);
+    return roleData;
   }, []);
 
   // Refresh functions

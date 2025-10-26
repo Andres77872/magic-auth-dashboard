@@ -39,9 +39,13 @@ export const ROUTES = {
   PERMISSIONS_LIST: '/dashboard/permissions/permissions',
   PERMISSIONS_ASSIGNMENTS: '/dashboard/permissions/assignments',
   
+  // Permission Management (UNIFIED)
+  PERMISSION_MANAGEMENT: '/dashboard/permissions/management',
+  
   // Global Roles Management (NEW)
   GLOBAL_ROLES: '/dashboard/permissions/global-roles',
   PERMISSION_GROUPS: '/dashboard/permissions/permission-groups',
+  PERMISSION_ASSIGNMENTS_MGMT: '/dashboard/permissions/permission-assignments',
   ROLE_MANAGEMENT: '/dashboard/permissions/role-management',
   
   // System Management (ROOT only)
@@ -94,9 +98,9 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     allowedUserTypes: ['root', 'admin'],
   },
   {
-    id: 'permissions',
-    label: 'Permissions',
-    path: ROUTES.PERMISSIONS,
+    id: 'permission-management',
+    label: 'Permission Management',
+    path: ROUTES.PERMISSION_MANAGEMENT,
     icon: 'shield',
     allowedUserTypes: ['root', 'admin'],
   },

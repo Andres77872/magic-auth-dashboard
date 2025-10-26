@@ -42,11 +42,12 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
   // Fetch all available permission groups
   const fetchAvailableGroups = async () => {
     try {
-      const response = await globalRolesService.getPermissionGroups();
-      if (response.success && response.data) {
+      const response: any = await globalRolesService.getPermissionGroups();
+      const permissionGroupsData = response.permission_groups || response.data || [];
+      if (response.success && permissionGroupsData.length >= 0) {
         // Filter out already assigned groups
         const assignedHashes = new Set(assignedGroups.map(g => g.permission_group_hash));
-        const available = response.data.filter(g => !assignedHashes.has(g.group_hash));
+        const available = permissionGroupsData.filter(g => !assignedHashes.has(g.group_hash));
         setAvailableGroups(available);
       }
     } catch (error) {

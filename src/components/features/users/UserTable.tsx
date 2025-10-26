@@ -18,6 +18,7 @@ interface UserTableProps {
   onBulkUpdateStatus?: (userHashes: string[], isActive: boolean) => Promise<void>;
   onBulkAssignGroup?: (userHashes: string[], groupId: string) => Promise<void>;
   onUserUpdated?: () => void;
+  onEditUser?: (user: User) => void;
 }
 
 export function UserTable({ 
@@ -27,7 +28,8 @@ export function UserTable({
   onBulkDelete,
   onBulkUpdateStatus,
   onBulkAssignGroup,
-  onUserUpdated
+  onUserUpdated,
+  onEditUser
 }: UserTableProps): React.JSX.Element {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [isBulkLoading, setIsBulkLoading] = useState(false);
@@ -263,6 +265,7 @@ export function UserTable({
         <UserActionsMenu 
           user={user} 
           onUserUpdated={onUserUpdated}
+          onEditUser={onEditUser}
         />
       ),
       align: 'center',

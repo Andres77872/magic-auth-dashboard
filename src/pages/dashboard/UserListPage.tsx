@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserFilter } from '@/components/features/users/UserFilter';
 import { UserTable } from '@/components/features/users/UserTable';
 import { UserStats } from '@/components/features/users/UserStats';
 import { UserEmptyState } from '@/components/features/users/UserEmptyState';
+import { UserFormModal } from '@/components/features/users/UserFormModal';
 import { Pagination, Button } from '@/components/common';
 import { useUsers, usePermissions } from '@/hooks';
 import { UserIcon, RefreshIcon } from '@/components/icons';
@@ -30,6 +31,11 @@ export function UserListPage(): React.JSX.Element {
     initialFilters: {}
   });
 
+  // Modal states
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   const handleFiltersChange = (newFilters: UserFilters) => {
     setFilters(newFilters);
   };
@@ -54,7 +60,24 @@ export function UserListPage(): React.JSX.Element {
   const showEmptyState = !isLoading && users.length === 0;
 
   const handleCreateUser = () => {
-    navigate(ROUTES.USERS_CREATE);
+    setModalMode('create');
+    setSelectedUser(null);
+    setShowUserModal(true);
+  };
+
+  const handleEditUser = (user: User) => {
+    setModalMode('edit');
+    setSelectedUser(user);
+    setShowUserModal(true);
+  };
+
+  const handleModalSuccess = () => {
+    fetchUsers();
+  };
+
+  const handleModalClose = () => {
+    setShowUserModal(false);
+    setSelectedUser(null);
   };
 
   return (
@@ -156,6 +179,7 @@ export function UserListPage(): React.JSX.Element {
               isLoading={isLoading}
               onSort={handleSortChange}
               onUserUpdated={handleRefresh}
+              onEditUser={handleEditUser}
             />
           </div>
         )}
@@ -178,6 +202,15 @@ export function UserListPage(): React.JSX.Element {
           </div>
         )}
       </div>
+
+      {/* User Form Modal */}
+      <UserFormModal
+        isOpen={showUserModal}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+        mode={modalMode}
+        user={selectedUser}
+      />
     </div>
   );
 }

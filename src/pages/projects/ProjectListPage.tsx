@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Button, Card, EmptyState } from '@/components/common';
-import { ProjectTable, ProjectCard, ProjectFilter } from '@/components/features/projects';
+import { ProjectTable, ProjectCard, ProjectFilter, ProjectFormModal } from '@/components/features/projects';
 import { useProjects } from '@/hooks';
 import { ProjectIcon, PlusIcon, RefreshIcon } from '@/components/icons';
-import { ROUTES } from '@/utils/routes';
+import type { ProjectDetails } from '@/types/project.types';
 import '@/styles/pages/ProjectListPage.css';
 
 export const ProjectListPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(null);
+  
   const {
     projects,
     pagination,
@@ -33,6 +36,36 @@ export const ProjectListPage: React.FC = () => {
 
   const handleSortChange = (sortField: string, sortDirection: 'asc' | 'desc') => {
     setSort(sortField, sortDirection);
+  };
+
+  const handleCreateClick = () => {
+    setShowCreateModal(true);
+  };
+
+  const handleEditProject = (project: ProjectDetails) => {
+    setSelectedProject(project);
+    setShowEditModal(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedProject(null);
+  };
+
+  const handleProjectSuccess = () => {
+    fetchProjects();
+  };
+
+  const handleProjectDelete = () => {
+    fetchProjects();
+  };
+
+  const handleProjectArchive = () => {
+    fetchProjects();
   };
 
   if (error) {
@@ -63,15 +96,14 @@ export const ProjectListPage: React.FC = () => {
           <p className="text-secondary">Manage and organize your projects</p>
         </div>
         <div className="project-list-page-header-actions" aria-label="Project actions">
-          <Link to={ROUTES.PROJECTS_CREATE}>
-            <Button 
-              variant="primary"
-              leftIcon={<PlusIcon size={16} aria-hidden="true" />}
-              aria-label="Create a new project"
-            >
-              Create Project
-            </Button>
-          </Link>
+          <Button 
+            variant="primary"
+            leftIcon={<PlusIcon size={16} aria-hidden="true" />}
+            onClick={handleCreateClick}
+            aria-label="Create a new project"
+          >
+            Create Project
+          </Button>
         </div>
       </header>
 
@@ -117,15 +149,14 @@ export const ProjectListPage: React.FC = () => {
                   : "You haven't created any projects yet. Get started by creating your first project."
               }
               action={
-                <Link to={ROUTES.PROJECTS_CREATE}>
-                  <Button 
-                    variant="primary"
-                    leftIcon={<PlusIcon size={16} aria-hidden="true" />}
-                    aria-label="Create your first project"
-                  >
-                    Create Your First Project
-                  </Button>
-                </Link>
+                <Button 
+                  variant="primary"
+                  leftIcon={<PlusIcon size={16} aria-hidden="true" />}
+                  onClick={handleCreateClick}
+                  aria-label="Create your first project"
+                >
+                  Create Your First Project
+                </Button>
               }
             />
           ) : viewMode === 'list' ? (
@@ -136,6 +167,10 @@ export const ProjectListPage: React.FC = () => {
               onSort={handleSortChange}
               sortBy={sortBy}
               sortOrder={sortOrder}
+              isLoading={isLoading}
+              onEdit={handleEditProject}
+              onDelete={handleProjectDelete}
+              onArchive={handleProjectArchive}
             />
           ) : (
             <ProjectCard
@@ -147,6 +182,23 @@ export const ProjectListPage: React.FC = () => {
           )}
         </section>
       </Card>
+
+      {/* Create Project Modal */}
+      <ProjectFormModal
+        isOpen={showCreateModal}
+        onClose={handleCloseCreateModal}
+        onSuccess={handleProjectSuccess}
+        mode="create"
+      />
+
+      {/* Edit Project Modal */}
+      <ProjectFormModal
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        onSuccess={handleProjectSuccess}
+        mode="edit"
+        project={selectedProject}
+      />
     </div>
   );
 }; 

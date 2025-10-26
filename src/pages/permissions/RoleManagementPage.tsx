@@ -5,7 +5,8 @@ import {
   GlobalRoleCard,
   GlobalRoleForm,
   PermissionGroupCard,
-  RoleAssignmentModal
+  RoleAssignmentModal,
+  RoleCardSkeleton
 } from '@/components/features/roles';
 import { SearchIcon, PlusIcon, SecurityIcon, LockIcon, UserIcon } from '@/components/icons';
 import { useToast } from '@/hooks';
@@ -257,10 +258,7 @@ export function RoleManagementPage(): React.JSX.Element {
         {activeTab === 'roles' && (
           <div className="roles-grid">
             {loadingRoles ? (
-              <div className="loading-state">
-                <div className="spinner"></div>
-                <p>Loading roles...</p>
-              </div>
+              <RoleCardSkeleton count={6} />
             ) : filteredRoles.length === 0 ? (
               <div className="empty-state">
                 <SecurityIcon size={48} aria-hidden="true" />
@@ -284,6 +282,7 @@ export function RoleManagementPage(): React.JSX.Element {
                     setShowAssignmentModal(true);
                   }}
                   userCount={users.filter(u => u.user_type === role.role_name).length}
+                  permissionGroupCount={0}
                 />
               ))
             )}
@@ -294,9 +293,8 @@ export function RoleManagementPage(): React.JSX.Element {
         {activeTab === 'groups' && (
           <div className="groups-section">
             {loadingGroups ? (
-              <div className="loading-state">
-                <div className="spinner"></div>
-                <p>Loading permission groups...</p>
+              <div className="groups-grid">
+                <RoleCardSkeleton count={6} />
               </div>
             ) : Object.keys(groupedPermissionGroups).length === 0 ? (
               <div className="empty-state">
@@ -316,6 +314,7 @@ export function RoleManagementPage(): React.JSX.Element {
                       <PermissionGroupCard
                         key={group.group_hash}
                         group={group}
+                        permissionCount={0}
                         onViewPermissions={(hash) => console.log('View permissions:', hash)}
                         onAssignToRole={selectedRole ? (hash) => handleAssignPermissionGroup(selectedRole.role_hash, hash) : undefined}
                         isAssigned={false}

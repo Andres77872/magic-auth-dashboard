@@ -426,11 +426,14 @@
 .content-header {
   background: var(--color-surface);
   border-bottom: var(--border-divider);
-  padding: var(--spacing-4) var(--spacing-6);
+  padding: var(--spacing-3) var(--spacing-6);
   flex-shrink: 0;
   /* Ensure it doesn't cause layout issues */
   position: relative;
   z-index: 5;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
 }
 
 .content-container {
@@ -438,9 +441,11 @@
   padding: var(--spacing-6);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-6);
   /* Ensure proper spacing and prevent DOM overlap */
   min-width: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
   /* No overflow here - handled by parent .main-content */
 }
 
@@ -460,6 +465,7 @@
   margin: 0;
   padding: 0;
   gap: var(--spacing-2);
+  flex-wrap: wrap;
 }
 
 .breadcrumb-item {
@@ -473,21 +479,33 @@
   text-decoration: none;
   font-size: var(--font-size-sm);
   transition: color var(--transition-fast);
+  line-height: 1.5;
+  padding: var(--spacing-1) 0;
 }
 
 .breadcrumb-link:hover {
   color: var(--color-primary-600);
+  text-decoration: underline;
+}
+
+.breadcrumb-link:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
 }
 
 .breadcrumb-text {
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  padding: var(--spacing-1) 0;
 }
 
 .breadcrumb-separator {
   color: var(--color-text-tertiary);
   flex-shrink: 0;
+  margin: 0 var(--spacing-1);
 }
 
 /* ========================================
@@ -570,10 +588,12 @@
     display: none;
   }
 
-  .content-header,
+  .content-header {
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+  
   .content-container {
-    padding-left: var(--spacing-4);
-    padding-right: var(--spacing-4);
+    padding: var(--spacing-5);
   }
 }
 
@@ -582,9 +602,20 @@
     padding: 0 var(--spacing-3);
   }
 
-  .content-header,
+  .content-header {
+    padding: var(--spacing-3);
+  }
+  
   .content-container {
-    padding: var(--spacing-4) var(--spacing-3);
+    padding: var(--spacing-4);
+  }
+  
+  .breadcrumb-list {
+    font-size: var(--font-size-xs);
+  }
+  
+  .breadcrumb-separator {
+    margin: 0;
   }
 
   .footer-content {

@@ -1,79 +1,124 @@
 import React from 'react';
-import { Button } from '@/components/common';
-import { EditIcon, DeleteIcon } from '@/components/icons';
+import { Table, Badge } from '@/components/common';
+import type { TableColumn } from '@/components/common/Table';
+import { ActionsMenu } from '@/components/common';
+import type { ActionMenuItem } from '@/components/common';
+import { EditIcon, DeleteIcon, ViewIcon } from '@/components/icons';
 import type { Role } from '@/types/rbac.types';
 
 interface RoleTableProps {
   roles: Role[];
-  projectHash: string;
   loading?: boolean;
-  onEdit: (role: Role) => void;
-  onDelete: (roleId: number) => void;
+  onEdit?: (role: Role) => void;
+  onDelete?: (role: Role) => void;
+  onView?: (role: Role) => void;
+  emptyAction?: React.ReactNode;
 }
 
 export const RoleTable: React.FC<RoleTableProps> = ({
   roles,
-  loading,
+  loading = false,
   onEdit,
-  onDelete
+  onDelete,
+  onView,
+  emptyAction
 }) => {
-  if (loading) {
-    return <div className="role-table loading">Loading roles...</div>;
-  }
+  const columns: TableColumn<Role>[] = [
+    {
+      key: 'group_name',
+      header: 'Role Name',
+      sortable: true,
+      render: (_value: any, role: Role) => (
+        <div className="table-role-name-cell">
+          <div className="table-role-name">{role.group_name}</div>
+          {role.description && (
+            <div className="table-role-description">
+              {role.description}
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'priority',
+      header: 'Priority',
+      sortable: true,
+      align: 'center',
+      width: '100px',
+      render: (_value: any, role: Role) => (
+        <Badge variant="secondary">
+          {role.priority || 50}
+        </Badge>
+      )
+    },
+    {
+      key: 'is_active',
+      header: 'Status',
+      sortable: true,
+      align: 'center',
+      width: '120px',
+      render: (_value: any, role: Role) => (
+        <Badge variant={role.is_active ? 'success' : 'secondary'}>
+          {role.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      )
+    },
+    {
+      key: 'id',
+      header: 'Actions',
+      width: '80px',
+      align: 'center',
+      render: (_value: any, role: Role) => {
+        const menuItems: ActionMenuItem[] = [];
+
+        if (onView) {
+          menuItems.push({
+            key: 'view',
+            label: 'View Details',
+            icon: <ViewIcon size="sm" />,
+            onClick: () => onView(role)
+          });
+        }
+
+        if (onEdit) {
+          menuItems.push({
+            key: 'edit',
+            label: 'Edit Role',
+            icon: <EditIcon size="sm" />,
+            onClick: () => onEdit(role)
+          });
+        }
+
+        if (onDelete) {
+          menuItems.push({
+            key: 'delete',
+            label: 'Delete Role',
+            icon: <DeleteIcon size="sm" />,
+            onClick: () => onDelete(role),
+            destructive: true
+          });
+        }
+
+        return menuItems.length > 0 ? (
+          <ActionsMenu
+            items={menuItems}
+            ariaLabel={`Actions for ${role.group_name}`}
+            placement="bottom-right"
+          />
+        ) : null;
+      }
+    }
+  ];
 
   return (
-    <div className="role-table">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Role Name</th>
-            <th>Priority</th>
-            <th>Description</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {roles.map((role) => (
-            <tr key={role.id}>
-              <td>
-                <strong>{role.group_name}</strong>
-              </td>
-              <td>
-                <span className="priority-badge">{role.priority}</span>
-              </td>
-              <td>{role.description}</td>
-              <td>
-                <span className={`status-badge ${role.is_active ? 'active' : 'inactive'}`}>
-                  {role.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </td>
-              <td>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <Button 
-                    onClick={() => onEdit(role)} 
-                    size="sm"
-                    variant="outline"
-                    leftIcon={<EditIcon size={14} aria-hidden="true" />}
-                    aria-label={`Edit role ${role.group_name}`}
-                  >
-                    Edit
-                  </Button>
-                  <Button 
-                    onClick={() => onDelete(role.id)} 
-                    size="sm"
-                    variant="danger"
-                    leftIcon={<DeleteIcon size={14} aria-hidden="true" />}
-                    aria-label={`Delete role ${role.group_name}`}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table<Role>
+      data={roles}
+      columns={columns}
+      isLoading={loading}
+      emptyMessage="No roles found"
+      emptyAction={emptyAction}
+      skeletonRows={5}
+      className="roles-table"
+    />
   );
-}; 
+};

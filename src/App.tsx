@@ -14,30 +14,23 @@ import './styles/pages/unauthorized.css';
 import './styles/pages/login.css';
 import './styles/pages/user-list.css';
 import './styles/components/user-management.css';
+import './styles/components/user-modals.css';
 
 // Import pages
-import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectCreatePage, ProjectEditPage, ProjectDetailsPage } from '@/pages';
-import { UserCreatePage } from '@/pages/users/UserCreatePage';
-import { UserEditPage } from '@/pages/users/UserEditPage';
+import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage } from '@/pages';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
 import { 
   GroupListPage, 
-  GroupCreatePage, 
-  GroupEditPage, 
   GroupDetailsPage,
   ProjectGroupsPage,
   ProjectGroupCreatePage,
   ProjectGroupEditPage
 } from '@/pages/groups';
 import {
-  PermissionsOverviewPage,
-  RolesPage,
-  PermissionsPage,
-  AuditPage,
+  PermissionManagementPage,
   GlobalRolesPage,
   RoleManagementPage
 } from '@/pages/permissions';
-import AssignmentsPage from '@/pages/permissions/AssignmentsPage';
 import { DashboardLayout } from '@/components/layout';
 
 const SystemPage = () => (
@@ -123,28 +116,7 @@ function App(): React.JSX.Element {
                 }
               />
               
-              <Route
-                path={ROUTES.USERS_CREATE}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <UserCreatePage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={`${ROUTES.USERS_EDIT}/:userHash`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <UserEditPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
+              {/* User Profile - Keep for detailed view */}
               <Route
                 path={`${ROUTES.USERS_PROFILE}/:userHash`}
                 element={
@@ -168,28 +140,6 @@ function App(): React.JSX.Element {
               />
               
               <Route
-                path={ROUTES.PROJECTS_CREATE}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProjectCreatePage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={`${ROUTES.PROJECTS_EDIT}/:projectHash`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProjectEditPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
                 path={`${ROUTES.PROJECTS_DETAILS}/:projectHash`}
                 element={
                   <AdminRoute>
@@ -207,28 +157,6 @@ function App(): React.JSX.Element {
                   <AdminRoute>
                     <DashboardLayout>
                       <GroupListPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={ROUTES.GROUPS_CREATE}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <GroupCreatePage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={`${ROUTES.GROUPS_EDIT}/:groupHash`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <GroupEditPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }
@@ -279,57 +207,13 @@ function App(): React.JSX.Element {
                 }
               />
 
-              {/* Permission Management Routes */}
+              {/* Permission Management (UNIFIED) */}
               <Route
-                path={ROUTES.PERMISSIONS}
+                path={ROUTES.PERMISSION_MANAGEMENT}
                 element={
                   <AdminRoute>
                     <DashboardLayout>
-                      <PermissionsOverviewPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={ROUTES.PERMISSIONS_ROLES}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <RolesPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={ROUTES.PERMISSIONS_LIST}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <PermissionsPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path="/dashboard/permissions/audit"
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <AuditPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={`${ROUTES.PERMISSIONS_ASSIGNMENTS}/:projectHash?`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <AssignmentsPage />
+                      <PermissionManagementPage />
                     </DashboardLayout>
                   </AdminRoute>
                 }

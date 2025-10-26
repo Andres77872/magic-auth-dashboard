@@ -12,6 +12,8 @@ export interface DirectPermissionAssignment {
   username: string;
   permission_group_hash: string;
   permission_group_name: string;
+  group_hash: string; // Alias for permission_group_hash
+  group_name: string; // Alias for permission_group_name
   assigned_at: string;
   assigned_by: string;
   notes?: string;

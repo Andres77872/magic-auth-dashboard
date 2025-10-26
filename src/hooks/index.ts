@@ -37,4 +37,6 @@ export { default as useAdminOperations } from './useAdminOperations';
 
 // Global Roles & Permission Assignments hooks (NEW)
 export { useGlobalRoles } from './useGlobalRoles';
-export { usePermissionAssignments } from './usePermissionAssignments'; 
+export { useGlobalPermissionGroups } from './useGlobalPermissionGroups';
+export { usePermissionAssignments } from './usePermissionAssignments';
+export { usePermissionManagement } from '@/contexts/PermissionManagementContext'; 

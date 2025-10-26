@@ -1,43 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, Badge, Button, Modal, Input, LoadingSpinner, ConfirmDialog } from '@/components/common';
-import { groupService, userService } from '@/services';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, Badge, Button, LoadingSpinner, ConfirmDialog } from '@/components/common';
+import { groupService } from '@/services';
 import { GroupMembersTable } from '@/components/features/groups/GroupMembersTable';
 import { GroupPermissionsTab } from '@/components/features/groups/GroupPermissionsTab';
+import { BulkMemberAssignmentModal } from '@/components/features/groups/BulkMemberAssignmentModal';
+import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
 import type { GroupMember } from '@/components/features/groups/GroupMembersTable';
 import { ROUTES } from '@/utils/routes';
-import type { UserGroup } from '@/types/group.types';
-import type { User } from '@/types/auth.types';
+import type { UserGroup, GroupFormData } from '@/types/group.types';
 import { useUsersByGroup } from '@/hooks/useUsersByGroup';
+import { useToast } from '@/hooks';
+import { formatDate } from '@/utils/component-utils';
 import '../../styles/pages/group-details.css';
 
 type TabType = 'members' | 'permissions';
 
 export const GroupDetailsPage: React.FC = () => {
   const { groupHash } = useParams<{ groupHash: string }>();
+  const navigate = useNavigate();
+  const { showToast } = useToast();
   const [group, setGroup] = useState<UserGroup | null>(null);
   const [statistics, setStatistics] = useState<{ total_members: number; total_projects: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('members');
 
-  // Use the new hook to fetch group members
+  // Use the hook to fetch group members
   const { users: groupUsers, refetch: refetchMembers, error: membersError } = useUsersByGroup(groupHash);
-  
-  // Log members data for debugging
-  useEffect(() => {
-    console.log('Group members data:', groupUsers);
-    console.log('Members error:', membersError);
-  }, [groupUsers, membersError]);
 
-  // Add member modal state
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<User[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [isAdding, setIsAdding] = useState<string | null>(null);
-
-  // Remove member state
+  // Modal states
+  const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<GroupMember | null>(null);
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
 
@@ -61,14 +55,9 @@ export const GroupDetailsPage: React.FC = () => {
 
       try {
         const response = await groupService.getGroup(groupHash);
-        console.log('getGroup() full response:', response);
         if (response.success && response.user_group) {
           setGroup(response.user_group);
           setStatistics(response.statistics);
-          
-          // The getGroup() API returns members directly in the response
-          // This is the source of truth - use these members if hook fails
-          console.log('Members from getGroup():', response.members);
         } else {
           setError(response.message || 'Failed to fetch group');
         }
@@ -82,107 +71,69 @@ export const GroupDetailsPage: React.FC = () => {
     fetchGroup();
   }, [groupHash]);
 
-  // Search users for adding to group
-  const searchUsers = async (query: string = '') => {
+  const handleBulkAddMembers = async (userHashes: string[]) => {
     if (!groupHash) return;
 
     try {
-      setIsSearching(true);
-      const response = await userService.getUsers({
-        search: query.trim() || undefined,
-        limit: 20,
-      });
-
-      if (response.success && response.users) {
-        // Filter out users already in the group
-        const memberHashes = groupUsers.map(u => u.user_hash);
-        const availableUsers = response.users.filter((user: User) =>
-          !memberHashes.includes(user.user_hash)
-        );
-        setSearchResults(availableUsers);
-      }
-    } catch (err) {
-      console.error('Error searching users:', err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isAddModalOpen) return;
-
-    const debounceTimer = setTimeout(() => {
-      searchUsers(searchQuery);
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, isAddModalOpen, groupUsers]);
-
-  // Load initial users when modal opens
-  useEffect(() => {
-    if (isAddModalOpen) {
-      searchUsers('');
-    }
-  }, [isAddModalOpen]);
-
-  const handleAddMember = async (user: User) => {
-    if (!groupHash) return;
-
-    try {
-      setIsAdding(user.user_hash);
-      const response = await groupService.addMemberToGroup(groupHash, {
-        user_hash: user.user_hash
-      });
-
+      const response = await groupService.bulkAddMembers(groupHash, userHashes);
+      
       if (response.success) {
+        showToast(`Successfully added ${userHashes.length} member(s) to the group`, 'success');
         await refetchMembers();
-        setIsAddModalOpen(false);
-        setSearchQuery('');
-        setSearchResults([]);
       } else {
-        setError(response.message || 'Failed to add member');
+        throw new Error(response.message || 'Failed to add members');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add member');
-    } finally {
-      setIsAdding(null);
+      showToast(err instanceof Error ? err.message : 'Failed to add members', 'error');
+      throw err;
     }
   };
 
   const handleRemoveMember = async (member: GroupMember) => {
     if (!groupHash) return;
 
+    setIsRemoving(member.user_hash);
     try {
-      setIsRemoving(member.user_hash);
       const response = await groupService.removeMemberFromGroup(groupHash, member.user_hash);
 
       if (response.success) {
+        showToast(`Successfully removed ${member.username} from the group`, 'success');
         await refetchMembers();
         setConfirmRemove(null);
       } else {
-        setError(response.message || 'Failed to remove member');
+        throw new Error(response.message || 'Failed to remove member');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove member');
+      showToast(err instanceof Error ? err.message : 'Failed to remove member', 'error');
     } finally {
       setIsRemoving(null);
     }
   };
 
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleEditGroup = async (data: GroupFormData) => {
+    if (!groupHash) return;
+
+    try {
+      const response = await groupService.updateGroup(groupHash, data);
+      if (response.success && response.user_group) {
+        setGroup(response.user_group);
+        showToast('Group updated successfully', 'success');
+      } else {
+        throw new Error(response.message || 'Failed to update group');
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update group', 'error');
+      throw err;
+    }
   };
 
   if (isLoading) {
     return (
       <div className="group-details-page">
-        <div>Loading group details...</div>
+        <div className="group-details-loading">
+          <LoadingSpinner size="lg" />
+          <p>Loading group details...</p>
+        </div>
       </div>
     );
   }
@@ -190,40 +141,41 @@ export const GroupDetailsPage: React.FC = () => {
   if (error || !group) {
     return (
       <div className="group-details-page">
-        <div className="danger-text">
-          {error || 'Group not found'}
+        <div className="group-details-error">
+          <p>{error || 'Group not found'}</p>
+          <Button
+            variant="primary"
+            onClick={() => navigate(ROUTES.GROUPS)}
+          >
+            Back to Groups
+          </Button>
         </div>
-        {membersError && (
-          <div className="danger-text" style={{ marginTop: '1rem' }}>
-            Members error: {membersError}
-          </div>
-        )}
       </div>
     );
   }
 
   return (
     <div className="group-details-page">
-      <div className="page-header-flex">
-        <div>
-          <h1>{group.group_name}</h1>
+      <div className="group-details-header">
+        <div className="group-details-header-text">
+          <h1 className="group-details-title">{group.group_name}</h1>
           {group.description && (
-            <p className="description-secondary">
+            <p className="group-details-description">
               {group.description}
             </p>
           )}
         </div>
         
-        <div className="button-group">
+        <div className="group-details-header-actions">
           <Button
             variant="outline"
-            onClick={() => window.location.href = `${ROUTES.GROUPS_EDIT}/${group.group_hash}`}
+            onClick={() => setIsEditModalOpen(true)}
           >
             Edit Group
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.location.href = ROUTES.GROUPS}
+            onClick={() => navigate(ROUTES.GROUPS)}
           >
             Back to Groups
           </Button>
@@ -231,187 +183,145 @@ export const GroupDetailsPage: React.FC = () => {
       </div>
 
       <div className="group-details-content">
-        <Card title="Group Information">
-          <div className="info-grid">
-            <div className="info-item">
-              <span className="detail-label">Group Name</span>
-              <span>{group.group_name}</span>
+        <Card title="Group Information" className="group-info-card">
+          <div className="group-info-grid">
+            <div className="group-info-item">
+              <span className="group-info-label">Group Name</span>
+              <span className="group-info-value">{group.group_name}</span>
             </div>
             
-            <div className="info-item">
-              <span className="detail-label">Description</span>
-              <span>{group.description || 'No description'}</span>
+            <div className="group-info-item">
+              <span className="group-info-label">Description</span>
+              <span className="group-info-value">{group.description || 'No description'}</span>
             </div>
             
-            <div className="info-item">
-              <span className="detail-label">Members</span>
+            <div className="group-info-item">
+              <span className="group-info-label">Members</span>
               <Badge variant="secondary">
                 {statistics?.total_members ?? group.member_count ?? 0} member{(statistics?.total_members ?? group.member_count ?? 0) !== 1 ? 's' : ''}
               </Badge>
             </div>
             
-            <div className="info-item">
-              <span className="detail-label">Created</span>
-              <span>{formatDate(group.created_at)}</span>
+            <div className="group-info-item">
+              <span className="group-info-label">Created</span>
+              <span className="group-info-value">{formatDate(group.created_at)}</span>
             </div>
             
-            <div className="info-item">
-              <span className="detail-label">Projects</span>
+            <div className="group-info-item">
+              <span className="group-info-label">Projects</span>
               <Badge variant="secondary">
                 {statistics?.total_projects ?? 0} project{(statistics?.total_projects ?? 0) !== 1 ? 's' : ''}
               </Badge>
             </div>
             
             {group.updated_at && (
-              <div className="info-item">
-                <span className="detail-label">Last Updated</span>
-                <span>{formatDate(group.updated_at)}</span>
+              <div className="group-info-item">
+                <span className="group-info-label">Last Updated</span>
+                <span className="group-info-value">{formatDate(group.updated_at)}</span>
               </div>
             )}
           </div>
         </Card>
 
-        <div className="mt-8">
+        <div className="group-details-tabs">
           {/* Tabs Navigation */}
-          <div className="tabs-container">
-            <div className="tabs-nav">
-              <button
-                className={`tab-button ${activeTab === 'members' ? 'active' : ''}`}
-                onClick={() => setActiveTab('members')}
-              >
-                Members ({members.length})
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'permissions' ? 'active' : ''}`}
-                onClick={() => setActiveTab('permissions')}
-              >
-                Permission Groups
-              </button>
-            </div>
-
-            {/* Tab Content */}
-            <div className="tab-content">
-              {activeTab === 'members' && (
-                <Card title="Members">
-                  <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ margin: 0 }}>Group Members ({members.length})</h3>
-                    <Button onClick={() => setIsAddModalOpen(true)}>
-                      Add Member
-                    </Button>
-                  </div>
-                  
-                  {membersError && (
-                    <div className="danger-text" style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#fee', borderRadius: '0.25rem' }}>
-                      Error loading members: {membersError}
-                    </div>
-                  )}
-                  
-                  {members.length === 0 && !membersError && (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-                      No members in this group. Click "Add Member" to get started.
-                    </div>
-                  )}
-                  
-                  {members.length > 0 && (
-                    <GroupMembersTable 
-                      members={members} 
-                      onRemove={setConfirmRemove}
-                      removingMember={isRemoving}
-                    />
-                  )}
-                </Card>
-              )}
-
-              {activeTab === 'permissions' && group && (
-                <GroupPermissionsTab
-                  groupHash={group.group_hash}
-                  groupName={group.group_name}
-                />
-              )}
-            </div>
+          <div className="tabs-nav">
+            <button
+              className={`tab-button ${activeTab === 'members' ? 'active' : ''}`}
+              onClick={() => setActiveTab('members')}
+            >
+              Members ({members.length})
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'permissions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('permissions')}
+            >
+              Permission Groups
+            </button>
           </div>
-        </div>
 
-        {/* Add Member Modal */}
-        <Modal
-          isOpen={isAddModalOpen}
-          onClose={() => {
-            setIsAddModalOpen(false);
-            setSearchQuery('');
-            setSearchResults([]);
-          }}
-          title="Add Member to Group"
-        >
-          <div style={{ padding: '1rem' }}>
-            <div style={{ marginBottom: '1rem' }}>
-              <Input
-                placeholder="Search users by username or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            {isSearching ? (
-              <div style={{ textAlign: 'center', padding: '2rem' }}>
-                <LoadingSpinner />
-              </div>
-            ) : searchResults.length > 0 ? (
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {searchResults.map(user => (
-                  <div
-                    key={user.user_hash}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '0.75rem',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '0.375rem',
-                      marginBottom: '0.5rem'
-                    }}
+          {/* Tab Content */}
+          <div className="tab-content">
+            {activeTab === 'members' && (
+              <Card>
+                <div className="members-tab-header">
+                  <h3 className="members-tab-title">Group Members ({members.length})</h3>
+                  <Button 
+                    variant="primary"
+                    onClick={() => setIsAddMembersModalOpen(true)}
                   >
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{user.username}</div>
-                      <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{user.email}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{user.user_type}</div>
-                    </div>
+                    Add Members
+                  </Button>
+                </div>
+                
+                {membersError && (
+                  <div className="members-error-banner">
+                    Error loading members: {membersError}
+                  </div>
+                )}
+                
+                {members.length === 0 && !membersError ? (
+                  <div className="members-empty-state">
+                    <p>No members in this group yet.</p>
                     <Button
-                      size="sm"
-                      onClick={() => handleAddMember(user)}
-                      disabled={isAdding === user.user_hash}
-                      loading={isAdding === user.user_hash}
+                      variant="primary"
+                      onClick={() => setIsAddMembersModalOpen(true)}
                     >
-                      Add
+                      Add Your First Member
                     </Button>
                   </div>
-                ))}
-              </div>
-            ) : searchQuery ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
-                No users found matching "{searchQuery}"
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>
-                No available users to add
-              </div>
+                ) : (
+                  <GroupMembersTable 
+                    members={members} 
+                    onRemove={setConfirmRemove}
+                    removingMember={isRemoving}
+                  />
+                )}
+              </Card>
+            )}
+
+            {activeTab === 'permissions' && group && (
+              <GroupPermissionsTab
+                groupHash={group.group_hash}
+                groupName={group.group_name}
+              />
             )}
           </div>
-        </Modal>
-
-        {/* Remove Member Confirmation */}
-        {confirmRemove && (
-          <ConfirmDialog
-            isOpen={true}
-            title="Remove Member"
-            message={`Are you sure you want to remove ${confirmRemove.username} from this group?`}
-            confirmText="Remove"
-            cancelText="Cancel"
-            onConfirm={() => handleRemoveMember(confirmRemove)}
-            onClose={() => setConfirmRemove(null)}
-            isLoading={isRemoving === confirmRemove.user_hash}
-          />
-        )}
+        </div>
       </div>
+
+      {/* Add Members Modal */}
+      <BulkMemberAssignmentModal
+        isOpen={isAddMembersModalOpen}
+        onClose={() => setIsAddMembersModalOpen(false)}
+        onAssign={handleBulkAddMembers}
+        groupName={group.group_name}
+        existingMemberHashes={members.map(m => m.user_hash)}
+      />
+
+      {/* Edit Group Modal */}
+      <GroupFormModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditGroup}
+        mode="edit"
+        group={group}
+      />
+
+      {/* Remove Member Confirmation */}
+      {confirmRemove && (
+        <ConfirmDialog
+          isOpen={true}
+          title="Remove Member"
+          message={`Are you sure you want to remove ${confirmRemove.username} from this group?`}
+          confirmText="Remove"
+          cancelText="Cancel"
+          variant="danger"
+          onConfirm={() => handleRemoveMember(confirmRemove)}
+          onClose={() => setConfirmRemove(null)}
+          isLoading={isRemoving === confirmRemove.user_hash}
+        />
+      )}
     </div>
   );
-}; 
+};

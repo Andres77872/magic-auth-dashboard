@@ -3,26 +3,42 @@ import { ActionsMenu } from '@/components/common';
 import type { ActionMenuItem } from '@/components/common';
 import { ViewIcon, EditIcon, DeleteIcon } from '@/components/icons';
 import type { UserGroup } from '@/types/group.types';
-import { ROUTES } from '@/utils/routes';
 
 interface GroupActionsMenuProps {
   group: UserGroup;
+  onEdit?: (group: UserGroup) => void;
+  onDelete?: (group: UserGroup) => void;
+  onView?: (group: UserGroup) => void;
 }
 
-export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({ group }) => {
+export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({ 
+  group, 
+  onEdit,
+  onDelete,
+  onView 
+}) => {
 
   const handleViewDetails = () => {
-    window.location.href = `${ROUTES.GROUPS}/${group.group_hash}`;
+    if (onView) {
+      onView(group);
+    } else {
+      // Fallback to navigation if callback not provided
+      window.location.href = `/dashboard/groups/${group.group_hash}`;
+    }
   };
 
   const handleEdit = () => {
-    window.location.href = `${ROUTES.GROUPS_EDIT}/${group.group_hash}`;
+    if (onEdit) {
+      onEdit(group);
+    } else {
+      // Fallback to navigation if callback not provided
+      window.location.href = `/dashboard/groups/${group.group_hash}/edit`;
+    }
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete the group "${group.group_name}"?`)) {
-      // TODO: Implement delete functionality
-      console.log('Delete group:', group.group_hash);
+    if (onDelete) {
+      onDelete(group);
     }
   };
 
@@ -35,18 +51,22 @@ export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({ group }) => 
     },
     {
       key: 'edit',
-      label: 'Edit',
+      label: 'Edit Group',
       icon: <EditIcon size="sm" />,
       onClick: handleEdit,
     },
-    {
+  ];
+
+  // Only add delete option if onDelete callback is provided
+  if (onDelete) {
+    menuItems.push({
       key: 'delete',
-      label: 'Delete',
+      label: 'Delete Group',
       icon: <DeleteIcon size="sm" />,
       onClick: handleDelete,
       destructive: true,
-    },
-  ];
+    });
+  }
 
   return (
     <ActionsMenu
@@ -55,4 +75,4 @@ export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({ group }) => 
       placement="bottom-right"
     />
   );
-}; 
+};

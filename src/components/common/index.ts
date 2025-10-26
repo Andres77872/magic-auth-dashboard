@@ -21,6 +21,7 @@ export { default as Badge } from './Badge';
 export { default as Toast } from './Toast';
 export { default as Pagination } from './Pagination';
 export { ActionsMenu } from './ActionsMenu';
+export { Checkbox } from './Checkbox';
 
 // Export types
 export type { ButtonProps } from './Button';
@@ -36,4 +37,5 @@ export type { ToastProps } from './Toast';
 export type { EmptyStateProps } from './EmptyState';
 export type { SkeletonProps } from './Skeleton';
 export type { ProgressBarProps } from './ProgressBar';
-export type { ActionsMenuProps, ActionMenuItem } from './ActionsMenu'; 
+export type { ActionsMenuProps, ActionMenuItem } from './ActionsMenu';
+export type { CheckboxProps } from './Checkbox'; 

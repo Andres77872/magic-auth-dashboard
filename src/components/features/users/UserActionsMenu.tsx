@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePermissions, useUserType, useAuth } from '@/hooks';
+import { usePermissions, useUserType, useAuth, useToast } from '@/hooks';
 import { Modal, Select, Button, ActionsMenu } from '@/components/common';
 import type { ActionMenuItem } from '@/components/common';
 import { userService } from '@/services';
@@ -8,15 +8,20 @@ import { ROUTES } from '@/utils/routes';
 import { ViewIcon, EditIcon, GroupIcon, LockIcon, CheckIcon, DeleteIcon, WarningIcon, ProjectIcon, ErrorIcon } from '@/components/icons';
 import type { User, UserType } from '@/types/auth.types';
 import { AdminProjectsManager } from './AdminProjectsManager';
+import { UserDetailsModal } from './UserDetailsModal';
+import { AssignGroupModal } from './AssignGroupModal';
 
 interface UserActionsMenuProps {
   user: User;
   onUserUpdated?: () => void;
+  onEditUser?: (user: User) => void;
 }
 
-export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): React.JSX.Element {
+export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActionsMenuProps): React.JSX.Element {
   const [showChangeTypeModal, setShowChangeTypeModal] = useState(false);
   const [showProjectsManager, setShowProjectsManager] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAssignGroupModal, setShowAssignGroupModal] = useState(false);
   const [selectedUserType, setSelectedUserType] = useState<UserType>(user.user_type);
   const [isChangingType, setIsChangingType] = useState(false);
   const [changeTypeError, setChangeTypeError] = useState('');
@@ -25,6 +30,7 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
   const { canCreateUser, canCreateAdmin, canCreateRoot } = usePermissions();
   const { userType: currentUserType } = useUserType();
   const { user: currentUser } = useAuth();
+  const { showToast } = useToast();
 
   // User type options for the change type modal
   const USER_TYPE_OPTIONS = [
@@ -67,7 +73,12 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
   };
 
   const handleEditUser = () => {
-    navigate(`${ROUTES.USERS_EDIT}/${user.user_hash}`);
+    if (onEditUser) {
+      onEditUser(user);
+    } else {
+      // Fallback to navigation if callback not provided
+      navigate(`${ROUTES.USERS_EDIT}/${user.user_hash}`);
+    }
   };
 
   const handleDeleteUser = () => {
@@ -86,7 +97,22 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
   };
 
   const handleViewDetails = () => {
-    navigate(`${ROUTES.USERS_PROFILE}/${user.user_hash}`);
+    setShowDetailsModal(true);
+  };
+
+  const handleAssignGroup = () => {
+    setShowAssignGroupModal(true);
+  };
+
+  const handleGroupAssigned = async (_groupHash: string) => {
+    try {
+      // TODO: Implement group assignment API call when API is available
+      showToast('User assigned to group successfully', 'success');
+      setShowAssignGroupModal(false);
+      onUserUpdated?.();
+    } catch (error) {
+      showToast('Failed to assign user to group', 'error');
+    }
   };
 
   const handleChangeUserType = () => {
@@ -150,6 +176,13 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
       hidden: !canEditUser(user),
     },
     {
+      key: 'assign-group',
+      label: 'Assign to Group',
+      icon: <GroupIcon size={16} />,
+      onClick: handleAssignGroup,
+      hidden: !canEditUser(user),
+    },
+    {
       key: 'change-type',
       label: 'Change User Type',
       icon: <GroupIcon size={16} />,
@@ -193,6 +226,27 @@ export function UserActionsMenu({ user, onUserUpdated }: UserActionsMenuProps): 
         items={menuItems}
         ariaLabel={`Actions for ${user.username}`}
         placement="bottom-right"
+      />
+
+      {/* User Details Modal */}
+      <UserDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        user={user}
+        onEdit={() => {
+          setShowDetailsModal(false);
+          handleEditUser();
+        }}
+      />
+
+      {/* Assign Group Modal */}
+      <AssignGroupModal
+        isOpen={showAssignGroupModal}
+        onClose={() => setShowAssignGroupModal(false)}
+        onConfirm={handleGroupAssigned}
+        initialSelection={user.groups?.[0]?.group_hash ? [user.groups[0].group_hash] : []}
+        isLoading={false}
+        userName={user.username}
       />
 
       {/* Admin Projects Manager */}

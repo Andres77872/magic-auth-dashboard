@@ -1,6 +1,11 @@
-export { PermissionsOverviewPage } from './PermissionsOverviewPage';
+// Unified Permission Management (NEW)
+export { PermissionManagementPage } from './PermissionManagementPage';
+
+// Roles Management
 export { RolesPage } from './RolesPage';
-export { PermissionsPage } from './PermissionsPage';
-export { AuditPage } from './AuditPage';
 export { GlobalRolesPage } from './GlobalRolesPage';
-export { RoleManagementPage } from './RoleManagementPage'; 
+export { RoleManagementPage } from './RoleManagementPage';
+
+// Other
+export { PermissionsOverviewPage } from './PermissionsOverviewPage';
+export { AuditPage } from './AuditPage'; 
