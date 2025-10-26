@@ -206,7 +206,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
     <div className="project-permissions-tab">
       {/* Info Banner */}
       <div className="permissions-info-banner">
-        <InfoIcon size={20} />
+        <InfoIcon size="md" aria-hidden="true" />
         <div className="info-content">
           <strong>About Permission Catalogs</strong>
           <p>
@@ -251,7 +251,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                 </div>
                 <Button
                   onClick={() => setShowAddRoleModal(true)}
-                  leftIcon={<PlusIcon size={16} />}
+                  leftIcon={<PlusIcon size="sm" aria-hidden="true" />}
                   disabled={availableRoles.length === 0}
                 >
                   Add Role to Catalog
@@ -260,7 +260,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
 
               {catalogedRoles.length === 0 ? (
                 <EmptyState
-                  icon={<InfoIcon size={48} />}
+                  icon={<InfoIcon size="xl" aria-hidden="true" />}
                   title="No Roles in Catalog"
                   description="Add roles to this project's catalog to suggest which roles are commonly used."
                   action={
@@ -285,7 +285,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                           variant="ghost"
                           size="sm"
                           onClick={() => setConfirmRemoveRole(role)}
-                          leftIcon={<DeleteIcon size={16} />}
+                          leftIcon={<DeleteIcon size="sm" aria-hidden="true" />}
                           aria-label="Remove from catalog"
                         />
                       </div>
@@ -319,7 +319,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                 </div>
                 <Button
                   onClick={() => setShowAddPermissionGroupModal(true)}
-                  leftIcon={<PlusIcon size={16} />}
+                  leftIcon={<PlusIcon size="sm" aria-hidden="true" />}
                   disabled={availablePermissionGroups.length === 0}
                 >
                   Add Permission Group
@@ -328,7 +328,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
 
               {catalogedPermissionGroups.length === 0 ? (
                 <EmptyState
-                  icon={<InfoIcon size={48} />}
+                  icon={<InfoIcon size="xl" aria-hidden="true" />}
                   title="No Permission Groups in Catalog"
                   description="Add permission groups to this project's catalog to suggest which groups are commonly used."
                   action={
@@ -353,7 +353,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                           variant="ghost"
                           size="sm"
                           onClick={() => setConfirmRemovePermissionGroup(group)}
-                          leftIcon={<DeleteIcon size={16} />}
+                          leftIcon={<DeleteIcon size="sm" aria-hidden="true" />}
                           aria-label="Remove from catalog"
                         />
                       </div>

@@ -476,12 +476,6 @@
   color: var(--color-text-tertiary);
 }
 
-.card-footer {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-}
-
 .health-bar {
   flex: 1;
   height: 4px;

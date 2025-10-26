@@ -1,7 +1,9 @@
 import React from 'react';
-import { Table, Badge, Button } from '@/components/common';
+import { Table, Badge, ActionsMenu } from '@/components/common';
 import type { TableColumn } from '@/components/common/Table';
+import type { ActionMenuItem } from '@/components/common/ActionsMenu';
 import type { UserType } from '@/types/auth.types';
+import { DeleteIcon } from '@/components/icons';
 
 /**
  * Basic member type used for group member tables.
@@ -103,18 +105,27 @@ export function GroupMembersTable({
       key: 'user_hash',
       header: 'Actions',
       sortable: false,
-      width: '100px',
-      render: (_, member) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onRemove(member)}
-          disabled={removingMember === member.user_hash}
-          loading={removingMember === member.user_hash}
-        >
-          Remove
-        </Button>
-      ),
+      width: '80px',
+      align: 'center',
+      render: (_, member) => {
+        const menuItems: ActionMenuItem[] = [
+          {
+            key: 'remove',
+            label: 'Remove',
+            icon: <DeleteIcon size="sm" />,
+            onClick: () => onRemove(member),
+            disabled: removingMember === member.user_hash,
+            destructive: true,
+          },
+        ];
+
+        return (
+          <ActionsMenu
+            items={menuItems}
+            ariaLabel={`Actions for ${member.username}`}
+          />
+        );
+      },
     });
   }
 

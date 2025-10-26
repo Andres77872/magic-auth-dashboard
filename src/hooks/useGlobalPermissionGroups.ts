@@ -35,9 +35,9 @@ export function useGlobalPermissionGroups(params: { category?: string } & Pagina
           new Set(
             permissionGroupsData
               .map((pg: GlobalPermissionGroup) => pg.group_category)
-              .filter((cat): cat is string => Boolean(cat))
+              .filter((cat: any): cat is string => Boolean(cat))
           )
-        ).sort();
+        ).sort() as string[];
         setCategories(uniqueCategories);
       } else {
         throw new Error(response.message || 'Failed to fetch permission groups');

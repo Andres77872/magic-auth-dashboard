@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { Button, Input, Textarea } from '@/components/common';
 import { FormField } from '@/components/forms';
 import type { ProjectFormData, ProjectFormErrors } from '@/types/project.types';
+import { 
+  validateRequired, 
+  validateLengthRange, 
+  validateMaxLength, 
+  composeValidators 
+} from '@/utils/validators';
 
 interface ProjectFormProps {
   initialData?: Partial<ProjectFormData>;
@@ -11,6 +17,10 @@ interface ProjectFormProps {
   mode: 'create' | 'edit';
 }
 
+/**
+ * ProjectForm component using consolidated validation utilities
+ * Follows Design System guidelines for forms and validation
+ */
 export const ProjectForm: React.FC<ProjectFormProps> = ({
   initialData = {},
   onSubmit,
@@ -28,18 +38,26 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   const validateForm = (): boolean => {
     const newErrors: ProjectFormErrors = {};
 
-    // Validate project name
-    if (!formData.project_name.trim()) {
-      newErrors.project_name = 'Project name is required';
-    } else if (formData.project_name.trim().length < 3) {
-      newErrors.project_name = 'Project name must be at least 3 characters';
-    } else if (formData.project_name.trim().length > 100) {
-      newErrors.project_name = 'Project name must be less than 100 characters';
+    // Project name validation using shared validators
+    const nameValidation = composeValidators(
+      () => validateRequired(formData.project_name.trim(), 'Project name'),
+      () => validateLengthRange(formData.project_name.trim(), 3, 100, 'Project name')
+    );
+
+    if (!nameValidation.isValid) {
+      newErrors.project_name = nameValidation.error!;
     }
 
-    // Validate project description (optional but has constraints if provided)
-    if (formData.project_description && formData.project_description.length > 500) {
-      newErrors.project_description = 'Project description must be less than 500 characters';
+    // Project description validation (optional)
+    if (formData.project_description) {
+      const descValidation = validateMaxLength(
+        formData.project_description, 
+        500, 
+        'Project description'
+      );
+      if (!descValidation.isValid) {
+        newErrors.project_description = descValidation.error!;
+      }
     }
 
     setErrors(newErrors);

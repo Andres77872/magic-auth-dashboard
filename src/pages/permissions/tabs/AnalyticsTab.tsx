@@ -127,9 +127,8 @@ export const AnalyticsTab: React.FC = () => {
 
       <div className="analytics-selector">
         <div className="form-group">
-          <label htmlFor="permission-group-select">Select Permission Group:</label>
+          <label>Select Permission Group:</label>
           <Select
-            id="permission-group-select"
             value={selectedPermissionGroup}
             onChange={setSelectedPermissionGroup}
             options={permissionGroupOptions}

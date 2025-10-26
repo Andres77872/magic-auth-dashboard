@@ -12,19 +12,23 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.badge-small {
+/* Badge size variants - Use short names: sm/md/lg */
+.badge-sm {
   padding: var(--spacing-0-5) var(--spacing-1-5);
   font-size: var(--font-size-2xs);
+  height: 20px;
 }
 
-.badge-medium {
+.badge-md {
   padding: var(--spacing-1) var(--spacing-2);
   font-size: var(--font-size-xs);
+  height: 24px;
 }
 
-.badge-large {
+.badge-lg {
   padding: var(--spacing-1-5) var(--spacing-3);
   font-size: var(--font-size-sm);
+  height: 28px;
 }
 
 .badge-primary {

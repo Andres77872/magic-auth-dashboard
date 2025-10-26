@@ -173,7 +173,7 @@ export function ActionsMenu({
       ref={menuRef}
       style={
         usePortal && menuStyles
-          ? { position: 'fixed', top: menuStyles.top, left: menuStyles.left, minWidth: menuStyles.minWidth, zIndex: 1000 }
+          ? { position: 'fixed', top: menuStyles.top, left: menuStyles.left, minWidth: menuStyles.minWidth, zIndex: 1060 }
           : undefined
       }
     >

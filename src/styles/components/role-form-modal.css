@@ -178,7 +178,7 @@
 }
 
 .role-form-permissions-list::-webkit-scrollbar-thumb {
-  background: var(--color-border-medium);
+  background: var(--color-border);
   border-radius: var(--border-radius-sm);
 }
 

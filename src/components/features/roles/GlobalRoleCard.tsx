@@ -47,14 +47,14 @@ export function GlobalRoleCard({
         <div className="role-card-header">
           <div className="role-header-left">
             <div className="role-icon-container">
-              <SecurityIcon size={24} className="role-icon" aria-hidden="true" />
+              <SecurityIcon size="lg" className="role-icon" aria-hidden="true" />
             </div>
             <div className="role-title-section">
               <div className="role-title-row">
                 <CardTitle>{role.role_display_name}</CardTitle>
                 {role.is_system_role && (
                   <Badge variant="info">
-                    <LockIcon size={12} aria-hidden="true" />
+                    <LockIcon size="xs" aria-hidden="true" />
                     System
                   </Badge>
                 )}
@@ -104,15 +104,6 @@ export function GlobalRoleCard({
               year: 'numeric' 
             })}
           </span>
-          {role.updated_at && role.updated_at !== role.created_at && (
-            <span className="meta-date">
-              Updated {new Date(role.updated_at).toLocaleDateString('en-US', { 
-                month: 'short', 
-                day: 'numeric', 
-                year: 'numeric' 
-              })}
-            </span>
-          )}
         </div>
 
         <div className="role-actions">

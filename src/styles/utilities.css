@@ -1,5 +1,8 @@
 /* Utility Classes */
 
+/* Import common page patterns */
+@import './utilities/page-layouts.css';
+
 /* Display utilities */
 .flex {
   display: flex;

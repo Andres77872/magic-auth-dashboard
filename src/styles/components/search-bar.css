@@ -1,0 +1,45 @@
+/* ==================================
+   SEARCH BAR - Standardized Component
+   ================================== */
+
+.search-bar {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.search-bar-input {
+  width: 100%;
+  padding-right: 2.5rem;
+}
+
+.search-bar-clear {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-200, #e5e7eb);
+  border: none;
+  border-radius: 50%;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.search-bar-clear:hover {
+  background: var(--color-gray-300, #d1d5db);
+  color: var(--color-text-primary, #111827);
+}
+
+.search-bar-clear:focus {
+  outline: 2px solid var(--color-primary, #3b82f6);
+  outline-offset: 2px;
+}
+

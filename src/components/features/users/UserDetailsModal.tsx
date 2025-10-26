@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Badge, Button } from '@/components/common';
 import { UserAvatar } from './UserAvatar';
-import { EditIcon, GroupIcon, ProjectIcon, ClockIcon, CheckIcon } from '@/components/icons';
+import { EditIcon, GroupIcon, ProjectIcon, ClockIcon } from '@/components/icons';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
 import type { User } from '@/types/auth.types';
 
@@ -78,7 +78,7 @@ export function UserDetailsModal({
         {user.groups && user.groups.length > 0 && (
           <div className="user-details-section">
             <h4 className="user-details-section-title">
-              <GroupIcon size={16} />
+              <GroupIcon size="sm" aria-hidden="true" />
               Groups ({user.groups.length})
             </h4>
             <div className="user-details-badges-list">
@@ -95,7 +95,7 @@ export function UserDetailsModal({
         {user.projects && user.projects.length > 0 && (
           <div className="user-details-section">
             <h4 className="user-details-section-title">
-              <ProjectIcon size={16} />
+              <ProjectIcon size="sm" aria-hidden="true" />
               Projects ({user.projects.length})
             </h4>
             <div className="user-details-badges-list">
@@ -128,7 +128,7 @@ export function UserDetailsModal({
           <Button
             variant="primary"
             onClick={onEdit}
-            leftIcon={<EditIcon size={16} />}
+            leftIcon={<EditIcon size="sm" aria-hidden="true" />}
           >
             Edit User
           </Button>

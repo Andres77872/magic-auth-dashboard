@@ -46,8 +46,8 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       const permissionGroupsData = response.permission_groups || response.data || [];
       if (response.success && permissionGroupsData.length >= 0) {
         // Filter out already assigned groups
-        const assignedHashes = new Set(assignedGroups.map(g => g.permission_group_hash));
-        const available = permissionGroupsData.filter(g => !assignedHashes.has(g.group_hash));
+        const assignedHashes = new Set(assignedGroups.map((g: any) => g.permission_group_hash));
+        const available = permissionGroupsData.filter((g: any) => !assignedHashes.has(g.group_hash));
         setAvailableGroups(available);
       }
     } catch (error) {
@@ -160,7 +160,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
             </div>
             <Button
               onClick={() => setShowAddModal(true)}
-              leftIcon={<PlusIcon size={16} />}
+              leftIcon={<PlusIcon size="sm" aria-hidden="true" />}
             >
               Assign Permission Groups
             </Button>
@@ -169,7 +169,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
         <CardContent>
           {assignedGroups.length === 0 ? (
             <EmptyState
-              icon={<LockIcon size={48} />}
+              icon={<LockIcon size="xl" aria-hidden="true" />}
               title="No Permission Groups Assigned"
               description="This user group doesn't have any permission groups assigned. Click 'Assign Permission Groups' to add some."
             />
@@ -180,7 +180,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
                   <CardContent>
                     <div className="group-card-header">
                       <div className="group-info">
-                        <LockIcon size={20} className="group-icon" />
+                        <LockIcon size="md" className="group-icon" aria-hidden="true" />
                         <div>
                           <h4>{assignment.permission_group_name}</h4>
                           <Badge variant="secondary">
@@ -192,7 +192,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
                         variant="ghost"
                         size="sm"
                         onClick={() => setConfirmRemove(assignment)}
-                        leftIcon={<DeleteIcon size={16} />}
+                        leftIcon={<DeleteIcon size="sm" aria-hidden="true" />}
                         aria-label="Remove permission group"
                       />
                     </div>
@@ -231,7 +231,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
             <div className="modal-body">
               {availableGroups.length === 0 ? (
                 <EmptyState
-                  icon={<InfoIcon size={48} />}
+                  icon={<InfoIcon size="xl" aria-hidden="true" />}
                   title="No Available Permission Groups"
                   description="All permission groups have been assigned to this user group."
                 />

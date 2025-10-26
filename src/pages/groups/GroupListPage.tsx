@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Pagination, ConfirmDialog } from '@/components/common';
+import { 
+  PageContainer,
+  PageHeader,
+  SearchBar,
+  FilterBar,
+  Button,
+  Pagination,
+  ConfirmDialog,
+  Card
+} from '@/components/common';
+import type { Filter } from '@/components/common';
 import { useGroups } from '@/hooks';
 import { GroupTable } from '@/components/features/groups/GroupTable';
 import { GroupCard } from '@/components/features/groups/GroupCard';
-import { GroupFilter } from '@/components/features/groups/GroupFilter';
 import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
 import { GroupIcon, PlusIcon } from '@/components/icons';
 import { useToast } from '@/hooks';
 import type { GroupListParams, UserGroup, GroupFormData } from '@/types/group.types';
-import '../../styles/pages/groups.css';
 
 export const GroupListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -142,58 +150,83 @@ export const GroupListPage: React.FC = () => {
   const currentPage = Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1;
   const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 0;
 
+  // Define filter options for FilterBar
+  const filterBarFilters: Filter[] = [
+    {
+      key: 'sort',
+      label: 'Sort by',
+      options: [
+        { value: 'created_at:desc', label: 'Newest first' },
+        { value: 'created_at:asc', label: 'Oldest first' },
+        { value: 'group_name:asc', label: 'Name (A-Z)' },
+        { value: 'group_name:desc', label: 'Name (Z-A)' },
+        { value: 'member_count:desc', label: 'Most members' },
+        { value: 'member_count:asc', label: 'Fewest members' }
+      ],
+      value: `${filters.sort_by}:${filters.sort_order}`,
+      onChange: (value: string) => {
+        const [sort_by, sort_order] = value.split(':');
+        handleFiltersChange({ sort_by, sort_order: sort_order as 'asc' | 'desc' });
+      }
+    }
+  ];
+
   return (
-    <div className="groups-page">
-      <div className="groups-header">
-        <div className="groups-header-content">
-          <div className="groups-header-text">
-            <h1 className="groups-title">User Groups</h1>
-            <p className="groups-subtitle">
-              Manage user groups and their memberships
-            </p>
-          </div>
-          <Button
-            variant="primary"
-            leftIcon={<PlusIcon size={16} aria-hidden="true" />}
-            onClick={handleOpenCreateModal}
-            aria-label="Create new group"
-          >
-            Create Group
-          </Button>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="User Groups"
+        subtitle="Manage user groups and their memberships"
+        icon={<GroupIcon size={28} />}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
+              aria-label={`Switch to ${viewMode === 'table' ? 'grid' : 'table'} view`}
+            >
+              {viewMode === 'table' ? 'Grid View' : 'Table View'}
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<PlusIcon size={16} />}
+              onClick={handleOpenCreateModal}
+              aria-label="Create new group"
+            >
+              Create Group
+            </Button>
+          </>
+        }
+      />
 
-        <GroupFilter
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
-          onClear={handleClearFilters}
+      {/* Search and Filter */}
+      <div className="search-filter-section">
+        <SearchBar
+          onSearch={(query) => handleFiltersChange({ search: query, offset: 0 })}
+          placeholder="Search groups by name or description..."
+          defaultValue={filters.search || ''}
         />
-
-        <div className="groups-view-toggle">
-          <button
-            className={`view-toggle-btn ${viewMode === 'table' ? 'active' : ''}`}
-            onClick={() => setViewMode('table')}
-            aria-label="Table view"
-          >
-            Table
-          </button>
-          <button
-            className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => setViewMode('grid')}
-            aria-label="Grid view"
-          >
-            Grid
-          </button>
-        </div>
+        <FilterBar
+          filters={filterBarFilters}
+          onClearAll={handleClearFilters}
+        />
       </div>
 
+      {/* Error State */}
       {error && (
-        <div className="groups-error-banner">
-          <p>{error}</p>
-        </div>
+        <Card className="error-card" padding="lg">
+          <div className="error-content">
+            <GroupIcon size={32} />
+            <h3>Failed to load groups</h3>
+            <p>{error}</p>
+          </div>
+        </Card>
       )}
 
-      <div className="groups-content">
-        {viewMode === 'table' ? (
+      {/* Table or Grid View */}
+      {viewMode === 'table' ? (
+        <Card padding="none">
           <GroupTable
             groups={groups}
             loading={isLoading}
@@ -211,32 +244,36 @@ export const GroupListPage: React.FC = () => {
               </Button>
             }
           />
-        ) : (
-          <div className="groups-grid">
-            {groups.length > 0 ? (
-              groups.map(group => (
-                <GroupCard key={group.group_hash} group={group} />
-              ))
-            ) : (
-              <div className="groups-empty-state">
-                <GroupIcon size="lg" />
-                <h3>No groups found</h3>
-                <p>Create your first group to get started</p>
-                <Button
-                  variant="primary"
-                  leftIcon={<PlusIcon size={16} />}
-                  onClick={handleOpenCreateModal}
-                >
-                  Create Group
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        </Card>
+      ) : (
+        <div className="groups-grid">
+          {groups.length > 0 ? (
+            groups.map(group => (
+              <GroupCard key={group.group_hash} group={group} />
+            ))
+          ) : (
+            <Card className="empty-state-card" padding="lg">
+              <GroupIcon size={48} />
+              <h3>No groups found</h3>
+              <p>Create your first group to get started</p>
+              <Button
+                variant="primary"
+                leftIcon={<PlusIcon size={16} />}
+                onClick={handleOpenCreateModal}
+              >
+                Create Group
+              </Button>
+            </Card>
+          )}
+        </div>
+      )}
 
+      {/* Pagination */}
       {pagination && pagination.total > pagination.limit && (
-        <div className="groups-pagination">
+        <div className="pagination-section">
+          <div className="pagination-info">
+            <span>Showing {groups.length} of {pagination.total} groups</span>
+          </div>
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
@@ -276,6 +313,6 @@ export const GroupListPage: React.FC = () => {
         variant="danger"
         isLoading={isDeleting}
       />
-    </div>
+    </PageContainer>
   );
 };

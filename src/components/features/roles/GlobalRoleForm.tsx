@@ -196,7 +196,7 @@ export function GlobalRoleForm({
       <CardHeader>
         <div className="form-header">
           <div className="form-header-icon">
-            <SecurityIcon size={24} aria-hidden="true" />
+            <SecurityIcon size="lg" aria-hidden="true" />
           </div>
           <div className="form-header-content">
             <CardTitle>
@@ -232,7 +232,7 @@ export function GlobalRoleForm({
             <div className="field-footer">
               {touched.role_name && errors.role_name ? (
                 <span className="error-message">
-                  <InfoIcon size={12} aria-hidden="true" />
+                  <InfoIcon size="xs" aria-hidden="true" />
                   {errors.role_name}
                 </span>
               ) : (
@@ -264,7 +264,7 @@ export function GlobalRoleForm({
             <div className="field-footer">
               {touched.role_display_name && errors.role_display_name ? (
                 <span className="error-message">
-                  <InfoIcon size={12} aria-hidden="true" />
+                  <InfoIcon size="xs" aria-hidden="true" />
                   {errors.role_display_name}
                 </span>
               ) : (
@@ -295,7 +295,7 @@ export function GlobalRoleForm({
             <div className="field-footer">
               {touched.role_description && errors.role_description ? (
                 <span className="error-message">
-                  <InfoIcon size={12} aria-hidden="true" />
+                  <InfoIcon size="xs" aria-hidden="true" />
                   {errors.role_description}
                 </span>
               ) : (
@@ -367,7 +367,7 @@ export function GlobalRoleForm({
                 </>
               ) : (
                 <>
-                  <CheckIcon size={16} aria-hidden="true" />
+                  <CheckIcon size="sm" aria-hidden="true" />
                   {mode === 'create' ? 'Create Role' : 'Update Role'}
                 </>
               )}
@@ -378,7 +378,7 @@ export function GlobalRoleForm({
               onClick={onCancel}
               disabled={isLoading}
             >
-              <CloseIcon size={16} aria-hidden="true" />
+              <CloseIcon size="sm" aria-hidden="true" />
               Cancel
             </Button>
           </div>

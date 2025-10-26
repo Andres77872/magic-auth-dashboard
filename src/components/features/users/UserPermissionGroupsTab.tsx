@@ -48,7 +48,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       if (response.success && permissionGroupsData.length >= 0) {
         // Filter out already assigned groups
         const assignedHashes = new Set(directAssignments.map(a => a.permission_group_hash));
-        const available = permissionGroupsData.filter(g => !assignedHashes.has(g.group_hash));
+        const available = permissionGroupsData.filter((g: any) => !assignedHashes.has(g.group_hash));
         setAvailableGroups(available);
       }
     } catch (error) {
@@ -147,7 +147,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
             </div>
             <Button
               onClick={() => setShowAddModal(true)}
-              leftIcon={<PlusIcon size={16} />}
+              leftIcon={<PlusIcon size="sm" aria-hidden="true" />}
             >
               Assign Permission Group
             </Button>
@@ -156,7 +156,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
         <CardContent>
           {directAssignments.length === 0 ? (
             <EmptyState
-              icon={<LockIcon size={48} />}
+              icon={<LockIcon size="xl" aria-hidden="true" />}
               title="No Direct Permission Groups"
               description="This user doesn't have any permission groups assigned directly. They inherit permissions from their user groups and global role."
             />
@@ -167,7 +167,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
                   <CardContent>
                     <div className="group-card-header">
                       <div className="group-info">
-                        <LockIcon size={20} className="group-icon" />
+                        <LockIcon size="md" className="group-icon" aria-hidden="true" />
                         <div>
                           <h4>{assignment.permission_group_name}</h4>
                           <Badge variant="warning">Direct Assignment</Badge>
@@ -177,7 +177,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
                         variant="ghost"
                         size="sm"
                         onClick={() => setConfirmRemove(assignment)}
-                        leftIcon={<DeleteIcon size={16} />}
+                        leftIcon={<DeleteIcon size="sm" aria-hidden="true" />}
                         aria-label="Remove permission group"
                       />
                     </div>
@@ -221,7 +221,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
             <div className="modal-body">
               {availableGroups.length === 0 ? (
                 <EmptyState
-                  icon={<InfoIcon size={48} />}
+                  icon={<InfoIcon size="xl" aria-hidden="true" />}
                   title="No Available Permission Groups"
                   description="All permission groups have been assigned to this user."
                 />

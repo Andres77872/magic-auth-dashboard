@@ -94,14 +94,6 @@
   letter-spacing: 0.05em;
 }
 
-.form-input {
-  transition: all 0.2s ease;
-}
-
-.form-input:focus {
-  transform: translateY(-1px);
-}
-
 /* Field Footer */
 
 .field-footer {

@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
-import { Button, Card, EmptyState } from '@/components/common';
-import { ProjectTable, ProjectCard, ProjectFilter, ProjectFormModal } from '@/components/features/projects';
+import { 
+  PageContainer,
+  PageHeader,
+  SearchBar,
+  Button, 
+  Card, 
+  EmptyState 
+} from '@/components/common';
+import { ProjectTable, ProjectCard, ProjectFormModal } from '@/components/features/projects';
 import { useProjects } from '@/hooks';
-import { ProjectIcon, PlusIcon, RefreshIcon } from '@/components/icons';
+import { ProjectIcon, PlusIcon } from '@/components/icons';
 import type { ProjectDetails } from '@/types/project.types';
-import '@/styles/pages/ProjectListPage.css';
 
 export const ProjectListPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const {
     projects,
@@ -26,8 +33,9 @@ export const ProjectListPage: React.FC = () => {
     sortOrder,
   } = useProjects();
 
-  const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters);
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setFilters({ ...filters, search: query || undefined });
   };
 
   const handlePageChange = (page: number) => {
@@ -68,90 +76,84 @@ export const ProjectListPage: React.FC = () => {
     fetchProjects();
   };
 
-  if (error) {
-    return (
-      <div className="project-list-page" role="main" aria-labelledby="error-title">
-        <div className="error-container">
-          <Card>
-            <h2 id="error-title" className="text-error">Error Loading Projects</h2>
-            <p role="alert" className="text-secondary">{error}</p>
-            <Button 
-              onClick={fetchProjects}
-              leftIcon={<RefreshIcon size={16} aria-hidden="true" />}
-              aria-label="Retry loading projects"
-            >
-              Retry
-            </Button>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="project-list-page" role="main" aria-labelledby="page-title">
-      <header className="project-list-page-header">
-        <div className="project-list-page-header-content">
-          <h1 id="page-title">Project Management</h1>
-          <p className="text-secondary">Manage and organize your projects</p>
-        </div>
-        <div className="project-list-page-header-actions" aria-label="Project actions">
+    <PageContainer>
+      <PageHeader
+        title="Project Management"
+        subtitle="Manage and organize your projects"
+        icon={<ProjectIcon size={28} />}
+        actions={
           <Button 
             variant="primary"
-            leftIcon={<PlusIcon size={16} aria-hidden="true" />}
+            size="md"
+            leftIcon={<PlusIcon size={16} />}
             onClick={handleCreateClick}
             aria-label="Create a new project"
           >
             Create Project
           </Button>
-        </div>
-      </header>
+        }
+      />
 
-      <Card className="content-card">
-        <section className="filters-section" aria-label="Project filters">
-          <ProjectFilter
-            filters={filters}
-            onFilterChange={handleFilterChange}
-          />
-        </section>
-
+      {/* Search Section */}
+      <div className="search-filter-section">
+        <SearchBar
+          onSearch={handleSearchChange}
+          placeholder="Search projects by name or description..."
+          defaultValue={searchQuery}
+        />
         <div className="view-controls">
-          <div className="view-switcher" role="group" aria-label="View mode selection">
-            <Button
-              variant={viewMode === 'list' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              aria-pressed={viewMode === 'list'}
-              aria-label="Switch to list view"
-            >
-              List View
-            </Button>
-            <Button
-              variant={viewMode === 'grid' ? 'primary' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              aria-pressed={viewMode === 'grid'}
-              aria-label="Switch to grid view"
-            >
-              Grid View
+          <Button
+            variant={viewMode === 'list' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+            aria-pressed={viewMode === 'list'}
+            aria-label="Switch to list view"
+          >
+            List View
+          </Button>
+          <Button
+            variant={viewMode === 'grid' ? 'primary' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+            aria-pressed={viewMode === 'grid'}
+            aria-label="Switch to grid view"
+          >
+            Grid View
+          </Button>
+        </div>
+      </div>
+
+      {/* Error State */}
+      {error && (
+        <Card className="error-card" padding="lg">
+          <div className="error-content">
+            <ProjectIcon size={32} />
+            <h3>Failed to load projects</h3>
+            <p>{error}</p>
+            <Button onClick={fetchProjects} variant="primary">
+              Try Again
             </Button>
           </div>
-        </div>
+        </Card>
+      )}
 
-        <section className="projects-content" aria-label="Projects list" aria-live="polite">
+      {/* Content */}
+      {!error && (
+        <>
           {!isLoading && projects.length === 0 ? (
             <EmptyState
-              icon={<ProjectIcon size="lg" aria-hidden="true" />}
+              icon={<ProjectIcon size={48} />}
               title="No Projects Found"
               description={
-                filters.search
-                  ? 'No projects match your search criteria. Try adjusting your filters.'
+                searchQuery
+                  ? 'No projects match your search criteria. Try adjusting your search.'
                   : "You haven't created any projects yet. Get started by creating your first project."
               }
               action={
                 <Button 
                   variant="primary"
-                  leftIcon={<PlusIcon size={16} aria-hidden="true" />}
+                  leftIcon={<PlusIcon size={16} />}
                   onClick={handleCreateClick}
                   aria-label="Create your first project"
                 >
@@ -160,28 +162,32 @@ export const ProjectListPage: React.FC = () => {
               }
             />
           ) : viewMode === 'list' ? (
-            <ProjectTable
-              projects={projects}
-              pagination={pagination}
-              onPageChange={handlePageChange}
-              onSort={handleSortChange}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              isLoading={isLoading}
-              onEdit={handleEditProject}
-              onDelete={handleProjectDelete}
-              onArchive={handleProjectArchive}
-            />
+            <Card padding="none">
+              <ProjectTable
+                projects={projects}
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                onSort={handleSortChange}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                isLoading={isLoading}
+                onEdit={handleEditProject}
+                onDelete={handleProjectDelete}
+                onArchive={handleProjectArchive}
+              />
+            </Card>
           ) : (
-            <ProjectCard
-              projects={projects}
-              pagination={pagination}
-              onPageChange={handlePageChange}
-              isLoading={isLoading}
-            />
+            <div className="projects-grid">
+              <ProjectCard
+                projects={projects}
+                pagination={pagination}
+                onPageChange={handlePageChange}
+                isLoading={isLoading}
+              />
+            </div>
           )}
-        </section>
-      </Card>
+        </>
+      )}
 
       {/* Create Project Modal */}
       <ProjectFormModal
@@ -199,6 +205,6 @@ export const ProjectListPage: React.FC = () => {
         mode="edit"
         project={selectedProject}
       />
-    </div>
+    </PageContainer>
   );
 }; 

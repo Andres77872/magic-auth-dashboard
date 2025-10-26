@@ -114,14 +114,14 @@ export function RoleAssignmentModal({
         <div className="progress-steps">
           <div className={`progress-step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
             <div className="step-circle">
-              {currentStep > 1 ? <CheckIcon size={16} aria-hidden="true" /> : '1'}
+              {currentStep > 1 ? <CheckIcon size="sm" aria-hidden="true" /> : '1'}
             </div>
             <span className="step-label">Select User</span>
           </div>
           <div className="progress-line"></div>
           <div className={`progress-step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
             <div className="step-circle">
-              {currentStep > 2 ? <CheckIcon size={16} aria-hidden="true" /> : '2'}
+              {currentStep > 2 ? <CheckIcon size="sm" aria-hidden="true" /> : '2'}
             </div>
             <span className="step-label">Choose Role</span>
           </div>
@@ -157,7 +157,7 @@ export function RoleAssignmentModal({
               <div className="user-list">
                 {filteredUsers.length === 0 ? (
                   <div className="empty-state-box">
-                    <UserIcon size={48} aria-hidden="true" />
+                    <UserIcon size="xl" aria-hidden="true" />
                     <p>No users found</p>
                   </div>
                 ) : (
@@ -168,7 +168,7 @@ export function RoleAssignmentModal({
                       onClick={() => handleUserSelect(user)}
                     >
                       <div className="user-avatar">
-                        <UserIcon size={20} aria-hidden="true" />
+                        <UserIcon size="md" aria-hidden="true" />
                       </div>
                       <div className="user-info">
                         <div className="user-name">{user.username}</div>
@@ -200,7 +200,7 @@ export function RoleAssignmentModal({
 
               {selectedUser.current_role && (
                 <div className="current-role-notice">
-                  <InfoIcon size={16} aria-hidden="true" />
+                  <InfoIcon size="sm" aria-hidden="true" />
                   <span>Current role: <strong>{selectedUser.current_role}</strong> (will be replaced)</span>
                 </div>
               )}
@@ -225,7 +225,7 @@ export function RoleAssignmentModal({
                   </div>
                 ) : filteredRoles.length === 0 ? (
                   <div className="empty-state-box">
-                    <SecurityIcon size={48} aria-hidden="true" />
+                    <SecurityIcon size="xl" aria-hidden="true" />
                     <p>No roles available</p>
                   </div>
                 ) : (
@@ -238,7 +238,7 @@ export function RoleAssignmentModal({
                         onClick={() => handleRoleSelect(role)}
                       >
                         <div className="role-icon-wrapper">
-                          <SecurityIcon size={20} aria-hidden="true" />
+                          <SecurityIcon size="md" aria-hidden="true" />
                         </div>
                         <div className="role-info">
                           <div className="role-name">{role.role_display_name}</div>
@@ -275,7 +275,7 @@ export function RoleAssignmentModal({
                 <div className="summary-section">
                   <label className="summary-label">User</label>
                   <div className="summary-card">
-                    <UserIcon size={20} aria-hidden="true" />
+                    <UserIcon size="md" aria-hidden="true" />
                     <div className="summary-info">
                       <div className="summary-primary">{selectedUser.username}</div>
                       <div className="summary-secondary">{selectedUser.email}</div>
@@ -284,13 +284,13 @@ export function RoleAssignmentModal({
                 </div>
 
                 <div className="summary-arrow">
-                  <ArrowRightIcon size={24} aria-hidden="true" />
+                  <ArrowRightIcon size="lg" aria-hidden="true" />
                 </div>
 
                 <div className="summary-section">
                   <label className="summary-label">New Role</label>
                   <div className="summary-card">
-                    <SecurityIcon size={20} aria-hidden="true" />
+                    <SecurityIcon size="md" aria-hidden="true" />
                     <div className="summary-info">
                       <div className="summary-primary">{selectedRole.role_display_name}</div>
                       <div className="summary-secondary">
@@ -325,7 +325,7 @@ export function RoleAssignmentModal({
               onClick={handleBack}
               disabled={assignmentInProgress || isLoading}
             >
-              <ArrowRightIcon size={16} aria-hidden="true" style={{ transform: 'rotate(180deg)' }} />
+              <ArrowRightIcon size="sm" aria-hidden="true" style={{ transform: 'rotate(180deg)' }} />
               Back
             </Button>
           )}
@@ -343,7 +343,7 @@ export function RoleAssignmentModal({
                 </>
               ) : (
                 <>
-                  <CheckIcon size={16} aria-hidden="true" />
+                  <CheckIcon size="sm" aria-hidden="true" />
                   Confirm Assignment
                 </>
               )}
@@ -355,7 +355,7 @@ export function RoleAssignmentModal({
             onClick={onClose}
             disabled={assignmentInProgress || isLoading}
           >
-            <CloseIcon size={16} aria-hidden="true" />
+            <CloseIcon size="sm" aria-hidden="true" />
             Cancel
           </Button>
         </div>

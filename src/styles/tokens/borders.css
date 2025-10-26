@@ -5,11 +5,11 @@
   --border-radius-none: 0;
   --border-radius-xs: 0.125rem;   /* 2px */
   --border-radius-sm: 0.25rem;    /* 4px */
-  --border-radius-md: 0.375rem;   /* 6px */
-  --border-radius-lg: 0.5rem;     /* 8px */
-  --border-radius-xl: 0.75rem;    /* 12px */
-  --border-radius-2xl: 1rem;      /* 16px */
-  --border-radius-3xl: 1.5rem;    /* 24px */
+  --border-radius-md: 0.5rem;     /* 8px - FIXED: Matches design system spec */
+  --border-radius-lg: 0.75rem;    /* 12px - FIXED: Matches design system spec */
+  --border-radius-xl: 1rem;       /* 16px */
+  --border-radius-2xl: 1.5rem;    /* 24px */
+  --border-radius-3xl: 2rem;      /* 32px */
   --border-radius-full: 9999px;
 
   /* === BORDER WIDTHS === */

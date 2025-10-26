@@ -23,6 +23,15 @@ export { default as Pagination } from './Pagination';
 export { ActionsMenu } from './ActionsMenu';
 export { Checkbox } from './Checkbox';
 
+// Standardized Layout Components
+export { FilterBar } from './FilterBar';
+export { PageContainer } from './PageContainer';
+export { PageHeader } from './PageHeader';
+export { SearchBar } from './SearchBar';
+export { default as StatCard } from './StatCard';
+export { default as StatsGrid } from './StatsGrid';
+export { TabNavigation } from './TabNavigation';
+
 // Export types
 export type { ButtonProps } from './Button';
 export type { InputProps } from './Input';
@@ -38,4 +47,11 @@ export type { EmptyStateProps } from './EmptyState';
 export type { SkeletonProps } from './Skeleton';
 export type { ProgressBarProps } from './ProgressBar';
 export type { ActionsMenuProps, ActionMenuItem } from './ActionsMenu';
-export type { CheckboxProps } from './Checkbox'; 
+export type { CheckboxProps } from './Checkbox';
+export type { FilterBarProps, Filter, FilterOption } from './FilterBar';
+export type { PageContainerProps } from './PageContainer';
+export type { PageHeaderProps } from './PageHeader';
+export type { SearchBarProps } from './SearchBar';
+export type { StatCardProps } from './StatCard';
+export type { StatsGridProps } from './StatsGrid';
+export type { TabNavigationProps, Tab } from './TabNavigation'; 

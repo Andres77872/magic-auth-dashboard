@@ -2,19 +2,16 @@ import React from 'react';
 import { Card, Badge, Button } from '@/components/common';
 import type { UserGroup } from '@/types/group.types';
 import { ROUTES } from '@/utils/routes';
+import { formatDate } from '@/utils';
 
 interface GroupCardProps {
   group: UserGroup;
 }
 
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
-
+/**
+ * GroupCard component for displaying group information
+ * Uses shared formatters and follows Design System guidelines
+ */
 export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
   const handleViewDetails = () => {
     window.location.href = `${ROUTES.GROUPS}/${group.group_hash}`;

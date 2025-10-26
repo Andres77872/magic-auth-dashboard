@@ -219,7 +219,8 @@
   gap: var(--spacing-3);
 }
 
-.navigation-user-avatar-large {
+/* Use short size names: -lg instead of -large */
+.navigation-user-avatar-lg {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -229,7 +230,7 @@
   justify-content: center;
 }
 
-.avatar-text-large {
+.avatar-text-lg {
   color: var(--color-text-inverted);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
@@ -239,7 +240,7 @@
   flex: 1;
 }
 
-.user-name-large {
+.user-name-lg {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);

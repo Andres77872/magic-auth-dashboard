@@ -163,6 +163,33 @@
   margin-right: auto;
 }
 
+/* === MODAL FORM LAYOUTS === */
+.modal-form-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  padding: var(--spacing-2) 0;
+}
+
+.modal-form-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  justify-content: flex-end;
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Responsive Modal Forms */
+@media (max-width: 768px) {
+  .modal-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-form-actions button {
+    width: 100%;
+  }
+}
+
 /* === MODAL ACTIONS === */
 .modal-actions {
   display: flex;

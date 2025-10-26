@@ -90,6 +90,8 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       key: 'project_hash' as keyof ProjectDetails,
       header: 'Actions',
       sortable: false,
+      width: '80px',
+      align: 'center' as const,
       render: (_value: any, project: ProjectDetails) => (
         <ProjectActionsMenu
           project={project}

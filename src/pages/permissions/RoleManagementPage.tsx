@@ -1,6 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { useGlobalRoles, useUsers } from '@/hooks';
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@/components/common';
+import {
+  PageContainer,
+  PageHeader,
+  TabNavigation,
+  SearchBar,
+  StatsGrid,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Button,
+  Badge
+} from '@/components/common';
 import {
   GlobalRoleCard,
   GlobalRoleForm,
@@ -8,10 +20,10 @@ import {
   RoleAssignmentModal,
   RoleCardSkeleton
 } from '@/components/features/roles';
-import { SearchIcon, PlusIcon, SecurityIcon, LockIcon, UserIcon } from '@/components/icons';
+import { PlusIcon, SecurityIcon, LockIcon, UserIcon } from '@/components/icons';
 import { useToast } from '@/hooks';
 import type { GlobalRole, GlobalPermissionGroup } from '@/types/global-roles.types';
-import '../../styles/pages/role-management.css';
+import type { Tab, StatCardProps } from '@/components/common';
 
 export function RoleManagementPage(): React.JSX.Element {
   const {
@@ -137,103 +149,96 @@ export function RoleManagementPage(): React.JSX.Element {
     // Permission groups would be loaded here with additional hook method
   };
 
+  // Generate tabs
+  const tabs: Tab[] = [
+    {
+      id: 'roles',
+      label: 'Roles',
+      icon: <SecurityIcon size={16} />,
+      count: roles.length,
+    },
+    {
+      id: 'groups',
+      label: 'Permission Groups',
+      icon: <LockIcon size={16} />,
+      count: permissionGroups.length,
+    },
+    {
+      id: 'assignments',
+      label: 'Assignments',
+      icon: <UserIcon size={16} />,
+    },
+  ];
+
+  // Generate stat cards
+  const statCards: StatCardProps[] = [
+    {
+      title: 'Roles',
+      value: roles.length,
+      icon: <SecurityIcon size={20} />,
+    },
+    {
+      title: 'Permission Groups',
+      value: permissionGroups.length,
+      icon: <LockIcon size={20} />,
+    },
+    {
+      title: 'Users',
+      value: users.length,
+      icon: <UserIcon size={20} />,
+    },
+  ];
+
   return (
-    <div className="role-management-page">
-      {/* Page Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <div className="title-section">
-            <h1>🎭 Role Management</h1>
-            <p className="subtitle">
-              Manage global roles, permission groups, and role assignments
-            </p>
-          </div>
+    <PageContainer>
+      <PageHeader
+        title="Role Management"
+        subtitle="Manage global roles, permission groups, and role assignments"
+        icon={<SecurityIcon size={28} />}
+        actions={
+          <>
+            {activeTab === 'roles' && (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  setEditingRole(null);
+                  setShowRoleForm(true);
+                }}
+                leftIcon={<PlusIcon size={16} />}
+              >
+                Create Role
+              </Button>
+            )}
+            {activeTab === 'assignments' && (
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => setShowAssignmentModal(true)}
+                leftIcon={<UserIcon size={16} />}
+              >
+                Assign Roles
+              </Button>
+            )}
+          </>
+        }
+      >
+        <StatsGrid stats={statCards} columns={3} />
+      </PageHeader>
 
-          <div className="header-stats">
-            <div className="stat-card">
-              <SecurityIcon size={20} aria-hidden="true" />
-              <div>
-                <div className="stat-value">{roles.length}</div>
-                <div className="stat-label">Roles</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <LockIcon size={20} aria-hidden="true" />
-              <div>
-                <div className="stat-value">{permissionGroups.length}</div>
-                <div className="stat-label">Permission Groups</div>
-              </div>
-            </div>
-            <div className="stat-card">
-              <UserIcon size={20} aria-hidden="true" />
-              <div>
-                <div className="stat-value">{users.length}</div>
-                <div className="stat-label">Users</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Tabs */}
+      <TabNavigation
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as 'roles' | 'groups' | 'assignments')}
+      />
 
-      {/* Navigation Tabs */}
-      <div className="tab-navigation">
-        <button
-          className={`tab-button ${activeTab === 'roles' ? 'active' : ''}`}
-          onClick={() => setActiveTab('roles')}
-        >
-          <SecurityIcon size={16} aria-hidden="true" />
-          Roles
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'groups' ? 'active' : ''}`}
-          onClick={() => setActiveTab('groups')}
-        >
-          <LockIcon size={16} aria-hidden="true" />
-          Permission Groups
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'assignments' ? 'active' : ''}`}
-          onClick={() => setActiveTab('assignments')}
-        >
-          <UserIcon size={16} aria-hidden="true" />
-          Assignments
-        </button>
-      </div>
-
-      {/* Search and Actions Bar */}
-      <div className="actions-bar">
-        <div className="search-section">
-          <div className="search-input-wrapper">
-            <SearchIcon size={18} aria-hidden="true" className="search-icon" />
-            <Input
-              type="text"
-              placeholder={`Search ${activeTab}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="action-buttons">
-          {activeTab === 'roles' && (
-            <Button
-              onClick={() => {
-                setEditingRole(null);
-                setShowRoleForm(true);
-              }}
-            >
-              <PlusIcon size={18} aria-hidden="true" />
-              Create Role
-            </Button>
-          )}
-          {activeTab === 'assignments' && (
-            <Button onClick={() => setShowAssignmentModal(true)}>
-              <UserIcon size={18} aria-hidden="true" />
-              Assign Roles
-            </Button>
-          )}
-        </div>
-      </div>
+      {/* Search Bar */}
+      <SearchBar
+        onSearch={setSearchQuery}
+        placeholder={`Search ${activeTab}...`}
+        defaultValue={searchQuery}
+      />
 
       {/* Role Form Modal */}
       {showRoleForm && (
@@ -253,124 +258,120 @@ export function RoleManagementPage(): React.JSX.Element {
       )}
 
       {/* Content Area */}
-      <div className="content-area">
-        {/* Roles Tab */}
-        {activeTab === 'roles' && (
-          <div className="roles-grid">
-            {loadingRoles ? (
-              <RoleCardSkeleton count={6} />
-            ) : filteredRoles.length === 0 ? (
-              <div className="empty-state">
-                <SecurityIcon size={48} aria-hidden="true" />
-                <h3>No roles found</h3>
-                <p>Create your first role to get started</p>
-                <Button onClick={() => setShowRoleForm(true)}>
-                  <PlusIcon size={18} aria-hidden="true" />
-                  Create Role
-                </Button>
-              </div>
-            ) : (
-              filteredRoles.map(role => (
-                <GlobalRoleCard
-                  key={role.role_hash}
-                  role={role}
-                  onEdit={handleEditRole}
-                  onDelete={handleDeleteRole}
-                  onViewPermissions={handleViewRolePermissions}
-                  onAssignUsers={() => {
-                    setSelectedRole(role);
-                    setShowAssignmentModal(true);
-                  }}
-                  userCount={users.filter(u => u.user_type === role.role_name).length}
-                  permissionGroupCount={0}
-                />
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Permission Groups Tab */}
-        {activeTab === 'groups' && (
-          <div className="groups-section">
-            {loadingGroups ? (
-              <div className="groups-grid">
-                <RoleCardSkeleton count={6} />
-              </div>
-            ) : Object.keys(groupedPermissionGroups).length === 0 ? (
-              <div className="empty-state">
-                <LockIcon size={48} aria-hidden="true" />
-                <h3>No permission groups found</h3>
-                <p>Permission groups are managed by the system</p>
-              </div>
-            ) : (
-              Object.entries(groupedPermissionGroups).map(([category, groups]) => (
-                <div key={category} className="category-section">
-                  <h3 className="category-title">
-                    <Badge variant="secondary">{category}</Badge>
-                    <span className="category-count">{groups.length} groups</span>
-                  </h3>
-                  <div className="groups-grid">
-                    {groups.map(group => (
-                      <PermissionGroupCard
-                        key={group.group_hash}
-                        group={group}
-                        permissionCount={0}
-                        onViewPermissions={(hash) => console.log('View permissions:', hash)}
-                        onAssignToRole={selectedRole ? (hash) => handleAssignPermissionGroup(selectedRole.role_hash, hash) : undefined}
-                        isAssigned={false}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Assignments Tab */}
-        {activeTab === 'assignments' && (
-          <div className="assignments-section">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <SecurityIcon size={20} aria-hidden="true" />
-                  Role Assignment Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="assignment-stats">
-                  {roles.map(role => {
-                    const userCount = users.filter(u => u.user_type === role.role_name).length;
-                    return (
-                      <div key={role.role_hash} className="assignment-stat-item">
-                        <div className="stat-header">
-                          <span className="stat-role-name">{role.role_display_name}</span>
-                          <Badge variant="secondary">{userCount} users</Badge>
-                        </div>
-                        <div className="stat-bar">
-                          <div
-                            className="stat-bar-fill"
-                            style={{
-                              width: `${users.length > 0 ? (userCount / users.length) * 100 : 0}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="assignment-actions">
-                  <Button onClick={() => setShowAssignmentModal(true)}>
-                    <UserIcon size={18} aria-hidden="true" />
-                    Assign Roles to Users
-                  </Button>
-                </div>
-              </CardContent>
+      {/* Roles Tab */}
+      {activeTab === 'roles' && (
+        <div className="roles-grid">
+          {loadingRoles ? (
+            <RoleCardSkeleton count={6} />
+          ) : filteredRoles.length === 0 ? (
+            <Card className="empty-state-card" padding="lg">
+              <SecurityIcon size={48} aria-hidden="true" />
+              <h3>No roles found</h3>
+              <p>Create your first role to get started</p>
+              <Button onClick={() => setShowRoleForm(true)} variant="primary">
+                <PlusIcon size={18} aria-hidden="true" />
+                Create Role
+              </Button>
             </Card>
-          </div>
-        )}
-      </div>
+          ) : (
+            filteredRoles.map(role => (
+              <GlobalRoleCard
+                key={role.role_hash}
+                role={role}
+                onEdit={handleEditRole}
+                onDelete={handleDeleteRole}
+                onViewPermissions={handleViewRolePermissions}
+                onAssignUsers={() => {
+                  setSelectedRole(role);
+                  setShowAssignmentModal(true);
+                }}
+                userCount={users.filter(u => u.user_type === role.role_name).length}
+                permissionGroupCount={0}
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Permission Groups Tab */}
+      {activeTab === 'groups' && (
+        <div className="groups-section">
+          {loadingGroups ? (
+            <div className="groups-grid">
+              <RoleCardSkeleton count={6} />
+            </div>
+          ) : Object.keys(groupedPermissionGroups).length === 0 ? (
+            <Card className="empty-state-card" padding="lg">
+              <LockIcon size={48} aria-hidden="true" />
+              <h3>No permission groups found</h3>
+              <p>Permission groups are managed by the system</p>
+            </Card>
+          ) : (
+            Object.entries(groupedPermissionGroups).map(([category, groups]) => (
+              <div key={category} className="category-section">
+                <h3 className="category-title">
+                  <Badge variant="secondary">{category}</Badge>
+                  <span className="category-count">{groups.length} groups</span>
+                </h3>
+                <div className="groups-grid">
+                  {groups.map(group => (
+                    <PermissionGroupCard
+                      key={group.group_hash}
+                      group={group}
+                      permissionCount={0}
+                      onViewPermissions={(hash) => console.log('View permissions:', hash)}
+                      onAssignToRole={selectedRole ? (hash) => handleAssignPermissionGroup(selectedRole.role_hash, hash) : undefined}
+                      isAssigned={false}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Assignments Tab */}
+      {activeTab === 'assignments' && (
+        <Card padding="lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SecurityIcon size={20} aria-hidden="true" />
+              Role Assignment Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="assignment-stats">
+              {roles.map(role => {
+                const userCount = users.filter(u => u.user_type === role.role_name).length;
+                return (
+                  <div key={role.role_hash} className="assignment-stat-item">
+                    <div className="stat-header">
+                      <span className="stat-role-name">{role.role_display_name}</span>
+                      <Badge variant="secondary">{userCount} users</Badge>
+                    </div>
+                    <div className="stat-bar">
+                      <div
+                        className="stat-bar-fill"
+                        style={{
+                          width: `${users.length > 0 ? (userCount / users.length) * 100 : 0}%`
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="assignment-actions">
+              <Button onClick={() => setShowAssignmentModal(true)} variant="primary">
+                <UserIcon size={18} aria-hidden="true" />
+                Assign Roles to Users
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Role Assignment Modal */}
       <RoleAssignmentModal
@@ -388,7 +389,7 @@ export function RoleManagementPage(): React.JSX.Element {
         }))}
         onAssignRole={handleAssignRole}
       />
-    </div>
+    </PageContainer>
   );
 }
 

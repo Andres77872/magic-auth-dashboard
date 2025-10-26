@@ -1,4 +1,6 @@
 /* === TABLE COMPONENT === */
+/* Unified table styling for consistent look and feel across all tables */
+
 .table-wrapper {
   background: var(--color-surface);
   border-radius: var(--border-radius-2xl);
@@ -16,6 +18,9 @@
   overflow-x: auto;
   overflow-y: visible;
   position: relative;
+  /* Smooth scrolling for better UX */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-container[data-max-height] {
@@ -148,4 +153,173 @@
   text-align: center;
   padding: var(--spacing-8);
   color: var(--color-text-tertiary);
+}
+
+/* === TABLE ACTIONS CONSISTENCY === */
+/* Ensure all action menus in tables have consistent appearance */
+
+.table-cell .actions-menu {
+  justify-content: center;
+}
+
+.table-cell .menu-trigger {
+  padding: var(--spacing-1-5) var(--spacing-2);
+  min-width: 32px;
+  min-height: 32px;
+}
+
+/* Better alignment for action columns */
+.table-align-center .actions-menu {
+  margin: 0 auto;
+}
+
+/* === TABLE CELL CONTENT STYLING === */
+/* Consistent styling for common table cell patterns */
+
+.table-group-name-cell,
+.project-name-cell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.table-group-name,
+.project-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.table-group-description,
+.project-description {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+/* Permission display names */
+.permission-display-name,
+.permission-group-display-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+/* Use short size name: -sm instead of -small */
+.permission-name-sm,
+.permission-group-name-sm {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono, 'Courier New', monospace);
+  margin-top: var(--spacing-1);
+}
+
+/* Category badges in tables */
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-2);
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-transform: capitalize;
+}
+
+/* User info in tables */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-0-5);
+}
+
+.user-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.user-hash {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono, 'Courier New', monospace);
+}
+
+.user-email {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.user-date {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Member count and other counts */
+.member-count {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+/* === TABLE RESPONSIVE DESIGN === */
+@media (max-width: 768px) {
+  .table-cell {
+    padding: var(--spacing-3) var(--spacing-3);
+  }
+  
+  .table-header-cell {
+    padding: var(--spacing-3) var(--spacing-3);
+  }
+  
+  /* Stack table content on very small screens */
+  @media (max-width: 640px) {
+    .table-wrapper {
+      border-radius: var(--border-radius-lg);
+    }
+  }
+}
+
+/* === BULK ACTIONS & SELECTION === */
+/* Consistent checkbox styling for bulk selection */
+
+.bulk-select-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-primary-500);
+}
+
+.bulk-select-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* === TABLE LOADING & EMPTY STATES === */
+.table-skeleton {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* === DARK MODE ENHANCEMENTS === */
+@media (prefers-color-scheme: dark) {
+  .category-badge {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: var(--color-primary-300);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
 }

@@ -140,7 +140,7 @@
   color: var(--color-text-primary);
 }
 
-.permission-name-small {
+.permission-name-sm {
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
   font-family: var(--font-family-mono);
@@ -158,7 +158,7 @@
   color: var(--color-text-primary);
 }
 
-.permission-group-name-small {
+.permission-group-name-sm {
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
   font-family: var(--font-family-mono);

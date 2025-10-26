@@ -1,19 +1,29 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { UserFilter } from '@/components/features/users/UserFilter';
+import React, { useState, useMemo } from 'react';
 import { UserTable } from '@/components/features/users/UserTable';
-import { UserStats } from '@/components/features/users/UserStats';
 import { UserEmptyState } from '@/components/features/users/UserEmptyState';
 import { UserFormModal } from '@/components/features/users/UserFormModal';
-import { Pagination, Button } from '@/components/common';
+import { 
+  PageContainer,
+  PageHeader,
+  SearchBar,
+  FilterBar,
+  StatsGrid,
+  Pagination,
+  Button,
+  Card
+} from '@/components/common';
+import type { Filter, StatCardProps } from '@/components/common';
 import { useUsers, usePermissions } from '@/hooks';
-import { UserIcon, RefreshIcon } from '@/components/icons';
-import { ROUTES } from '@/utils/routes';
+import { UserIcon, RefreshIcon, PlusIcon, CheckIcon, WarningIcon, GroupIcon } from '@/components/icons';
 import type { User } from '@/types/auth.types';
-import type { UserFilters } from '@/components/features/users/UserFilter';
+
+export interface UserFilters {
+  search?: string;
+  userType?: string;
+  isActive?: boolean;
+}
 
 export function UserListPage(): React.JSX.Element {
-  const navigate = useNavigate();
   const { canCreateUser } = usePermissions();
   const {
     users,
@@ -24,7 +34,6 @@ export function UserListPage(): React.JSX.Element {
     setFilters,
     setPage,
     setSort,
-    filters,
     currentPage,
   } = useUsers({
     limit: 10,
@@ -36,8 +45,36 @@ export function UserListPage(): React.JSX.Element {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const handleFiltersChange = (newFilters: UserFilters) => {
+  // Local filter state
+  const [localFilters, setLocalFilters] = useState<UserFilters>({
+    search: '',
+    userType: '',
+    isActive: undefined
+  });
+
+  const handleSearchChange = (query: string) => {
+    const newFilters = { ...localFilters, search: query || undefined };
+    setLocalFilters(newFilters);
     setFilters(newFilters);
+  };
+
+  const handleUserTypeChange = (value: string) => {
+    const newFilters = { ...localFilters, userType: value || undefined };
+    setLocalFilters(newFilters);
+    setFilters(newFilters);
+  };
+
+  const handleStatusChange = (value: string) => {
+    const isActive = value === '' ? undefined : value === 'true';
+    const newFilters = { ...localFilters, isActive };
+    setLocalFilters(newFilters);
+    setFilters(newFilters);
+  };
+
+  const handleClearFilters = () => {
+    const clearedFilters = { search: '', userType: '', isActive: undefined };
+    setLocalFilters(clearedFilters);
+    setFilters({});
   };
 
   const handleSortChange = (key: keyof User, direction: 'asc' | 'desc') => {
@@ -56,7 +93,9 @@ export function UserListPage(): React.JSX.Element {
     await fetchUsers();
   };
 
-  const hasFilters = Object.keys(filters).some(key => filters[key as keyof UserFilters] !== undefined);
+  const hasFilters = Object.values(localFilters).some(value => 
+    value !== undefined && value !== ''
+  );
   const showEmptyState = !isLoading && users.length === 0;
 
   const handleCreateUser = () => {
@@ -80,27 +119,78 @@ export function UserListPage(): React.JSX.Element {
     setSelectedUser(null);
   };
 
+  // Calculate statistics
+  const stats: StatCardProps[] = useMemo(() => {
+    const totalUsers = users.length;
+    const activeUsers = users.filter(u => u.is_active).length;
+    const inactiveUsers = totalUsers - activeUsers;
+    const adminUsers = users.filter(u => u.user_type === 'admin').length;
+
+    return [
+      {
+        title: 'Total Users',
+        value: totalUsers,
+        icon: <UserIcon size={20} />,
+      },
+      {
+        title: 'Active Users',
+        value: activeUsers,
+        icon: <CheckIcon size={20} />,
+      },
+      {
+        title: 'Inactive Users',
+        value: inactiveUsers,
+        icon: <WarningIcon size={20} />,
+      },
+      {
+        title: 'Admin Users',
+        value: adminUsers,
+        icon: <GroupIcon size={20} />,
+      },
+    ];
+  }, [users]);
+
+  // Filter options for FilterBar
+  const filterBarFilters: Filter[] = [
+    {
+      key: 'userType',
+      label: 'All User Types',
+      options: [
+        { value: '', label: 'All User Types' },
+        { value: 'root', label: 'ROOT Users' },
+        { value: 'admin', label: 'ADMIN Users' },
+        { value: 'consumer', label: 'CONSUMER Users' },
+      ],
+      value: localFilters.userType || '',
+      onChange: handleUserTypeChange,
+    },
+    {
+      key: 'status',
+      label: 'All Status',
+      options: [
+        { value: '', label: 'All Status' },
+        { value: 'true', label: 'Active' },
+        { value: 'false', label: 'Inactive' },
+      ],
+      value: localFilters.isActive === undefined ? '' : String(localFilters.isActive),
+      onChange: handleStatusChange,
+    },
+  ];
+
   return (
-    <div className="user-list-page">
-      {/* Enhanced Page Header */}
-      <div className="user-list-page-header">
-        <div className="user-list-page-header-content">
-          <div className="user-list-page-title-section">
-            <h1 className="user-list-page-title">
-              <UserIcon size="md" />
-              User Management
-            </h1>
-            <p className="user-list-page-subtitle">
-              Manage system users, permissions, and access controls
-            </p>
-          </div>
-          <div className="user-list-page-actions">
+    <PageContainer>
+      <PageHeader
+        title="User Management"
+        subtitle="Manage system users, permissions, and access controls"
+        icon={<UserIcon size={28} />}
+        actions={
+          <>
             <Button
               variant="outline"
               size="md"
               onClick={handleRefresh}
               disabled={isLoading}
-              leftIcon={<RefreshIcon size="sm" className={isLoading ? 'spinning' : ''} aria-hidden="true" />}
+              leftIcon={<RefreshIcon size={16} className={isLoading ? 'spinning' : ''} />}
               aria-label="Refresh user list"
             >
               Refresh
@@ -110,98 +200,98 @@ export function UserListPage(): React.JSX.Element {
                 variant="primary"
                 size="md"
                 onClick={handleCreateUser}
-                leftIcon={<UserIcon size="sm" aria-hidden="true" />}
+                leftIcon={<PlusIcon size={16} />}
                 aria-label="Create new user"
               >
                 Create User
               </Button>
             )}
-          </div>
-        </div>
-      </div>
-
-      <div className="user-list-page-content">
+          </>
+        }
+      >
         {/* Statistics Section */}
         {!showEmptyState && (
-          <div className="stats-section">
-            <UserStats users={users} isLoading={isLoading} />
-          </div>
+          <StatsGrid stats={stats} columns={4} loading={isLoading} />
         )}
+      </PageHeader>
 
-        {/* Filter Section */}
-        <div className="filter-section">
-          <UserFilter 
-            onFiltersChange={handleFiltersChange}
-            initialFilters={filters}
+      {/* Search and Filter Section */}
+      <div className="search-filter-section">
+        <SearchBar
+          onSearch={handleSearchChange}
+          placeholder="Search by username or email..."
+          defaultValue={localFilters.search || ''}
+        />
+        <FilterBar
+          filters={filterBarFilters}
+          onClearAll={handleClearFilters}
+          showClearButton={hasFilters}
+        />
+      </div>
+
+      {/* Error State */}
+      {error && (
+        <Card className="error-card" padding="lg">
+          <div className="error-content">
+            <div className="error-icon">
+              <UserIcon size={32} />
+            </div>
+            <div className="error-details">
+              <h3 className="error-title">Failed to load users</h3>
+              <p className="error-message">{error}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={handleRetry}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Retrying...' : 'Try Again'}
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Empty State */}
+      {showEmptyState && (
+        <UserEmptyState
+          hasFilters={hasFilters}
+          onClearFilters={handleClearFilters}
+          onCreateUser={canCreateUser ? handleCreateUser : undefined}
+          canCreateUser={canCreateUser}
+        />
+      )}
+
+      {/* Table Section */}
+      {!showEmptyState && (
+        <Card padding="none">
+          <UserTable
+            users={users}
+            isLoading={isLoading}
+            onSort={handleSortChange}
+            onUserUpdated={handleRefresh}
+            onEditUser={handleEditUser}
+          />
+        </Card>
+      )}
+
+      {/* Pagination Section */}
+      {pagination && pagination.total > 0 && (
+        <div className="pagination-section">
+          <div className="pagination-info">
+            <span className="pagination-text">
+              Showing {users.length} of {pagination.total} users
+            </span>
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(pagination.total / pagination.limit)}
+            onPageChange={handlePageChange}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
           />
         </div>
-
-        {/* Error State */}
-        {error && (
-          <div className="error-banner" role="alert">
-            <div className="error-content">
-              <div className="error-icon">
-                <UserIcon size="md" />
-              </div>
-              <div className="error-details">
-                <span className="error-title">Failed to load users</span>
-                <span className="error-message">{error}</span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRetry}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Retrying...' : 'Try Again'}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {showEmptyState && (
-          <div className="empty-state-section">
-            <UserEmptyState
-              hasFilters={hasFilters}
-              onClearFilters={() => handleFiltersChange({})}
-              onCreateUser={canCreateUser ? handleCreateUser : undefined}
-              canCreateUser={canCreateUser}
-            />
-          </div>
-        )}
-
-        {/* Table Section */}
-        {!showEmptyState && (
-          <div className="table-section">
-            <UserTable
-              users={users}
-              isLoading={isLoading}
-              onSort={handleSortChange}
-              onUserUpdated={handleRefresh}
-              onEditUser={handleEditUser}
-            />
-          </div>
-        )}
-
-        {/* Pagination Section */}
-        {pagination && pagination.total > 0 && (
-          <div className="pagination-section">
-            <div className="pagination-info">
-              <span className="pagination-text">
-                Showing {users.length} of {pagination.total} users
-              </span>
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(pagination.total / pagination.limit)}
-              onPageChange={handlePageChange}
-              totalItems={pagination.total}
-              itemsPerPage={pagination.limit}
-            />
-          </div>
-        )}
-      </div>
+      )}
 
       {/* User Form Modal */}
       <UserFormModal
@@ -211,7 +301,7 @@ export function UserListPage(): React.JSX.Element {
         mode={modalMode}
         user={selectedUser}
       />
-    </div>
+    </PageContainer>
   );
 }
 

@@ -1,71 +1,64 @@
 import React, { useState } from 'react';
-import { Card } from '@/components/common';
+import { 
+  PageContainer,
+  PageHeader,
+  TabNavigation
+} from '@/components/common';
+import { SecurityIcon } from '@/components/icons';
 import { PermissionManagementProvider } from '@/contexts';
 import { PermissionsTab } from './tabs/PermissionsTab';
 import { PermissionGroupsTab } from './tabs/PermissionGroupsTab';
 import { AssignmentsTab } from './tabs/AssignmentsTab';
 import { AnalyticsTab } from './tabs/AnalyticsTab';
-import '@/styles/pages/permission-management-page.css';
+import type { Tab } from '@/components/common';
 
 type TabType = 'permissions' | 'groups' | 'assignments' | 'analytics';
 
 export const PermissionManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('permissions');
 
+  const tabs: Tab[] = [
+    {
+      id: 'permissions',
+      label: 'Permissions',
+      icon: <SecurityIcon size={16} />,
+    },
+    {
+      id: 'groups',
+      label: 'Permission Groups',
+    },
+    {
+      id: 'assignments',
+      label: 'Assignments',
+    },
+    {
+      id: 'analytics',
+      label: 'Analytics',
+    },
+  ];
+
   return (
     <PermissionManagementProvider>
-      <div className="permission-management-page">
-        <div className="permission-management-page-header">
-          <div className="permission-management-page-header-content">
-            <div className="permission-management-page-header-text">
-              <h1 className="permission-management-page-title">Permission Management</h1>
-              <p className="permission-management-page-subtitle">
-                Manage global permissions, permission groups, and assignments
-              </p>
-            </div>
-          </div>
-        </div>
+      <PageContainer>
+        <PageHeader
+          title="Permission Management"
+          subtitle="Manage global permissions, permission groups, and assignments"
+          icon={<SecurityIcon size={28} />}
+        />
 
-        <div className="permission-management-page-content">
-          <Card>
-            <div className="permission-management-tabs">
-              <div className="permission-management-tabs-nav">
-                <button
-                  className={`permission-management-tab ${activeTab === 'permissions' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('permissions')}
-                >
-                  Permissions
-                </button>
-                <button
-                  className={`permission-management-tab ${activeTab === 'groups' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('groups')}
-                >
-                  Permission Groups
-                </button>
-                <button
-                  className={`permission-management-tab ${activeTab === 'assignments' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('assignments')}
-                >
-                  Assignments
-                </button>
-                <button
-                  className={`permission-management-tab ${activeTab === 'analytics' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('analytics')}
-                >
-                  Analytics
-                </button>
-              </div>
+        <TabNavigation
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={(tabId) => setActiveTab(tabId as TabType)}
+        />
 
-              <div className="permission-management-tabs-content">
-                {activeTab === 'permissions' && <PermissionsTab />}
-                {activeTab === 'groups' && <PermissionGroupsTab />}
-                {activeTab === 'assignments' && <AssignmentsTab />}
-                {activeTab === 'analytics' && <AnalyticsTab />}
-              </div>
-            </div>
-          </Card>
+        <div className="tab-content">
+          {activeTab === 'permissions' && <PermissionsTab />}
+          {activeTab === 'groups' && <PermissionGroupsTab />}
+          {activeTab === 'assignments' && <AssignmentsTab />}
+          {activeTab === 'analytics' && <AnalyticsTab />}
         </div>
-      </div>
+      </PageContainer>
     </PermissionManagementProvider>
   );
 };

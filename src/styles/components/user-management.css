@@ -192,56 +192,8 @@
   box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
-/* Portal dropdown styles */
-.menu-dropdown {
-  min-width: 200px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-}
 
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  width: 100%;
-  padding: var(--spacing-3) var(--spacing-4);
-  background: none;
-  border: none;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s ease;
-}
 
-.menu-item:hover,
-.menu-item:focus-visible {
-  background: var(--color-surface-hover);
-  color: var(--color-text-primary);
-  outline: none;
-}
-
-.menu-item.destructive {
-  color: var(--color-error);
-}
-
-.menu-item.destructive:hover {
-  background: var(--color-error-light);
-  color: var(--color-error);
-}
-
-.user-actions-menu .menu-item:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.user-actions-menu .menu-item:disabled:hover {
-  background: none;
-  color: var(--color-text-secondary);
-}
 
 .user-actions-menu .menu-icon {
   width: 16px;

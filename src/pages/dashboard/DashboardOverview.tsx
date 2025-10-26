@@ -1,66 +1,104 @@
 import React from 'react';
 import { 
-  WelcomeSection, 
-  StatisticsGrid, 
   QuickActionsPanel, 
   SystemHealthPanel 
 } from './components';
-import { Button } from '@/components/common';
-import { RefreshIcon } from '@/components/icons';
-import { useSystemStats, useSystemHealth, useUserType, useAdminStats } from '@/hooks';
+import { 
+  PageContainer,
+  PageHeader,
+  StatsGrid,
+  Button,
+  Badge
+} from '@/components/common';
+import { RefreshIcon, DashboardIcon, UserIcon, ProjectIcon, GroupIcon } from '@/components/icons';
+import { useSystemStats, useSystemHealth, useUserType, useAdminStats, useAuth } from '@/hooks';
+import type { StatCardProps } from '@/components/common';
 
 export function DashboardOverview(): React.JSX.Element {
+  const { user } = useAuth();
   const { stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useSystemStats();
   const { health, isLoading: healthLoading, error: healthError, refetch: refetchHealth } = useSystemHealth();
-  // NEW: Real admin statistics from API (replaces mock data)
-  const { stats: adminStats, isLoading: adminLoading, error: adminError } = useAdminStats();
-  const { isRoot } = useUserType();
-  
-  // Admin stats can be used for enhanced dashboard display:
-  // - adminStats.totals.users, adminStats.totals.projects
-  // - adminStats.user_breakdown (root/admin/consumer counts)
-  // - adminStats.growth (7-day growth metrics)
-  // - adminStats.system_health (database/redis health)
+  const { stats: adminStats } = useAdminStats();
+  const { isRoot, getUserTypeLabel } = useUserType();
+
+  // Generate stat cards for the stats grid
+  const statCards: StatCardProps[] = React.useMemo(() => {
+    if (!stats) return [];
+
+    return [
+      {
+        title: 'Total Users',
+        value: stats.totalUsers.toLocaleString(),
+        icon: <UserIcon size={20} />,
+        trend: adminStats?.growth?.user_growth_7d ? {
+          value: adminStats.growth.user_growth_7d,
+          label: 'vs last week'
+        } : undefined,
+      },
+      {
+        title: 'Active Projects',
+        value: stats.activeProjects.toLocaleString(),
+        icon: <ProjectIcon size={20} />,
+        trend: adminStats?.growth?.project_growth_7d ? {
+          value: adminStats.growth.project_growth_7d,
+          label: 'vs last week'
+        } : undefined,
+      },
+      {
+        title: 'Active Sessions',
+        value: stats.activeSessions.toLocaleString(),
+        icon: <DashboardIcon size={20} />,
+      },
+      {
+        title: 'User Groups',
+        value: stats.userGroups.toLocaleString(),
+        icon: <GroupIcon size={20} />,
+      },
+    ];
+  }, [stats, adminStats]);
+
+  const getGreeting = (): string => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
 
   return (
-    <div className="dashboard-overview">
-      {/* Welcome Section */}
-      <WelcomeSection />
+    <PageContainer>
+      <PageHeader
+        title={user ? `${getGreeting()}, ${user.username}!` : 'Dashboard'}
+        subtitle="Welcome back to the Magic Auth Admin Dashboard"
+        icon={<DashboardIcon size={32} />}
+        badge={
+          <Badge variant="primary" size="md">
+            {getUserTypeLabel()}
+          </Badge>
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={refetchStats}
+              disabled={statsLoading}
+              leftIcon={<RefreshIcon size={16} className={statsLoading ? 'spinning' : ''} />}
+              aria-label="Refresh dashboard"
+            >
+              Refresh
+            </Button>
+          </>
+        }
+      />
 
       {/* Statistics Grid */}
-      <StatisticsGrid 
-        stats={stats}
-        isLoading={statsLoading}
-        error={statsError}
+      <StatsGrid
+        stats={statCards}
+        columns={4}
+        loading={statsLoading}
       />
-      {/* TODO: Update StatisticsGrid component to accept adminStats prop */}
-      {/* This will enable showing: user breakdown, growth metrics, system health */}
-      {adminStats && !adminLoading && !adminError && (
-        <div className="admin-stats-preview" style={{ marginTop: '1rem', padding: '1rem', background: '#f5f5f5', borderRadius: '8px' }}>
-          <h4>Admin Stats Available (Example):</h4>
-          <p>Total Users: {adminStats.totals.users}</p>
-          <p>Total Projects: {adminStats.totals.projects}</p>
-          <p>Active Sessions: {adminStats.totals.active_sessions}</p>
-          <p>Root Users: {adminStats.user_breakdown.root_users}</p>
-          <p>Admin Users: {adminStats.user_breakdown.admin_users}</p>
-          <p>Consumer Users: {adminStats.user_breakdown.consumer_users}</p>
-        </div>
-      )}
 
-      {/* Quick Actions Panel */}
-      <QuickActionsPanel />
-
-      {/* System Health Panel (ROOT only) */}
-      {isRoot && (
-        <SystemHealthPanel
-          health={health}
-          isLoading={healthLoading}
-          error={healthError}
-          onRefresh={refetchHealth}
-        />
-      )}
-
-      {/* Error Recovery Section */}
+      {/* Error State */}
       {(statsError || healthError) && (
         <div className="error-recovery-section">
           <div className="error-recovery-panel">
@@ -93,7 +131,20 @@ export function DashboardOverview(): React.JSX.Element {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Quick Actions Panel */}
+      <QuickActionsPanel />
+
+      {/* System Health Panel (ROOT only) */}
+      {isRoot && (
+        <SystemHealthPanel
+          health={health}
+          isLoading={healthLoading}
+          error={healthError}
+          onRefresh={refetchHealth}
+        />
+      )}
+    </PageContainer>
   );
 }
 

@@ -1,0 +1,94 @@
+/* ==================================
+   PAGE HEADER - Standardized Component
+   ================================== */
+
+.page-header {
+  padding: 2rem 0 1.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+}
+
+.page-header-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.page-header-text {
+  flex: 1;
+  min-width: 250px;
+}
+
+.page-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-header-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary, #3b82f6);
+}
+
+.page-header-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #111827);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.page-header-badge {
+  display: inline-flex;
+  align-items: center;
+}
+
+.page-header-subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.page-header-extra {
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header {
+    padding: 1.5rem 0 1rem;
+  }
+
+  .page-header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header-title {
+    font-size: 1.5rem;
+  }
+
+  .page-header-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .page-header-actions > * {
+    flex: 1;
+  }
+}
+

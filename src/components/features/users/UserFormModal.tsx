@@ -248,7 +248,6 @@ export function UserFormModal({
               username: formData.username,
               password: formData.password,
               email: formData.email,
-              user_group_hash: formData.assignedGroup,
             });
             break;
         }
@@ -377,7 +376,7 @@ export function UserFormModal({
             {/* Security Warning for ROOT users */}
             {mode === 'create' && formData.userType === 'root' && (
               <div className="form-alert form-alert-warning">
-                <WarningIcon size={20} aria-hidden="true" />
+                <WarningIcon size="md" aria-hidden="true" />
                 <div>
                   <strong>Creating ROOT User</strong>
                   <p>You are about to create a ROOT user with full system access.</p>
@@ -388,7 +387,7 @@ export function UserFormModal({
             {/* Self-editing protection warning */}
             {isEditingSelf && (
               <div className="form-alert form-alert-info">
-                <InfoIcon size={20} aria-hidden="true" />
+                <InfoIcon size="md" aria-hidden="true" />
                 <p>You are editing your own account. Some restrictions apply for security reasons.</p>
               </div>
             )}
@@ -516,7 +515,7 @@ export function UserFormModal({
                     size="sm"
                     onClick={() => setShowProjectModal(true)}
                     disabled={isLoading}
-                    leftIcon={<ProjectIcon size={16} />}
+                    leftIcon={<ProjectIcon size="sm" aria-hidden="true" />}
                   >
                     {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
                   </Button>
@@ -545,7 +544,7 @@ export function UserFormModal({
                     size="sm"
                     onClick={() => setShowGroupModal(true)}
                     disabled={isLoading}
-                    leftIcon={<GroupIcon size={16} />}
+                    leftIcon={<GroupIcon size="sm" aria-hidden="true" />}
                   >
                     {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
                   </Button>
@@ -594,7 +593,7 @@ export function UserFormModal({
       >
         <div className="modal-body">
           <div className="form-alert form-alert-warning">
-            <WarningIcon size={32} aria-hidden="true" />
+            <WarningIcon size="xl" aria-hidden="true" />
             <div>
               <p>You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>
               <p><strong>Please enter your password to confirm this action:</strong></p>

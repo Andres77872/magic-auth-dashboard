@@ -4,6 +4,7 @@
 @import './buttons.css';
 @import './forms.css';
 @import './modals.css';
+@import './login-modal.css';
 @import './tables.css';
 @import './cards.css';
 @import './badges.css';
@@ -16,6 +17,15 @@
 @import './layout-patterns.css';
 @import './page-layouts.css';
 @import './actions-menu.css';
+
+/* === STANDARDIZED LAYOUT COMPONENTS === */
+@import './page-header.css';
+@import './page-container.css';
+@import './search-bar.css';
+@import './filter-bar.css';
+@import './stat-card.css';
+@import './stats-grid.css';
+@import './tab-navigation.css';
 
 /* === PAGE COMPONENTS === */
 @import './dashboard-overview.css';

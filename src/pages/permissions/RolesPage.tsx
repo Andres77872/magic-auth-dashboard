@@ -74,10 +74,10 @@ export const RolesPage: React.FC = () => {
     }
   };
 
-  const handleDeleteRole = async (roleId: number) => {
+  const handleDeleteRole = async (role: Role) => {
     if (window.confirm('Are you sure you want to delete this role?')) {
       try {
-        await deleteRole(roleId);
+        await deleteRole(role.id);
         await refreshRoles();
       } catch (error) {
         console.error('Error deleting role:', error);
@@ -178,7 +178,6 @@ export const RolesPage: React.FC = () => {
 
             <RoleTable
               roles={filteredRoles}
-              projectHash={selectedProjectHash}
               loading={rolesLoading}
               onEdit={handleEditRole}
               onDelete={handleDeleteRole}

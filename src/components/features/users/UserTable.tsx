@@ -1,9 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Table, Badge } from '@/components/common';
+import { Table, Badge, TableSkeleton } from '@/components/common';
 import { UserActionsMenu } from './UserActionsMenu';
 import { UserAvatar } from './UserAvatar';
 import { BulkActionsBar } from './BulkActionsBar';
-import { UserTableSkeleton } from './UserTableSkeleton';
 import { usePermissions } from '@/hooks';
 import { GroupIcon, ProjectIcon, WarningIcon } from '@/components/icons';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
@@ -185,7 +184,7 @@ export function UserTable({
           </Badge>
           {user.user_type_info?.error && (
             <span className="user-type-error" title={user.user_type_info.error}>
-              <WarningIcon size={16} aria-hidden="true" />
+              <WarningIcon size="sm" aria-hidden="true" />
             </span>
           )}
         </>
@@ -269,7 +268,7 @@ export function UserTable({
         />
       ),
       align: 'center',
-      width: '120px',
+      width: '80px',
     },
   ];
 
@@ -279,7 +278,7 @@ export function UserTable({
 
   // Show skeleton while loading initial data
   if (isLoading && users.length === 0) {
-    return <UserTableSkeleton rows={10} />;
+    return <TableSkeleton rows={10} columns={7} />;
   }
 
   return (

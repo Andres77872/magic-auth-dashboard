@@ -14,20 +14,23 @@
 // Import icons
 import { UserIcon, EditIcon, CheckIcon } from '@/components/icons';
 
-// Basic usage
-<UserIcon size={20} />
+// Basic usage - Use string sizes (recommended)
+<UserIcon size="md" />
 
 // With accessibility
 <button aria-label="Edit profile">
-  <EditIcon size={16} aria-hidden="true" />
+  <EditIcon size="sm" aria-hidden="true" />
 </button>
 
 // With custom styling
 <CheckIcon 
-  size={24} 
+  size="lg" 
   className="text-success" 
   strokeWidth={2.5}
 />
+
+// Numeric sizes also supported for special cases
+<UserIcon size={20} />
 ```
 
 ---
@@ -87,13 +90,19 @@ import { UserIcon, EditIcon, CheckIcon } from '@/components/icons';
 
 ## Standard Sizes
 
-| Size | Pixels | Use Case | Example |
-|------|--------|----------|---------|
-| **XS** | 12px | Inline text indicators | Badge icons |
-| **SM** | 16px | Buttons, compact UI | Action buttons |
-| **MD** | 20px | Default size, navigation | Nav items |
-| **LG** | 24px | Headers, prominent actions | Page headers |
-| **XL** | 32px | Hero sections, large displays | Dashboard cards |
+**Use string size names for consistency with the design system.**
+
+| Size String | Pixels | Use Case | Example |
+|-------------|--------|----------|---------|
+| **"xs"** | 12px | Inline text indicators | Badge icons |
+| **"sm"** | 16px | Buttons, compact UI | Action buttons |
+| **"md"** | 20px | Default size, navigation | Nav items ⭐ |
+| **"lg"** | 24px | Headers, prominent actions | Page headers |
+| **"xl"** | 32px | Hero sections, large displays | Dashboard cards |
+
+⭐ = Default size
+
+**Numeric sizes** (12, 16, 20, 24, 32) are supported but should only be used for special cases where exact pixel values are needed.
 
 ---
 
@@ -108,20 +117,20 @@ import { EditIcon, DeleteIcon, CheckIcon } from '@/components/icons';
 ### In Components
 
 ```tsx
-// Button with icon
+// Button with icon (use string sizes)
 <button className="btn btn-primary">
-  <EditIcon size={16} />
+  <EditIcon size="sm" aria-hidden="true" />
   Edit
 </button>
 
-// Icon only button
+// Icon only button (requires aria-label)
 <button className="btn btn-ghost" aria-label="Delete item">
-  <DeleteIcon size={20} />
+  <DeleteIcon size="md" />
 </button>
 
 // Navigation link
 <a href="/dashboard" className="nav-link">
-  <DashboardIcon size={20} />
+  <DashboardIcon size="md" aria-hidden="true" />
   <span>Dashboard</span>
 </a>
 ```
@@ -131,6 +140,14 @@ import { EditIcon, DeleteIcon, CheckIcon } from '@/components/icons';
 All icons accept standard SVG props:
 
 ```tsx
+<CheckIcon 
+  size="lg"
+  className="custom-class"
+  color="var(--color-success)"
+  aria-hidden="true"
+/>
+
+// Numeric sizes also supported for special cases
 <CheckIcon 
   size={24}
   className="custom-class"
@@ -147,41 +164,41 @@ All icons accept standard SVG props:
 
 #### 1. **Decorative Icons (with text label)**
 ```tsx
-// ✅ Good - Icon hidden from screen readers
+// ✅ Good - Icon hidden from screen readers, using string size
 <button className="btn btn-primary">
-  <PlusIcon size={16} aria-hidden="true" />
+  <PlusIcon size="sm" aria-hidden="true" />
   <span>Add User</span>
 </button>
 
 // ❌ Bad - Screen reader announces both icon and text
 <button className="btn btn-primary">
-  <PlusIcon size={16} />
+  <PlusIcon size="sm" />
   <span>Add User</span>
 </button>
 ```
 
 #### 2. **Standalone Icons (no text)**
 ```tsx
-// ✅ Good - Descriptive label for screen readers
+// ✅ Good - Descriptive label for screen readers, using string size
 <button 
   className="btn btn-ghost" 
   aria-label="Delete project"
 >
-  <DeleteIcon size={20} />
+  <DeleteIcon size="md" />
 </button>
 
 // ❌ Bad - No context for screen readers
 <button className="btn btn-ghost">
-  <DeleteIcon size={20} />
+  <DeleteIcon size="md" />
 </button>
 ```
 
 #### 3. **Status/Informative Icons**
 ```tsx
-// ✅ Good - Icon provides information
+// ✅ Good - Icon provides information, using string size
 <div className="alert">
   <WarningIcon 
-    size={20} 
+    size="md" 
     role="img" 
     aria-label="Warning"
   />
@@ -190,7 +207,7 @@ All icons accept standard SVG props:
 
 // Alternative with text
 <div className="alert">
-  <WarningIcon size={20} aria-hidden="true" />
+  <WarningIcon size="md" aria-hidden="true" />
   <span>Warning: This action cannot be undone</span>
 </div>
 ```
@@ -258,20 +275,20 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 ### Action Buttons with Icons
 
 ```tsx
-// Primary action with icon
+// Primary action with icon (use string sizes)
 <button className="btn btn-primary">
-  <PlusIcon size={16} aria-hidden="true" />
+  <PlusIcon size="sm" aria-hidden="true" />
   <span>Add New Project</span>
 </button>
 
 // Button group with icons
 <div className="flex gap-2">
   <button className="btn btn-outline">
-    <ExportIcon size={16} aria-hidden="true" />
+    <ExportIcon size="sm" aria-hidden="true" />
     <span>Export</span>
   </button>
   <button className="btn btn-outline">
-    <RefreshIcon size={16} aria-hidden="true" />
+    <RefreshIcon size="sm" aria-hidden="true" />
     <span>Refresh</span>
   </button>
 </div>
@@ -279,13 +296,13 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 // Icon-only actions (must have aria-label)
 <div className="flex items-center gap-1">
   <button className="btn btn-ghost btn-sm" aria-label="Edit item">
-    <EditIcon size={16} />
+    <EditIcon size="sm" />
   </button>
   <button className="btn btn-ghost btn-sm" aria-label="Delete item">
-    <DeleteIcon size={16} />
+    <DeleteIcon size="sm" />
   </button>
   <button className="btn btn-ghost btn-sm" aria-label="More options">
-    <MoreIcon size={16} />
+    <MoreIcon size="sm" />
   </button>
 </div>
 ```
@@ -293,25 +310,25 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 ### Status Indicators
 
 ```tsx
-// Status badges with icons
+// Status badges with icons (use xs for badges)
 <div className="flex flex-wrap gap-2">
   <span className="badge badge-success">
-    <CheckIcon size={14} aria-hidden="true" />
+    <CheckIcon size="xs" aria-hidden="true" />
     <span>Completed</span>
   </span>
   <span className="badge badge-warning">
-    <ClockIcon size={14} aria-hidden="true" />
+    <ClockIcon size="xs" aria-hidden="true" />
     <span>In Progress</span>
   </span>
   <span className="badge badge-error">
-    <ErrorIcon size={14} aria-hidden="true" />
+    <ErrorIcon size="xs" aria-hidden="true" />
     <span>Failed</span>
   </span>
 </div>
 
 // Alert messages
 <div className="alert alert-info">
-  <InfoIcon size={20} role="img" aria-label="Information" />
+  <InfoIcon size="md" role="img" aria-label="Information" />
   <div>
     <strong>New Feature Available</strong>
     <p className="text-sm">Check out our latest updates.</p>
@@ -322,22 +339,22 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 ### List Items with Icons
 
 ```tsx
-// Navigation menu
+// Navigation menu (use md for navigation)
 <nav className="flex flex-col gap-1">
   <a href="/dashboard" className="nav-link">
-    <DashboardIcon size={20} aria-hidden="true" />
+    <DashboardIcon size="md" aria-hidden="true" />
     <span>Dashboard</span>
   </a>
   <a href="/projects" className="nav-link">
-    <ProjectIcon size={20} aria-hidden="true" />
+    <ProjectIcon size="md" aria-hidden="true" />
     <span>Projects</span>
   </a>
   <a href="/users" className="nav-link">
-    <UserIcon size={20} aria-hidden="true" />
+    <UserIcon size="md" aria-hidden="true" />
     <span>Users</span>
   </a>
   <a href="/settings" className="nav-link">
-    <SettingsIcon size={20} aria-hidden="true" />
+    <SettingsIcon size="md" aria-hidden="true" />
     <span>Settings</span>
   </a>
 </nav>
@@ -345,15 +362,15 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 // Feature list
 <ul className="space-y-3">
   <li className="flex items-start gap-3">
-    <CheckIcon size={20} className="text-success mt-0.5" aria-hidden="true" />
+    <CheckIcon size="md" className="text-success mt-0.5" aria-hidden="true" />
     <span>Unlimited projects</span>
   </li>
   <li className="flex items-start gap-3">
-    <CheckIcon size={20} className="text-success mt-0.5" aria-hidden="true" />
+    <CheckIcon size="md" className="text-success mt-0.5" aria-hidden="true" />
     <span>Advanced analytics</span>
   </li>
   <li className="flex items-start gap-3">
-    <CheckIcon size={20} className="text-success mt-0.5" aria-hidden="true" />
+    <CheckIcon size="md" className="text-success mt-0.5" aria-hidden="true" />
     <span>Priority support</span>
   </li>
 </ul>
@@ -362,12 +379,12 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 ### Form Fields with Icons
 
 ```tsx
-// Input with icon prefix
+// Input with icon prefix (use sm for form inputs)
 <div className="form-field">
   <label htmlFor="search" className="form-label">Search</label>
   <div className="relative">
     <div className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary">
-      <SearchIcon size={18} aria-hidden="true" />
+      <SearchIcon size="sm" aria-hidden="true" />
     </div>
     <input
       id="search"
@@ -390,7 +407,7 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
     />
     {hasError && (
       <div className="absolute right-3 top-1/2 -translate-y-1/2 text-error">
-        <ErrorIcon size={18} aria-hidden="true" />
+        <ErrorIcon size="sm" aria-hidden="true" />
       </div>
     )}
   </div>
@@ -407,15 +424,15 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 ```tsx
 <nav className="navigation-menu">
   <a href="/dashboard" className="nav-link">
-    <DashboardIcon size={20} />
+    <DashboardIcon size="md" aria-hidden="true" />
     <span>Dashboard</span>
   </a>
   <a href="/projects" className="nav-link">
-    <ProjectIcon size={20} />
+    <ProjectIcon size="md" aria-hidden="true" />
     <span>Projects</span>
   </a>
   <a href="/users" className="nav-link">
-    <UserIcon size={20} />
+    <UserIcon size="md" aria-hidden="true" />
     <span>Users</span>
   </a>
 </nav>
@@ -426,19 +443,19 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 ```tsx
 // Success state
 <div className="status-item">
-  <CheckIcon size={16} className="text-success" />
+  <CheckIcon size="sm" className="text-success" aria-hidden="true" />
   <span>Completed</span>
 </div>
 
 // Error state
 <div className="status-item">
-  <ErrorIcon size={16} className="text-error" />
+  <ErrorIcon size="sm" className="text-error" aria-hidden="true" />
   <span>Failed</span>
 </div>
 
 // Warning state
 <div className="status-item">
-  <WarningIcon size={16} className="text-warning" />
+  <WarningIcon size="sm" className="text-warning" aria-hidden="true" />
   <span>Pending</span>
 </div>
 ```
@@ -447,8 +464,8 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 
 ```tsx
 <button className="btn btn-primary" disabled>
-  <LoadingIcon size={16} className="spinning" />
-  Loading...
+  <LoadingIcon size="sm" className="spinning" aria-hidden="true" />
+  <span>Loading...</span>
 </button>
 ```
 
@@ -469,8 +486,8 @@ All icon components use the base `Icon` component to load SVG files from `/publi
 
 ```tsx
 interface IconProps extends React.HTMLAttributes<HTMLElement> {
-  name: string;        // SVG filename (without .svg extension)
-  size?: number;       // Size in pixels (e.g., 16, 20, 24)
+  name: string;                                 // SVG filename (without .svg extension)
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;  // String sizes (recommended) or numeric pixels
   color?: string;
   className?: string;
   'aria-label'?: string;
@@ -479,8 +496,8 @@ interface IconProps extends React.HTMLAttributes<HTMLElement> {
 
 The base component:
 - Loads SVG files from `/public/icons/` directory
-- Accepts numeric size values (e.g., 16, 20, 24)
-- Supports any custom size via number prop
+- Accepts string size values (recommended: "xs", "sm", "md", "lg", "xl")
+- Also accepts numeric pixel values for special cases (e.g., 16, 20, 24)
 - Inherits color from parent via `currentColor`
 - Applies custom styling via className
 
@@ -493,7 +510,7 @@ import React from 'react';
 import { Icon, type IconProps } from './Icon';
 
 export interface ExampleIconProps extends Omit<IconProps, 'name'> {
-  size?: number;       // Size in pixels (default: 20)
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;  // String sizes (recommended) or numeric pixels
   color?: string;
   className?: string;
   'aria-label'?: string;
@@ -502,9 +519,17 @@ export interface ExampleIconProps extends Omit<IconProps, 'name'> {
 /**
  * Example Icon - loads example.svg
  * Used for: Specific use cases
+ * 
+ * @example
+ * // Recommended: use string sizes
+ * <ExampleIcon size="md" aria-hidden="true" />
+ * 
+ * @example
+ * // Special cases: numeric pixels
+ * <ExampleIcon size={20} aria-hidden="true" />
  */
 export function ExampleIcon({
-  size = 20,
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,
@@ -545,6 +570,10 @@ Import only the icons you need:
 ```tsx
 // ✅ Good - tree shaking works
 import { EditIcon, DeleteIcon } from '@/components/icons';
+
+// Use with string sizes
+<EditIcon size="sm" aria-hidden="true" />
+<DeleteIcon size="sm" aria-hidden="true" />
 
 // ❌ Avoid - imports all icons
 import * as Icons from '@/components/icons';
@@ -604,7 +633,7 @@ import React from 'react';
 import { Icon, type IconProps } from './Icon';
 
 export interface NewIconProps extends Omit<IconProps, 'name'> {
-  size?: number;       // Size in pixels (default: 20)
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;  // String sizes (recommended) or numeric pixels
   color?: string;
   className?: string;
   'aria-label'?: string;
@@ -613,9 +642,17 @@ export interface NewIconProps extends Omit<IconProps, 'name'> {
 /**
  * New Icon - loads new-icon.svg
  * Used for: [Describe specific use cases]
+ * 
+ * @example
+ * // Recommended: use string sizes
+ * <NewIcon size="md" aria-hidden="true" />
+ * 
+ * @example
+ * // Special cases: numeric pixels
+ * <NewIcon size={20} aria-hidden="true" />
  */
 export function NewIcon({
-  size = 20,
+  size = 'md',
   color = 'currentColor',
   className = '',
   'aria-label': ariaLabel,

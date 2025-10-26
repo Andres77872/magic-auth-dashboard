@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Textarea, Button } from '@/components/common';
+import { FormField } from '@/components/forms';
 import type { GroupFormData, UserGroup } from '@/types/group.types';
-import '../../../styles/components/group-form-modal.css';
 
 interface GroupFormModalProps {
   isOpen: boolean;
@@ -116,62 +116,51 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({
       closeOnBackdropClick={!isSubmitting}
       closeOnEscape={!isSubmitting}
     >
-      <form onSubmit={handleSubmit} className="group-form-modal">
-        {errors.general && (
-          <div className="group-form-error-banner">
-            {errors.general}
-          </div>
-        )}
+      <form onSubmit={handleSubmit}>
+        <div className="modal-form-content">
+          {errors.general && (
+            <div className="form-alert form-alert-error" role="alert">
+              {errors.general}
+            </div>
+          )}
 
-        <div className="group-form-field">
-          <label 
+          <FormField
+            label="Group Name"
             htmlFor="group_name"
-            className="group-form-label"
-          >
-            Group Name <span className="group-form-required">*</span>
-          </label>
-          <Input
-            id="group_name"
-            type="text"
-            value={formData.group_name}
-            onChange={(e) => handleInputChange('group_name', e.target.value)}
-            placeholder="Enter group name"
             error={errors.group_name}
-            disabled={isSubmitting}
             required
-            autoFocus
-          />
-          {!errors.group_name && (
-            <div className="group-form-hint">
-              Choose a descriptive name for your group (3-50 characters)
-            </div>
-          )}
-        </div>
-
-        <div className="group-form-field">
-          <label 
-            htmlFor="description"
-            className="group-form-label"
           >
-            Description
-          </label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            placeholder="Enter group description (optional)"
-            rows={4}
+            <Input
+              id="group_name"
+              type="text"
+              value={formData.group_name}
+              onChange={(e) => handleInputChange('group_name', e.target.value)}
+              placeholder="Enter group name"
+              disabled={isSubmitting}
+              required
+              autoFocus
+              helperText={!errors.group_name ? "Choose a descriptive name for your group (3-50 characters)" : undefined}
+            />
+          </FormField>
+
+          <FormField
+            label="Description"
+            htmlFor="description"
             error={errors.description}
-            disabled={isSubmitting}
-          />
-          {!errors.description && (
-            <div className="group-form-hint">
-              Optional description to help others understand this group's purpose
-            </div>
-          )}
+          >
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Enter group description (optional)"
+              rows={4}
+              disabled={isSubmitting}
+              helperText={!errors.description ? "Optional description to help others understand this group's purpose" : undefined}
+            />
+          </FormField>
         </div>
 
-        <div className="group-form-actions">
+        <div className="modal-form-actions">
           <Button
             type="button"
             variant="outline"

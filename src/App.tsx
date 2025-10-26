@@ -9,15 +9,10 @@ import {
 } from '@/components/guards';
 import { ROUTES } from '@/utils/routes';
 import './styles/globals.css';
-import './styles/components/route-guards.css';
-import './styles/pages/unauthorized.css';
-import './styles/pages/login.css';
-import './styles/pages/user-list.css';
-import './styles/components/user-management.css';
-import './styles/components/user-modals.css';
+import './styles/pages/landing.css';
 
 // Import pages
-import { LoginPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage } from '@/pages';
+import { LandingPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage } from '@/pages';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
 import { 
   GroupListPage, 
@@ -57,7 +52,7 @@ function App(): React.JSX.Element {
                 path={ROUTES.LOGIN}
                 element={
                   <PublicRoute>
-                    <LoginPage />
+                    <LandingPage />
                   </PublicRoute>
                 }
               />
@@ -254,6 +249,9 @@ function App(): React.JSX.Element {
 
               {/* Default redirects */}
               <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
+              
+              {/* Legacy login route redirect */}
+              <Route path="/login" element={<Navigate to={ROUTES.LOGIN} replace />} />
               
               {/* Catch-all route */}
               <Route

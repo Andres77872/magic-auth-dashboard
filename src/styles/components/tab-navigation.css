@@ -1,0 +1,102 @@
+/* ==================================
+   TAB NAVIGATION - Standardized Component
+   ================================== */
+
+.tab-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 2px solid var(--color-border, #e5e7eb);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tab-navigation-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.25rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.tab-navigation-item:hover:not(:disabled) {
+  color: var(--color-text-primary, #111827);
+  background: var(--color-bg-secondary, #f9fafb);
+}
+
+.tab-navigation-item:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary-light, #dbeafe);
+}
+
+.tab-navigation-item-active {
+  color: var(--color-primary, #3b82f6);
+  border-bottom-color: var(--color-primary, #3b82f6);
+  font-weight: 600;
+}
+
+.tab-navigation-item-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tab-navigation-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-navigation-label {
+  display: inline-block;
+}
+
+.tab-navigation-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding: 0 0.5rem;
+  background: var(--color-bg-secondary, #f3f4f6);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.tab-navigation-item-active .tab-navigation-count {
+  background: var(--color-primary-light, #dbeafe);
+  color: var(--color-primary, #3b82f6);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .tab-navigation {
+    gap: 0;
+  }
+
+  .tab-navigation-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .tab-navigation-label {
+    display: none;
+  }
+
+  .tab-navigation-item-active .tab-navigation-label {
+    display: inline-block;
+  }
+}
+

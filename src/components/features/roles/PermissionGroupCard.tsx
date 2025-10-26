@@ -42,14 +42,14 @@ export function PermissionGroupCard({
       <CardHeader>
         <div className="group-card-header">
           <div className="group-icon-container">
-            <LockIcon size={20} className="group-icon" aria-hidden="true" />
+            <LockIcon size="md" className="group-icon" aria-hidden="true" />
           </div>
           <div className="group-title-section">
             <div className="group-title-row">
               <CardTitle>{group.group_display_name}</CardTitle>
               {isAssigned && (
                 <Badge variant="success" className="assigned-badge">
-                  <CheckIcon size={12} aria-hidden="true" />
+                  <CheckIcon size="xs" aria-hidden="true" />
                   Assigned
                 </Badge>
               )}

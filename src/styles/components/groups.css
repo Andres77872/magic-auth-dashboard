@@ -53,21 +53,6 @@
   color: var(--color-error);
 }
 
-.form-input {
-  width: 100%;
-  padding: var(--spacing-3);
-  border: var(--border-input);
-  border-radius: var(--border-radius-input);
-  font-size: var(--font-size-base);
-  transition: var(--transition-input);
-  background-color: var(--color-surface);
-}
-
-.form-input:focus {
-  outline: none;
-  border: var(--border-input-focus);
-  box-shadow: var(--shadow-focus-primary);
-}
 
 .form-input.error {
   border-color: var(--color-error);
@@ -150,7 +135,7 @@
   margin-bottom: var(--spacing-1);
 }
 
-.stat-value-small {
+.stat-value-sm {
   font-size: var(--font-size-xs);
 }
 

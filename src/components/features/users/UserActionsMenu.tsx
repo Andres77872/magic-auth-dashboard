@@ -165,55 +165,55 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActions
     {
       key: 'view',
       label: 'View Details',
-      icon: <ViewIcon size={16} />,
+      icon: <ViewIcon size="sm" />,
       onClick: handleViewDetails,
     },
     {
       key: 'edit',
       label: 'Edit User',
-      icon: <EditIcon size={16} />,
+      icon: <EditIcon size="sm" />,
       onClick: handleEditUser,
       hidden: !canEditUser(user),
     },
     {
       key: 'assign-group',
       label: 'Assign to Group',
-      icon: <GroupIcon size={16} />,
+      icon: <GroupIcon size="sm" />,
       onClick: handleAssignGroup,
       hidden: !canEditUser(user),
     },
     {
       key: 'change-type',
       label: 'Change User Type',
-      icon: <GroupIcon size={16} />,
+      icon: <GroupIcon size="sm" />,
       onClick: handleChangeUserType,
       hidden: !canChangeUserType(user),
     },
     {
       key: 'manage-projects',
       label: 'Manage Projects',
-      icon: <ProjectIcon size={16} />,
+      icon: <ProjectIcon size="sm" />,
       onClick: handleManageProjects,
       hidden: user.user_type !== 'admin' || currentUserType !== 'root',
     },
     {
       key: 'reset-password',
       label: 'Reset Password',
-      icon: <LockIcon size={16} />,
+      icon: <LockIcon size="sm" />,
       onClick: handleResetPassword,
       hidden: !canEditUser(user),
     },
     {
       key: 'change-status',
       label: 'Change Status',
-      icon: <CheckIcon size={16} />,
+      icon: <CheckIcon size="sm" />,
       onClick: handleChangeStatus,
       hidden: !canEditUser(user),
     },
     {
       key: 'delete',
       label: 'Delete User',
-      icon: <DeleteIcon size={16} />,
+      icon: <DeleteIcon size="sm" />,
       onClick: handleDeleteUser,
       destructive: true,
       hidden: !canDeleteUser(user),
@@ -275,7 +275,7 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActions
           </div>
 
           <div className="warning-section">
-            <WarningIcon size={24} />
+            <WarningIcon size="lg" aria-hidden="true" />
             <p>Changing a user's type will immediately affect their permissions and access level.</p>
           </div>
 
@@ -290,7 +290,7 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActions
           
           {changeTypeError && (
             <div className="form-error" role="alert">
-              <ErrorIcon size={14} aria-hidden="true" />
+              <ErrorIcon size="xs" aria-hidden="true" />
               {changeTypeError}
             </div>
           )}

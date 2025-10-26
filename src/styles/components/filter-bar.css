@@ -1,0 +1,55 @@
+/* ==================================
+   FILTER BAR - Standardized Component
+   ================================== */
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--color-bg-secondary, #f9fafb);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-bar-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.filter-bar-item {
+  min-width: 200px;
+  flex: 1;
+  max-width: 300px;
+}
+
+.filter-bar-clear {
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-bar-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .filter-bar-item {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .filter-bar-clear {
+    width: 100%;
+  }
+}
+

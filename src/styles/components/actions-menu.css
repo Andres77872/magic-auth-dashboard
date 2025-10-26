@@ -26,13 +26,15 @@
 }
 
 .menu-trigger:hover {
-  background-color: var(--color-gray-50);
+  background-color: var(--color-hover-subtle);
   color: var(--color-text-primary);
   border-color: var(--color-border);
+  transform: scale(1.05);
+  transition: all 0.15s ease;
 }
 
 .menu-trigger:active {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-hover-muted);
 }
 
 .menu-trigger:focus-visible {
@@ -41,7 +43,7 @@
 }
 
 .menu-trigger[aria-expanded="true"] {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-hover-muted);
   color: var(--color-text-primary);
 }
 
@@ -100,17 +102,19 @@
 }
 
 .menu-item:hover:not(:disabled) {
-  background-color: var(--color-gray-50);
+  background-color: var(--color-hover-subtle);
+  transform: translateX(2px);
+  transition: all 0.15s ease;
 }
 
 .menu-item:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: -2px;
-  background-color: var(--color-primary-50);
+  background-color: var(--color-hover-subtle);
 }
 
 .menu-item:active:not(:disabled) {
-  background-color: var(--color-gray-100);
+  background-color: var(--color-hover-muted);
 }
 
 .menu-item:disabled {
@@ -124,13 +128,13 @@
 }
 
 .menu-item.destructive:hover:not(:disabled) {
-  background-color: var(--color-error-light);
-  color: var(--color-error-dark);
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
 }
 
 .menu-item.destructive:focus-visible {
   outline-color: var(--color-error);
-  background-color: var(--color-error-light);
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* Menu item icon */
@@ -190,8 +194,8 @@
 }
 
 .actions-menu-item-danger:hover {
-  background-color: var(--color-error-light) !important;
-  border-color: var(--color-error-dark) !important;
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-color: var(--color-error) !important;
 }
 
 /* Responsive adjustments */

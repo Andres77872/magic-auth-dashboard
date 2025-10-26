@@ -39,4 +39,7 @@ export { default as useAdminOperations } from './useAdminOperations';
 export { useGlobalRoles } from './useGlobalRoles';
 export { useGlobalPermissionGroups } from './useGlobalPermissionGroups';
 export { usePermissionAssignments } from './usePermissionAssignments';
-export { usePermissionManagement } from '@/contexts/PermissionManagementContext'; 
+export { usePermissionManagement } from '@/contexts/PermissionManagementContext';
+
+// Utility hooks
+export { useDebounce, useDebouncedCallback } from './useDebounce'; 

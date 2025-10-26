@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { Input, Textarea, Button, Card } from '@/components/common';
 import type { GroupFormData } from '@/types/group.types';
+import { 
+  validateRequired, 
+  validateLengthRange, 
+  validateMaxLength, 
+  composeValidators 
+} from '@/utils/validators';
 
 interface GroupFormProps {
   mode: 'create' | 'edit';
@@ -9,6 +15,10 @@ interface GroupFormProps {
   isSubmitting?: boolean;
 }
 
+/**
+ * GroupForm component using consolidated validation utilities
+ * Follows Design System guidelines for forms and validation
+ */
 export const GroupForm: React.FC<GroupFormProps> = ({
   mode,
   initialData = {},
@@ -25,16 +35,26 @@ export const GroupForm: React.FC<GroupFormProps> = ({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.group_name.trim()) {
-      newErrors.group_name = 'Group name is required';
-    } else if (formData.group_name.length < 3) {
-      newErrors.group_name = 'Group name must be at least 3 characters';
-    } else if (formData.group_name.length > 50) {
-      newErrors.group_name = 'Group name must be less than 50 characters';
+    // Group name validation using shared validators
+    const nameValidation = composeValidators(
+      () => validateRequired(formData.group_name, 'Group name'),
+      () => validateLengthRange(formData.group_name, 3, 50, 'Group name')
+    );
+
+    if (!nameValidation.isValid) {
+      newErrors.group_name = nameValidation.error!;
     }
 
-    if (formData.description && formData.description.length > 255) {
-      newErrors.description = 'Description must be less than 255 characters';
+    // Description validation
+    if (formData.description) {
+      const descValidation = validateMaxLength(
+        formData.description, 
+        255, 
+        'Description'
+      );
+      if (!descValidation.isValid) {
+        newErrors.description = descValidation.error!;
+      }
     }
 
     setErrors(newErrors);

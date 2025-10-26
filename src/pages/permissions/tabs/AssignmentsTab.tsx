@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, ConfirmDialog, Table } from '@/components/common';
+import { Button, Input, Select, ConfirmDialog, Table, ActionsMenu } from '@/components/common';
 import { PlusIcon, DeleteIcon } from '@/components/icons';
 import { usePermissionAssignments, useGroups, useUsers, useToast, usePermissionManagement } from '@/hooks';
 import type { TableColumn } from '@/components/common/Table';
+import type { ActionMenuItem } from '@/components/common/ActionsMenu';
 
 interface AssignmentRecord {
   id: string;
@@ -187,19 +188,26 @@ export const AssignmentsTab: React.FC = () => {
       key: 'id',
       header: 'Actions',
       sortable: false,
-      width: '15%',
-      align: 'right',
-      render: (_, row) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<DeleteIcon size={16} />}
-          onClick={() => handleDelete(row)}
-          aria-label={`Remove ${row.permissionGroupName}`}
-        >
-          Remove
-        </Button>
-      ),
+      width: '80px',
+      align: 'center',
+      render: (_, row) => {
+        const menuItems: ActionMenuItem[] = [
+          {
+            key: 'remove',
+            label: 'Remove',
+            icon: <DeleteIcon size={16} />,
+            onClick: () => handleDelete(row),
+            destructive: true,
+          },
+        ];
+
+        return (
+          <ActionsMenu
+            items={menuItems}
+            ariaLabel={`Actions for ${row.permissionGroupName}`}
+          />
+        );
+      },
     },
   ];
 
@@ -242,11 +250,10 @@ export const AssignmentsTab: React.FC = () => {
       <div className="assignments-form">
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="target-select">
+            <label>
               {viewType === 'user_group' ? 'User Group:' : 'User:'}
             </label>
             <Select
-              id="target-select"
               value={selectedTarget}
               onChange={setSelectedTarget}
               options={targetOptions}
@@ -258,9 +265,8 @@ export const AssignmentsTab: React.FC = () => {
           {selectedTarget && (
             <>
               <div className="form-group">
-                <label htmlFor="permission-group-select">Permission Group:</label>
+                <label>Permission Group:</label>
                 <Select
-                  id="permission-group-select"
                   value={selectedPermissionGroup}
                   onChange={setSelectedPermissionGroup}
                   options={permissionGroupOptions}
@@ -271,9 +277,8 @@ export const AssignmentsTab: React.FC = () => {
 
               {viewType === 'user' && (
                 <div className="form-group">
-                  <label htmlFor="notes-input">Notes (optional):</label>
+                  <label>Notes (optional):</label>
                   <Input
-                    id="notes-input"
                     type="text"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}

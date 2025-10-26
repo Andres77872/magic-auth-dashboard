@@ -1,20 +1,23 @@
 import React, { type CSSProperties, useEffect, useState } from 'react';
 
+export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+
 export interface IconProps extends React.SVGAttributes<SVGSVGElement> {
   name: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
+  size?: IconSize | number;
   color?: string;
   className?: string;
   'aria-label'?: string;
 }
 
 // Icon size scale following design system
-const iconSizeMap = {
-  xs: 12,
-  sm: 16,
-  md: 20,  // Default
-  lg: 24,
-  xl: 32,
+// Maps string sizes to pixel values
+const iconSizeMap: Record<IconSize, number> = {
+  xs: 12,  // Inline text indicators, badges
+  sm: 16,  // Buttons, compact UI
+  md: 20,  // Default - Navigation, standard icons
+  lg: 24,  // Headers, prominent actions
+  xl: 32,  // Hero sections, large displays
 } as const;
 
 // Cache for loaded SVG content
@@ -22,11 +25,20 @@ const svgCache = new Map<string, string>();
 
 /**
  * Base Icon component that loads and inlines SVG files from public/icons directory
+ * 
  * @param name - Name of the SVG file (without .svg extension)
- * @param size - Size preset (xs/sm/md/lg/xl) or custom number in pixels
+ * @param size - Size preset: 'xs' (12px), 'sm' (16px), 'md' (20px), 'lg' (24px), 'xl' (32px), or custom number in pixels (default: 'md')
  * @param color - Color value (defaults to currentColor for theme inheritance)
  * @param className - Additional CSS classes
  * @param aria-label - Accessibility label
+ * 
+ * @example
+ * // Recommended: use string sizes
+ * <Icon name="user" size="md" />
+ * 
+ * @example
+ * // Special cases: numeric pixels
+ * <Icon name="user" size={20} />
  */
 export function Icon({
   name,

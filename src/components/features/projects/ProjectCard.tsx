@@ -3,6 +3,7 @@ import { Card, Badge, Pagination, Skeleton } from '@/components/common';
 import { ProjectActionsMenu } from './ProjectActionsMenu';
 import type { ProjectDetails } from '@/types/project.types';
 import type { PaginationResponse } from '@/types/api.types';
+import { formatDate } from '@/utils';
 
 interface ProjectCardProps {
   projects: ProjectDetails[];
@@ -11,19 +12,16 @@ interface ProjectCardProps {
   isLoading?: boolean;
 }
 
+/**
+ * ProjectCard component for displaying project grid
+ * Uses shared formatters and follows Design System guidelines
+ */
 export const ProjectCard: React.FC<ProjectCardProps> = ({
   projects,
   pagination,
   onPageChange,
   isLoading = false,
 }) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   if (isLoading) {
     return (

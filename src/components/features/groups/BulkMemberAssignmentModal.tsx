@@ -21,7 +21,7 @@ export const BulkMemberAssignmentModal: React.FC<BulkMemberAssignmentModalProps>
   groupName,
   existingMemberHashes = []
 }) => {
-  const { addToast } = useToast();
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [selectedUserHashes, setSelectedUserHashes] = useState<string[]>([]);
@@ -67,10 +67,7 @@ export const BulkMemberAssignmentModal: React.FC<BulkMemberAssignmentModalProps>
         setUsers(response.users);
       }
     } catch (error) {
-      addToast({
-        message: 'Failed to load users',
-        variant: 'error'
-      });
+      showToast('Failed to load users', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -96,10 +93,7 @@ export const BulkMemberAssignmentModal: React.FC<BulkMemberAssignmentModalProps>
 
   const handleSubmit = async () => {
     if (selectedUserHashes.length === 0) {
-      addToast({
-        message: 'Please select at least one user',
-        variant: 'warning'
-      });
+      showToast('Please select at least one user', 'warning');
       return;
     }
 

@@ -234,26 +234,6 @@
    USER MENU DROPDOWN
    ======================================== */
 
-.user-menu {
-  position: relative;
-}
-
-.user-menu-trigger {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  padding: var(--spacing-2);
-  background: none;
-  border: none;
-  border-radius: var(--border-radius-md);
-  cursor: pointer;
-  transition: background-color var(--transition-fast);
-}
-
-.user-menu-trigger:hover {
-  background-color: var(--color-gray-100);
-}
-
 .dashboard-user-avatar {
   width: 32px;
   height: 32px;
@@ -288,19 +268,6 @@
 
 .dropdown-arrow.open {
   transform: rotate(180deg);
-}
-
-.user-menu-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  min-width: 240px;
-  background: var(--color-surface);
-  border: var(--border-card);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-lg);
-  z-index: var(--z-index-dropdown);
-  margin-top: var(--spacing-2);
 }
 
 .dropdown-header {

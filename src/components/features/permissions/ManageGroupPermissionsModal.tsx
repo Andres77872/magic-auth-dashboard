@@ -76,7 +76,6 @@ export const ManageGroupPermissionsModal: React.FC<ManageGroupPermissionsModalPr
       // Determine which permissions to add and remove
       const currentPermissionHashes = new Set(groupPermissions.map(p => p.permission_hash));
       const permissionsToAdd = Array.from(selectedPermissions).filter(hash => !currentPermissionHashes.has(hash));
-      const permissionsToRemove = Array.from(currentPermissionHashes).filter(hash => !selectedPermissions.has(hash));
 
       // Add new permissions
       for (const permissionHash of permissionsToAdd) {
