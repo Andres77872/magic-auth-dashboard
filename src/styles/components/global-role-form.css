@@ -1,39 +1,14 @@
 /* Global Role Form Styles */
 
 .global-role-form {
-  max-width: 700px;
-  margin: 0 auto;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  width: 100%;
 }
 
-/* Form Header */
-
-.form-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-
-.form-header-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
-  border-radius: 12px;
-  color: white;
-  flex-shrink: 0;
-}
-
-.form-header-content {
-  flex: 1;
-}
-
-.form-subtitle {
-  margin: 0.5rem 0 0 0;
+.global-role-form .form-subtitle {
+  margin: 0 0 1.5rem 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 /* Form Styles */

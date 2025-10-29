@@ -1,5 +1,7 @@
 import React from 'react';
-import { Button } from '@/components/common';
+import { ActionsMenu } from '@/components/common';
+import type { ActionMenuItem } from '@/components/common';
+import { ViewIcon, EditIcon, DeleteIcon } from '@/components/icons';
 import type { ProjectGroup } from '@/services/project-group.service';
 
 interface ProjectGroupActionsMenuProps {
@@ -41,32 +43,37 @@ export function ProjectGroupActionsMenu({
     }
   };
 
+  const menuItems: ActionMenuItem[] = [
+    {
+      key: 'view',
+      label: 'View Details',
+      icon: <ViewIcon size="sm" />,
+      onClick: handleViewDetails,
+    },
+    {
+      key: 'edit',
+      label: 'Edit Group',
+      icon: <EditIcon size="sm" />,
+      onClick: handleEdit,
+    },
+  ];
+
+  // Only add delete option if onDelete callback is provided
+  if (onDelete) {
+    menuItems.push({
+      key: 'delete',
+      label: 'Delete Group',
+      icon: <DeleteIcon size="sm" />,
+      onClick: handleDelete,
+      destructive: true,
+    });
+  }
+
   return (
-    <div className="group-actions-menu">
-      <div className="actions-inline">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleViewDetails}
-        >
-          View
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleEdit}
-        >
-          Edit
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDelete}
-          className="actions-menu-item-danger"
-        >
-          Delete
-        </Button>
-      </div>
-    </div>
+    <ActionsMenu
+      items={menuItems}
+      ariaLabel={`Actions for ${group.group_name}`}
+      placement="bottom-right"
+    />
   );
 } 

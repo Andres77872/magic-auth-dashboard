@@ -11,7 +11,8 @@ import {
   CardTitle,
   CardContent,
   Button,
-  Badge
+  Badge,
+  Modal
 } from '@/components/common';
 import {
   GlobalRoleCard,
@@ -241,21 +242,26 @@ export function RoleManagementPage(): React.JSX.Element {
       />
 
       {/* Role Form Modal */}
-      {showRoleForm && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <GlobalRoleForm
-              mode={editingRole ? 'edit' : 'create'}
-              initialData={editingRole || undefined}
-              onSubmit={editingRole ? handleUpdateRole : handleCreateRole}
-              onCancel={() => {
-                setShowRoleForm(false);
-                setEditingRole(null);
-              }}
-            />
-          </div>
-        </div>
-      )}
+      <Modal
+        isOpen={showRoleForm}
+        onClose={() => {
+          setShowRoleForm(false);
+          setEditingRole(null);
+        }}
+        title={editingRole ? 'Edit Global Role' : 'Create New Global Role'}
+        size="lg"
+        showCloseButton={true}
+      >
+        <GlobalRoleForm
+          mode={editingRole ? 'edit' : 'create'}
+          initialData={editingRole || undefined}
+          onSubmit={editingRole ? handleUpdateRole : handleCreateRole}
+          onCancel={() => {
+            setShowRoleForm(false);
+            setEditingRole(null);
+          }}
+        />
+      </Modal>
 
       {/* Content Area */}
       {/* Roles Tab */}

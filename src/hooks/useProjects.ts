@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { projectService } from '@/services';
 import type { ProjectListParams, ProjectDetails } from '@/types/project.types';
 import type { PaginationResponse } from '@/types/api.types';
@@ -39,17 +39,33 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
+  // Use refs to store current values to avoid recreating fetchProjects
+  const limitRef = useRef(limit);
+  const currentPageRef = useRef(currentPage);
+  const filtersRef = useRef(filters);
+  const sortByRef = useRef(sortBy);
+  const sortOrderRef = useRef(sortOrder);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    limitRef.current = limit;
+    currentPageRef.current = currentPage;
+    filtersRef.current = filters;
+    sortByRef.current = sortBy;
+    sortOrderRef.current = sortOrder;
+  }, [limit, currentPage, filters, sortBy, sortOrder]);
+
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
       const params: ProjectListParams = {
-        limit,
-        offset: (currentPage - 1) * limit,
-        search: filters.search,
-        ...(sortBy && { sort_by: sortBy }),
-        ...(sortBy && { sort_order: sortOrder }),
+        limit: limitRef.current,
+        offset: (currentPageRef.current - 1) * limitRef.current,
+        search: filtersRef.current.search,
+        ...(sortByRef.current && { sort_by: sortByRef.current }),
+        ...(sortByRef.current && { sort_order: sortOrderRef.current }),
       };
 
       const response = await projectService.getProjects(params);
@@ -78,7 +94,7 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
     } finally {
       setIsLoading(false);
     }
-  }, [limit, currentPage, filters.search, sortBy, sortOrder]);
+  }, []);
 
   const setFilters = useCallback((newFilters: UseProjectsFilters) => {
     setFiltersState(newFilters);
@@ -95,9 +111,10 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsReturn
     setCurrentPage(1); // Reset to first page when sorting changes
   }, []);
 
+  // Fetch on mount and when state changes
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+  }, [currentPage, filters.search, sortBy, sortOrder]);
 
   return {
     projects,

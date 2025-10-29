@@ -2,7 +2,8 @@
 .input-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
+  width: 100%;
 }
 
 .input-full-width {
@@ -14,55 +15,55 @@
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   letter-spacing: 0.01em;
-  margin-bottom: var(--spacing-1);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
 }
 
 .input-required {
   color: var(--color-error);
-  margin-left: var(--spacing-1);
+  font-weight: var(--font-weight-bold);
 }
 
 .input-field {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .input-control {
   width: 100%;
   padding: var(--spacing-3) var(--spacing-4);
   border: 2px solid var(--color-border);
-  border-radius: var(--border-radius-lg);
+  border-radius: var(--border-radius-md);
   font-size: var(--font-size-base);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   background-color: var(--color-surface);
   color: var(--color-text-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-shadow: var(--shadow-xs);
+}
+
+.input-control::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 1;
 }
 
 .input-control:hover:not(:disabled):not(:focus) {
   border-color: var(--color-primary-300);
-  background-color: var(--color-surface);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .input-control:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 
-    0 0 0 4px var(--color-focus-ring-primary),
-    0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-2px);
-  background-color: var(--color-surface);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
-.input-error .input-control {
-  border-color: var(--color-error);
-}
-
-.input-error .input-control:focus {
-  border-color: var(--color-error);
-  box-shadow: var(--shadow-focus-error);
+.input-control:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
 }
 
 .input-control:disabled {
@@ -71,17 +72,34 @@
   opacity: 0.6;
 }
 
-.input-control:focus-visible {
-  outline: 3px solid var(--color-primary-500);
-  outline-offset: 2px;
+/* Input states */
+.input-error .input-control {
+  border-color: var(--color-error);
 }
 
+.input-error .input-control:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-error);
+}
+
+.input-success .input-control {
+  border-color: var(--color-success);
+}
+
+.input-success .input-control:focus {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-success);
+}
+
+/* Input with icons */
 .input-icon {
   position: absolute;
   display: flex;
   align-items: center;
+  justify-content: center;
   pointer-events: none;
-  color: var(--color-gray-400);
+  color: var(--color-text-tertiary);
+  z-index: 1;
 }
 
 .input-icon-left {
@@ -92,19 +110,39 @@
   right: var(--spacing-3);
 }
 
-.input-field:has(.input-icon-left) .input-control {
+.input-with-left-icon {
   padding-left: var(--spacing-10);
 }
 
-.input-field:has(.input-icon-right) .input-control {
+.input-with-right-icon {
   padding-right: var(--spacing-10);
 }
 
-/* Validation messages are defined in utilities.css as .validation-message-* */
+/* Input footer (messages and char count) */
+.input-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  min-height: 20px;
+}
+
+.input-messages {
+  flex: 1;
+}
 
 .input-helper-text {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.input-char-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* === SELECT COMPONENT === */
@@ -112,7 +150,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
+  width: 100%;
 }
 
 .select-full-width {
@@ -121,46 +160,75 @@
 
 .select-label {
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
 }
 
 .select-trigger {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-3);
-  border: var(--border-input);
-  border-radius: var(--border-radius-input);
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
   background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
   cursor: pointer;
-  transition: var(--transition-input);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+  gap: var(--spacing-2);
+}
+
+.select-trigger:hover:not(.select-disabled .select-trigger) {
+  border-color: var(--color-primary-300);
 }
 
 .select-trigger:focus {
   outline: none;
-  border: var(--border-input-focus);
-  box-shadow: var(--shadow-focus-primary);
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
+}
+
+.select-trigger:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
 }
 
 .select-error .select-trigger {
   border-color: var(--color-error);
 }
 
+.select-error .select-trigger:focus {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-error);
+}
+
 .select-disabled .select-trigger {
   background-color: var(--color-background-muted);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .select-value {
   color: var(--color-text-primary);
   flex: 1;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .select-arrow {
   transition: transform var(--transition-fast);
-  color: var(--color-gray-400);
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
 }
 
 .select-arrow-up {
@@ -169,34 +237,54 @@
 
 .select-dropdown {
   position: absolute;
-  top: 100%;
+  top: calc(100% + var(--spacing-1));
   left: 0;
   right: 0;
   background: var(--color-surface);
-  border: var(--border-card);
-  border-radius: var(--border-radius-input);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-lg);
   z-index: var(--z-index-dropdown);
-  margin-top: var(--spacing-1);
-  max-height: 200px;
+  max-height: 240px;
   overflow: hidden;
+  animation: select-dropdown-fade-in var(--transition-fast);
+}
+
+@keyframes select-dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .select-search {
   padding: var(--spacing-2);
-  border-bottom: var(--border-divider);
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-background-secondary);
 }
 
 .select-search-input {
   width: 100%;
-  padding: var(--spacing-2);
-  border: var(--border-input);
+  padding: var(--spacing-2) var(--spacing-3);
+  border: 1px solid var(--color-border);
   border-radius: var(--border-radius-sm);
   font-size: var(--font-size-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast);
+}
+
+.select-search-input:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
 }
 
 .select-options {
-  max-height: 160px;
+  max-height: 200px;
   overflow-y: auto;
 }
 
@@ -204,41 +292,108 @@
   padding: var(--spacing-2) var(--spacing-3);
   cursor: pointer;
   transition: background-color var(--transition-fast);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
 }
 
-.select-option:hover {
-  background-color: var(--color-hover-muted);
+.select-option:hover:not(.select-option-disabled) {
+  background-color: var(--color-background-secondary);
 }
 
 .select-option-highlighted {
-  background-color: var(--color-primary-100);
+  background-color: var(--color-primary-50);
   color: var(--color-primary-700);
 }
 
 .select-option-selected {
   background-color: var(--color-primary-500);
-  color: var(--color-text-on-primary);
+  color: white;
+  font-weight: var(--font-weight-semibold);
 }
 
 .select-option-disabled {
-  color: var(--color-gray-400);
+  color: var(--color-text-tertiary);
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .select-no-options {
-  padding: var(--spacing-3);
+  padding: var(--spacing-6);
   text-align: center;
-  color: var(--color-gray-500);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
 }
 
+.select-helper-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
 /* Select validation messages use .validation-message-* from utilities.css */
+
+/* === NATIVE SELECT (for filters and simple dropdowns) === */
+.filter-select,
+select.form-control {
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-8) var(--spacing-3) var(--spacing-4);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  line-height: 1.5;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-3) center;
+  background-size: 12px;
+}
+
+.filter-select:hover:not(:disabled),
+select.form-control:hover:not(:disabled) {
+  border-color: var(--color-primary-300);
+}
+
+.filter-select:focus,
+select.form-control:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
+}
+
+.filter-select:focus-visible,
+select.form-control:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.filter-select:disabled,
+select.form-control:disabled {
+  background-color: var(--color-background-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.filter-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+  display: block;
+  margin-bottom: var(--spacing-1);
+}
 
 /* === TEXTAREA COMPONENT === */
 .textarea-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
+  width: 100%;
 }
 
 .textarea-full-width {
@@ -247,38 +402,67 @@
 
 .textarea-label {
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-gray-700);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
 }
 
 .textarea-required {
   color: var(--color-error);
-  margin-left: var(--spacing-1);
+  font-weight: var(--font-weight-bold);
 }
 
 .textarea-field {
   position: relative;
+  width: 100%;
 }
 
 .textarea-control {
   width: 100%;
-  min-height: 120px;
+  min-height: 96px;
   padding: var(--spacing-3);
-  border: var(--border-input);
-  border-radius: var(--border-radius-input);
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-md);
   font-size: var(--font-size-base);
   font-family: inherit;
-  transition: var(--transition-input);
+  line-height: 1.5;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   background-color: var(--color-surface);
+  color: var(--color-text-primary);
   resize: vertical;
+  box-shadow: var(--shadow-xs);
+}
+
+.textarea-control::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 1;
+}
+
+.textarea-control:hover:not(:disabled):not(:focus) {
+  border-color: var(--color-primary-300);
 }
 
 .textarea-control:focus {
   outline: none;
-  border: var(--border-input-focus);
-  box-shadow: var(--shadow-focus-primary);
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-primary);
 }
 
+.textarea-control:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+.textarea-control:disabled {
+  background-color: var(--color-background-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Textarea states */
 .textarea-error .textarea-control {
   border-color: var(--color-error);
 }
@@ -288,14 +472,38 @@
   box-shadow: 0 0 0 3px var(--color-focus-ring-error);
 }
 
-.textarea-control:disabled {
-  background-color: var(--color-background-muted);
-  cursor: not-allowed;
+.textarea-success .textarea-control {
+  border-color: var(--color-success);
 }
 
-/* Textarea validation messages use .validation-message-* from utilities.css */
+.textarea-success .textarea-control:focus {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px var(--color-focus-ring-success);
+}
+
+/* Textarea footer (messages and char count) */
+.textarea-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-2);
+  min-height: 20px;
+}
+
+.textarea-messages {
+  flex: 1;
+}
 
 .textarea-helper-text {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.textarea-char-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
 } 

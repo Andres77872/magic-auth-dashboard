@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { groupService } from '@/services';
 import type { UserGroup, GroupListParams, GroupFormData } from '@/types/group.types';
 import type { PaginationResponse } from '@/types/api.types';
@@ -40,12 +40,28 @@ export function useGroups(options: UseGroupsOptions = {}): UseGroupsReturn {
     sort_order: 'desc'
   });
 
+  // Use ref to store current filters to avoid recreating fetchGroups on every filter change
+  const filtersRef = useRef(filters);
+  const isFetchingRef = useRef(false);
+  const hasFetchedRef = useRef(false);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
   const fetchGroups = useCallback(async (params?: Partial<GroupListParams>) => {
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      return;
+    }
+
+    isFetchingRef.current = true;
     setIsLoading(true);
     setError(null);
 
     try {
-      const queryParams = { ...filters, ...params };
+      const queryParams = { ...filtersRef.current, ...params };
       const response = await groupService.getGroups(queryParams);
       
       if (response.success && response.user_groups) {
@@ -60,8 +76,9 @@ export function useGroups(options: UseGroupsOptions = {}): UseGroupsReturn {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [filters]);
+  }, []);
 
   const createGroup = useCallback(async (groupData: GroupFormData): Promise<UserGroup> => {
     try {
@@ -110,9 +127,13 @@ export function useGroups(options: UseGroupsOptions = {}): UseGroupsReturn {
     setFiltersState(prev => ({ ...prev, ...newFilters }));
   }, []);
 
+  // Fetch only once on mount
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      fetchGroups();
+    }
+  }, [fetchGroups]);
 
   return {
     groups,

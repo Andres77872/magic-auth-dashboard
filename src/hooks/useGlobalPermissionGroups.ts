@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { globalRolesService } from '@/services';
 import type { GlobalPermissionGroup, CreateGlobalPermissionGroupRequest } from '@/types/global-roles.types';
 import type { PaginationParams } from '@/types/api.types';
@@ -19,11 +19,19 @@ export function useGlobalPermissionGroups(params: { category?: string } & Pagina
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
 
+  // Use ref to store params to avoid recreating fetchPermissionGroups
+  const paramsRef = useRef(params);
+  
+  // Keep ref in sync with params
+  useEffect(() => {
+    paramsRef.current = params;
+  }, [JSON.stringify(params)]);
+
   const fetchPermissionGroups = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response: any = await globalRolesService.getPermissionGroups(params);
+      const response: any = await globalRolesService.getPermissionGroups(paramsRef.current);
       // API returns permission_groups key, not data
       const permissionGroupsData = response.permission_groups || response.data || [];
       
@@ -49,7 +57,7 @@ export function useGlobalPermissionGroups(params: { category?: string } & Pagina
     } finally {
       setLoading(false);
     }
-  }, [JSON.stringify(params)]);
+  }, []);
 
   const createPermissionGroup = useCallback(async (data: CreateGlobalPermissionGroupRequest): Promise<GlobalPermissionGroup> => {
     setError(null);
@@ -90,7 +98,7 @@ export function useGlobalPermissionGroups(params: { category?: string } & Pagina
 
   useEffect(() => {
     fetchPermissionGroups();
-  }, [fetchPermissionGroups]);
+  }, []);
 
   return {
     permissionGroups,

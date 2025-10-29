@@ -29,8 +29,8 @@ export function Card({
 }: CardProps): React.JSX.Element {
   const cardClasses = [
     'card',
-    padding !== 'md' ? `card-padding-${padding}` : '',
-    elevated ? 'card-elevated' : '',
+    `card-padding-${padding}`,
+    elevated ? 'card-shadow card-border' : 'card-border',
     (clickable || onClick) ? 'card-clickable' : '',
     className,
   ]
@@ -38,6 +38,9 @@ export function Card({
     .join(' ');
 
   const CardWrapper = (clickable || onClick) ? 'button' : 'div';
+
+  // If there's a header, we need the card-content wrapper for proper spacing
+  const hasHeader = title || subtitle || actions;
 
   return (
     <CardWrapper
@@ -48,7 +51,7 @@ export function Card({
       tabIndex={(clickable || onClick) ? (tabIndex ?? 0) : undefined}
       aria-label={title || undefined}
     >
-      {(title || subtitle || actions) && (
+      {hasHeader && (
         <div className="card-header">
           <div className="card-header-content">
             {title && <h3 className="card-title">{title}</h3>}
@@ -58,9 +61,7 @@ export function Card({
         </div>
       )}
       
-      <div className="card-content">
-        {children}
-      </div>
+      {hasHeader ? <div className="card-content">{children}</div> : children}
     </CardWrapper>
   );
 }

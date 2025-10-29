@@ -104,28 +104,29 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
   ];
 
   return (
-    <div className="project-table">
+    <>
       <Table
         data={projects}
         columns={columns}
         onSort={onSort}
         isLoading={isLoading}
         emptyMessage="No projects found"
-        emptyIcon={<ProjectIcon size="lg" />}
+        emptyIcon={<ProjectIcon size="xl" />}
         skeletonRows={8}
+        className="project-table"
       />
       
       {pagination && pagination.total > 0 && (
         <div className="table-pagination">
-                     <Pagination
-             currentPage={Math.floor(pagination.offset / pagination.limit) + 1}
-             totalPages={Math.ceil(pagination.total / pagination.limit)}
-             onPageChange={onPageChange}
-             totalItems={pagination.total}
-             itemsPerPage={pagination.limit}
-           />
+          <Pagination
+            currentPage={Math.floor(pagination.offset / pagination.limit) + 1}
+            totalPages={Math.ceil(pagination.total / pagination.limit)}
+            onPageChange={onPageChange}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+          />
         </div>
       )}
-    </div>
+    </>
   );
 }; 

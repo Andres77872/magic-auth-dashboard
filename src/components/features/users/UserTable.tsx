@@ -176,17 +176,19 @@ export function UserTable({
       sortable: true,
       render: (value, user) => (
         <>
-          <Badge 
-            variant={getUserTypeBadgeVariant(value as UserType)}
-            size="sm"
-          >
-            {(value as string).toUpperCase()}
-          </Badge>
-          {user.user_type_info?.error && (
-            <span className="user-type-error" title={user.user_type_info.error}>
-              <WarningIcon size="sm" aria-hidden="true" />
-            </span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+            <Badge 
+              variant={getUserTypeBadgeVariant(value as UserType)}
+              size="sm"
+            >
+              {(value as string).toUpperCase()}
+            </Badge>
+            {user.user_type_info?.error && (
+              <span className="user-type-error" title={user.user_type_info.error}>
+                <WarningIcon size="sm" aria-hidden="true" />
+              </span>
+            )}
+          </div>
         </>
       ),
     },
@@ -195,23 +197,25 @@ export function UserTable({
       header: 'Groups',
       sortable: false,
       render: (_, user) => (
-        user.groups && user.groups.length > 0 ? (
-          <>
-            {user.groups.slice(0, 2).map(group => (
-              <Badge key={group.group_hash} variant="secondary" size="sm">
-                <GroupIcon size={14} aria-hidden="true" />
-                {group.group_name}
-              </Badge>
-            ))}
-            {user.groups.length > 2 && (
-              <Badge variant="secondary" size="sm">
-                +{user.groups.length - 2} more
-              </Badge>
-            )}
-          </>
-        ) : (
-          <span className="no-groups">No groups</span>
-        )
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-1)' }}>
+          {user.groups && user.groups.length > 0 ? (
+            <>
+              {user.groups.slice(0, 2).map(group => (
+                <Badge key={group.group_hash} variant="secondary" size="sm">
+                  <GroupIcon size="xs" aria-hidden="true" />
+                  {group.group_name}
+                </Badge>
+              ))}
+              {user.groups.length > 2 && (
+                <Badge variant="secondary" size="sm">
+                  +{user.groups.length - 2} more
+                </Badge>
+              )}
+            </>
+          ) : (
+            <span className="no-groups">No groups</span>
+          )}
+        </div>
       ),
     },
     {
@@ -219,23 +223,25 @@ export function UserTable({
       header: 'Projects',
       sortable: false,
       render: (_, user) => (
-        user.projects && user.projects.length > 0 ? (
-          <>
-            {user.projects.slice(0, 2).map(project => (
-              <Badge key={project.project_hash} variant="info" size="sm">
-                <ProjectIcon size={14} aria-hidden="true" />
-                {project.project_name}
-              </Badge>
-            ))}
-            {user.projects.length > 2 && (
-              <Badge variant="secondary" size="sm">
-                +{user.projects.length - 2} more
-              </Badge>
-            )}
-          </>
-        ) : (
-          <span className="no-projects">No projects</span>
-        )
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-1)' }}>
+          {user.projects && user.projects.length > 0 ? (
+            <>
+              {user.projects.slice(0, 2).map(project => (
+                <Badge key={project.project_hash} variant="info" size="sm">
+                  <ProjectIcon size="xs" aria-hidden="true" />
+                  {project.project_name}
+                </Badge>
+              ))}
+              {user.projects.length > 2 && (
+                <Badge variant="secondary" size="sm">
+                  +{user.projects.length - 2} more
+                </Badge>
+              )}
+            </>
+          ) : (
+            <span className="no-projects">No projects</span>
+          )}
+        </div>
       ),
     },
     {

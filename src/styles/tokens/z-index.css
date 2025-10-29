@@ -23,14 +23,19 @@
   --z-index-overlay: 1040;          /* General overlays */
   
   /* Modal Layers (1045-1099) */
-  --z-index-modal-backdrop: 1045;   /* Modal backdrop */
-  --z-index-modal: 1050;            /* Modal content */
-  --z-index-popover: 1060;          /* Popovers and tooltips */
+  /* Modal system uses two z-index values for proper stacking:
+   * - Backdrop (1045): Sits below modal content but above dropdowns
+   * - Modal (1050): The actual modal dialog content
+   * This ensures modals always appear above all other UI elements
+   */
+  --z-index-modal-backdrop: 1045;   /* Modal backdrop overlay */
+  --z-index-modal: 1050;            /* Modal dialog content */
+  --z-index-popover: 1060;          /* Popovers, tooltips, and dropdowns inside modals */
   
   /* Top Layers (1070+) */
-  --z-index-tooltip: 1070;          /* Tooltips */
-  --z-index-toast: 1080;            /* Toast notifications */
-  --z-index-debug: 9999;            /* Debug overlays */
+  --z-index-tooltip: 1070;          /* Tooltips (highest interactive element) */
+  --z-index-toast: 1080;            /* Toast notifications (always visible) */
+  --z-index-debug: 9999;            /* Debug overlays (development only) */
 }
 
 /* === CONTEXTUAL Z-INDEX === */

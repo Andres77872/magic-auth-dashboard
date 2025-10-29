@@ -1,19 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { 
   PageContainer,
   PageHeader,
   SearchBar,
-  Button, 
-  Card, 
-  EmptyState 
+  Button,
+  DataView,
+  DataViewCard,
+  Badge,
+  Pagination
 } from '@/components/common';
-import { ProjectTable, ProjectCard, ProjectFormModal } from '@/components/features/projects';
+import type { DataViewColumn } from '@/components/common';
+import { ProjectActionsMenu } from '@/components/features/projects/ProjectActionsMenu';
+import { ProjectFormModal } from '@/components/features/projects/ProjectFormModal';
 import { useProjects } from '@/hooks';
 import { ProjectIcon, PlusIcon } from '@/components/icons';
+import { formatDate, formatCount } from '@/utils/component-utils';
 import type { ProjectDetails } from '@/types/project.types';
 
 export const ProjectListPage: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(null);
@@ -27,10 +32,7 @@ export const ProjectListPage: React.FC = () => {
     fetchProjects,
     setFilters,
     setPage,
-    setSort,
     filters,
-    sortBy,
-    sortOrder,
   } = useProjects();
 
   const handleSearchChange = (query: string) => {
@@ -43,7 +45,9 @@ export const ProjectListPage: React.FC = () => {
   };
 
   const handleSortChange = (sortField: string, sortDirection: 'asc' | 'desc') => {
-    setSort(sortField, sortDirection);
+    // Sort handling - triggers a refetch through the filters
+    console.log('Sort changed:', sortField, sortDirection);
+    fetchProjects();
   };
 
   const handleCreateClick = () => {
@@ -76,6 +80,100 @@ export const ProjectListPage: React.FC = () => {
     fetchProjects();
   };
 
+  // Define columns for DataView
+  const columns: DataViewColumn<ProjectDetails>[] = useMemo(() => [
+    {
+      key: 'project_name',
+      header: 'Project Name',
+      sortable: true,
+      render: (_value: any, project: ProjectDetails) => (
+        <div className="project-name-cell">
+          <div className="project-name">{project.project_name}</div>
+          {project.project_description && (
+            <div className="project-description">{project.project_description}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'member_count',
+      header: 'Members',
+      sortable: true,
+      align: 'center',
+      width: '120px',
+      render: (_value: any, project: ProjectDetails) => (
+        <Badge variant="secondary">
+          {formatCount(project.member_count || 0, 'member')}
+        </Badge>
+      ),
+    },
+    {
+      key: 'is_active',
+      header: 'Status',
+      sortable: true,
+      width: '120px',
+      render: (_value: any, project: ProjectDetails) => (
+        <Badge variant={project.is_active ? 'success' : 'error'}>
+          {project.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'created_at',
+      header: 'Created',
+      sortable: true,
+      width: '180px',
+      render: (_value: any, project: ProjectDetails) => formatDate(project.created_at),
+    },
+    {
+      key: 'project_hash',
+      header: 'Actions',
+      sortable: false,
+      width: '80px',
+      align: 'center',
+      render: (_value: any, project: ProjectDetails) => (
+        <ProjectActionsMenu
+          project={project}
+          onEdit={handleEditProject}
+          onDelete={handleProjectDelete}
+          onArchive={handleProjectArchive}
+        />
+      ),
+    },
+  ], [handleEditProject, handleProjectDelete, handleProjectArchive]);
+
+  // Render card for grid view
+  const renderCard = useCallback((project: ProjectDetails) => (
+    <DataViewCard
+      title={project.project_name}
+      description={project.project_description}
+      icon={<ProjectIcon size={24} />}
+      badges={[
+        <Badge key="status" variant={project.is_active ? 'success' : 'error'}>
+          {project.is_active ? 'Active' : 'Inactive'}
+        </Badge>
+      ]}
+      stats={[
+        {
+          label: 'Members',
+          value: <Badge variant="secondary">{formatCount(project.member_count || 0, 'member')}</Badge>
+        },
+        {
+          label: 'Created',
+          value: formatDate(project.created_at)
+        }
+      ]}
+      actions={
+        <ProjectActionsMenu
+          project={project}
+          onEdit={handleEditProject}
+          onDelete={handleProjectDelete}
+          onArchive={handleProjectArchive}
+        />
+      }
+    />
+  ), [handleEditProject, handleProjectDelete, handleProjectArchive]);
+
   return (
     <PageContainer>
       <PageHeader
@@ -104,13 +202,13 @@ export const ProjectListPage: React.FC = () => {
         />
         <div className="view-controls">
           <Button
-            variant={viewMode === 'list' ? 'primary' : 'outline'}
+            variant={viewMode === 'table' ? 'primary' : 'outline'}
             size="sm"
-            onClick={() => setViewMode('list')}
-            aria-pressed={viewMode === 'list'}
-            aria-label="Switch to list view"
+            onClick={() => setViewMode('table')}
+            aria-pressed={viewMode === 'table'}
+            aria-label="Switch to table view"
           >
-            List View
+            Table View
           </Button>
           <Button
             variant={viewMode === 'grid' ? 'primary' : 'outline'}
@@ -125,8 +223,8 @@ export const ProjectListPage: React.FC = () => {
       </div>
 
       {/* Error State */}
-      {error && (
-        <Card className="error-card" padding="lg">
+      {error ? (
+        <div className="data-view-error">
           <div className="error-content">
             <ProjectIcon size={32} />
             <h3>Failed to load projects</h3>
@@ -135,58 +233,54 @@ export const ProjectListPage: React.FC = () => {
               Try Again
             </Button>
           </div>
-        </Card>
+        </div>
+      ) : (
+        /* Data View - Unified Table and Grid */
+        <DataView<ProjectDetails>
+          data={projects}
+          columns={columns}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          showViewToggle={false}
+          renderCard={renderCard}
+          gridColumns={{
+            mobile: 1,
+            tablet: 2,
+            desktop: 3
+          }}
+          onSort={(key, direction) => handleSortChange(key as string, direction)}
+          isLoading={isLoading}
+          emptyMessage={searchQuery ? 'No projects match your search criteria' : 'No projects found'}
+          emptyIcon={<ProjectIcon size={32} />}
+          emptyAction={
+            <Button
+              variant="primary"
+              leftIcon={<PlusIcon size={16} />}
+              onClick={handleCreateClick}
+              aria-label="Create your first project"
+            >
+              Create Your First Project
+            </Button>
+          }
+          skeletonRows={8}
+          className="projects-data-view"
+        />
       )}
 
-      {/* Content */}
-      {!error && (
-        <>
-          {!isLoading && projects.length === 0 ? (
-            <EmptyState
-              icon={<ProjectIcon size={48} />}
-              title="No Projects Found"
-              description={
-                searchQuery
-                  ? 'No projects match your search criteria. Try adjusting your search.'
-                  : "You haven't created any projects yet. Get started by creating your first project."
-              }
-              action={
-                <Button 
-                  variant="primary"
-                  leftIcon={<PlusIcon size={16} />}
-                  onClick={handleCreateClick}
-                  aria-label="Create your first project"
-                >
-                  Create Your First Project
-                </Button>
-              }
-            />
-          ) : viewMode === 'list' ? (
-            <Card padding="none">
-              <ProjectTable
-                projects={projects}
-                pagination={pagination}
-                onPageChange={handlePageChange}
-                onSort={handleSortChange}
-                sortBy={sortBy}
-                sortOrder={sortOrder}
-                isLoading={isLoading}
-                onEdit={handleEditProject}
-                onDelete={handleProjectDelete}
-                onArchive={handleProjectArchive}
-              />
-            </Card>
-          ) : (
-            <div className="projects-grid">
-              <ProjectCard
-                projects={projects}
-                pagination={pagination}
-                onPageChange={handlePageChange}
-                isLoading={isLoading}
-              />
-            </div>
-          )}
-        </>
+      {/* Pagination */}
+      {pagination && pagination.total > pagination.limit && !error && (
+        <div className="pagination-section">
+          <div className="pagination-info">
+            <span>Showing {projects.length} of {pagination.total} projects</span>
+          </div>
+          <Pagination
+            currentPage={Math.floor(pagination.offset / pagination.limit) + 1}
+            totalPages={Math.ceil(pagination.total / pagination.limit)}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={handlePageChange}
+          />
+        </div>
       )}
 
       {/* Create Project Modal */}

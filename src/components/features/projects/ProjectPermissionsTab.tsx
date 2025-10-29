@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, LoadingSpinner, Card, Badge, ConfirmDialog, EmptyState } from '@/components/common';
+import { Button, LoadingSpinner, Card, Badge, ConfirmDialog, EmptyState, Modal } from '@/components/common';
 import { globalRolesService, permissionAssignmentsService } from '@/services';
 import { useToast } from '@/contexts/ToastContext';
 import type { ProjectDetails } from '@/types/project.types';
@@ -380,136 +380,136 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       )}
 
       {/* Add Role Modal */}
-      {showAddRoleModal && (
-        <div className="modal-overlay" onClick={() => setShowAddRoleModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>Add Role to Catalog</h3>
-            <p className="modal-description">
-              Select a global role to add to this project's catalog. This is for UI suggestions only.
-            </p>
+      <Modal
+        isOpen={showAddRoleModal}
+        onClose={() => setShowAddRoleModal(false)}
+        title="Add Role to Catalog"
+        size="md"
+      >
+        <p className="modal-description">
+          Select a global role to add to this project's catalog. This is for UI suggestions only.
+        </p>
 
-            <div className="form-group">
-              <label htmlFor="role-select">Select Role</label>
-              <select
-                id="role-select"
-                value={selectedRoleToAdd}
-                onChange={e => setSelectedRoleToAdd(e.target.value)}
-                className="form-select"
-              >
-                <option value="">Choose a role...</option>
-                {availableRoles.map(role => (
-                  <option key={role.role_hash} value={role.role_hash}>
-                    {role.role_display_name || role.role_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="role-purpose">Purpose (Optional)</label>
-              <input
-                id="role-purpose"
-                type="text"
-                value={rolePurpose}
-                onChange={e => setRolePurpose(e.target.value)}
-                placeholder="e.g., For content editors"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="role-notes">Notes (Optional)</label>
-              <textarea
-                id="role-notes"
-                value={roleNotes}
-                onChange={e => setRoleNotes(e.target.value)}
-                placeholder="Additional notes about this role's use in the project"
-                className="form-textarea"
-                rows={3}
-              />
-            </div>
-
-            <div className="modal-actions">
-              <Button variant="outline" onClick={() => setShowAddRoleModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAddRoleToCustomCatalog}
-                loading={isAddingRole}
-                disabled={!selectedRoleToAdd}
-              >
-                Add to Catalog
-              </Button>
-            </div>
-          </div>
+        <div className="form-group">
+          <label htmlFor="role-select">Select Role</label>
+          <select
+            id="role-select"
+            value={selectedRoleToAdd}
+            onChange={e => setSelectedRoleToAdd(e.target.value)}
+            className="form-select"
+          >
+            <option value="">Choose a role...</option>
+            {availableRoles.map(role => (
+              <option key={role.role_hash} value={role.role_hash}>
+                {role.role_display_name || role.role_name}
+              </option>
+            ))}
+          </select>
         </div>
-      )}
+
+        <div className="form-group">
+          <label htmlFor="role-purpose">Purpose (Optional)</label>
+          <input
+            id="role-purpose"
+            type="text"
+            value={rolePurpose}
+            onChange={e => setRolePurpose(e.target.value)}
+            placeholder="e.g., For content editors"
+            className="form-input"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="role-notes">Notes (Optional)</label>
+          <textarea
+            id="role-notes"
+            value={roleNotes}
+            onChange={e => setRoleNotes(e.target.value)}
+            placeholder="Additional notes about this role's use in the project"
+            className="form-textarea"
+            rows={3}
+          />
+        </div>
+
+        <div className="modal-actions">
+          <Button variant="outline" onClick={() => setShowAddRoleModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddRoleToCustomCatalog}
+            loading={isAddingRole}
+            disabled={!selectedRoleToAdd}
+          >
+            Add to Catalog
+          </Button>
+        </div>
+      </Modal>
 
       {/* Add Permission Group Modal */}
-      {showAddPermissionGroupModal && (
-        <div className="modal-overlay" onClick={() => setShowAddPermissionGroupModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>Add Permission Group to Catalog</h3>
-            <p className="modal-description">
-              Select a permission group to add to this project's catalog. This is for UI suggestions only.
-            </p>
+      <Modal
+        isOpen={showAddPermissionGroupModal}
+        onClose={() => setShowAddPermissionGroupModal(false)}
+        title="Add Permission Group to Catalog"
+        size="md"
+      >
+        <p className="modal-description">
+          Select a permission group to add to this project's catalog. This is for UI suggestions only.
+        </p>
 
-            <div className="form-group">
-              <label htmlFor="permission-group-select">Select Permission Group</label>
-              <select
-                id="permission-group-select"
-                value={selectedPermissionGroupToAdd}
-                onChange={e => setSelectedPermissionGroupToAdd(e.target.value)}
-                className="form-select"
-              >
-                <option value="">Choose a permission group...</option>
-                {availablePermissionGroups.map(group => (
-                  <option key={group.group_hash} value={group.group_hash}>
-                    {group.group_display_name || group.group_name} ({group.group_category})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="permission-group-purpose">Purpose (Optional)</label>
-              <input
-                id="permission-group-purpose"
-                type="text"
-                value={permissionGroupPurpose}
-                onChange={e => setPermissionGroupPurpose(e.target.value)}
-                placeholder="e.g., For content management"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="permission-group-notes">Notes (Optional)</label>
-              <textarea
-                id="permission-group-notes"
-                value={permissionGroupNotes}
-                onChange={e => setPermissionGroupNotes(e.target.value)}
-                placeholder="Additional notes about this permission group's use in the project"
-                className="form-textarea"
-                rows={3}
-              />
-            </div>
-
-            <div className="modal-actions">
-              <Button variant="outline" onClick={() => setShowAddPermissionGroupModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAddPermissionGroupToCatalog}
-                loading={isAddingPermissionGroup}
-                disabled={!selectedPermissionGroupToAdd}
-              >
-                Add to Catalog
-              </Button>
-            </div>
-          </div>
+        <div className="form-group">
+          <label htmlFor="permission-group-select">Select Permission Group</label>
+          <select
+            id="permission-group-select"
+            value={selectedPermissionGroupToAdd}
+            onChange={e => setSelectedPermissionGroupToAdd(e.target.value)}
+            className="form-select"
+          >
+            <option value="">Choose a permission group...</option>
+            {availablePermissionGroups.map(group => (
+              <option key={group.group_hash} value={group.group_hash}>
+                {group.group_display_name || group.group_name} ({group.group_category})
+              </option>
+            ))}
+          </select>
         </div>
-      )}
+
+        <div className="form-group">
+          <label htmlFor="permission-group-purpose">Purpose (Optional)</label>
+          <input
+            id="permission-group-purpose"
+            type="text"
+            value={permissionGroupPurpose}
+            onChange={e => setPermissionGroupPurpose(e.target.value)}
+            placeholder="e.g., For content management"
+            className="form-input"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="permission-group-notes">Notes (Optional)</label>
+          <textarea
+            id="permission-group-notes"
+            value={permissionGroupNotes}
+            onChange={e => setPermissionGroupNotes(e.target.value)}
+            placeholder="Additional notes about this permission group's use in the project"
+            className="form-textarea"
+            rows={3}
+          />
+        </div>
+
+        <div className="modal-actions">
+          <Button variant="outline" onClick={() => setShowAddPermissionGroupModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddPermissionGroupToCatalog}
+            loading={isAddingPermissionGroup}
+            disabled={!selectedPermissionGroupToAdd}
+          >
+            Add to Catalog
+          </Button>
+        </div>
+      </Modal>
 
       {/* Remove Role Confirmation */}
       {confirmRemoveRole && (

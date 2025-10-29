@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Button, Card, CardHeader, CardTitle, CardContent, Badge } from '@/components/common';
-import { CheckIcon, CloseIcon, SecurityIcon, InfoIcon } from '@/components/icons';
+import { Input, Button, Badge, Textarea } from '@/components/common';
+import { CheckIcon, CloseIcon } from '@/components/icons';
 import type { GlobalRole, CreateGlobalRoleRequest, UpdateGlobalRoleRequest } from '@/types/global-roles.types';
 import '../../../styles/components/global-role-form.css';
 
@@ -28,25 +28,14 @@ export function GlobalRoleForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [charCounts, setCharCounts] = useState({
-    role_name: 0,
-    role_display_name: 0,
-    role_description: 0
-  });
 
   useEffect(() => {
     if (initialData) {
-      const data = {
+      setFormData({
         role_name: initialData.role_name,
         role_display_name: initialData.role_display_name,
         role_description: initialData.role_description || '',
         role_priority: initialData.role_priority
-      };
-      setFormData(data);
-      setCharCounts({
-        role_name: data.role_name.length,
-        role_display_name: data.role_display_name.length,
-        role_description: data.role_description.length
       });
     }
   }, [initialData]);
@@ -109,11 +98,6 @@ export function GlobalRoleForm({
 
   const handleChange = (field: string, value: string | number) => {
     setFormData({ ...formData, [field]: value });
-    
-    // Update character count
-    if (field !== 'role_priority') {
-      setCharCounts({ ...charCounts, [field]: String(value).length });
-    }
 
     // Real-time validation for touched fields
     if (touched[field]) {
@@ -192,119 +176,68 @@ export function GlobalRoleForm({
   const priorityInfo = getPriorityLevel(formData.role_priority);
 
   return (
-    <Card className="global-role-form">
-      <CardHeader>
-        <div className="form-header">
-          <div className="form-header-icon">
-            <SecurityIcon size="lg" aria-hidden="true" />
-          </div>
-          <div className="form-header-content">
-            <CardTitle>
-              {mode === 'create' ? 'Create New Global Role' : 'Edit Global Role'}
-            </CardTitle>
-            <p className="form-subtitle">
-              {mode === 'create' 
-                ? 'Define a new role with specific permissions and priority' 
-                : `Editing ${initialData?.role_display_name || 'role'}`}
-            </p>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="role-form">
+    <div className="global-role-form">
+      <p className="form-subtitle">
+        {mode === 'create' 
+          ? 'Define a new role with specific permissions and priority' 
+          : `Editing ${initialData?.role_display_name || 'role'}`}
+      </p>
+      
+      <form onSubmit={handleSubmit} className="role-form">
           {/* Role Name */}
           <div className={`form-group ${touched.role_name && errors.role_name ? 'has-error' : touched.role_name ? 'has-success' : ''}`}>
-            <label htmlFor="role_name" className="form-label">
-              Role Name (Internal Identifier)
-              <span className="required">*</span>
-            </label>
             <Input
               id="role_name"
               type="text"
+              label="Role Name (Internal Identifier)"
               value={formData.role_name}
               onChange={(e) => handleChange('role_name', e.target.value)}
               onBlur={() => handleBlur('role_name')}
               placeholder="e.g., super_admin, content_editor"
               disabled={mode === 'edit' || isLoading}
+              required
               error={touched.role_name ? errors.role_name : undefined}
-              className="form-input"
+              helperText={!errors.role_name ? "Lowercase letters and underscores only. Cannot be changed after creation." : undefined}
+              maxLength={50}
+              showCharCount
             />
-            <div className="field-footer">
-              {touched.role_name && errors.role_name ? (
-                <span className="error-message">
-                  <InfoIcon size="xs" aria-hidden="true" />
-                  {errors.role_name}
-                </span>
-              ) : (
-                <span className="help-text">
-                  Lowercase letters and underscores only. Cannot be changed after creation.
-                </span>
-              )}
-              <span className="char-count">{charCounts.role_name}/50</span>
-            </div>
           </div>
 
           {/* Display Name */}
           <div className={`form-group ${touched.role_display_name && errors.role_display_name ? 'has-error' : touched.role_display_name ? 'has-success' : ''}`}>
-            <label htmlFor="role_display_name" className="form-label">
-              Display Name
-              <span className="required">*</span>
-            </label>
             <Input
               id="role_display_name"
               type="text"
+              label="Display Name"
               value={formData.role_display_name}
               onChange={(e) => handleChange('role_display_name', e.target.value)}
               onBlur={() => handleBlur('role_display_name')}
               placeholder="e.g., Super Administrator, Content Editor"
               disabled={isLoading}
+              required
               error={touched.role_display_name ? errors.role_display_name : undefined}
-              className="form-input"
+              helperText={!errors.role_display_name ? "User-friendly name shown in the interface" : undefined}
+              maxLength={100}
+              showCharCount
             />
-            <div className="field-footer">
-              {touched.role_display_name && errors.role_display_name ? (
-                <span className="error-message">
-                  <InfoIcon size="xs" aria-hidden="true" />
-                  {errors.role_display_name}
-                </span>
-              ) : (
-                <span className="help-text">
-                  User-friendly name shown in the interface
-                </span>
-              )}
-              <span className="char-count">{charCounts.role_display_name}/100</span>
-            </div>
           </div>
 
           {/* Description */}
           <div className={`form-group ${touched.role_description && errors.role_description ? 'has-error' : ''}`}>
-            <label htmlFor="role_description" className="form-label">
-              Description
-              <span className="optional-badge">Optional</span>
-            </label>
-            <textarea
+            <Textarea
               id="role_description"
+              label="Description"
               value={formData.role_description}
               onChange={(e) => handleChange('role_description', e.target.value)}
               onBlur={() => handleBlur('role_description')}
               placeholder="Describe the purpose and permissions of this role..."
               rows={4}
               disabled={isLoading}
-              className="role-description-textarea"
+              error={touched.role_description ? errors.role_description : undefined}
+              helperText={!errors.role_description ? "Detailed explanation of role responsibilities" : undefined}
+              maxLength={500}
+              showCharCount
             />
-            <div className="field-footer">
-              {touched.role_description && errors.role_description ? (
-                <span className="error-message">
-                  <InfoIcon size="xs" aria-hidden="true" />
-                  {errors.role_description}
-                </span>
-              ) : (
-                <span className="help-text">
-                  Detailed explanation of role responsibilities
-                </span>
-              )}
-              <span className="char-count">{charCounts.role_description}/500</span>
-            </div>
           </div>
 
           {/* Priority */}
@@ -383,8 +316,7 @@ export function GlobalRoleForm({
             </Button>
           </div>
         </form>
-      </CardContent>
-    </Card>
+    </div>
   );
 }
 

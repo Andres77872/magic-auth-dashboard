@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, LoadingSpinner, ConfirmDialog, EmptyState } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, LoadingSpinner, ConfirmDialog, EmptyState, Modal } from '@/components/common';
 import { LockIcon, PlusIcon, DeleteIcon, InfoIcon } from '@/components/icons';
 import { permissionAssignmentsService, globalRolesService } from '@/services';
 import type { DirectPermissionAssignment } from '@/types/permission-assignments.types';
@@ -48,7 +48,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       if (response.success && permissionGroupsData.length >= 0) {
         // Filter out already assigned groups
         const assignedHashes = new Set(directAssignments.map(a => a.permission_group_hash));
-        const available = permissionGroupsData.filter((g: any) => !assignedHashes.has(g.group_hash));
+        const available = permissionGroupsData.filter((g: GlobalPermissionGroup) => !assignedHashes.has(g.group_hash));
         setAvailableGroups(available);
       }
     } catch (error) {
@@ -205,81 +205,72 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       </Card>
 
       {/* Assign Permission Group Modal */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => !isAssigning && setShowAddModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Assign Direct Permission Group</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowAddModal(false)}
-                disabled={isAssigning}
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => !isAssigning && setShowAddModal(false)}
+        title="Assign Direct Permission Group"
+        size="md"
+        closeOnBackdropClick={!isAssigning}
+        closeOnEscape={!isAssigning}
+      >
+        {availableGroups.length === 0 ? (
+          <EmptyState
+            icon={<InfoIcon size="xl" aria-hidden="true" />}
+            title="No Available Permission Groups"
+            description="All permission groups have been assigned to this user."
+          />
+        ) : (
+          <>
+            <div className="form-group">
+              <label htmlFor="permission-group">Select Permission Group</label>
+              <select
+                id="permission-group"
+                className="form-select"
+                value={selectedGroup}
+                onChange={(e) => setSelectedGroup(e.target.value)}
               >
-                ×
-              </button>
+                <option value="">-- Select a permission group --</option>
+                {availableGroups.map(group => (
+                  <option key={group.group_hash} value={group.group_hash}>
+                    {group.group_display_name} ({group.group_name})
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="modal-body">
-              {availableGroups.length === 0 ? (
-                <EmptyState
-                  icon={<InfoIcon size="xl" aria-hidden="true" />}
-                  title="No Available Permission Groups"
-                  description="All permission groups have been assigned to this user."
-                />
-              ) : (
-                <>
-                  <div className="form-group">
-                    <label htmlFor="permission-group">Select Permission Group</label>
-                    <select
-                      id="permission-group"
-                      className="form-select"
-                      value={selectedGroup}
-                      onChange={(e) => setSelectedGroup(e.target.value)}
-                    >
-                      <option value="">-- Select a permission group --</option>
-                      {availableGroups.map(group => (
-                        <option key={group.group_hash} value={group.group_hash}>
-                          {group.group_display_name} ({group.group_name})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div className="form-group">
-                    <label htmlFor="notes">Notes (Optional)</label>
-                    <textarea
-                      id="notes"
-                      className="form-textarea"
-                      value={assignmentNotes}
-                      onChange={(e) => setAssignmentNotes(e.target.value)}
-                      placeholder="Reason for direct assignment (e.g., 'Temporary elevated access for migration')"
-                      rows={3}
-                    />
-                    <p className="field-hint">
-                      Document why this user needs direct permission assignment instead of group membership.
-                    </p>
-                  </div>
-                </>
-              )}
+            <div className="form-group">
+              <label htmlFor="notes">Notes (Optional)</label>
+              <textarea
+                id="notes"
+                className="form-textarea"
+                value={assignmentNotes}
+                onChange={(e) => setAssignmentNotes(e.target.value)}
+                placeholder="Reason for direct assignment (e.g., 'Temporary elevated access for migration')"
+                rows={3}
+              />
+              <p className="field-hint">
+                Document why this user needs direct permission assignment instead of group membership.
+              </p>
             </div>
-            <div className="modal-footer">
-              <Button
-                variant="outline"
-                onClick={() => setShowAddModal(false)}
-                disabled={isAssigning}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAssign}
-                disabled={!selectedGroup || isAssigning}
-                loading={isAssigning}
-              >
-                Assign Permission Group
-              </Button>
-            </div>
-          </div>
+          </>
+        )}
+        <div className="modal-footer">
+          <Button
+            variant="outline"
+            onClick={() => setShowAddModal(false)}
+            disabled={isAssigning}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAssign}
+            disabled={!selectedGroup || isAssigning}
+            loading={isAssigning}
+          >
+            Assign Permission Group
+          </Button>
         </div>
-      )}
+      </Modal>
 
       {/* Remove Confirmation Dialog */}
       {confirmRemove && (

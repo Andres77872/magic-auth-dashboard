@@ -6,6 +6,8 @@
 @import './modals.css';
 @import './login-modal.css';
 @import './tables.css';
+@import './data-view.css';
+@import './data-view-card.css';
 @import './cards.css';
 @import './badges.css';
 @import './toasts.css';

@@ -2,15 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Table, Badge, Button } from '@/components/common';
 import { ProjectGroupActionsMenu } from './ProjectGroupActionsMenu';
+import { GroupIcon, PlusIcon } from '@/components/icons';
+import { formatDate } from '@/utils/component-utils';
+import type { TableColumn } from '@/components/common/Table';
 import type { ProjectGroup } from '@/services/project-group.service';
-
-const formatDate = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
 
 interface ProjectGroupTableProps {
   projectGroups: ProjectGroup[];
@@ -18,6 +13,7 @@ interface ProjectGroupTableProps {
   onEdit?: (group: ProjectGroup) => void;
   onDelete?: (group: ProjectGroup) => void;
   onView?: (group: ProjectGroup) => void;
+  onSort?: (key: keyof ProjectGroup, direction: 'asc' | 'desc') => void;
 }
 
 export function ProjectGroupTable({
@@ -25,34 +21,43 @@ export function ProjectGroupTable({
   isLoading = false,
   onEdit,
   onDelete,
-  onView
+  onView,
+  onSort
 }: ProjectGroupTableProps): React.JSX.Element {
-  const columns = [
+  const columns: TableColumn<ProjectGroup>[] = [
     {
-      key: 'group_name' as keyof ProjectGroup,
+      key: 'group_name',
       header: 'Group Name',
       sortable: true,
-      render: (_value: any, group: ProjectGroup) => (
-        <div className="flex flex-col">
+      render: (_value, group) => (
+        <div className="table-group-name-cell">
           <Link 
             to={`/dashboard/groups/project-groups/${group.group_hash}`}
-            className="font-medium text-primary hover:text-primary-dark"
+            className="table-group-name"
+            style={{ 
+              color: 'var(--color-primary-500)',
+              textDecoration: 'none',
+              transition: 'color var(--transition-fast)'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.color = 'var(--color-primary-600)'}
+            onMouseOut={(e) => e.currentTarget.style.color = 'var(--color-primary-500)'}
           >
             {group.group_name}
           </Link>
           {group.description && (
-            <span className="text-sm text-muted mt-1">
+            <div className="table-group-description">
               {group.description}
-            </span>
+            </div>
           )}
         </div>
       ),
     },
     {
-      key: 'permissions' as keyof ProjectGroup,
+      key: 'permissions',
       header: 'Permissions',
-      render: (_value: any, group: ProjectGroup) => (
-        <div className="flex flex-wrap gap-1">
+      sortable: false,
+      render: (_value, group) => (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-1)' }}>
           {group.permissions.slice(0, 3).map((permission, index) => (
             <Badge key={index} variant="secondary" size="sm">
               {permission}
@@ -67,30 +72,35 @@ export function ProjectGroupTable({
       ),
     },
     {
-      key: 'project_count' as keyof ProjectGroup,
+      key: 'project_count',
       header: 'Projects',
       sortable: true,
-      render: (_value: any, group: ProjectGroup) => (
+      align: 'center',
+      width: '120px',
+      render: (_value, group) => (
         <Badge variant="info" size="sm">
-          {group.project_count} project{group.project_count !== 1 ? 's' : ''}
+          {group.project_count} {group.project_count !== 1 ? 'projects' : 'project'}
         </Badge>
       ),
     },
     {
-      key: 'created_at' as keyof ProjectGroup,
+      key: 'created_at',
       header: 'Created',
       sortable: true,
-      render: (_value: any, group: ProjectGroup) => (
-        <span className="text-sm text-muted">
+      width: '140px',
+      render: (_value, group) => (
+        <span className="user-date">
           {formatDate(group.created_at)}
         </span>
       ),
     },
     {
-      key: 'group_hash' as keyof ProjectGroup,
+      key: 'group_hash',
       header: 'Actions',
-      width: '100px',
-      render: (_value: any, group: ProjectGroup) => (
+      sortable: false,
+      width: '80px',
+      align: 'center',
+      render: (_value, group) => (
         <ProjectGroupActionsMenu
           group={group}
           onEdit={onEdit}
@@ -101,34 +111,28 @@ export function ProjectGroupTable({
     },
   ];
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-2 text-muted">Loading project groups...</span>
-      </div>
-    );
-  }
-
-  if (projectGroups.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <h3 className="text-lg font-medium text-muted">No project groups found</h3>
-        <p className="text-muted mt-2">
-          Create your first project group to organize permissions across projects.
-        </p>
-        <Button className="mt-4" onClick={() => window.location.href = '/dashboard/groups/project-groups/create'}>
-          Create Project Group
-        </Button>
-      </div>
-    );
-  }
+  const emptyAction = (
+    <Button 
+      variant="primary" 
+      size="md"
+      onClick={() => window.location.href = '/dashboard/groups/project-groups/create'}
+    >
+      <PlusIcon size="sm" />
+      Create Project Group
+    </Button>
+  );
 
   return (
-    <Table 
+    <Table<ProjectGroup>
       data={projectGroups} 
       columns={columns}
+      isLoading={isLoading}
+      onSort={onSort}
+      emptyMessage="No project groups found. Create your first project group to organize permissions across projects."
+      emptyIcon={<GroupIcon size="xl" />}
+      emptyAction={emptyAction}
       className="project-group-table"
+      skeletonRows={6}
     />
   );
 } 

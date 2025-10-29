@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { projectGroupService } from '@/services';
 import type { 
   ProjectGroup, 
@@ -46,12 +46,20 @@ export function useProjectGroups(options: UseProjectGroupsOptions = {}): UseProj
     sort_order: 'desc'
   });
 
+  // Use ref to store current filters to avoid recreating fetchProjectGroups on every filter change
+  const filtersRef = useRef(filters);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
   const fetchProjectGroups = useCallback(async (params?: Partial<PaginationParams>) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const queryParams = { ...filters, ...params };
+      const queryParams = { ...filtersRef.current, ...params };
       const response: ProjectGroupListResponse = await projectGroupService.getProjectGroups(queryParams);
       
       if (response.success && response.project_groups) {
@@ -67,7 +75,7 @@ export function useProjectGroups(options: UseProjectGroupsOptions = {}): UseProj
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, []);
 
   const createProjectGroup = useCallback(async (groupData: CreateProjectGroupRequest): Promise<ProjectGroup> => {
     try {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Badge, Button } from '@/components/common';
 import { UserAvatar } from './UserAvatar';
-import { EditIcon, GroupIcon, ProjectIcon, ClockIcon } from '@/components/icons';
+import { EditIcon, GroupIcon, ProjectIcon, ClockIcon, CheckIcon } from '@/components/icons';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
 import type { User } from '@/types/auth.types';
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, LoadingSpinner, ConfirmDialog, EmptyState } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, LoadingSpinner, ConfirmDialog, EmptyState, Modal } from '@/components/common';
 import { LockIcon, PlusIcon, DeleteIcon, InfoIcon } from '@/components/icons';
 import { permissionAssignmentsService, globalRolesService } from '@/services';
 import type { PermissionGroupAssignment } from '@/types/permission-assignments.types';
@@ -215,90 +215,81 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       </Card>
 
       {/* Add Permission Groups Modal */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => !isAssigning && setShowAddModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Assign Permission Groups</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowAddModal(false)}
-                disabled={isAssigning}
-              >
-                ×
-              </button>
+      <Modal
+        isOpen={showAddModal}
+        onClose={() => !isAssigning && setShowAddModal(false)}
+        title="Assign Permission Groups"
+        size="lg"
+        closeOnBackdropClick={!isAssigning}
+        closeOnEscape={!isAssigning}
+      >
+        {availableGroups.length === 0 ? (
+          <EmptyState
+            icon={<InfoIcon size="xl" aria-hidden="true" />}
+            title="No Available Permission Groups"
+            description="All permission groups have been assigned to this user group."
+          />
+        ) : (
+          <>
+            <div className="selection-info">
+              <Badge variant="info">
+                {selectedGroups.length} selected
+              </Badge>
             </div>
-            <div className="modal-body">
-              {availableGroups.length === 0 ? (
-                <EmptyState
-                  icon={<InfoIcon size="xl" aria-hidden="true" />}
-                  title="No Available Permission Groups"
-                  description="All permission groups have been assigned to this user group."
-                />
-              ) : (
-                <>
-                  <div className="selection-info">
-                    <Badge variant="info">
-                      {selectedGroups.length} selected
-                    </Badge>
-                  </div>
 
-                  {Object.entries(groupedByCategory).map(([category, groups]) => (
-                    <div key={category} className="category-section">
-                      <h3 className="category-title">
-                        {category}
-                        <Badge variant="secondary">{groups.length}</Badge>
-                      </h3>
-                      <div className="groups-list">
-                        {groups.map(group => (
-                          <div
-                            key={group.group_hash}
-                            className={`group-item ${selectedGroups.includes(group.group_hash) ? 'selected' : ''}`}
-                            onClick={() => toggleGroupSelection(group.group_hash)}
-                          >
-                            <div className="group-item-content">
-                              <input
-                                type="checkbox"
-                                checked={selectedGroups.includes(group.group_hash)}
-                                onChange={() => toggleGroupSelection(group.group_hash)}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              <div className="group-item-info">
-                                <h4>{group.group_display_name}</h4>
-                                <p className="group-name">{group.group_name}</p>
-                                {group.group_description && (
-                                  <p className="group-description">{group.group_description}</p>
-                                )}
-                              </div>
-                            </div>
-                            <Badge variant="secondary">{group.group_category}</Badge>
-                          </div>
-                        ))}
+            {Object.entries(groupedByCategory).map(([category, groups]) => (
+              <div key={category} className="category-section">
+                <h3 className="category-title">
+                  {category}
+                  <Badge variant="secondary">{groups.length}</Badge>
+                </h3>
+                <div className="groups-list">
+                  {groups.map(group => (
+                    <div
+                      key={group.group_hash}
+                      className={`group-item ${selectedGroups.includes(group.group_hash) ? 'selected' : ''}`}
+                      onClick={() => toggleGroupSelection(group.group_hash)}
+                    >
+                      <div className="group-item-content">
+                        <input
+                          type="checkbox"
+                          checked={selectedGroups.includes(group.group_hash)}
+                          onChange={() => toggleGroupSelection(group.group_hash)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="group-item-info">
+                          <h4>{group.group_display_name}</h4>
+                          <p className="group-name">{group.group_name}</p>
+                          {group.group_description && (
+                            <p className="group-description">{group.group_description}</p>
+                          )}
+                        </div>
                       </div>
+                      <Badge variant="secondary">{group.group_category}</Badge>
                     </div>
                   ))}
-                </>
-              )}
-            </div>
-            <div className="modal-footer">
-              <Button
-                variant="outline"
-                onClick={() => setShowAddModal(false)}
-                disabled={isAssigning}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleBulkAssign}
-                disabled={selectedGroups.length === 0 || isAssigning}
-                loading={isAssigning}
-              >
-                Assign {selectedGroups.length > 0 ? `(${selectedGroups.length})` : ''}
-              </Button>
-            </div>
-          </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+        <div className="modal-footer">
+          <Button
+            variant="outline"
+            onClick={() => setShowAddModal(false)}
+            disabled={isAssigning}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleBulkAssign}
+            disabled={selectedGroups.length === 0 || isAssigning}
+            loading={isAssigning}
+          >
+            Assign {selectedGroups.length > 0 ? `(${selectedGroups.length})` : ''}
+          </Button>
         </div>
-      )}
+      </Modal>
 
       {/* Remove Confirmation Dialog */}
       {confirmRemove && (

@@ -83,7 +83,7 @@ export const GroupTable: React.FC<GroupTableProps> = ({
       onSort={onSort}
       isLoading={loading}
       emptyMessage="No groups found"
-      emptyIcon={<GroupIcon size="lg" />}
+      emptyIcon={<GroupIcon size="xl" />}
       emptyAction={emptyAction}
       skeletonRows={6}
       className="groups-table"

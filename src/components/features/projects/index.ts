@@ -1,3 +1,5 @@
+// ⚠️ DEPRECATED: Use DataView from @/components/common instead
+// These components are kept for backward compatibility but should not be used in new code
 export { ProjectTable } from './ProjectTable';
 export { ProjectCard } from './ProjectCard';
 export { ProjectFilter } from './ProjectFilter';

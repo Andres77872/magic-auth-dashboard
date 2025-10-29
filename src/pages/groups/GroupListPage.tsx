@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   PageContainer,
@@ -8,15 +8,17 @@ import {
   Button,
   Pagination,
   ConfirmDialog,
-  Card
+  DataView,
+  DataViewCard,
+  Badge
 } from '@/components/common';
-import type { Filter } from '@/components/common';
+import type { Filter, DataViewColumn } from '@/components/common';
 import { useGroups } from '@/hooks';
-import { GroupTable } from '@/components/features/groups/GroupTable';
-import { GroupCard } from '@/components/features/groups/GroupCard';
+import { GroupActionsMenu } from '@/components/features/groups/GroupActionsMenu';
 import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
 import { GroupIcon, PlusIcon } from '@/components/icons';
 import { useToast } from '@/hooks';
+import { formatDate, formatCount } from '@/utils/component-utils';
 import type { GroupListParams, UserGroup, GroupFormData } from '@/types/group.types';
 
 export const GroupListPage: React.FC = () => {
@@ -44,30 +46,30 @@ export const GroupListPage: React.FC = () => {
   const [groupToDelete, setGroupToDelete] = useState<UserGroup | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     const offset = (page - 1) * (filters.limit || 20);
     setFilters({ offset });
     fetchGroups({ offset });
-  };
+  }, [filters.limit, setFilters, fetchGroups]);
 
-  const handleSort = (field: keyof UserGroup, direction: 'asc' | 'desc') => {
+  const handleSort = useCallback((field: keyof UserGroup, direction: 'asc' | 'desc') => {
     setFilters({ sort_by: field as string, sort_order: direction });
     fetchGroups({ sort_by: field as string, sort_order: direction });
-  };
+  }, [setFilters, fetchGroups]);
 
-  const handleFiltersChange = (newFilters: Partial<GroupListParams>) => {
+  const handleFiltersChange = useCallback((newFilters: Partial<GroupListParams>) => {
     setFilters(newFilters);
     fetchGroups(newFilters);
-  };
+  }, [setFilters, fetchGroups]);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     const clearedFilters = {
       search: '',
       offset: 0
     };
     setFilters(clearedFilters);
     fetchGroups(clearedFilters);
-  };
+  }, [setFilters, fetchGroups]);
 
   // Create group handlers
   const handleOpenCreateModal = () => {
@@ -150,8 +152,99 @@ export const GroupListPage: React.FC = () => {
   const currentPage = Math.floor((filters.offset || 0) / (filters.limit || 20)) + 1;
   const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 0;
 
-  // Define filter options for FilterBar
-  const filterBarFilters: Filter[] = [
+  // Memoize search handler to prevent SearchBar re-renders
+  const handleSearch = useCallback((query: string) => {
+    handleFiltersChange({ search: query, offset: 0 });
+  }, [handleFiltersChange]);
+
+  // Define columns for DataView
+  const columns: DataViewColumn<UserGroup>[] = useMemo(() => [
+    {
+      key: 'group_name',
+      header: 'Group Name',
+      sortable: true,
+      render: (_value: any, group: UserGroup) => (
+        <div className="table-group-name-cell">
+          <div className="table-group-name">{group.group_name}</div>
+          {group.description && (
+            <div className="table-group-description">
+              {group.description}
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'member_count',
+      header: 'Members',
+      sortable: true,
+      align: 'center',
+      width: '150px',
+      render: (_value: any, group: UserGroup) => (
+        <Badge variant="secondary">
+          {formatCount(group.member_count || 0, 'member')}
+        </Badge>
+      )
+    },
+    {
+      key: 'created_at',
+      header: 'Created',
+      sortable: true,
+      width: '180px',
+      render: (_value: any, group: UserGroup) => formatDate(group.created_at)
+    },
+    {
+      key: 'group_hash',
+      header: 'Actions',
+      width: '80px',
+      align: 'center',
+      render: (_value: any, group: UserGroup) => (
+        <GroupActionsMenu 
+          group={group}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onView={handleView}
+        />
+      )
+    }
+  ], [handleEdit, handleDelete, handleView]);
+
+  // Render card for grid view
+  const renderCard = useCallback((group: UserGroup) => (
+    <DataViewCard
+      title={group.group_name}
+      description={group.description}
+      icon={<GroupIcon size={24} />}
+      stats={[
+        {
+          label: 'Members',
+          value: <Badge variant="secondary">{formatCount(group.member_count || 0, 'member')}</Badge>
+        },
+        {
+          label: 'Created',
+          value: formatDate(group.created_at)
+        }
+      ]}
+      actions={
+        <GroupActionsMenu 
+          group={group}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onView={handleView}
+        />
+      }
+      onClick={() => handleView(group)}
+    />
+  ), [handleEdit, handleDelete, handleView]);
+
+  // Memoize sort handler for FilterBar
+  const handleSortFilterChange = useCallback((value: string) => {
+    const [sort_by, sort_order] = value.split(':');
+    handleFiltersChange({ sort_by, sort_order: sort_order as 'asc' | 'desc' });
+  }, [handleFiltersChange]);
+
+  // Define filter options for FilterBar - memoize to prevent recreating on every render
+  const filterBarFilters: Filter[] = useMemo(() => [
     {
       key: 'sort',
       label: 'Sort by',
@@ -164,12 +257,9 @@ export const GroupListPage: React.FC = () => {
         { value: 'member_count:asc', label: 'Fewest members' }
       ],
       value: `${filters.sort_by}:${filters.sort_order}`,
-      onChange: (value: string) => {
-        const [sort_by, sort_order] = value.split(':');
-        handleFiltersChange({ sort_by, sort_order: sort_order as 'asc' | 'desc' });
-      }
+      onChange: handleSortFilterChange
     }
-  ];
+  ], [filters.sort_by, filters.sort_order, handleSortFilterChange]);
 
   return (
     <PageContainer>
@@ -203,7 +293,7 @@ export const GroupListPage: React.FC = () => {
       {/* Search and Filter */}
       <div className="search-filter-section">
         <SearchBar
-          onSearch={(query) => handleFiltersChange({ search: query, offset: 0 })}
+          onSearch={handleSearch}
           placeholder="Search groups by name or description..."
           defaultValue={filters.search || ''}
         />
@@ -214,58 +304,48 @@ export const GroupListPage: React.FC = () => {
       </div>
 
       {/* Error State */}
-      {error && (
-        <Card className="error-card" padding="lg">
+      {error ? (
+        <div className="data-view-error">
           <div className="error-content">
             <GroupIcon size={32} />
             <h3>Failed to load groups</h3>
             <p>{error}</p>
+            <Button onClick={() => fetchGroups()} variant="primary">
+              Try Again
+            </Button>
           </div>
-        </Card>
-      )}
-
-      {/* Table or Grid View */}
-      {viewMode === 'table' ? (
-        <Card padding="none">
-          <GroupTable
-            groups={groups}
-            loading={isLoading}
-            onSort={handleSort}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onView={handleView}
-            emptyAction={
-              <Button
-                variant="primary"
-                leftIcon={<PlusIcon size={16} />}
-                onClick={handleOpenCreateModal}
-              >
-                Create Your First Group
-              </Button>
-            }
-          />
-        </Card>
-      ) : (
-        <div className="groups-grid">
-          {groups.length > 0 ? (
-            groups.map(group => (
-              <GroupCard key={group.group_hash} group={group} />
-            ))
-          ) : (
-            <Card className="empty-state-card" padding="lg">
-              <GroupIcon size={48} />
-              <h3>No groups found</h3>
-              <p>Create your first group to get started</p>
-              <Button
-                variant="primary"
-                leftIcon={<PlusIcon size={16} />}
-                onClick={handleOpenCreateModal}
-              >
-                Create Group
-              </Button>
-            </Card>
-          )}
         </div>
+      ) : (
+        /* Data View - Unified Table and Grid */
+        <DataView<UserGroup>
+          data={groups}
+          columns={columns}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          showViewToggle={false}
+          renderCard={renderCard}
+          gridColumns={{
+            mobile: 1,
+            tablet: 2,
+            desktop: 3
+          }}
+          onSort={handleSort}
+          isLoading={isLoading}
+          emptyMessage="No groups found"
+          emptyIcon={<GroupIcon size={32} />}
+          emptyAction={
+            <Button
+              variant="primary"
+              leftIcon={<PlusIcon size={16} />}
+              onClick={handleOpenCreateModal}
+              aria-label="Create your first group"
+            >
+              Create Your First Group
+            </Button>
+          }
+          skeletonRows={6}
+          className="groups-data-view"
+        />
       )}
 
       {/* Pagination */}

@@ -107,6 +107,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
         tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
           <div className="modal-header">

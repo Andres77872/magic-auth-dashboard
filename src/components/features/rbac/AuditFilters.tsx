@@ -13,9 +13,10 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
     <div className="audit-filters">
       <div className="filters-row">
         <div className="filter-group">
-          <label htmlFor="action_type">Action Type</label>
+          <label htmlFor="action_type" className="filter-label">Action Type</label>
           <select 
             id="action_type"
+            className="filter-select"
             value={filters.action_type || ''}
             onChange={(e) => onFiltersChange({ action_type: e.target.value })}
           >
@@ -27,9 +28,10 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
         </div>
 
         <div className="filter-group">
-          <label htmlFor="days">Time Period</label>
+          <label htmlFor="days" className="filter-label">Time Period</label>
           <select 
             id="days"
+            className="filter-select"
             value={filters.days || 30}
             onChange={(e) => onFiltersChange({ days: parseInt(e.target.value) })}
           >
@@ -40,9 +42,10 @@ export const AuditFilters: React.FC<AuditFiltersProps> = ({
         </div>
 
         <div className="filter-group">
-          <label htmlFor="limit">Items per page</label>
+          <label htmlFor="limit" className="filter-label">Items per page</label>
           <select 
             id="limit"
+            className="filter-select"
             value={filters.limit || 50}
             onChange={(e) => onFiltersChange({ limit: parseInt(e.target.value) })}
           >
