@@ -1,0 +1,213 @@
+/* ============================================================
+   DATA VIEW COMPONENT
+   Unified component for displaying data in table or grid views
+   Version: 1.0 - Clean, consolidated implementation
+   ============================================================ */
+
+/* === DATA VIEW CONTAINER === */
+.data-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  width: 100%;
+}
+
+/* === VIEW CONTROLS === */
+.data-view-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: var(--spacing-4) 0;
+}
+
+.data-view-toggle {
+  display: inline-flex;
+  gap: var(--spacing-1);
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-1);
+  border: 1px solid var(--color-border);
+}
+
+.data-view-toggle-btn {
+  padding: var(--spacing-2) var(--spacing-4);
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 80px;
+}
+
+.data-view-toggle-btn:hover {
+  background: rgba(59, 130, 246, 0.05);
+  color: var(--color-text-primary);
+}
+
+.data-view-toggle-btn.active {
+  background: var(--color-primary-500);
+  color: var(--color-bg-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.data-view-toggle-btn:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .data-view-toggle {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .data-view-toggle-btn:hover {
+    background: rgba(59, 130, 246, 0.15);
+  }
+}
+
+/* === CONTENT AREA === */
+.data-view-content {
+  width: 100%;
+}
+
+/* === GRID VIEW === */
+.data-view-grid {
+  display: grid;
+  gap: var(--spacing-6);
+  width: 100%;
+}
+
+/* Grid column variations */
+.data-view-grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.data-view-grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.data-view-grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.data-view-grid-cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* Responsive grid columns */
+@media (min-width: 768px) {
+  .md\:data-view-grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .md\:data-view-grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .md\:data-view-grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  
+  .md\:data-view-grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .lg\:data-view-grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .lg\:data-view-grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  
+  .lg\:data-view-grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  
+  .lg\:data-view-grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Grid item */
+.data-view-grid-item {
+  min-width: 0; /* Prevent grid blowout */
+}
+
+/* === EMPTY STATE === */
+.data-view-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-12) var(--spacing-6);
+  background: var(--color-bg-secondary);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+/* === ERROR STATE === */
+.data-view-error {
+  padding: var(--spacing-6);
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--border-radius-md);
+  color: var(--color-error);
+  text-align: center;
+}
+
+.data-view-error p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (max-width: 768px) {
+  .data-view-toggle {
+    width: 100%;
+  }
+  
+  .data-view-toggle-btn {
+    flex: 1;
+    min-width: unset;
+  }
+  
+  .data-view-grid {
+    gap: var(--spacing-4);
+  }
+}
+
+@media (max-width: 640px) {
+  .data-view-controls {
+    padding: var(--spacing-3) 0;
+  }
+  
+  .data-view-grid {
+    gap: var(--spacing-3);
+  }
+}
+
+/* === ACCESSIBILITY === */
+@media (prefers-reduced-motion: reduce) {
+  .data-view-toggle-btn {
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  .data-view-toggle {
+    border-width: 2px;
+  }
+  
+  .data-view-toggle-btn.active {
+    border: 2px solid var(--color-bg-primary);
+  }
+}
+
+
+
+
