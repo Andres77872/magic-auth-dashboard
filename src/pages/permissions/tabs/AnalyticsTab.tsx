@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
-import { Select, Card, Table } from '@/components/common';
+import { Select, Card, DataView } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { usePermissionAssignments, usePermissionManagement, useToast } from '@/hooks';
-import type { TableColumn } from '@/components/common/Table';
 
 interface UserGroupUsage {
   group_hash: string;
@@ -55,7 +55,7 @@ export const AnalyticsTab: React.FC = () => {
     loadAnalytics();
   }, [loadAnalytics]);
 
-  const userGroupColumns: TableColumn<UserGroupUsage>[] = [
+  const userGroupColumns: DataViewColumn<UserGroupUsage>[] = [
     {
       key: 'group_name',
       header: 'User Group',
@@ -78,7 +78,7 @@ export const AnalyticsTab: React.FC = () => {
     },
   ];
 
-  const userColumns: TableColumn<UserUsage>[] = [
+  const userColumns: DataViewColumn<UserUsage>[] = [
     {
       key: 'username',
       header: 'Username',
@@ -148,15 +148,15 @@ export const AnalyticsTab: React.FC = () => {
               </p>
               
               <div className="analytics-stats">
-                <div className="stat-card">
+                <div className="analytics-stat">
                   <div className="stat-value">{userGroupUsage.length}</div>
                   <div className="stat-label">User Groups</div>
                 </div>
-                <div className="stat-card">
+                <div className="analytics-stat">
                   <div className="stat-value">{userUsage.length}</div>
                   <div className="stat-label">Direct User Assignments</div>
                 </div>
-                <div className="stat-card">
+                <div className="analytics-stat">
                   <div className="stat-value">{userGroupUsage.length + userUsage.length}</div>
                   <div className="stat-label">Total Assignments</div>
                 </div>
@@ -169,9 +169,11 @@ export const AnalyticsTab: React.FC = () => {
             <p className="section-description">
               These user groups have been assigned this permission group. All members inherit these permissions.
             </p>
-            <Table
+            <DataView
               columns={userGroupColumns}
               data={userGroupUsage}
+              viewMode="table"
+              showViewToggle={false}
               isLoading={loading}
               emptyMessage="No user groups are using this permission group"
             />
@@ -182,9 +184,11 @@ export const AnalyticsTab: React.FC = () => {
             <p className="section-description">
               These users have been directly assigned this permission group (individual overrides).
             </p>
-            <Table
+            <DataView
               columns={userColumns}
               data={userUsage}
+              viewMode="table"
+              showViewToggle={false}
               isLoading={loading}
               emptyMessage="No users have direct assignments of this permission group"
             />

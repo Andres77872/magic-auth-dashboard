@@ -1,6 +1,9 @@
-/* ========================================
-   Loading Spinner Component Styles
-   ======================================== */
+/* ============================================================
+   LOADING SPINNER COMPONENT - Extensions
+   Base styles are in primitives/LoadingSpinner/LoadingSpinner.css
+   This file provides legacy .magic-loading-spinner classes.
+   Prefer using the LoadingSpinner primitive component.
+   ============================================================ */
 
 /* === BASE STYLES === */
 .magic-loading-spinner {

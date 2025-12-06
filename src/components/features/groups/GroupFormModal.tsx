@@ -113,7 +113,7 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({
       onClose={handleClose}
       title={mode === 'create' ? 'Create New Group' : 'Edit Group'}
       size="md"
-      closeOnBackdropClick={!isSubmitting}
+      closeOnBackdrop={!isSubmitting}
       closeOnEscape={!isSubmitting}
     >
       <form onSubmit={handleSubmit}>

@@ -78,7 +78,7 @@ export function UserDetailsModal({
         {user.groups && user.groups.length > 0 && (
           <div className="user-details-section">
             <h4 className="user-details-section-title">
-              <GroupIcon size="sm" aria-hidden="true" />
+              <GroupIcon size={16} aria-hidden="true" />
               Groups ({user.groups.length})
             </h4>
             <div className="user-details-badges-list">
@@ -95,7 +95,7 @@ export function UserDetailsModal({
         {user.projects && user.projects.length > 0 && (
           <div className="user-details-section">
             <h4 className="user-details-section-title">
-              <ProjectIcon size="sm" aria-hidden="true" />
+              <ProjectIcon size={16} aria-hidden="true" />
               Projects ({user.projects.length})
             </h4>
             <div className="user-details-badges-list">
@@ -128,7 +128,7 @@ export function UserDetailsModal({
           <Button
             variant="primary"
             onClick={onEdit}
-            leftIcon={<EditIcon size="sm" aria-hidden="true" />}
+            leftIcon={<EditIcon size={16} aria-hidden="true" />}
           >
             Edit User
           </Button>

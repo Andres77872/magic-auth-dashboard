@@ -4,7 +4,6 @@ import {
   PageContainer,
   PageHeader,
   TabNavigation,
-  SearchBar,
   StatsGrid,
   Card,
   CardHeader,
@@ -12,19 +11,20 @@ import {
   CardContent,
   Button,
   Badge,
-  Modal
+  Modal,
+  DataView
 } from '@/components/common';
 import {
   GlobalRoleCard,
   GlobalRoleForm,
   PermissionGroupCard,
-  RoleAssignmentModal,
-  RoleCardSkeleton
+  RoleAssignmentModal
 } from '@/components/features/roles';
 import { PlusIcon, SecurityIcon, LockIcon, UserIcon } from '@/components/icons';
 import { useToast } from '@/hooks';
 import type { GlobalRole, GlobalPermissionGroup } from '@/types/global-roles.types';
 import type { Tab, StatCardProps } from '@/components/common';
+import '../../styles/pages/role-management.css';
 
 export function RoleManagementPage(): React.JSX.Element {
   const {
@@ -44,6 +44,7 @@ export function RoleManagementPage(): React.JSX.Element {
 
   const [activeTab, setActiveTab] = useState<'roles' | 'groups' | 'assignments'>('roles');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
   const [showRoleForm, setShowRoleForm] = useState(false);
   const [editingRole, setEditingRole] = useState<GlobalRole | null>(null);
   const [selectedRole, setSelectedRole] = useState<GlobalRole | null>(null);
@@ -234,13 +235,6 @@ export function RoleManagementPage(): React.JSX.Element {
         onChange={(tabId) => setActiveTab(tabId as 'roles' | 'groups' | 'assignments')}
       />
 
-      {/* Search Bar */}
-      <SearchBar
-        onSearch={setSearchQuery}
-        placeholder={`Search ${activeTab}...`}
-        defaultValue={searchQuery}
-      />
-
       {/* Role Form Modal */}
       <Modal
         isOpen={showRoleForm}
@@ -266,46 +260,71 @@ export function RoleManagementPage(): React.JSX.Element {
       {/* Content Area */}
       {/* Roles Tab */}
       {activeTab === 'roles' && (
-        <div className="roles-grid">
-          {loadingRoles ? (
-            <RoleCardSkeleton count={6} />
-          ) : filteredRoles.length === 0 ? (
-            <Card className="empty-state-card" padding="lg">
-              <SecurityIcon size={48} aria-hidden="true" />
-              <h3>No roles found</h3>
-              <p>Create your first role to get started</p>
-              <Button onClick={() => setShowRoleForm(true)} variant="primary">
-                <PlusIcon size={18} aria-hidden="true" />
-                Create Role
-              </Button>
-            </Card>
-          ) : (
-            filteredRoles.map(role => (
-              <GlobalRoleCard
-                key={role.role_hash}
-                role={role}
-                onEdit={handleEditRole}
-                onDelete={handleDeleteRole}
-                onViewPermissions={handleViewRolePermissions}
-                onAssignUsers={() => {
-                  setSelectedRole(role);
-                  setShowAssignmentModal(true);
-                }}
-                userCount={users.filter(u => u.user_type === role.role_name).length}
-                permissionGroupCount={0}
-              />
-            ))
+        <DataView
+          data={filteredRoles}
+          columns={[
+            { key: 'role_display_name', header: 'Role Name', sortable: true },
+            { key: 'role_name', header: 'Internal Name', sortable: true },
+            { key: 'role_priority', header: 'Priority', sortable: true },
+            { key: 'role_description', header: 'Description' },
+          ]}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          showViewToggle={true}
+          showSearch={true}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search roles..."
+          defaultViewMode="grid"
+          renderCard={(role) => (
+            <GlobalRoleCard
+              key={role.role_hash}
+              role={role}
+              onEdit={handleEditRole}
+              onDelete={handleDeleteRole}
+              onViewPermissions={handleViewRolePermissions}
+              onAssignUsers={() => {
+                setSelectedRole(role);
+                setShowAssignmentModal(true);
+              }}
+              userCount={users.filter(u => u.user_type === role.role_name).length}
+              permissionGroupCount={0}
+            />
           )}
-        </div>
+          isLoading={loadingRoles}
+          emptyMessage="No roles found"
+          emptyIcon={<SecurityIcon size={48} aria-hidden="true" />}
+          emptyAction={
+            <Button onClick={() => setShowRoleForm(true)} variant="primary">
+              <PlusIcon size={18} aria-hidden="true" />
+              Create Role
+            </Button>
+          }
+          skeletonRows={6}
+          gridColumns={{
+            mobile: 1,
+            tablet: 2,
+            desktop: 3,
+          }}
+        />
       )}
 
       {/* Permission Groups Tab */}
       {activeTab === 'groups' && (
         <div className="groups-section">
           {loadingGroups ? (
-            <div className="groups-grid">
-              <RoleCardSkeleton count={6} />
-            </div>
+            <DataView
+              data={[]}
+              columns={[]}
+              viewMode="grid"
+              isLoading={true}
+              skeletonRows={6}
+              gridColumns={{
+                mobile: 1,
+                tablet: 2,
+                desktop: 3,
+              }}
+            />
           ) : Object.keys(groupedPermissionGroups).length === 0 ? (
             <Card className="empty-state-card" padding="lg">
               <LockIcon size={48} aria-hidden="true" />
@@ -319,8 +338,17 @@ export function RoleManagementPage(): React.JSX.Element {
                   <Badge variant="secondary">{category}</Badge>
                   <span className="category-count">{groups.length} groups</span>
                 </h3>
-                <div className="groups-grid">
-                  {groups.map(group => (
+                <DataView
+                  data={groups}
+                  columns={[
+                    { key: 'group_display_name', header: 'Group Name', sortable: true },
+                    { key: 'group_name', header: 'Internal Name', sortable: true },
+                    { key: 'group_category', header: 'Category', sortable: true },
+                    { key: 'group_description', header: 'Description' },
+                  ]}
+                  viewMode="grid"
+                  defaultViewMode="grid"
+                  renderCard={(group) => (
                     <PermissionGroupCard
                       key={group.group_hash}
                       group={group}
@@ -329,8 +357,13 @@ export function RoleManagementPage(): React.JSX.Element {
                       onAssignToRole={selectedRole ? (hash) => handleAssignPermissionGroup(selectedRole.role_hash, hash) : undefined}
                       isAssigned={false}
                     />
-                  ))}
-                </div>
+                  )}
+                  gridColumns={{
+                    mobile: 1,
+                    tablet: 2,
+                    desktop: 3,
+                  }}
+                />
               </div>
             ))
           )}

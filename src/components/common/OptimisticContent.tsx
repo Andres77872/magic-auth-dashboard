@@ -1,4 +1,6 @@
 import React from 'react';
+import { WarningIcon, RefreshIcon } from '@/components/icons';
+import { cn } from '@/utils/component-utils';
 
 interface OptimisticContentProps {
   isLoading?: boolean;
@@ -8,12 +10,9 @@ interface OptimisticContentProps {
   className?: string;
   showIndicator?: boolean;
   indicatorText?: string;
+  staleText?: string;
 }
 
-/**
- * OptimisticContent - Wrapper component for smooth loading transitions
- * Shows content immediately while indicating loading state subtly
- */
 export function OptimisticContent({
   isLoading = false,
   isRefetching = false,
@@ -22,39 +21,35 @@ export function OptimisticContent({
   className = '',
   showIndicator = true,
   indicatorText = 'Updating...',
+  staleText = 'Showing cached data',
 }: OptimisticContentProps): React.JSX.Element {
-  const contentClasses = [
-    'optimistic-content',
-    isLoading && 'optimistic-content--loading',
-    isRefetching && 'optimistic-content--refetching',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
-    <div className={contentClasses}>
-      {/* Background refresh indicator */}
+    <div
+      className={cn(
+        'optimistic-content',
+        isLoading && 'optimistic-content--loading',
+        isRefetching && 'optimistic-content--refetching',
+        className
+      )}
+    >
       {isRefetching && showIndicator && (
-        <div className="optimistic-refresh-bar" />
+        <div className="optimistic-content__refresh-bar" aria-hidden="true" />
       )}
 
-      {/* Inline loading indicator for refetching */}
       {isRefetching && showIndicator && (
-        <div className="optimistic-loading-indicator">
-          <div className="optimistic-loading-indicator__spinner" />
+        <div className="optimistic-content__indicator" role="status" aria-live="polite">
+          <RefreshIcon size={14} className="optimistic-content__spinner" aria-hidden="true" />
           <span>{indicatorText}</span>
         </div>
       )}
 
-      {/* Stale data indicator */}
       {isStale && !isRefetching && (
-        <div className="optimistic-stale-indicator">
-          ⚠️ Showing cached data
+        <div className="optimistic-content__stale" role="status">
+          <WarningIcon size={14} aria-hidden="true" />
+          <span>{staleText}</span>
         </div>
       )}
 
-      {/* Actual content */}
       {children}
     </div>
   );

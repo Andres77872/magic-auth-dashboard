@@ -1,50 +1,33 @@
 import React from 'react';
+import { cn } from '@/utils/component-utils';
 
 export interface EmptyStateProps {
   icon: React.ReactNode;
   title: string;
   description?: string;
   action?: React.ReactNode;
-  size?: 'default' | 'large';
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-/**
- * EmptyState Component
- * 
- * Modern empty state pattern for better UX when no data is available.
- * Provides visual feedback and guidance to users.
- * 
- * @example
- * ```tsx
- * <EmptyState
- *   icon={<InboxIcon />}
- *   title="No projects yet"
- *   description="Get started by creating your first project"
- *   action={<Button variant="primary">Create Project</Button>}
- * />
- * ```
- */
 export const EmptyState: React.FC<EmptyStateProps> = ({
   icon,
   title,
   description,
   action,
-  size = 'default',
+  size = 'md',
   className = '',
 }) => {
-  const iconSizeClass = size === 'large' ? 'empty-state-icon-lg' : '';
-  
   return (
-    <div className={`empty-state-container ${className}`}>
-      <div className={`empty-state-icon ${iconSizeClass}`} aria-hidden="true">
+    <div className={cn('empty-state', `empty-state--${size}`, className)}>
+      <div className="empty-state__icon" aria-hidden="true">
         {icon}
       </div>
-      <h3 className="empty-state-title">{title}</h3>
+      <h3 className="empty-state__title">{title}</h3>
       {description && (
-        <p className="empty-state-description">{description}</p>
+        <p className="empty-state__description">{description}</p>
       )}
-      {action && <div className="empty-state-action">{action}</div>}
+      {action && <div className="empty-state__action">{action}</div>}
     </div>
   );
 };

@@ -80,19 +80,16 @@
   margin: 0;
 }
 
-/* Tab Content */
-.tab-content {
-  margin-top: 1.5rem;
-}
+/* Note: .tab-content style is defined in page-layouts.css to avoid duplication */
 
 /* Grid Layouts */
-.roles-grid,
-.groups-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-}
+/* NOTE: .roles-grid and .groups-grid classes removed as they were unused.
+ * Component-specific grids should use:
+ * - .assigned-groups-grid (for assigned groups)
+ * - .project-groups-grid (for project groups)
+ * - .admin-projects-grid (for admin project management)
+ * - Or DataView component for data displays
+ */
 
 /* Category Section (for grouped items) */
 .category-section {
@@ -202,10 +199,7 @@
     align-items: stretch;
   }
 
-  .roles-grid,
-  .groups-grid {
-    grid-template-columns: 1fr;
-  }
+  /* Responsive grid layouts are now handled by component-specific classes */
 
   .assignment-actions {
     justify-content: stretch;

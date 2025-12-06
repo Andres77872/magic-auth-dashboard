@@ -1,10 +1,11 @@
 /* ============================================================
    DATA VIEW CARD COMPONENT
-   Card component for grid views in DataView
-   Version: 1.0 - Clean, consistent implementation
+   Built on top of base Card component
+   Only contains data-view-specific styling
+   Version: 2.0 - Refactored for consistency
    ============================================================ */
 
-/* === BASE CARD === */
+/* Base Layout */
 .data-view-card {
   display: flex;
   flex-direction: column;
@@ -12,29 +13,14 @@
   height: 100%;
 }
 
-.data-view-card-clickable {
-  cursor: pointer;
-  transition: all var(--transition-normal);
-}
-
-.data-view-card-clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.data-view-card-clickable:focus-visible {
-  outline: 2px solid var(--color-primary-500);
-  outline-offset: 2px;
-}
-
-/* === HEADER SECTION === */
-.data-view-card-header {
+/* Header Section */
+.data-view-card__header {
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-3);
 }
 
-.data-view-card-icon {
+.data-view-card__icon {
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -45,12 +31,12 @@
   border-radius: var(--border-radius-md);
 }
 
-.data-view-card-header-content {
+.data-view-card__header-content {
   flex: 1;
-  min-width: 0; /* Enable text truncation */
+  min-width: 0;
 }
 
-.data-view-card-title {
+.data-view-card__title {
   margin: 0;
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
@@ -61,22 +47,22 @@
   white-space: nowrap;
 }
 
-.data-view-card-subtitle {
+.data-view-card__subtitle {
   margin: var(--spacing-1) 0 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   line-height: var(--line-height-normal);
 }
 
-.data-view-card-badges {
+.data-view-card__badges {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-2);
   align-items: flex-start;
 }
 
-/* === DESCRIPTION === */
-.data-view-card-description {
+/* Description */
+.data-view-card__description {
   margin: 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -89,16 +75,16 @@
   -webkit-box-orient: vertical;
 }
 
-/* === CONTENT === */
-.data-view-card-content {
+/* Content */
+.data-view-card__content {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
 }
 
-/* === STATS SECTION === */
-.data-view-card-stats {
+/* Stats Section */
+.data-view-card__stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: var(--spacing-4);
@@ -106,13 +92,13 @@
   border-top: 1px solid var(--color-border);
 }
 
-.data-view-card-stat {
+.data-view-card__stat {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-1);
 }
 
-.data-view-card-stat-label {
+.data-view-card__stat-label {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-tertiary);
@@ -120,14 +106,14 @@
   letter-spacing: 0.05em;
 }
 
-.data-view-card-stat-value {
+.data-view-card__stat-value {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
 }
 
-/* === FOOTER === */
-.data-view-card-footer {
+/* Footer */
+.data-view-card__footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -136,56 +122,44 @@
   border-top: 1px solid var(--color-border);
 }
 
-/* === RESPONSIVE DESIGN === */
+/* Responsive Design */
 @media (max-width: 768px) {
-  .data-view-card-title {
+  .data-view-card__title {
     font-size: var(--font-size-base);
   }
   
-  .data-view-card-stats {
+  .data-view-card__stats {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-3);
   }
 }
 
 @media (max-width: 640px) {
-  .data-view-card-header {
+  .data-view-card__header {
     flex-direction: column;
   }
   
-  .data-view-card-icon {
+  .data-view-card__icon {
     align-self: flex-start;
   }
   
-  .data-view-card-footer {
+  .data-view-card__footer {
     flex-direction: column;
     align-items: stretch;
   }
 }
 
-/* === ACCESSIBILITY === */
-@media (prefers-reduced-motion: reduce) {
-  .data-view-card-clickable,
-  .data-view-card-clickable:hover {
-    transition: none !important;
-    transform: none !important;
-  }
-}
-
+/* Accessibility - High Contrast Mode */
 @media (prefers-contrast: high) {
-  .data-view-card {
-    border-width: 2px;
-  }
-  
-  .data-view-card-stats,
-  .data-view-card-footer {
+  .data-view-card__stats,
+  .data-view-card__footer {
     border-top-width: 2px;
   }
 }
 
-/* === DARK MODE === */
+/* Dark Mode */
 @media (prefers-color-scheme: dark) {
-  .data-view-card-icon {
+  .data-view-card__icon {
     background: rgba(255, 255, 255, 0.05);
   }
 }

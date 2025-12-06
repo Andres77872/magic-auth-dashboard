@@ -1,5 +1,7 @@
 import React from 'react';
-import { Skeleton } from './Skeleton';
+import { Card, Skeleton } from '../primitives';
+import { ArrowUpIcon, ArrowDownIcon, HorizontalLineIcon } from '@/components/icons';
+import { cn } from '@/utils/component-utils';
 
 export interface StatCardProps {
   title: string;
@@ -15,10 +17,6 @@ export interface StatCardProps {
   className?: string;
 }
 
-/**
- * Standardized stat card component for displaying metrics
- * Use this for all statistics displays across the application
- */
 export function StatCard({
   title,
   value,
@@ -29,64 +27,51 @@ export function StatCard({
   loading = false,
   className = '',
 }: StatCardProps): React.JSX.Element {
-  const isClickable = !!onClick;
   const trendDirection = trend && trend.value > 0 ? 'up' : trend && trend.value < 0 ? 'down' : 'neutral';
 
-  const cardClasses = [
-    'stat-card',
-    isClickable && 'stat-card-clickable',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const getTrendIcon = () => {
+    if (trendDirection === 'up') {
+      return <ArrowUpIcon size={14} aria-hidden="true" />;
+    }
+    if (trendDirection === 'down') {
+      return <ArrowDownIcon size={14} aria-hidden="true" />;
+    }
+    return <HorizontalLineIcon size={14} aria-hidden="true" />;
+  };
 
-  const content = (
-    <>
-      <div className="stat-card-header">
-        {icon && <div className="stat-card-icon" aria-hidden="true">{icon}</div>}
-        <h3 className="stat-card-title">{title}</h3>
-        {badge && <div className="stat-card-badge">{badge}</div>}
+  return (
+    <Card
+      className={cn('stat-card', className)}
+      onClick={onClick}
+      interactive={!!onClick}
+      padding="md"
+      elevated
+      aria-label={onClick ? `View ${title}` : undefined}
+    >
+      <div className="stat-card__header">
+        {icon && <div className="stat-card__icon" aria-hidden="true">{icon}</div>}
+        <h3 className="stat-card__title">{title}</h3>
+        {badge && <div className="stat-card__badge">{badge}</div>}
       </div>
-      <div className="stat-card-body">
+      <div className="stat-card__body">
         {loading ? (
           <Skeleton variant="text" width="80%" height="32px" />
         ) : (
-          <div className="stat-card-value">{value}</div>
+          <div className="stat-card__value">{value}</div>
         )}
         {trend && !loading && (
-          <div className={`stat-card-trend stat-card-trend-${trendDirection}`}>
-            <span className="stat-card-trend-icon" aria-hidden="true">
-              {trendDirection === 'up' && '↑'}
-              {trendDirection === 'down' && '↓'}
-              {trendDirection === 'neutral' && '—'}
+          <div className={cn('stat-card__trend', `stat-card__trend--${trendDirection}`)}>
+            <span className="stat-card__trend-icon">
+              {getTrendIcon()}
             </span>
-            <span className="stat-card-trend-value">
+            <span className="stat-card__trend-value">
               {Math.abs(trend.value)}%
             </span>
-            {trend.label && <span className="stat-card-trend-label">{trend.label}</span>}
+            {trend.label && <span className="stat-card__trend-label">{trend.label}</span>}
           </div>
         )}
       </div>
-    </>
-  );
-
-  if (isClickable) {
-    return (
-      <button
-        type="button"
-        className={cardClasses}
-        onClick={onClick}
-        aria-label={`View ${title}`}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return (
-    <div className={cardClasses}>
-      {content}
-    </div>
+    </Card>
   );
 }
 

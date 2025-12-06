@@ -42,6 +42,45 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* === SCROLLBARS === */
+/* Consistent scrollbar styling across all elements */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: var(--border-radius-sm);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-border-strong);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--color-text-tertiary);
+}
+
+/* Thin scrollbars for horizontal overflow */
+*::-webkit-scrollbar-horizontal {
+  height: 6px;
+}
+
 /* === TYPOGRAPHY === */
 
 h1,

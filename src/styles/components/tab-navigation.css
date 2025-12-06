@@ -1,102 +1,158 @@
-/* ==================================
-   TAB NAVIGATION - Standardized Component
-   ================================== */
+/* ============================================================
+   TAB NAVIGATION COMPONENT - BEM Naming
+   ============================================================ */
 
+/* Container for tabs when using contained mode */
+.tab-navigation__container {
+  overflow: hidden;
+}
+
+.tab-navigation__container .card-content {
+  padding: 0;
+}
+
+/* Tab Navigation Bar */
 .tab-navigation {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  border-bottom: 2px solid var(--color-border, #e5e7eb);
-  margin-bottom: 1.5rem;
+  gap: var(--spacing-1);
+  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 0;
   overflow-x: auto;
-  scrollbar-width: thin;
 }
 
-.tab-navigation-item {
+/* Size Modifiers */
+.tab-navigation--sm .tab-navigation__item {
+  padding: var(--spacing-2) var(--spacing-3);
+  font-size: var(--font-size-xs);
+}
+
+.tab-navigation--md .tab-navigation__item {
+  padding: var(--spacing-3) var(--spacing-4);
+  font-size: var(--font-size-sm);
+}
+
+.tab-navigation--lg .tab-navigation__item {
+  padding: var(--spacing-4) var(--spacing-5);
+  font-size: var(--font-size-base);
+}
+
+/* When inside container, add padding */
+.tab-navigation__container .tab-navigation {
+  padding: 0 var(--spacing-6);
+  padding-top: var(--spacing-4);
+  background: transparent;
+}
+
+/* Tab Panel Content */
+.tab-navigation__panel {
+  padding: var(--spacing-6);
+}
+
+/* Tab Item */
+.tab-navigation__item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.25rem;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  color: var(--color-text-secondary, #6b7280);
-  font-size: 0.9375rem;
-  font-weight: 500;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   white-space: nowrap;
   position: relative;
 }
 
-.tab-navigation-item:hover:not(:disabled) {
-  color: var(--color-text-primary, #111827);
-  background: var(--color-bg-secondary, #f9fafb);
+/* Hover State */
+.tab-navigation__item:hover:not(:disabled):not(.tab-navigation__item--active) {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-hover);
 }
 
-.tab-navigation-item:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary-light, #dbeafe);
+/* Focus State - WCAG 2.2 compliant */
+.tab-navigation__item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  z-index: 1;
 }
 
-.tab-navigation-item-active {
-  color: var(--color-primary, #3b82f6);
-  border-bottom-color: var(--color-primary, #3b82f6);
-  font-weight: 600;
+/* Active State */
+.tab-navigation__item--active {
+  color: var(--color-primary-600);
+  border-bottom-color: var(--color-primary-600);
+  font-weight: var(--font-weight-semibold);
+  background: transparent;
 }
 
-.tab-navigation-item-disabled {
+.tab-navigation__item--active:hover {
+  color: var(--color-primary-600);
+  background: transparent;
+}
+
+/* Disabled State */
+.tab-navigation__item--disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  pointer-events: none;
 }
 
-.tab-navigation-icon {
+/* Icon */
+.tab-navigation__icon {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.tab-navigation-label {
+/* Label */
+.tab-navigation__label {
   display: inline-block;
+  flex-shrink: 0;
 }
 
-.tab-navigation-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.5rem;
-  height: 1.5rem;
-  padding: 0 0.5rem;
-  background: var(--color-bg-secondary, #f3f4f6);
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-secondary, #6b7280);
+/* Count Badge */
+.tab-navigation__count {
+  flex-shrink: 0;
 }
 
-.tab-navigation-item-active .tab-navigation-count {
-  background: var(--color-primary-light, #dbeafe);
-  color: var(--color-primary, #3b82f6);
+/* Active Tab Count Badge Override */
+.tab-navigation__item--active .tab-navigation__count {
+  background: var(--color-primary-100);
+  color: var(--color-primary-600);
 }
 
-/* Responsive */
+/* Responsive Design */
+@media (max-width: 768px) {
+  .tab-navigation__panel {
+    padding: var(--spacing-4);
+  }
+}
+
 @media (max-width: 640px) {
   .tab-navigation {
     gap: 0;
   }
 
-  .tab-navigation-item {
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
+  .tab-navigation__item {
+    padding: var(--spacing-3);
+    font-size: var(--font-size-sm);
   }
 
-  .tab-navigation-label {
+  .tab-navigation__label {
     display: none;
   }
 
-  .tab-navigation-item-active .tab-navigation-label {
+  .tab-navigation__item--active .tab-navigation__label {
     display: inline-block;
+  }
+
+  .tab-navigation__panel {
+    padding: var(--spacing-4);
   }
 }
 

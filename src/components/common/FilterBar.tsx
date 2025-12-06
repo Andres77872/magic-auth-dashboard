@@ -1,6 +1,7 @@
 import React from 'react';
-import { Button } from './Button';
-import { Select } from './Select';
+import { Button, Select } from '../primitives';
+import { CloseIcon } from '@/components/icons';
+import { cn } from '@/utils/component-utils';
 
 export interface FilterOption {
   value: string;
@@ -22,10 +23,6 @@ export interface FilterBarProps {
   className?: string;
 }
 
-/**
- * Standardized filter bar component for consistent filtering UI
- * Use this instead of creating custom filter layouts
- */
 export function FilterBar({
   filters,
   onClearAll,
@@ -35,10 +32,10 @@ export function FilterBar({
   const hasActiveFilters = filters.some(filter => filter.value && filter.value !== '');
 
   return (
-    <div className={`filter-bar ${className}`.trim()}>
-      <div className="filter-bar-controls">
+    <div className={cn('filter-bar', className)}>
+      <div className="filter-bar__controls">
         {filters.map((filter) => (
-          <div key={filter.key} className="filter-bar-item">
+          <div key={filter.key} className="filter-bar__item">
             <Select
               value={filter.value}
               onChange={filter.onChange}
@@ -54,8 +51,9 @@ export function FilterBar({
           variant="outline"
           size="sm"
           onClick={onClearAll}
-          className="filter-bar-clear"
+          className="filter-bar__clear"
         >
+          <CloseIcon size={14} aria-hidden="true" />
           Clear Filters
         </Button>
       )}

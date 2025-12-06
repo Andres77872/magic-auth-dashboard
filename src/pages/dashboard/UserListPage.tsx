@@ -7,7 +7,6 @@ import { BulkActionsBar } from '@/components/features/users/BulkActionsBar';
 import { 
   PageContainer,
   PageHeader,
-  SearchBar,
   FilterBar,
   StatsGrid,
   Pagination,
@@ -419,37 +418,17 @@ export function UserListPage(): React.JSX.Element {
         subtitle="Manage system users, permissions, and access controls"
         icon={<UserIcon size={28} />}
         actions={
-          <>
+          canCreateUser && (
             <Button
-              variant="outline"
+              variant="primary"
               size="md"
-              onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
-              aria-label={`Switch to ${viewMode === 'table' ? 'grid' : 'table'} view`}
+              onClick={handleCreateUser}
+              leftIcon={<PlusIcon size={16} />}
+              aria-label="Create new user"
             >
-              {viewMode === 'table' ? 'Grid View' : 'Table View'}
+              Create User
             </Button>
-            <Button
-              variant="outline"
-              size="md"
-              onClick={handleRefresh}
-              disabled={isLoading}
-              leftIcon={<RefreshIcon size={16} className={isLoading ? 'spinning' : ''} />}
-              aria-label="Refresh user list"
-            >
-              Refresh
-            </Button>
-            {canCreateUser && (
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleCreateUser}
-                leftIcon={<PlusIcon size={16} />}
-                aria-label="Create new user"
-              >
-                Create User
-              </Button>
-            )}
-          </>
+          )
         }
       >
         {/* Statistics Section */}
@@ -458,13 +437,8 @@ export function UserListPage(): React.JSX.Element {
         )}
       </PageHeader>
 
-      {/* Search and Filter Section */}
-      <div className="search-filter-section">
-        <SearchBar
-          onSearch={handleSearchChange}
-          placeholder="Search by username or email..."
-          defaultValue={localFilters.search || ''}
-        />
+      {/* Filter Section */}
+      <div className="filter-section">
         <FilterBar
           filters={filterBarFilters}
           onClearAll={handleClearFilters}
@@ -514,14 +488,30 @@ export function UserListPage(): React.JSX.Element {
         />
       )}
 
-      {/* Data View Section */}
+      {/* Data View Section with Integrated Toolbar */}
       {!showEmptyState && !error && (
         <DataView<User>
           data={users}
           columns={columns}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          showViewToggle={false}
+          showViewToggle={true}
+          showSearch={true}
+          searchValue={localFilters.search || ''}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Search by username or email..."
+          toolbarActions={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              leftIcon={<RefreshIcon size={16} className={isLoading ? 'spinning' : ''} />}
+              aria-label="Refresh user list"
+            >
+              Refresh
+            </Button>
+          }
           renderCard={renderCard}
           gridColumns={{
             mobile: 1,

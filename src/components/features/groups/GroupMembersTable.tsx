@@ -1,6 +1,6 @@
 import React from 'react';
-import { Table, Badge, ActionsMenu } from '@/components/common';
-import type { TableColumn } from '@/components/common/Table';
+import { DataView, Badge, ActionsMenu } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import type { ActionMenuItem } from '@/components/common/ActionsMenu';
 import type { UserType } from '@/types/auth.types';
 import { DeleteIcon } from '@/components/icons';
@@ -56,7 +56,7 @@ export function GroupMembersTable({
     });
   };
 
-  const columns: TableColumn<GroupMember>[] = [
+  const columns: DataViewColumn<GroupMember>[] = [
     {
       key: 'username',
       header: 'Username',
@@ -130,9 +130,11 @@ export function GroupMembersTable({
   }
 
   return (
-    <Table
+    <DataView
       data={members}
       columns={columns}
+      viewMode="table"
+      showViewToggle={false}
       isLoading={isLoading}
       emptyMessage="This group has no members"
       className={className}

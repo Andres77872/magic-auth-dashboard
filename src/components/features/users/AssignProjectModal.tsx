@@ -125,7 +125,7 @@ export function AssignProjectModal({
       title={`Assign ${allowMultiple ? 'Projects' : 'Project'} to ${userName}`}
       size="lg"
       className="assign-project-modal"
-      closeOnBackdropClick={!isLoading}
+      closeOnBackdrop={!isLoading}
       closeOnEscape={!isLoading}
     >
       <div className="assign-project-content">

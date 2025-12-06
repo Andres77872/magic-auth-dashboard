@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Input } from './Input';
-import { SearchIcon } from '@/components/icons';
+import { Input, Button } from '../primitives';
+import { SearchIcon, CloseIcon } from '@/components/icons';
+import { cn } from '@/utils/component-utils';
 
 export interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -8,18 +9,16 @@ export interface SearchBarProps {
   defaultValue?: string;
   debounceMs?: number;
   className?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-/**
- * Standardized search bar component with built-in debouncing
- * Use this instead of creating custom search inputs
- */
 export function SearchBar({
   onSearch,
   placeholder = 'Search...',
   defaultValue = '',
   debounceMs = 300,
   className = '',
+  size = 'md',
 }: SearchBarProps): React.JSX.Element {
   const [searchValue, setSearchValue] = useState(defaultValue);
   const debounceTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,26 +51,30 @@ export function SearchBar({
     onSearch('');
   };
 
+  const iconSize = size === 'sm' ? 14 : size === 'lg' ? 20 : 16;
+
   return (
-    <div className={`search-bar ${className}`.trim()}>
+    <div className={cn('search-bar', `search-bar--${size}`, className)}>
       <Input
         type="search"
         placeholder={placeholder}
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
-        leftIcon={<SearchIcon size={18} aria-hidden="true" />}
-        className="search-bar-input"
+        leftIcon={<SearchIcon size={iconSize} aria-hidden="true" />}
+        className="search-bar__input"
         aria-label={placeholder}
+        size={size}
       />
       {searchValue && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleClear}
-          className="search-bar-clear"
+          className="search-bar__clear"
           aria-label="Clear search"
         >
-          ×
-        </button>
+          <CloseIcon size={14} aria-hidden="true" />
+        </Button>
       )}
     </div>
   );

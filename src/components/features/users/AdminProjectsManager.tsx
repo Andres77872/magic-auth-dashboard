@@ -142,25 +142,25 @@ export function AdminProjectsManager({
             <div className="projects-section">
               <div className="section-header">
                 <h3>
-                  <ProjectIcon size="md" />
+                  <ProjectIcon size={20} />
                   Assigned Projects ({assignedProjects.length})
                 </h3>
               </div>
 
               {assignedProjects.length === 0 ? (
                 <div className="empty-state">
-                  <ProjectIcon size="lg" />
+                  <ProjectIcon size={24} />
                   <p>No projects assigned yet</p>
                   <p className="empty-state-hint">
                     Select projects from the available list below
                   </p>
                 </div>
               ) : (
-                <div className="projects-grid">
+                <div className="admin-projects-grid">
                   {assignedProjects.map(project => (
                     <div key={project.project_id} className="project-card assigned">
                       <div className="project-card-header">
-                        <ProjectIcon size="sm" />
+                        <ProjectIcon size={16} />
                         <div className="project-info">
                           <h4>{project.name}</h4>
                           {project.description && (
@@ -170,7 +170,7 @@ export function AdminProjectsManager({
                       </div>
                       <div className="project-card-footer">
                         <Badge variant="success">
-                          <CheckIcon size="sm" />
+                          <CheckIcon size={16} />
                           Assigned
                         </Badge>
                         <Button
@@ -179,7 +179,7 @@ export function AdminProjectsManager({
                           onClick={() => handleRemoveProject(project)}
                           disabled={isSaving}
                         >
-                          <DeleteIcon size="sm" />
+                          <DeleteIcon size={16} />
                           Remove
                         </Button>
                       </div>
@@ -193,22 +193,22 @@ export function AdminProjectsManager({
             <div className="projects-section">
               <div className="section-header">
                 <h3>
-                  <PlusIcon size="md" />
+                  <PlusIcon size={20} />
                   Available Projects ({availableProjects.length})
                 </h3>
               </div>
 
               {availableProjects.length === 0 ? (
                 <div className="empty-state">
-                  <CheckIcon size="lg" />
+                  <CheckIcon size={24} />
                   <p>All projects are already assigned</p>
                 </div>
               ) : (
-                <div className="projects-grid">
+                <div className="admin-projects-grid">
                   {availableProjects.map(project => (
                     <div key={project.project_id} className="project-card available">
                       <div className="project-card-header">
-                        <ProjectIcon size="sm" />
+                        <ProjectIcon size={16} />
                         <div className="project-info">
                           <h4>{project.name}</h4>
                           {project.description && (
@@ -223,7 +223,7 @@ export function AdminProjectsManager({
                           onClick={() => handleAddProject(project.project_id)}
                           disabled={isSaving}
                         >
-                          <PlusIcon size="sm" />
+                          <PlusIcon size={16} />
                           Add Project
                         </Button>
                       </div>

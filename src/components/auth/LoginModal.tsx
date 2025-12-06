@@ -123,7 +123,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
   // Show loading state
   if (isLoading) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} size="md" closeOnBackdropClick={false}>
+      <Modal isOpen={isOpen} onClose={onClose} size="md" closeOnBackdrop={false}>
         <div className="auth-login-loading">
           <LoadingSpinner size="lg" message="Checking authentication..." />
         </div>
@@ -136,7 +136,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
       isOpen={isOpen}
       onClose={onClose}
       size="md"
-      closeOnBackdropClick={!isSubmitting}
+      closeOnBackdrop={!isSubmitting}
       className="login-modal"
     >
       <div className="login-modal-container">

@@ -150,7 +150,7 @@ export function AddUserToProjectModal({
       title={`Add ${userName} to Project via Group`}
       size="lg"
       className="assign-project-modal"
-      closeOnBackdropClick={!isSubmitting}
+      closeOnBackdrop={!isSubmitting}
       closeOnEscape={!isSubmitting}
     >
       <div className="assign-project-content">
@@ -177,7 +177,7 @@ export function AddUserToProjectModal({
                   placeholder="Search groups..."
                   value={searchGroupTerm}
                   onChange={(e) => setSearchGroupTerm(e.target.value)}
-                  leftIcon={<SearchIcon size="sm" />}
+                  leftIcon={<SearchIcon size={16} />}
                   disabled={isLoadingGroups}
                 />
               </div>
@@ -187,14 +187,14 @@ export function AddUserToProjectModal({
               {isLoadingGroups ? (
                 <div className="loading-state">
                   <div className="loading-spinner">
-                    <LoadingIcon size="lg" />
+                    <LoadingIcon size={24} />
                   </div>
                   <p>Loading groups...</p>
                 </div>
               ) : filteredGroups.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-icon">
-                    <HealthIcon size="lg" />
+                    <HealthIcon size={24} />
                   </div>
                   <p>{searchGroupTerm ? 'No groups match your search.' : 'No user groups available.'}</p>
                 </div>
@@ -242,7 +242,7 @@ export function AddUserToProjectModal({
                   placeholder="Search projects..."
                   value={searchProjectTerm}
                   onChange={(e) => setSearchProjectTerm(e.target.value)}
-                  leftIcon={<SearchIcon size="sm" />}
+                  leftIcon={<SearchIcon size={16} />}
                   disabled={isLoadingProjects}
                 />
               </div>
@@ -252,14 +252,14 @@ export function AddUserToProjectModal({
               {isLoadingProjects ? (
                 <div className="loading-state">
                   <div className="loading-spinner">
-                    <LoadingIcon size="lg" />
+                    <LoadingIcon size={24} />
                   </div>
                   <p>Loading projects...</p>
                 </div>
               ) : filteredProjects.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-icon">
-                    <HealthIcon size="lg" />
+                    <HealthIcon size={24} />
                   </div>
                   <p>{searchProjectTerm ? 'No projects match your search.' : 'No projects available.'}</p>
                 </div>

@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
-import { Input } from '@/components/common/Input';
-import { Button } from '@/components/common/Button';
-import { Textarea } from '@/components/common/Textarea';
-import { Card } from '@/components/common/Card';
+import { Input, Button, Textarea, Card } from '@/components/common';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { Role, Permission } from '@/types/rbac.types';
 

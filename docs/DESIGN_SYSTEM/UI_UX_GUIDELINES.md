@@ -1,4 +1,4 @@
-# 🎨 UI/UX Guidelines - Magic Auth Dashboard
+# UI/UX Guidelines - Magic Auth Dashboard
 
 **Version:** 1.0  
 **Last Updated:** October 12, 2025  
@@ -8,7 +8,7 @@
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [Size Naming Standard](#-size-naming-standard-mandatory)
 2. [Design Principles](#-design-principles)
@@ -20,7 +20,7 @@
 
 ---
 
-## 🔤 Size Naming Standard (MANDATORY)
+## Size Naming Standard (MANDATORY)
 
 **Rule:** Always use short size names, never long descriptive names.
 
@@ -84,7 +84,7 @@ size?: 'small' | 'medium' | 'large'
 
 ---
 
-## 🎯 Design Principles
+## Design Principles
 
 ### 1. Clarity Over Complexity
 **Rule:** Every UI element must have a clear, singular purpose.
@@ -195,7 +195,7 @@ const [isLoading, setIsLoading] = useState(false);
 
 ---
 
-## 🎨 Visual Design System
+## Visual Design System
 
 ### Color Usage Rules
 
@@ -386,7 +386,7 @@ const [isLoading, setIsLoading] = useState(false);
 
 ---
 
-## 🧩 Component Usage Rules
+## Component Usage Rules
 
 ### Button Hierarchy (STRICT)
 
@@ -622,7 +622,7 @@ const [isLoading, setIsLoading] = useState(false);
 
 ---
 
-## 🖱️ Interaction Patterns
+## Interaction Patterns
 
 ### Hover States (MANDATORY)
 
@@ -703,7 +703,7 @@ All interactive elements must have hover feedback:
 
 ---
 
-## ♿ Accessibility Standards (WCAG 2.2 AA)
+## Accessibility Standards (WCAG 2.2 AA)
 
 ### Keyboard Navigation (MANDATORY)
 
@@ -766,7 +766,7 @@ Arrow keys → Navigate lists
 
 ---
 
-## 📊 Dashboard Patterns
+## Dashboard Patterns
 
 ### Page Header (MANDATORY)
 
@@ -887,7 +887,7 @@ Every page must have this structure:
 
 ---
 
-## 🎓 Quick Reference
+## Quick Reference
 
 ### Must Follow Rules
 
@@ -904,12 +904,12 @@ Every page must have this structure:
 
 ---
 
-## 📚 Related Documentation
+## Related Documentation
 
 - **[Component Inventory](./COMPONENT_INVENTORY.md)** - Complete component catalog
 - **[Icon System](./ICON_SYSTEM.md)** - Icon documentation
 - **[Utility Classes](./UTILITY_CLASSES.md)** - Utility reference
-- **[Dashboard Patterns](./DASHBOARD_PATTERNS.md)** - Management app patterns
+- **[Size Specifications](./SIZE_SPECIFICATIONS.md)** - Exact pixel values reference
 
 ---
 

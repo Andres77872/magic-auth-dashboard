@@ -138,7 +138,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
       onClose={handleCancel}
       title={mode === 'create' ? 'Create New Project' : 'Edit Project'}
       size="md"
-      closeOnBackdropClick={!isSubmitting}
+      closeOnBackdrop={!isSubmitting}
       closeOnEscape={!isSubmitting}
     >
       <form onSubmit={handleSubmit} className="project-form-modal">

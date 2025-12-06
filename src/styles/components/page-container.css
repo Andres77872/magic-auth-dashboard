@@ -1,38 +1,38 @@
-/* ==================================
-   PAGE CONTAINER - Standardized Component
-   ================================== */
+/* ============================================================
+   PAGE CONTAINER COMPONENT - BEM Naming
+   ============================================================ */
 
 .page-container {
   width: 100%;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 var(--spacing-6);
 }
 
-/* Max Width Variants */
-.page-container-sm {
+/* Max Width Modifiers */
+.page-container--sm {
   max-width: 640px;
 }
 
-.page-container-md {
+.page-container--md {
   max-width: 768px;
 }
 
-.page-container-lg {
+.page-container--lg {
   max-width: 1024px;
 }
 
-.page-container-xl {
+.page-container--xl {
   max-width: 1280px;
 }
 
-.page-container-full {
+.page-container--full {
   max-width: 100%;
 }
 
 /* Responsive */
 @media (max-width: 640px) {
   .page-container {
-    padding: 0 1rem;
+    padding: 0 var(--spacing-4);
   }
 }
 

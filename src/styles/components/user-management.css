@@ -303,7 +303,8 @@
   color: var(--color-text-secondary);
 }
 
-/* User Modal Actions */
+/* User Modal Actions - uses .modal-footer from primitives
+   This class is kept for backward compatibility but should use .modal-footer */
 .user-modal-actions {
   display: flex;
   gap: var(--spacing-3);

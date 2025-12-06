@@ -197,7 +197,7 @@ export const RoleFormModal: React.FC<RoleFormModalProps> = ({
       onClose={handleClose}
       title={mode === 'create' ? 'Create New Role' : 'Edit Role'}
       size="lg"
-      closeOnBackdropClick={!isSubmitting}
+      closeOnBackdrop={!isSubmitting}
       closeOnEscape={!isSubmitting}
     >
       <form onSubmit={handleSubmit} className="role-form-modal">

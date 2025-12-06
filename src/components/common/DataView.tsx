@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { Skeleton } from './Skeleton';
+import { Skeleton } from '../primitives';
 import { EmptyState } from './EmptyState';
-import { ChevronIcon } from '@/components/icons';
+import { DataViewToolbar } from './DataViewToolbar';
+import { ChevronIcon, DocumentIcon } from '@/components/icons';
 
 // ============================================================================
 // TYPES
@@ -40,6 +41,18 @@ export interface DataViewProps<T> {
     tablet?: number;
     desktop?: number;
   };
+  
+  // Search & Filter
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
+  showSearch?: boolean;
+  enableLocalSearch?: boolean;
+  searchKeys?: Array<keyof T>;
+  
+  // Toolbar
+  showToolbar?: boolean;
+  toolbarActions?: ReactNode;
   
   // Table Behavior
   onSort?: (key: keyof T, direction: 'asc' | 'desc') => void;
@@ -79,6 +92,14 @@ export function DataView<T extends Record<string, any>>({
     tablet: 2,
     desktop: 3,
   },
+  searchValue: controlledSearchValue,
+  onSearchChange,
+  searchPlaceholder = 'Search...',
+  showSearch = false,
+  enableLocalSearch = false,
+  searchKeys = [],
+  showToolbar = false,
+  toolbarActions,
   onSort,
   isLoading = false,
   emptyMessage = 'No data available',
@@ -92,8 +113,14 @@ export function DataView<T extends Record<string, any>>({
   // Internal view mode state (used when not controlled)
   const [internalViewMode, setInternalViewMode] = useState<'table' | 'grid'>(defaultViewMode);
   
+  // Internal search state (used when local search is enabled)
+  const [internalSearchValue, setInternalSearchValue] = useState('');
+  
   // Use controlled or internal view mode
   const currentViewMode = controlledViewMode ?? internalViewMode;
+  
+  // Use controlled or internal search value
+  const currentSearchValue = controlledSearchValue ?? internalSearchValue;
   
   // Sort state for table
   const [sortState, setSortState] = useState<SortState<T>>({
@@ -109,6 +136,49 @@ export function DataView<T extends Record<string, any>>({
       setInternalViewMode(mode);
     }
   };
+
+  // Handle search change
+  const handleSearchChange = useCallback((value: string) => {
+    if (onSearchChange) {
+      // If parent provides handler, use it (controlled)
+      onSearchChange(value);
+    } else {
+      // Otherwise update internal state (uncontrolled)
+      setInternalSearchValue(value);
+    }
+  }, [onSearchChange]);
+
+  // Local search filtering
+  const filteredData = useMemo(() => {
+    if (!enableLocalSearch || !currentSearchValue.trim()) {
+      return data;
+    }
+
+    const searchLower = currentSearchValue.toLowerCase().trim();
+    
+    return data.filter((item) => {
+      // If specific search keys provided, only search those
+      if (searchKeys.length > 0) {
+        return searchKeys.some((key) => {
+          const value = item[key];
+          if (value == null) return false;
+          return String(value).toLowerCase().includes(searchLower);
+        });
+      }
+      
+      // Otherwise search all string/number fields
+      return Object.values(item).some((value) => {
+        if (value == null) return false;
+        if (typeof value === 'string' || typeof value === 'number') {
+          return String(value).toLowerCase().includes(searchLower);
+        }
+        return false;
+      });
+    });
+  }, [data, enableLocalSearch, currentSearchValue, searchKeys]);
+
+  // Use filtered data if local search is enabled
+  const displayData = enableLocalSearch ? filteredData : data;
 
   // Handle sort
   const handleSort = (column: DataViewColumn<T>) => {
@@ -217,23 +287,19 @@ export function DataView<T extends Record<string, any>>({
                   ))}
                 </tr>
               ))
-            ) : data.length === 0 ? (
+            ) : displayData.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="table-empty">
-                  {emptyIcon || emptyAction ? (
-                    <EmptyState
-                      icon={emptyIcon || <span>📭</span>}
-                      title={emptyMessage}
-                      description=""
-                      action={emptyAction}
-                    />
-                  ) : (
-                    emptyMessage
-                  )}
+                  <EmptyState
+                    icon={emptyIcon || <DocumentIcon size={32} />}
+                    title={emptyMessage}
+                    description=""
+                    action={emptyAction}
+                  />
                 </td>
               </tr>
             ) : (
-              data.map((row, index) => (
+              displayData.map((row, index) => (
                 <tr key={index} className="table-row">
                   {columns.map((column) => (
                     <td
@@ -279,11 +345,11 @@ export function DataView<T extends Record<string, any>>({
       );
     }
 
-    if (data.length === 0) {
+    if (displayData.length === 0) {
       return (
         <div className="data-view-empty">
           <EmptyState
-            icon={emptyIcon || <span>📭</span>}
+            icon={emptyIcon || <DocumentIcon size={32} />}
             title={emptyMessage}
             description=""
             action={emptyAction}
@@ -294,7 +360,7 @@ export function DataView<T extends Record<string, any>>({
 
     return (
       <div className={`data-view-grid ${gridColsClass}`}>
-        {data.map((item, index) => (
+        {displayData.map((item, index) => (
           <div key={index} className="data-view-grid-item">
             {renderCard(item)}
           </div>
@@ -306,33 +372,27 @@ export function DataView<T extends Record<string, any>>({
   // ============================================================================
   // MAIN RENDER
   // ============================================================================
+  
+  // Determine if toolbar should be shown
+  const shouldShowToolbar = showToolbar || showSearch || showViewToggle || toolbarActions;
+  
   return (
     <div className={containerClasses}>
-      {showViewToggle && (
-        <div className="data-view-controls">
-          <div className="data-view-toggle">
-            <button
-              type="button"
-              className={`data-view-toggle-btn ${currentViewMode === 'table' ? 'active' : ''}`}
-              onClick={() => handleViewModeChange('table')}
-              aria-pressed={currentViewMode === 'table'}
-              aria-label="Switch to table view"
-            >
-              Table
-            </button>
-            <button
-              type="button"
-              className={`data-view-toggle-btn ${currentViewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => handleViewModeChange('grid')}
-              aria-pressed={currentViewMode === 'grid'}
-              aria-label="Switch to grid view"
-            >
-              Grid
-            </button>
-          </div>
-        </div>
+      {/* Unified Toolbar */}
+      {shouldShowToolbar && (
+        <DataViewToolbar
+          searchValue={currentSearchValue}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder={searchPlaceholder}
+          showSearch={showSearch}
+          viewMode={currentViewMode}
+          onViewModeChange={handleViewModeChange}
+          showViewToggle={showViewToggle}
+          actions={toolbarActions}
+        />
       )}
 
+      {/* Content Area */}
       <div className="data-view-content">
         {currentViewMode === 'table' ? renderTableView() : renderGridView()}
       </div>

@@ -1,4 +1,4 @@
-# 🎨 Icon System - Magic Auth Dashboard
+# Icon System - Magic Auth Dashboard
 
 **Version:** 3.0  
 **Last Updated:** 2025-10-12  
@@ -8,7 +8,7 @@
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```tsx
 // Import icons
@@ -158,7 +158,7 @@ All icons accept standard SVG props:
 
 ---
 
-## ♿ Accessibility Guidelines
+## Accessibility Guidelines
 
 ### The Golden Rules
 
@@ -270,7 +270,7 @@ Icons automatically adapt to dark mode through CSS custom properties. No additio
 
 ---
 
-## 💡 Real-World Examples
+## Real-World Examples
 
 ### Action Buttons with Icons
 

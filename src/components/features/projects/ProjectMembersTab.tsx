@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, LoadingSpinner, Table, Pagination, ConfirmDialog, Modal, Input } from '@/components/common';
+import { Button, LoadingSpinner, DataView, Pagination, ConfirmDialog, Modal, Input } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { projectService, userService } from '@/services';
 import type { ProjectDetails, ProjectMember } from '@/types/project.types';
 import type { User } from '@/types/auth.types';
-import type { TableColumn } from '@/components/common/Table';
 
 interface ProjectMembersTabProps {
   project: ProjectDetails;
@@ -153,7 +153,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
     });
   };
 
-  const columns: TableColumn<ProjectMember>[] = [
+  const columns: DataViewColumn<ProjectMember>[] = [
     { key: 'username', header: 'Username', sortable: true },
     { key: 'email', header: 'Email', sortable: false },
     { key: 'user_type', header: 'User Type', sortable: true },
@@ -226,9 +226,11 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
         </div>
       ) : (
         <>
-          <Table
+          <DataView
             columns={columns}
             data={members}
+            viewMode="table"
+            showViewToggle={false}
             emptyMessage="No members found"
           />
           

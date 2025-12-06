@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, ConfirmDialog, Table, ActionsMenu } from '@/components/common';
+import { Button, Input, Select, ConfirmDialog, DataView, ActionsMenu } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
+import type { ActionMenuItem } from '@/components/common/ActionsMenu';
 import { PlusIcon, DeleteIcon } from '@/components/icons';
 import { usePermissionAssignments, useGroups, useUsers, useToast, usePermissionManagement } from '@/hooks';
-import type { TableColumn } from '@/components/common/Table';
-import type { ActionMenuItem } from '@/components/common/ActionsMenu';
 
 interface AssignmentRecord {
   id: string;
@@ -163,7 +163,7 @@ export const AssignmentsTab: React.FC = () => {
     assignment.targetName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const columns: TableColumn<AssignmentRecord>[] = [
+  const columns: DataViewColumn<AssignmentRecord>[] = [
     {
       key: 'permissionGroupName',
       header: 'Permission Group',
@@ -320,9 +320,11 @@ export const AssignmentsTab: React.FC = () => {
             </div>
           </div>
 
-          <Table
+          <DataView
             columns={columns}
             data={filteredAssignments}
+            viewMode="table"
+            showViewToggle={false}
             isLoading={loading}
             emptyMessage={`No permission groups assigned to ${selectedTargetName}`}
             caption={`Permission Assignments for ${selectedTargetName}`}

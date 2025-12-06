@@ -85,7 +85,7 @@ export function AssignGroupToProjectModal({
       title={`Assign Group to ${projectName}`}
       size="lg"
       className="assign-project-modal"
-      closeOnBackdropClick={!isLoading}
+      closeOnBackdrop={!isLoading}
       closeOnEscape={!isLoading}
     >
       <div className="assign-project-content">
@@ -101,7 +101,7 @@ export function AssignGroupToProjectModal({
               placeholder="Search groups..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={<SearchIcon size="sm" />}
+              leftIcon={<SearchIcon size={16} />}
               disabled={fetchingGroups}
             />
           </div>
@@ -111,14 +111,14 @@ export function AssignGroupToProjectModal({
           {fetchingGroups ? (
             <div className="assign-modal-loading-state">
               <div className="loading-spinner">
-                <LoadingIcon size="lg" />
+                <LoadingIcon size={24} />
               </div>
               <p>Loading groups...</p>
             </div>
           ) : error ? (
             <div className="assign-modal-error-state">
               <div className="assign-modal-error-icon">
-                <ErrorIcon size="lg" />
+                <ErrorIcon size={24} />
               </div>
               <p>{error}</p>
               <Button variant="outline" size="sm" onClick={fetchGroups}>
@@ -128,7 +128,7 @@ export function AssignGroupToProjectModal({
           ) : filteredGroups.length === 0 ? (
             <div className="assign-modal-empty-state">
               <div className="assign-modal-empty-icon">
-                <HealthIcon size="lg" />
+                <HealthIcon size={24} />
               </div>
               <p>
                 {searchTerm 

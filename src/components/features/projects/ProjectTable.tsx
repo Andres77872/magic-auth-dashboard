@@ -1,5 +1,6 @@
 import React from 'react';
-import { Table, Pagination, Badge } from '@/components/common';
+import { DataView, Pagination, Badge } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { ProjectActionsMenu } from './ProjectActionsMenu';
 import { ProjectIcon } from '@/components/icons';
 import { formatDate, getStatusBadgeVariant } from '@/utils/component-utils';
@@ -32,7 +33,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
   onArchive,
 }) => {
 
-  const columns = [
+  const columns: DataViewColumn<ProjectDetails>[] = [
     {
       key: 'project_name' as keyof ProjectDetails,
       header: 'Project Name',
@@ -105,13 +106,15 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
 
   return (
     <>
-      <Table
+      <DataView
         data={projects}
         columns={columns}
+        viewMode="table"
+        showViewToggle={false}
         onSort={onSort}
         isLoading={isLoading}
         emptyMessage="No projects found"
-        emptyIcon={<ProjectIcon size="xl" />}
+        emptyIcon={<ProjectIcon size={32} />}
         skeletonRows={8}
         className="project-table"
       />

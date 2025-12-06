@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { Table, Badge, TableSkeleton } from '@/components/common';
+import { DataView, Badge, TableSkeleton } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { UserActionsMenu } from './UserActionsMenu';
 import { UserAvatar } from './UserAvatar';
 import { BulkActionsBar } from './BulkActionsBar';
 import { usePermissions } from '@/hooks';
 import { GroupIcon, ProjectIcon, WarningIcon } from '@/components/icons';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
-import type { TableColumn } from '@/components/common';
-import type { User, UserType } from '@/types/auth.types';
+import type { User } from '@/types/auth.types';
 
 interface UserTableProps {
   users: User[];
@@ -124,7 +124,7 @@ export function UserTable({
     return operableUsers.some(opUser => opUser.user_hash === user.user_hash);
   };
 
-  const columns: TableColumn<User>[] = [
+  const columns: DataViewColumn<User>[] = [
     // Checkbox column
     {
       key: 'select' as keyof User,
@@ -174,18 +174,18 @@ export function UserTable({
       key: 'user_type',
       header: 'User Type',
       sortable: true,
-      render: (value, user) => (
+      render: (_, user) => (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+          <div className="flex items-center gap-2">
             <Badge 
-              variant={getUserTypeBadgeVariant(value as UserType)}
+              variant={getUserTypeBadgeVariant(user.user_type)}
               size="sm"
             >
-              {(value as string).toUpperCase()}
+              {(user.user_type).toUpperCase()}
             </Badge>
             {user.user_type_info?.error && (
               <span className="user-type-error" title={user.user_type_info.error}>
-                <WarningIcon size="sm" aria-hidden="true" />
+                <WarningIcon size={16} aria-hidden="true" />
               </span>
             )}
           </div>
@@ -197,12 +197,12 @@ export function UserTable({
       header: 'Groups',
       sortable: false,
       render: (_, user) => (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-1)' }}>
+        <div className="flex flex-wrap gap-1">
           {user.groups && user.groups.length > 0 ? (
             <>
               {user.groups.slice(0, 2).map(group => (
                 <Badge key={group.group_hash} variant="secondary" size="sm">
-                  <GroupIcon size="xs" aria-hidden="true" />
+                  <GroupIcon size={12} aria-hidden="true" />
                   {group.group_name}
                 </Badge>
               ))}
@@ -223,12 +223,12 @@ export function UserTable({
       header: 'Projects',
       sortable: false,
       render: (_, user) => (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-1)' }}>
+        <div className="flex flex-wrap gap-1">
           {user.projects && user.projects.length > 0 ? (
             <>
               {user.projects.slice(0, 2).map(project => (
                 <Badge key={project.project_hash} variant="info" size="sm">
-                  <ProjectIcon size="xs" aria-hidden="true" />
+                  <ProjectIcon size={12} aria-hidden="true" />
                   {project.project_name}
                 </Badge>
               ))}
@@ -301,9 +301,11 @@ export function UserTable({
         />
       )}
 
-      <Table
+      <DataView
         columns={columns}
         data={users}
+        viewMode="table"
+        showViewToggle={false}
         isLoading={isBulkLoading}
         onSort={handleSort}
         emptyMessage="No users found"

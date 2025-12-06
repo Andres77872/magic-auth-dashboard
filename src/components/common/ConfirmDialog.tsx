@@ -1,6 +1,5 @@
 import React from 'react';
-import { Modal } from './Modal';
-import { Button } from './Button';
+import { Modal, Button } from '../primitives';
 import { ErrorIcon, WarningIcon, InfoIcon } from '@/components/icons';
 
 export interface ConfirmDialogProps {
@@ -26,34 +25,22 @@ export function ConfirmDialog({
   variant = 'danger',
   isLoading = false,
 }: ConfirmDialogProps): React.JSX.Element {
-  const handleConfirm = () => {
-    onConfirm();
-  };
-
   const getIcon = () => {
+    const iconSize = 32;
     switch (variant) {
       case 'danger':
-        return <ErrorIcon size="lg" className="confirm-icon confirm-icon-danger" />;
+        return <ErrorIcon size={iconSize} />;
       case 'warning':
-        return <WarningIcon size="lg" className="confirm-icon confirm-icon-warning" />;
+        return <WarningIcon size={iconSize} />;
       case 'info':
-        return <InfoIcon size="lg" className="confirm-icon confirm-icon-info" />;
+        return <InfoIcon size={iconSize} />;
       default:
         return null;
     }
   };
 
-  const getConfirmButtonVariant = () => {
-    switch (variant) {
-      case 'danger':
-        return 'danger';
-      case 'warning':
-        return 'primary';
-      case 'info':
-        return 'primary';
-      default:
-        return 'primary';
-    }
+  const getConfirmButtonVariant = (): 'danger' | 'primary' => {
+    return variant === 'danger' ? 'danger' : 'primary';
   };
 
   return (
@@ -63,19 +50,19 @@ export function ConfirmDialog({
       title={title}
       size="sm"
       className="confirm-dialog"
-      closeOnBackdropClick={!isLoading}
+      closeOnBackdrop={!isLoading}
       closeOnEscape={!isLoading}
     >
-      <div className="confirm-dialog-content">
-        <div className="confirm-dialog-icon">
+      <div className="confirm-dialog__content">
+        <div className={`confirm-dialog__icon confirm-dialog__icon--${variant}`} aria-hidden="true">
           {getIcon()}
         </div>
         
-        <div className="confirm-dialog-message">
+        <div className="confirm-dialog__message">
           <p>{message}</p>
         </div>
         
-        <div className="confirm-dialog-actions">
+        <div className="confirm-dialog__actions">
           <Button
             variant="outline"
             onClick={onClose}
@@ -85,7 +72,7 @@ export function ConfirmDialog({
           </Button>
           <Button
             variant={getConfirmButtonVariant()}
-            onClick={handleConfirm}
+            onClick={onConfirm}
             loading={isLoading}
           >
             {confirmText}

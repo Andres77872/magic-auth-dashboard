@@ -1,4 +1,4 @@
-# 📏 Size Naming Standard - Quick Reference
+# Size Naming Standard - Quick Reference
 
 **Version:** 2.4  
 **Date:** October 12, 2025  
@@ -6,7 +6,7 @@
 
 ---
 
-## 🎯 The Rule
+## The Rule
 
 **ALWAYS use short size names. NEVER use long descriptive names.**
 
@@ -71,7 +71,7 @@ interface ButtonProps {
 
 ---
 
-## 📐 Standard Size Scale by Component
+## Standard Size Scale by Component
 
 ### Button Heights
 | Size | Height | Padding | Use Case |
@@ -142,7 +142,7 @@ interface ButtonProps {
 
 ---
 
-## 🎯 Where This Applies
+## Where This Applies
 
 ### ✅ Use Short Names In:
 1. **Component Props** - `<Button size="sm">`
@@ -158,7 +158,7 @@ interface ButtonProps {
 
 ---
 
-## 🔍 Component-Specific Rules
+## Component-Specific Rules
 
 ### Buttons
 ```tsx
@@ -229,7 +229,7 @@ interface ButtonProps {
 
 ---
 
-## 🔄 Migration Guide
+## Migration Guide
 
 ### Find and Replace (Codebase)
 
@@ -296,7 +296,7 @@ Icons should use **numeric sizes** directly:
 
 ---
 
-## 📚 Updated Documentation
+## Updated Documentation
 
 The following design system documentation files have been updated:
 
@@ -309,7 +309,7 @@ The following design system documentation files have been updated:
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 ### Q: Why short names only?
 **A:** Consistency, brevity, and industry standards (TailwindCSS, Bootstrap, Material-UI all use short names).
@@ -341,7 +341,7 @@ When creating a new component with size variations:
 
 ---
 
-## 📞 Questions?
+## Questions?
 
 See full documentation: [UI/UX Guidelines - Size Naming Standard](./UI_UX_GUIDELINES.md#-size-naming-standard-mandatory)
 

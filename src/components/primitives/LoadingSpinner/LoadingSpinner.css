@@ -1,0 +1,184 @@
+/* LoadingSpinner Primitive Styles */
+
+.spinner {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+}
+
+.spinner-fullscreen {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: var(--z-modal);
+}
+
+/* Default Circle Spinner */
+.spinner-circle-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-circle {
+  display: block;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spinner-rotate 0.6s linear infinite;
+}
+
+.spinner-primary .spinner-circle {
+  border-color: var(--color-primary-subtle);
+  border-top-color: var(--color-primary);
+}
+
+/* Sizes */
+.spinner-xs .spinner-circle {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.spinner-sm .spinner-circle {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.spinner-md .spinner-circle {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.spinner-lg .spinner-circle {
+  width: 48px;
+  height: 48px;
+  border-width: 4px;
+}
+
+.spinner-xl .spinner-circle {
+  width: 64px;
+  height: 64px;
+  border-width: 4px;
+}
+
+@keyframes spinner-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Dots Variant */
+.spinner-dots {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.spinner-dot {
+  background: var(--color-primary);
+  border-radius: 50%;
+  animation: spinner-bounce 1.4s ease-in-out infinite both;
+}
+
+.spinner-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.spinner-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.spinner-xs .spinner-dot {
+  width: 4px;
+  height: 4px;
+}
+
+.spinner-sm .spinner-dot {
+  width: 6px;
+  height: 6px;
+}
+
+.spinner-md .spinner-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.spinner-lg .spinner-dot {
+  width: 10px;
+  height: 10px;
+}
+
+.spinner-xl .spinner-dot {
+  width: 12px;
+  height: 12px;
+}
+
+@keyframes spinner-bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+/* Pulse Variant */
+.spinner-pulse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-pulse-circle {
+  display: block;
+  background: var(--color-primary);
+  border-radius: 50%;
+  animation: spinner-pulse-anim 1.5s ease-in-out infinite;
+}
+
+.spinner-xs .spinner-pulse-circle {
+  width: 16px;
+  height: 16px;
+}
+
+.spinner-sm .spinner-pulse-circle {
+  width: 20px;
+  height: 20px;
+}
+
+.spinner-md .spinner-pulse-circle {
+  width: 32px;
+  height: 32px;
+}
+
+.spinner-lg .spinner-pulse-circle {
+  width: 48px;
+  height: 48px;
+}
+
+.spinner-xl .spinner-pulse-circle {
+  width: 64px;
+  height: 64px;
+}
+
+@keyframes spinner-pulse-anim {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Message */
+.spinner-message {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+}

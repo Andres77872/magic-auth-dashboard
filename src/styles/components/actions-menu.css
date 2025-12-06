@@ -1,6 +1,5 @@
 /* ============================================================
-   ACTIONS MENU COMPONENT
-   Consolidated dropdown menu styles used across the application
+   ACTIONS MENU COMPONENT - BEM Naming
    ============================================================ */
 
 .actions-menu {
@@ -8,77 +7,56 @@
   display: inline-flex;
 }
 
-/* Menu Trigger Button */
-.menu-trigger {
+/* Trigger Button */
+.actions-menu__trigger {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--spacing-2);
-  padding: var(--spacing-2);
-  background: none;
-  border: 1px solid transparent;
-  border-radius: var(--border-radius-md);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
 }
 
-.menu-trigger:hover {
-  background-color: var(--color-hover-subtle);
-  color: var(--color-text-primary);
-  border-color: var(--color-border);
-  transform: scale(1.05);
-  transition: all 0.15s ease;
-}
-
-.menu-trigger:active {
-  background-color: var(--color-hover-muted);
-}
-
-.menu-trigger:focus-visible {
-  outline: 2px solid var(--color-primary-500);
-  outline-offset: 2px;
-}
-
-.menu-trigger[aria-expanded="true"] {
-  background-color: var(--color-hover-muted);
-  color: var(--color-text-primary);
-}
-
-.menu-trigger-label {
+.actions-menu__trigger-label {
   user-select: none;
 }
 
-/* Menu Dropdown */
-.menu-dropdown {
+/* Dropdown */
+.actions-menu__dropdown {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--border-radius-md);
+  border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-xl);
   padding: var(--spacing-2);
-  min-width: 200px;
+  min-width: 180px;
   max-width: 280px;
   z-index: 1060;
-  animation: menuSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: actionsMenuSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* When using portal (fixed positioning) */
-.menu-dropdown[style*="position: fixed"] {
+.actions-menu__dropdown--sm {
+  min-width: 160px;
+}
+
+.actions-menu__dropdown--md {
+  min-width: 180px;
+}
+
+.actions-menu__dropdown--lg {
+  min-width: 220px;
+}
+
+.actions-menu__dropdown[style*="position: fixed"] {
   z-index: 1060;
 }
 
-/* When not using portal (inline dropdown) */
-.actions-menu .menu-dropdown:not([style*="position: fixed"]) {
+.actions-menu .actions-menu__dropdown:not([style*="position: fixed"]) {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 4px);
   right: 0;
   z-index: 1060;
 }
 
 @media (prefers-color-scheme: dark) {
-  .menu-dropdown {
+  .actions-menu__dropdown {
     background: var(--color-surface);
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 
@@ -88,7 +66,7 @@
   }
 }
 
-@keyframes menuSlideIn {
+@keyframes actionsMenuSlideIn {
   from {
     opacity: 0;
     transform: translateY(-8px) scale(0.95);
@@ -100,7 +78,7 @@
 }
 
 /* Menu Items */
-.menu-item {
+.actions-menu__item {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
@@ -119,7 +97,7 @@
   position: relative;
 }
 
-.menu-item::before {
+.actions-menu__item::before {
   content: '';
   position: absolute;
   left: 0;
@@ -132,65 +110,65 @@
   transition: height 0.15s ease;
 }
 
-.menu-item:hover:not(:disabled) {
+.actions-menu__item:hover:not(:disabled) {
   background-color: rgba(59, 130, 246, 0.08);
   padding-left: var(--spacing-4);
 }
 
-.menu-item:hover:not(:disabled)::before {
+.actions-menu__item:hover:not(:disabled)::before {
   height: 70%;
 }
 
 @media (prefers-color-scheme: dark) {
-  .menu-item:hover:not(:disabled) {
+  .actions-menu__item:hover:not(:disabled) {
     background-color: rgba(59, 130, 246, 0.15);
   }
 }
 
-.menu-item:focus-visible {
+.actions-menu__item:focus-visible {
   outline: 2px solid var(--color-primary-500);
   outline-offset: -2px;
   background-color: rgba(59, 130, 246, 0.08);
 }
 
-.menu-item:active:not(:disabled) {
+.actions-menu__item:active:not(:disabled) {
   background-color: rgba(59, 130, 246, 0.12);
   transform: scale(0.98);
 }
 
-.menu-item:disabled {
+.actions-menu__item--disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* Destructive menu items */
-.menu-item.destructive {
+/* Destructive Items */
+.actions-menu__item--destructive {
   color: var(--color-error);
 }
 
-.menu-item.destructive::before {
+.actions-menu__item--destructive::before {
   background-color: var(--color-error);
 }
 
-.menu-item.destructive:hover:not(:disabled) {
+.actions-menu__item--destructive:hover:not(:disabled) {
   background-color: rgba(239, 68, 68, 0.1);
   color: var(--color-error-dark);
 }
 
 @media (prefers-color-scheme: dark) {
-  .menu-item.destructive:hover:not(:disabled) {
+  .actions-menu__item--destructive:hover:not(:disabled) {
     background-color: rgba(239, 68, 68, 0.2);
     color: var(--color-error);
   }
 }
 
-.menu-item.destructive:focus-visible {
+.actions-menu__item--destructive:focus-visible {
   outline-color: var(--color-error);
   background-color: rgba(239, 68, 68, 0.1);
 }
 
-/* Menu item icon */
-.menu-item-icon {
+/* Item Icon & Label */
+.actions-menu__item-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -199,20 +177,20 @@
   height: 16px;
 }
 
-.menu-item-label {
+.actions-menu__item-label {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Menu divider */
-.menu-divider,
-.user-menu-divider {
+/* Divider */
+.actions-menu__divider {
   height: 1px;
   background: var(--color-border);
   margin: var(--spacing-2) 0;
 }
+
 
 /* Legacy support for existing component styles */
 .user-actions-menu,

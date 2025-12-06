@@ -1,0 +1,87 @@
+/* ProgressBar Primitive Styles */
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  width: 100%;
+}
+
+/* Header */
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.progress-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.progress-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+/* Track */
+.progress-track {
+  width: 100%;
+  background: var(--color-bg-tertiary);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+/* Sizes */
+.progress-sm .progress-track {
+  height: 4px;
+}
+
+.progress-md .progress-track {
+  height: 8px;
+}
+
+.progress-lg .progress-track {
+  height: 12px;
+}
+
+/* Fill */
+.progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* Variants */
+.progress-primary .progress-fill {
+  background: var(--color-primary);
+}
+
+.progress-success .progress-fill {
+  background: var(--color-success);
+}
+
+.progress-warning .progress-fill {
+  background: var(--color-warning);
+}
+
+.progress-error .progress-fill {
+  background: var(--color-error);
+}
+
+/* Indeterminate */
+.progress-indeterminate .progress-fill {
+  width: 30%;
+  animation: progress-indeterminate 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}

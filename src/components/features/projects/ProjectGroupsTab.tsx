@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, LoadingSpinner, Table, Pagination, ConfirmDialog } from '@/components/common';
+import { Button, LoadingSpinner, DataView, Pagination, ConfirmDialog } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { projectService } from '@/services';
 import type { ProjectDetails } from '@/types/project.types';
 import type { UserGroup } from '@/types/group.types';
-import type { TableColumn } from '@/components/common/Table';
 import { AssignGroupToProjectModal } from './AssignGroupToProjectModal';
 
 interface ProjectGroupsTabProps {
@@ -110,7 +110,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({ project }) =
     });
   };
 
-  const columns: TableColumn<UserGroup>[] = [
+  const columns: DataViewColumn<UserGroup>[] = [
     { key: 'group_name', header: 'Group Name', sortable: true },
     { 
       key: 'description', 
@@ -196,9 +196,11 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({ project }) =
       ) : (
         <>
           <div className="groups-table">
-            <Table
+            <DataView
               data={groups}
               columns={columns}
+              viewMode="table"
+              showViewToggle={false}
               isLoading={isLoading}
               emptyMessage="No groups found"
             />

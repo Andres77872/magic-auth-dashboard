@@ -1,4 +1,4 @@
-# 🛠️ Utility Classes Reference
+# Utility Classes Reference
 
 **Project:** Magic Auth Dashboard  
 **Version:** 2.0  
@@ -9,7 +9,7 @@
 
 ---
 
-## 🎯 Quick Reference
+## Quick Reference
 
 | Category | Classes | Use Case |
 |----------|---------|----------|
@@ -35,7 +35,7 @@ See [UI/UX Guidelines - Size Naming Standard](./UI_UX_GUIDELINES.md#-size-naming
 
 ---
 
-## 📖 Philosophy
+## Philosophy
 
 ### ✅ Use Utility Classes For
 
@@ -486,7 +486,7 @@ For flex and grid spacing:
 
 ---
 
-## 🎨 Modern Layout Patterns
+## Modern Layout Patterns
 
 ### Centered Modal/Dialog
 

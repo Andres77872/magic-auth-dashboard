@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Badge, Button } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '@/components/common';
 import type { UserGroup } from '@/types/group.types';
 import { ROUTES } from '@/utils/routes';
 import { formatDate } from '@/utils';
@@ -18,11 +18,14 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
   };
 
   return (
-    <Card 
-      className="group-card"
-      title={group.group_name}
-      subtitle={group.description}
-      actions={
+    <Card className="group-card" padding="md" elevated>
+      <CardHeader>
+        <div>
+          <CardTitle>{group.group_name}</CardTitle>
+          {group.description && (
+            <p className="card-subtitle">{group.description}</p>
+          )}
+        </div>
         <Button 
           variant="outline" 
           size="sm"
@@ -30,23 +33,24 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
         >
           View Details
         </Button>
-      }
-    >
-      <div className="group-stats">
-        <div className="stat-item">
-          <span className="stat-label">Members</span>
-          <Badge variant="secondary">
-            {group.member_count || 0}
-          </Badge>
+      </CardHeader>
+      <CardContent>
+        <div className="group-stats">
+          <div className="stat-item">
+            <span className="stat-label">Members</span>
+            <Badge variant="secondary">
+              {group.member_count || 0}
+            </Badge>
+          </div>
+          
+          <div className="stat-item">
+            <span className="stat-label">Created</span>
+            <span className="stat-value text-sm">
+              {formatDate(group.created_at)}
+            </span>
+          </div>
         </div>
-        
-        <div className="stat-item">
-          <span className="stat-label">Created</span>
-          <span className="stat-value text-sm">
-            {formatDate(group.created_at)}
-          </span>
-        </div>
-      </div>
+      </CardContent>
     </Card>
   );
 }; 

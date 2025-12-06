@@ -368,7 +368,7 @@ export function UserFormModal({
         onClose={onClose}
         title={mode === 'create' ? 'Create New User' : 'Edit User'}
         size="lg"
-        closeOnBackdropClick={!isLoading}
+        closeOnBackdrop={!isLoading}
         closeOnEscape={!isLoading}
       >
         <form onSubmit={handleSubmit}>
@@ -376,7 +376,7 @@ export function UserFormModal({
             {/* Security Warning for ROOT users */}
             {mode === 'create' && formData.userType === 'root' && (
               <div className="form-alert form-alert-warning">
-                <WarningIcon size="md" aria-hidden="true" />
+                <WarningIcon size={20} aria-hidden="true" />
                 <div>
                   <strong>Creating ROOT User</strong>
                   <p>You are about to create a ROOT user with full system access.</p>
@@ -387,7 +387,7 @@ export function UserFormModal({
             {/* Self-editing protection warning */}
             {isEditingSelf && (
               <div className="form-alert form-alert-info">
-                <InfoIcon size="md" aria-hidden="true" />
+                <InfoIcon size={20} aria-hidden="true" />
                 <p>You are editing your own account. Some restrictions apply for security reasons.</p>
               </div>
             )}
@@ -400,7 +400,7 @@ export function UserFormModal({
                   value={formData.username}
                   onChange={(e) => handleInputChange('username', e.target.value)}
                   error={errors.username}
-                  success={mode === 'create' && usernameAvailable === true}
+                  validationState={mode === 'create' ? (usernameAvailable === true ? 'success' : usernameAvailable === false ? 'error' : null) : null}
                   required
                   disabled={isLoading || mode === 'edit'}
                   helperText={mode === 'create' ? 
@@ -419,7 +419,7 @@ export function UserFormModal({
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   error={errors.email}
-                  success={mode === 'create' && !!formData.email && emailAvailable === true}
+                  validationState={mode === 'create' && formData.email ? (emailAvailable === true ? 'success' : emailAvailable === false ? 'error' : null) : null}
                   disabled={isLoading}
                   helperText={mode === 'create' && formData.email ? 
                     (emailAvailable === true ? 'Email is available' : 
@@ -515,7 +515,7 @@ export function UserFormModal({
                     size="sm"
                     onClick={() => setShowProjectModal(true)}
                     disabled={isLoading}
-                    leftIcon={<ProjectIcon size="sm" aria-hidden="true" />}
+                    leftIcon={<ProjectIcon size={16} aria-hidden="true" />}
                   >
                     {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
                   </Button>
@@ -544,7 +544,7 @@ export function UserFormModal({
                     size="sm"
                     onClick={() => setShowGroupModal(true)}
                     disabled={isLoading}
-                    leftIcon={<GroupIcon size="sm" aria-hidden="true" />}
+                    leftIcon={<GroupIcon size={16} aria-hidden="true" />}
                   >
                     {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
                   </Button>
@@ -588,12 +588,12 @@ export function UserFormModal({
         }}
         title="Confirm ROOT User Creation"
         size="md"
-        closeOnBackdropClick={!isLoading}
+        closeOnBackdrop={!isLoading}
         closeOnEscape={!isLoading}
       >
         <div className="modal-body">
           <div className="form-alert form-alert-warning">
-            <WarningIcon size="xl" aria-hidden="true" />
+            <WarningIcon size={32} aria-hidden="true" />
             <div>
               <p>You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>
               <p><strong>Please enter your password to confirm this action:</strong></p>

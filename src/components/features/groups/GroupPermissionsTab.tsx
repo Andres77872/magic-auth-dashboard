@@ -220,7 +220,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
         onClose={() => !isAssigning && setShowAddModal(false)}
         title="Assign Permission Groups"
         size="lg"
-        closeOnBackdropClick={!isAssigning}
+        closeOnBackdrop={!isAssigning}
         closeOnEscape={!isAssigning}
       >
         {availableGroups.length === 0 ? (

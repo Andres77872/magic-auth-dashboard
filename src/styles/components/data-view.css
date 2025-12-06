@@ -12,61 +12,7 @@
   width: 100%;
 }
 
-/* === VIEW CONTROLS === */
-.data-view-controls {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: var(--spacing-4) 0;
-}
-
-.data-view-toggle {
-  display: inline-flex;
-  gap: var(--spacing-1);
-  background: var(--color-bg-secondary);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-1);
-  border: 1px solid var(--color-border);
-}
-
-.data-view-toggle-btn {
-  padding: var(--spacing-2) var(--spacing-4);
-  background: transparent;
-  border: none;
-  border-radius: var(--border-radius-sm);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  min-width: 80px;
-}
-
-.data-view-toggle-btn:hover {
-  background: rgba(59, 130, 246, 0.05);
-  color: var(--color-text-primary);
-}
-
-.data-view-toggle-btn.active {
-  background: var(--color-primary-500);
-  color: var(--color-bg-primary);
-  box-shadow: var(--shadow-sm);
-}
-
-.data-view-toggle-btn:focus-visible {
-  outline: 2px solid var(--color-primary-500);
-  outline-offset: 2px;
-}
-
-@media (prefers-color-scheme: dark) {
-  .data-view-toggle {
-    background: rgba(255, 255, 255, 0.05);
-  }
-  
-  .data-view-toggle-btn:hover {
-    background: rgba(59, 130, 246, 0.15);
-  }
-}
+/* Note: View controls/toolbar moved to data-view-toolbar.css */
 
 /* === CONTENT AREA === */
 .data-view-content {
@@ -137,6 +83,16 @@
 /* Grid item */
 .data-view-grid-item {
   min-width: 0; /* Prevent grid blowout */
+  display: flex; /* Enable flex for child cards to stretch */
+  flex-direction: column;
+}
+
+/* Ensure cards inside grid items fill the height */
+.data-view-grid-item > .card,
+.data-view-grid-item > * {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* === EMPTY STATE === */
@@ -167,47 +123,24 @@
 
 /* === RESPONSIVE DESIGN === */
 @media (max-width: 768px) {
-  .data-view-toggle {
-    width: 100%;
-  }
-  
-  .data-view-toggle-btn {
-    flex: 1;
-    min-width: unset;
-  }
-  
   .data-view-grid {
     gap: var(--spacing-4);
   }
 }
 
 @media (max-width: 640px) {
-  .data-view-controls {
-    padding: var(--spacing-3) 0;
-  }
-  
   .data-view-grid {
     gap: var(--spacing-3);
   }
 }
 
 /* === ACCESSIBILITY === */
-@media (prefers-reduced-motion: reduce) {
-  .data-view-toggle-btn {
-    transition: none !important;
-  }
-}
+/* Toolbar accessibility styles moved to data-view-toolbar.css */
 
 @media (prefers-contrast: high) {
-  .data-view-toggle {
+  .data-view-empty,
+  .data-view-error {
     border-width: 2px;
   }
-  
-  .data-view-toggle-btn.active {
-    border: 2px solid var(--color-bg-primary);
-  }
 }
-
-
-
 

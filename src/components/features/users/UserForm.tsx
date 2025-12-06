@@ -273,7 +273,7 @@ export function UserForm({
           {mode === 'create' && formData.userType === 'root' && (
             <div className="security-warning">
               <div className="warning-icon">
-                <WarningIcon size="lg" aria-hidden="true" />
+                <WarningIcon size={24} aria-hidden="true" />
               </div>
               <div className="warning-content">
                 <h4>Creating ROOT User</h4>
@@ -286,7 +286,7 @@ export function UserForm({
           {isEditingSelf && (
             <div className="info-banner">
               <div className="info-icon">
-                <InfoIcon size="lg" aria-hidden="true" />
+                <InfoIcon size={24} aria-hidden="true" />
               </div>
               <div className="info-content">
                 <p>You are editing your own account. Some restrictions apply for security reasons.</p>
@@ -339,7 +339,6 @@ export function UserForm({
                 value={formData.username}
                 onChange={(e) => handleInputChange('username', e.target.value)}
                 error={errors.username}
-                success={mode === 'create' && usernameAvailable === true}
                 validationState={mode === 'create' ? (usernameAvailable === true ? 'success' : usernameAvailable === false ? 'error' : null) : null}
                 required
                 disabled={isLoading || mode === 'edit'}
@@ -360,7 +359,6 @@ export function UserForm({
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 error={errors.email}
-                success={mode === 'create' && !!formData.email && emailAvailable === true}
                 validationState={mode === 'create' && formData.email ? (emailAvailable === true ? 'success' : emailAvailable === false ? 'error' : null) : null}
                 disabled={isLoading}
                 loading={mode === 'create' && checkingAvailability && formData.email.length > 0}
@@ -465,7 +463,7 @@ export function UserForm({
                       <div className="project-tags">
                         {formData.assignedProjects.slice(0, 3).map((projectHash, index) => (
                           <span key={projectHash} className="project-tag">
-                            <ProjectIcon size="xs" aria-hidden="true" />
+                            <ProjectIcon size={12} aria-hidden="true" />
                             Project {index + 1}
                           </span>
                         ))}
@@ -489,7 +487,7 @@ export function UserForm({
                   onClick={() => setShowProjectModal(true)}
                   disabled={isLoading}
                 >
-                  <ProjectIcon size="sm" aria-hidden="true" />
+                  <ProjectIcon size={16} aria-hidden="true" />
                   {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
                 </Button>
               </div>
@@ -534,7 +532,7 @@ export function UserForm({
                   onClick={() => setShowGroupModal(true)}
                   disabled={isLoading}
                 >
-                  <GroupIcon size="sm" aria-hidden="true" />
+                  <GroupIcon size={16} aria-hidden="true" />
                   {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
                 </Button>
               </div>
@@ -574,13 +572,13 @@ export function UserForm({
           title="Confirm ROOT User Creation"
           size="md"
           className="root-confirmation-modal"
-          closeOnBackdropClick={!isLoading}
+          closeOnBackdrop={!isLoading}
           closeOnEscape={!isLoading}
         >
           <div className="modal-body">
             <div className="warning-section">
               <div className="warning-icon">
-                <WarningIcon size="xl" className="confirm-icon confirm-icon-warning" aria-hidden="true" />
+                <WarningIcon size={32} className="confirm-icon confirm-icon-warning" aria-hidden="true" />
               </div>
               <div className="warning-message">
                 <p>You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>

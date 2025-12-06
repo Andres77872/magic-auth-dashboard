@@ -38,7 +38,57 @@
   opacity: 0.95;
 }
 
-/* Inline loading indicator (non-blocking) */
+/* Loading Indicator */
+.optimistic-content__indicator {
+  position: absolute;
+  top: var(--spacing-2);
+  right: var(--spacing-2);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-background-overlay);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  z-index: 10;
+  animation: slideInFromTop 200ms ease-out;
+}
+
+.optimistic-content__spinner {
+  animation: spin 600ms linear infinite;
+}
+
+/* Stale Data Indicator */
+.optimistic-content__stale {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  background: var(--color-warning-light);
+  color: var(--color-warning-dark);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Refresh Bar */
+.optimistic-content__refresh-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-primary);
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: progressBar 1s ease-in-out;
+  z-index: 100;
+}
+
+/* Legacy support */
 .optimistic-loading-indicator {
   position: absolute;
   top: 8px;
@@ -48,7 +98,7 @@
   gap: 8px;
   padding: 6px 12px;
   background: var(--color-background-overlay);
-  border-radius: var(--radius-md);
+  border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
@@ -65,7 +115,6 @@
   animation: spin 600ms linear infinite;
 }
 
-/* Stale data indicator */
 .optimistic-stale-indicator {
   display: inline-flex;
   align-items: center;
@@ -73,7 +122,7 @@
   padding: 2px 8px;
   background: var(--color-warning-light);
   color: var(--color-warning-dark);
-  border-radius: var(--radius-sm);
+  border-radius: var(--border-radius-sm);
   font-size: var(--font-size-xs);
   font-weight: 500;
 }

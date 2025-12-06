@@ -1,10 +1,10 @@
 import React from 'react';
-import { Table, Badge } from '@/components/common';
+import { DataView, Badge } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { GroupIcon } from '@/components/icons';
 import { formatDate, formatCount } from '@/utils/component-utils';
 import type { UserGroup } from '@/types/group.types';
 import { GroupActionsMenu } from './GroupActionsMenu';
-import type { TableColumn } from '@/components/common/Table';
 
 interface GroupTableProps {
   groups: UserGroup[];
@@ -25,7 +25,7 @@ export const GroupTable: React.FC<GroupTableProps> = ({
   onView,
   emptyAction
 }) => {
-  const columns: TableColumn<UserGroup>[] = [
+  const columns: DataViewColumn<UserGroup>[] = [
     {
       key: 'group_name',
       header: 'Group Name',
@@ -77,9 +77,11 @@ export const GroupTable: React.FC<GroupTableProps> = ({
   ];
 
   return (
-    <Table<UserGroup>
+    <DataView<UserGroup>
       data={groups}
       columns={columns}
+      viewMode="table"
+      showViewToggle={false}
       onSort={onSort}
       isLoading={loading}
       emptyMessage="No groups found"

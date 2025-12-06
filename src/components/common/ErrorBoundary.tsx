@@ -1,9 +1,12 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { ErrorIcon } from '@/components/icons';
 
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  title?: string;
+  message?: string;
 }
 
 interface State {
@@ -21,23 +24,27 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Authentication error caught by boundary:', error, errorInfo);
+    console.error('Error caught by boundary:', error, errorInfo);
   }
 
   public render() {
     if (this.state.hasError) {
       return this.props.fallback || (
-        <div className="error-boundary">
-          <div className="error-boundary-content">
-            <h2 className="error-boundary-title">
-              Authentication Error
+        <div className="error-boundary" role="alert">
+          <div className="error-boundary__content">
+            <div className="error-boundary__icon" aria-hidden="true">
+              <ErrorIcon size={48} />
+            </div>
+            <h2 className="error-boundary__title">
+              {this.props.title || 'Something went wrong'}
             </h2>
-            <p className="error-boundary-message">
-              Something went wrong with the authentication system.
+            <p className="error-boundary__message">
+              {this.props.message || 'An unexpected error occurred. Please try again.'}
             </p>
             <button 
+              type="button"
               onClick={() => this.setState({ hasError: false })}
-              className="error-boundary-reload-button"
+              className="btn btn-primary error-boundary__action"
             >
               Try again
             </button>

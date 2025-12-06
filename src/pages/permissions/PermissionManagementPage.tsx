@@ -50,14 +50,13 @@ export const PermissionManagementPage: React.FC = () => {
           tabs={tabs}
           activeTab={activeTab}
           onChange={(tabId) => setActiveTab(tabId as TabType)}
-        />
-
-        <div className="tab-content">
+          contained
+        >
           {activeTab === 'permissions' && <PermissionsTab />}
           {activeTab === 'groups' && <PermissionGroupsTab />}
           {activeTab === 'assignments' && <AssignmentsTab />}
           {activeTab === 'analytics' && <AnalyticsTab />}
-        </div>
+        </TabNavigation>
       </PageContainer>
     </PermissionManagementProvider>
   );

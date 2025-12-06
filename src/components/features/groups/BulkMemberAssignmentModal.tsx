@@ -120,7 +120,7 @@ export const BulkMemberAssignmentModal: React.FC<BulkMemberAssignmentModalProps>
       onClose={handleClose}
       title={`Add Members to ${groupName}`}
       size="lg"
-      closeOnBackdropClick={!isSubmitting}
+      closeOnBackdrop={!isSubmitting}
       closeOnEscape={!isSubmitting}
     >
       <div className="bulk-member-assignment-modal">

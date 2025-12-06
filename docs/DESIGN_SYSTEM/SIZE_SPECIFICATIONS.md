@@ -1,10 +1,10 @@
-# 📐 Size Specifications Reference
+# Size Specifications Reference
 
 **Quick reference guide for exact pixel values across all components**
 
 ---
 
-## 🎯 Complete Size Matrix
+## Complete Size Matrix
 
 ### Buttons
 ```tsx
@@ -86,7 +86,7 @@
 
 ---
 
-## 📊 Decision Matrix
+## Decision Matrix
 
 ### Which size should I use?
 
@@ -116,7 +116,7 @@
 
 ---
 
-## 🎨 Real-World Examples
+## Real-World Examples
 
 ### Dashboard Stats Card
 ```tsx
@@ -180,7 +180,7 @@
 
 ---
 
-## 🔍 Quick Lookup
+## Quick Lookup
 
 **Need a button for table actions?**  
 → `<Button size="sm">` (32px)
@@ -205,7 +205,7 @@
 
 ---
 
-## 📏 Measurement Guidelines
+## Measurement Guidelines
 
 ### Visual Rhythm (8px Grid)
 All spacing follows an 8px grid system:
@@ -231,7 +231,7 @@ Base font size: **16px** (1rem)
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 **Q: Can I use custom pixel values?**  
 A: No, always use the defined size scale for consistency.

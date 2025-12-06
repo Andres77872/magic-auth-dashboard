@@ -12,7 +12,7 @@ import type {
 class AuthService {
   // Login user
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>(
+    const response = await apiClient.postForm<LoginResponse>(
       '/auth/login', 
       credentials,
       true // Skip auth for login

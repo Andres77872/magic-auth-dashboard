@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Select, Button } from '@/components/common';
+import { Input, Select, Button } from '../primitives';
 import { SearchIcon, CloseIcon } from '@/components/icons';
 import { useDebouncedCallback } from '@/hooks';
+import { cn } from '@/utils/component-utils';
 
 export interface FilterOption {
   value: string;
@@ -144,24 +145,20 @@ export function EntityFilter<T extends Record<string, any>>({
   const activeTags = getActiveFilterTags();
 
   return (
-    <div className={`flex flex-col gap-4 ${className}`}>
-      {/* Main filter row */}
-      <div className="flex items-center gap-3">
-        {/* Search input */}
-        <div className="flex-1">
+    <div className={cn('entity-filter', className)}>
+      <div className="entity-filter__row">
+        <div className="entity-filter__search">
           <Input
             type="search"
             placeholder={config.searchPlaceholder || 'Search...'}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
             leftIcon={<SearchIcon size={16} aria-hidden="true" />}
-            className="w-full"
           />
         </div>
 
-        {/* Filter dropdowns */}
         {config.filterOptions?.map((filterOption) => (
-          <div key={String(filterOption.key)} className="w-48">
+          <div key={String(filterOption.key)} className="entity-filter__select">
             <Select
               value={String(filters[filterOption.key] || '')}
               onChange={(value) => handleFilterChange(filterOption.key, value)}
@@ -171,13 +168,10 @@ export function EntityFilter<T extends Record<string, any>>({
           </div>
         ))}
 
-        {/* Sort dropdown */}
         {config.sortOptions && (
-          <div className="w-48">
+          <div className="entity-filter__select">
             <Select
-              value={`${filters.sort_by || 'created_at'}:${
-                filters.sort_order || 'desc'
-              }`}
+              value={`${filters.sort_by || 'created_at'}:${filters.sort_order || 'desc'}`}
               onChange={handleSortChange}
               options={config.sortOptions}
               placeholder="Sort by"
@@ -185,52 +179,46 @@ export function EntityFilter<T extends Record<string, any>>({
           </div>
         )}
 
-        {/* Clear filters button */}
         {hasActiveFilters && (
           <Button
             variant="outline"
             size="md"
             onClick={handleClearFilters}
-            className="flex items-center gap-2"
           >
-            <CloseIcon size={16} aria-hidden="true" />
-            <span>Clear</span>
+            <CloseIcon size={14} aria-hidden="true" />
+            Clear
           </Button>
         )}
       </div>
 
-      {/* Active filters tags */}
       {(searchValue || activeTags.length > 0) && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm text-secondary">Active filters:</span>
+        <div className="entity-filter__tags">
+          <span className="entity-filter__tags-label">Active filters:</span>
 
-          {/* Search tag */}
           {searchValue && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-secondary rounded-sm text-sm">
+            <span className="entity-filter__tag">
               Search: "{searchValue}"
               <button
+                type="button"
                 onClick={() => setSearchValue('')}
-                className="ml-1 hover:text-primary"
+                className="entity-filter__tag-remove"
                 aria-label="Remove search filter"
               >
-                ×
+                <CloseIcon size={12} aria-hidden="true" />
               </button>
             </span>
           )}
 
-          {/* Filter tags */}
           {activeTags.map((tag) => (
-            <span
-              key={tag.key}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-secondary rounded-sm text-sm"
-            >
+            <span key={tag.key} className="entity-filter__tag">
               {tag.label}: {tag.value}
               <button
+                type="button"
                 onClick={() => handleFilterChange(tag.key as keyof T, '')}
-                className="ml-1 hover:text-primary"
+                className="entity-filter__tag-remove"
                 aria-label={`Remove ${tag.label} filter`}
               >
-                ×
+                <CloseIcon size={12} aria-hidden="true" />
               </button>
             </span>
           ))}

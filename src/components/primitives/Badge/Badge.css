@@ -1,0 +1,103 @@
+/* Badge Primitive Styles */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-weight: var(--font-weight-medium);
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* Sizes */
+.badge-sm {
+  height: 20px;
+  padding: 0 var(--spacing-2);
+  font-size: var(--font-size-xs);
+}
+
+.badge-md {
+  height: 24px;
+  padding: 0 var(--spacing-3);
+  font-size: var(--font-size-sm);
+}
+
+.badge-lg {
+  height: 28px;
+  padding: 0 var(--spacing-3);
+  font-size: var(--font-size-base);
+}
+
+/* Variants */
+.badge-primary {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+}
+
+.badge-secondary {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+}
+
+.badge-success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+
+.badge-error {
+  background: var(--color-error-subtle);
+  color: var(--color-error);
+}
+
+.badge-info {
+  background: var(--color-info-subtle);
+  color: var(--color-info);
+}
+
+/* Dot */
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.badge-sm .badge-dot {
+  width: 5px;
+  height: 5px;
+}
+
+.badge-lg .badge-dot {
+  width: 8px;
+  height: 8px;
+}
+
+/* Text Modifiers */
+.badge-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Dot Indicator */
+.badge-dot-indicator {
+  position: relative;
+  padding-right: var(--spacing-4);
+}
+
+.badge-dot-indicator::after {
+  content: '';
+  position: absolute;
+  right: var(--spacing-1);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background-color: currentColor;
+  border-radius: 50%;
+}

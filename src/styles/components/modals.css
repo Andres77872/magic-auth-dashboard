@@ -1,230 +1,57 @@
-/* === MODAL COMPONENT === */
-/* 
- * Modal Z-Index Hierarchy:
- * - Backdrop: --z-index-modal-backdrop (1045) 
- * - Modal Content: --z-index-modal (1050)
- * This ensures modals appear above dropdowns (1000) and general overlays (1040)
- */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: var(--z-index-modal-backdrop);
-  padding: var(--spacing-4);
-  animation: fade-in 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  /* Prevent body scroll when modal is open */
-  overscroll-behavior: contain;
-  /* Prevent interaction with elements behind the modal */
-  pointer-events: auto;
-}
-
-/* Modal dialog container */
-.modal {
-  background: var(--color-surface);
-  border-radius: var(--border-radius-2xl);
-  box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.3), 
-    0 10px 30px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-  width: 100%;
-  max-height: 90vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  animation: scale-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: var(--z-index-modal);
-  /* Ensure modal content is clickable */
-  pointer-events: auto;
-}
-
-/* Modal size variants */
-.modal-sm { max-width: 400px; }
-.modal-md { max-width: 600px; }
-.modal-lg { max-width: 800px; }
-.modal-xl { max-width: 1200px; }
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-6);
-  border-bottom: var(--border-divider);
-}
-
-.modal-title {
-  margin: 0;
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: var(--spacing-1);
-  border-radius: var(--border-radius-sm);
-  color: var(--color-text-tertiary);
-  transition: all var(--transition-fast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-close:hover {
-  color: var(--color-text-secondary);
-  background-color: var(--color-hover-muted);
-}
-
-.modal-close:focus-visible {
-  outline: 3px solid var(--color-primary-500);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px var(--color-focus-ring-primary);
-}
-
-/* Modal content area */
-.modal-content {
-  padding: var(--spacing-6);
-  flex: 1;
-  overflow-y: auto;
-  /* Prevent content from overlapping with header/footer */
-  position: relative;
-  max-height: calc(90vh - 10rem);
-}
-
-/* Legacy alias for backwards compatibility */
-.modal-body {
-  padding: var(--spacing-6);
-  flex: 1;
-  overflow-y: auto;
-  position: relative;
-  max-height: calc(90vh - 10rem);
-}
-
-/* === NESTED COMPONENTS IN MODALS === */
-/* Ensure dropdowns and popovers inside modals appear above modal content */
-.modal .dropdown-menu,
-.modal [role="menu"],
-.modal .popover {
-  z-index: var(--z-index-popover);
-  position: absolute;
-}
-
-/* Ensure select dropdowns inside modals work properly */
-.modal select {
-  position: relative;
-  z-index: auto;
-}
-
-/* === CONFIRM DIALOG === */
+/* Confirm Dialog */
 .confirm-dialog .modal-content,
 .confirm-dialog .modal-body {
   padding: 0;
 }
 
-.confirm-dialog-content {
+.confirm-dialog__content {
   padding: var(--spacing-6);
   text-align: center;
 }
 
-.confirm-dialog-icon {
-  margin-bottom: var(--spacing-4);
+.confirm-dialog__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-4);
+  border-radius: var(--border-radius-full);
 }
 
-.confirm-icon {
-  display: inline-block;
-}
-
-.confirm-icon-danger {
+.confirm-dialog__icon--danger {
+  background: var(--color-error-light);
   color: var(--color-error);
 }
 
-.confirm-icon-warning {
+.confirm-dialog__icon--warning {
+  background: var(--color-warning-light);
   color: var(--color-warning);
 }
 
-.confirm-icon-info {
+.confirm-dialog__icon--info {
+  background: var(--color-info-light);
   color: var(--color-info);
 }
 
-.confirm-dialog-message {
+.confirm-dialog__message {
   margin-bottom: var(--spacing-6);
 }
 
-.confirm-dialog-message p {
+.confirm-dialog__message p {
   margin: 0;
   font-size: var(--font-size-base);
   color: var(--color-text-secondary);
   line-height: var(--line-height-relaxed);
 }
 
-.confirm-dialog-actions {
+.confirm-dialog__actions {
   display: flex;
   gap: var(--spacing-3);
   justify-content: center;
 }
 
-/* === MODAL FOOTER === */
-.modal-footer {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--spacing-3);
-  padding: var(--spacing-6);
-  border-top: var(--border-divider);
-  background: var(--color-surface-secondary);
-  flex-shrink: 0;
-}
-
-.modal-footer-left {
-  margin-right: auto;
-}
-
-/* === MODAL FORM LAYOUTS === */
-.modal-form-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
-  padding: var(--spacing-2) 0;
-}
-
-.modal-form-actions {
-  display: flex;
-  gap: var(--spacing-3);
-  justify-content: flex-end;
-  padding-top: var(--spacing-4);
-  border-top: 1px solid var(--color-border);
-}
-
-/* Responsive Modal Forms */
-@media (max-width: 768px) {
-  .modal-form-actions {
-    flex-direction: column-reverse;
-  }
-
-  .modal-form-actions button {
-    width: 100%;
-  }
-}
-
-/* === MODAL ACTIONS === */
-.modal-actions {
-  display: flex;
-  gap: var(--spacing-3);
-  justify-content: flex-end;
-  margin-top: var(--spacing-6);
-}
-
-/* === MODAL USER INFO === */
+/* Modal User Info */
 .modal-content .user-info,
 .modal-body .user-info {
   margin-bottom: var(--spacing-4);
@@ -278,42 +105,3 @@
   border-radius: var(--border-radius-sm);
   border-left: 3px solid var(--color-error);
 }
-
-/* === ANIMATIONS === */
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* === ACCESSIBILITY === */
-@media (prefers-reduced-motion: reduce) {
-  .modal-overlay,
-  .modal {
-    animation-duration: 0.01ms !important;
-  }
-}
-
-@media (prefers-contrast: high) {
-  .modal {
-    border: 2px solid var(--color-text-primary);
-  }
-  
-  .modal-close:focus-visible {
-    outline-width: 4px;
-  }
-} 

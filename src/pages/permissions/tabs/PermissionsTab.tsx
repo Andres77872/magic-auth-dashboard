@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, ConfirmDialog, Table } from '@/components/common';
+import { Button, Input, Select, ConfirmDialog, DataView } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { PlusIcon, EditIcon, DeleteIcon } from '@/components/icons';
 import { PermissionModal } from '@/components/features/permissions';
 import { useToast, usePermissionManagement } from '@/hooks';
 import { globalRolesService } from '@/services';
 import type { GlobalPermission } from '@/types/global-roles.types';
-import type { TableColumn } from '@/components/common/Table';
 
 export const PermissionsTab: React.FC = () => {
   const { showToast } = useToast();
@@ -91,7 +91,7 @@ export const PermissionsTab: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const columns: TableColumn<GlobalPermission>[] = [
+  const columns: DataViewColumn<GlobalPermission>[] = [
     {
       key: 'permission_display_name',
       header: 'Name',
@@ -199,9 +199,11 @@ export const PermissionsTab: React.FC = () => {
         </div>
       </div>
 
-      <Table
+      <DataView
         columns={columns}
         data={filteredPermissions}
+        viewMode="table"
+        showViewToggle={false}
         isLoading={loading}
         emptyMessage="No permissions found"
         emptyAction={

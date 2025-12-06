@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Table, Badge, Button } from '@/components/common';
+import { DataView, Badge, Button } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { ProjectGroupActionsMenu } from './ProjectGroupActionsMenu';
 import { GroupIcon, PlusIcon } from '@/components/icons';
 import { formatDate } from '@/utils/component-utils';
-import type { TableColumn } from '@/components/common/Table';
 import type { ProjectGroup } from '@/services/project-group.service';
 
 interface ProjectGroupTableProps {
@@ -24,7 +24,7 @@ export function ProjectGroupTable({
   onView,
   onSort
 }: ProjectGroupTableProps): React.JSX.Element {
-  const columns: TableColumn<ProjectGroup>[] = [
+  const columns: DataViewColumn<ProjectGroup>[] = [
     {
       key: 'group_name',
       header: 'Group Name',
@@ -123,9 +123,11 @@ export function ProjectGroupTable({
   );
 
   return (
-    <Table<ProjectGroup>
+    <DataView<ProjectGroup>
       data={projectGroups} 
       columns={columns}
+      viewMode="table"
+      showViewToggle={false}
       isLoading={isLoading}
       onSort={onSort}
       emptyMessage="No project groups found. Create your first project group to organize permissions across projects."

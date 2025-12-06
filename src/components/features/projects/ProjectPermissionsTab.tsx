@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, LoadingSpinner, Card, Badge, ConfirmDialog, EmptyState, Modal } from '@/components/common';
+import { Button, LoadingSpinner, Card, Badge, ConfirmDialog, EmptyState, Modal, TabNavigation } from '@/components/common';
+import type { Tab } from '@/components/common';
 import { globalRolesService, permissionAssignmentsService } from '@/services';
 import { useToast } from '@/contexts/ToastContext';
 import type { ProjectDetails } from '@/types/project.types';
@@ -202,11 +203,24 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
     pg => !catalogedPermissionGroups.some(cpg => cpg.group_hash === pg.group_hash)
   );
 
+  const tabs: Tab[] = [
+    {
+      id: 'roles',
+      label: 'Global Roles Catalog',
+      count: catalogedRoles.length,
+    },
+    {
+      id: 'permission-groups',
+      label: 'Permission Groups Catalog',
+      count: catalogedPermissionGroups.length,
+    },
+  ];
+
   return (
     <div className="project-permissions-tab">
       {/* Info Banner */}
       <div className="permissions-info-banner">
-        <InfoIcon size="md" aria-hidden="true" />
+        <InfoIcon size={20} aria-hidden="true" />
         <div className="info-content">
           <strong>About Permission Catalogs</strong>
           <p>
@@ -218,20 +232,11 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       </div>
 
       {/* Section Tabs */}
-      <div className="permissions-tabs">
-        <button
-          className={`tab-button ${activeSection === 'roles' ? 'active' : ''}`}
-          onClick={() => setActiveSection('roles')}
-        >
-          Global Roles Catalog ({catalogedRoles.length})
-        </button>
-        <button
-          className={`tab-button ${activeSection === 'permission-groups' ? 'active' : ''}`}
-          onClick={() => setActiveSection('permission-groups')}
-        >
-          Permission Groups Catalog ({catalogedPermissionGroups.length})
-        </button>
-      </div>
+      <TabNavigation
+        tabs={tabs}
+        activeTab={activeSection}
+        onChange={(tabId) => setActiveSection(tabId as 'roles' | 'permission-groups')}
+      />
 
       {/* Content */}
       {isLoading ? (
@@ -251,7 +256,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                 </div>
                 <Button
                   onClick={() => setShowAddRoleModal(true)}
-                  leftIcon={<PlusIcon size="sm" aria-hidden="true" />}
+                  leftIcon={<PlusIcon size={16} aria-hidden="true" />}
                   disabled={availableRoles.length === 0}
                 >
                   Add Role to Catalog
@@ -260,7 +265,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
 
               {catalogedRoles.length === 0 ? (
                 <EmptyState
-                  icon={<InfoIcon size="xl" aria-hidden="true" />}
+                  icon={<InfoIcon size={32} aria-hidden="true" />}
                   title="No Roles in Catalog"
                   description="Add roles to this project's catalog to suggest which roles are commonly used."
                   action={
@@ -285,7 +290,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                           variant="ghost"
                           size="sm"
                           onClick={() => setConfirmRemoveRole(role)}
-                          leftIcon={<DeleteIcon size="sm" aria-hidden="true" />}
+                          leftIcon={<DeleteIcon size={16} aria-hidden="true" />}
                           aria-label="Remove from catalog"
                         />
                       </div>
@@ -319,7 +324,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                 </div>
                 <Button
                   onClick={() => setShowAddPermissionGroupModal(true)}
-                  leftIcon={<PlusIcon size="sm" aria-hidden="true" />}
+                  leftIcon={<PlusIcon size={16} aria-hidden="true" />}
                   disabled={availablePermissionGroups.length === 0}
                 >
                   Add Permission Group
@@ -328,7 +333,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
 
               {catalogedPermissionGroups.length === 0 ? (
                 <EmptyState
-                  icon={<InfoIcon size="xl" aria-hidden="true" />}
+                  icon={<InfoIcon size={32} aria-hidden="true" />}
                   title="No Permission Groups in Catalog"
                   description="Add permission groups to this project's catalog to suggest which groups are commonly used."
                   action={
@@ -353,7 +358,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                           variant="ghost"
                           size="sm"
                           onClick={() => setConfirmRemovePermissionGroup(group)}
-                          leftIcon={<DeleteIcon size="sm" aria-hidden="true" />}
+                          leftIcon={<DeleteIcon size={16} aria-hidden="true" />}
                           aria-label="Remove from catalog"
                         />
                       </div>

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, ConfirmDialog, Table } from '@/components/common';
+import { Button, Input, Select, ConfirmDialog, DataView } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { PlusIcon, EditIcon, DeleteIcon, SettingsIcon } from '@/components/icons';
 import { PermissionGroupModal, ManageGroupPermissionsModal } from '@/components/features/permissions';
 import { useToast, usePermissionManagement } from '@/hooks';
 import { globalRolesService } from '@/services';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
-import type { TableColumn } from '@/components/common/Table';
 
 export const PermissionGroupsTab: React.FC = () => {
   const { showToast } = useToast();
@@ -99,7 +99,7 @@ export const PermissionGroupsTab: React.FC = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const columns: TableColumn<GlobalPermissionGroup>[] = [
+  const columns: DataViewColumn<GlobalPermissionGroup>[] = [
     {
       key: 'group_display_name',
       header: 'Name',
@@ -216,9 +216,11 @@ export const PermissionGroupsTab: React.FC = () => {
         </div>
       </div>
 
-      <Table
+      <DataView
         columns={columns}
         data={filteredPermissionGroups}
+        viewMode="table"
+        showViewToggle={false}
         isLoading={loading}
         emptyMessage="No permission groups found"
         emptyAction={

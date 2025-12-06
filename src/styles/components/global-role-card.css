@@ -1,11 +1,18 @@
-/* Global Role Card Styles */
+/* ============================================================
+   GLOBAL ROLE CARD STYLES
+   Card component for displaying global role information
+   Version: 2.0 - Aligned with design system
+   ============================================================ */
 
 .global-role-card {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-normal);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .global-role-card::before {
@@ -17,12 +24,12 @@
   height: 4px;
   background: linear-gradient(90deg, var(--color-primary-500), var(--color-primary-600));
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--transition-fast);
 }
 
 .global-role-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-lg);
   border-color: var(--color-primary-300);
 }
 
@@ -30,19 +37,32 @@
   opacity: 1;
 }
 
-/* Card Header */
+/* === CARD STRUCTURE === */
+/* Ensure card header stays at top */
+.global-role-card > .card-header {
+  flex-shrink: 0;
+}
+
+/* Ensure card content grows to fill space */
+.global-role-card > .card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === CARD HEADER === */
 
 .role-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--spacing-4);
 }
 
 .role-header-left {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--spacing-4);
   flex: 1;
   min-width: 0;
 }
@@ -54,9 +74,9 @@
   width: 48px;
   height: 48px;
   background: linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100));
-  border-radius: 12px;
+  border-radius: var(--border-radius-lg);
   flex-shrink: 0;
-  transition: transform 0.2s;
+  transition: transform var(--transition-fast);
 }
 
 .global-role-card:hover .role-icon-container {
@@ -75,9 +95,9 @@
 .role-title-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   flex-wrap: wrap;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--spacing-1);
 }
 
 .role-name-text {
@@ -86,8 +106,8 @@
   margin: 0;
   font-family: 'Courier New', 'Monaco', monospace;
   background: var(--color-gray-100);
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--border-radius-sm);
   display: inline-block;
 }
 
@@ -95,30 +115,30 @@
   flex-shrink: 0;
 }
 
-/* Description */
+/* === DESCRIPTION === */
 
 .role-description {
-  margin: 1.25rem 0;
+  margin: var(--spacing-4) 0;
   color: var(--color-text-secondary);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
   font-size: var(--font-size-sm);
 }
 
-/* Stats Section */
+/* === STATS SECTION === */
 
 .role-stats {
   display: flex;
-  gap: 1.5rem;
-  padding: 1rem;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
   background: var(--color-surface-tertiary);
-  border-radius: 8px;
-  margin: 1rem 0;
+  border-radius: var(--border-radius-md);
+  margin: var(--spacing-4) 0;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--spacing-3);
   flex: 1;
 }
 
@@ -129,14 +149,14 @@
   width: 36px;
   height: 36px;
   background: var(--color-surface);
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   color: var(--color-primary-600);
 }
 
 .stat-content {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: var(--spacing-1);
 }
 
 .stat-value {
@@ -158,17 +178,18 @@
   width: 1px;
   background: var(--color-border);
   align-self: stretch;
-  margin: 0.5rem 0;
+  margin: var(--spacing-2) 0;
 }
 
-/* Meta Footer */
+/* === META FOOTER === */
 
 .role-meta-footer {
   display: flex;
-  gap: 1rem;
-  padding: 0.75rem 0;
+  gap: var(--spacing-4);
+  padding: var(--spacing-3) 0;
   border-top: 1px solid var(--color-border);
-  margin-top: 1rem;
+  margin-top: var(--spacing-4);
+  margin-bottom: var(--spacing-2);
   flex-wrap: wrap;
 }
 
@@ -177,12 +198,12 @@
   color: var(--color-text-muted);
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--spacing-1);
 }
 
 .meta-date::before {
   content: '•';
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-tertiary);
 }
 
@@ -190,25 +211,26 @@
   content: '';
 }
 
-/* Actions */
+/* === ACTIONS === */
 
 .role-actions {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 1.25rem;
+  gap: var(--spacing-3);
+  margin-top: auto; /* Push to bottom of flex container */
+  padding-top: var(--spacing-4);
   align-items: center;
   justify-content: space-between;
 }
 
 .primary-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   flex: 1;
 }
 
 .secondary-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
   flex-shrink: 0;
 }
 
@@ -216,7 +238,7 @@
 .action-button-secondary {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: var(--spacing-2);
   flex: 1;
   justify-content: center;
   min-width: 0;
@@ -229,8 +251,8 @@
   width: 36px;
   height: 36px;
   padding: 0;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-fast);
 }
 
 .action-button-icon:hover {
@@ -243,7 +265,7 @@
   background: var(--color-error-50);
 }
 
-/* Delete Confirmation Dialog */
+/* === DELETE CONFIRMATION DIALOG === */
 
 .confirm-delete-overlay {
   position: fixed;
@@ -256,18 +278,18 @@
   align-items: center;
   justify-content: center;
   z-index: var(--z-index-modal-backdrop);
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn var(--transition-fast) ease;
   backdrop-filter: blur(4px);
 }
 
 .confirm-delete-dialog {
   background: var(--color-surface);
-  padding: 2rem;
-  border-radius: 16px;
+  padding: var(--spacing-8);
+  border-radius: var(--border-radius-xl);
   max-width: 440px;
-  width: calc(100% - 2rem);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
-  animation: slideUp 0.3s ease;
+  width: calc(100% - var(--spacing-8));
+  box-shadow: var(--shadow-2xl);
+  animation: slideUp var(--transition-normal) ease;
   text-align: center;
   position: relative;
   z-index: var(--z-index-modal);
@@ -282,20 +304,20 @@
   background: var(--color-error-50);
   border-radius: 50%;
   color: var(--color-error);
-  margin-bottom: 1rem;
+  margin-bottom: var(--spacing-4);
 }
 
 .confirm-delete-dialog h4 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 var(--spacing-4) 0;
   font-size: var(--font-size-xl);
   color: var(--color-text-primary);
 }
 
 .confirm-delete-dialog p {
-  margin: 0.75rem 0;
+  margin: var(--spacing-3) 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  line-height: 1.6;
+  line-height: var(--line-height-relaxed);
 }
 
 .confirm-delete-dialog p strong {
@@ -307,13 +329,13 @@
   color: var(--color-error);
   font-weight: var(--font-weight-semibold);
   font-size: var(--font-size-sm);
-  margin-top: 1rem !important;
+  margin-top: var(--spacing-4) !important;
 }
 
 .confirm-actions {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-6);
   justify-content: center;
 }
 
@@ -325,10 +347,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--spacing-2);
 }
 
-/* Animations */
+/* === ANIMATIONS === */
 
 @keyframes fadeIn {
   from {
@@ -350,12 +372,12 @@
   }
 }
 
-/* Responsive Design */
+/* === RESPONSIVE DESIGN === */
 
 @media (max-width: 768px) {
   .role-card-header {
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--spacing-4);
   }
   
   .role-header-left {
@@ -368,7 +390,7 @@
   
   .role-stats {
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--spacing-4);
   }
 
   .stat-divider {
@@ -377,12 +399,12 @@
   
   .role-meta-footer {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--spacing-2);
   }
   
   .role-actions {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--spacing-3);
   }
 
   .primary-actions,
@@ -409,11 +431,11 @@
   }
   
   .confirm-delete-dialog {
-    padding: 1.5rem;
+    padding: var(--spacing-6);
   }
 }
 
-/* Dark Mode Adjustments */
+/* === DARK MODE === */
 
 @media (prefers-color-scheme: dark) {
   .role-icon-container {
@@ -436,5 +458,41 @@
 
   .dialog-icon {
     background: rgba(239, 68, 68, 0.15);
+  }
+}
+
+/* === ACCESSIBILITY === */
+
+@media (prefers-reduced-motion: reduce) {
+  .global-role-card,
+  .role-icon-container,
+  .action-button-icon {
+    transition: none !important;
+  }
+
+  .global-role-card:hover {
+    transform: none;
+  }
+
+  .global-role-card:hover .role-icon-container {
+    transform: none;
+  }
+
+  .action-button-icon:hover {
+    transform: none;
+  }
+
+  @keyframes fadeIn {
+    from, to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideUp {
+    from, to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

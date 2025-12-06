@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Badge, Button, LoadingSpinner, ConfirmDialog } from '@/components/common';
+import { 
+  PageContainer,
+  PageHeader,
+  Card,
+  Badge, 
+  Button, 
+  LoadingSpinner, 
+  ConfirmDialog,
+  TabNavigation,
+  type Tab
+} from '@/components/common';
 import { groupService } from '@/services';
 import { GroupMembersTable } from '@/components/features/groups/GroupMembersTable';
 import { GroupPermissionsTab } from '@/components/features/groups/GroupPermissionsTab';
@@ -12,6 +22,7 @@ import type { UserGroup, GroupFormData } from '@/types/group.types';
 import { useUsersByGroup } from '@/hooks/useUsersByGroup';
 import { useToast } from '@/hooks';
 import { formatDate } from '@/utils/component-utils';
+import { GroupIcon, UserIcon, LockIcon } from '@/components/icons';
 import '../../styles/pages/group-details.css';
 
 type TabType = 'members' | 'permissions';
@@ -127,20 +138,35 @@ export const GroupDetailsPage: React.FC = () => {
     }
   };
 
+  // Define tabs
+  const tabs: Tab[] = [
+    {
+      id: 'members',
+      label: 'Members',
+      icon: <UserIcon size={16} />,
+      count: members.length,
+    },
+    {
+      id: 'permissions',
+      label: 'Permission Groups',
+      icon: <LockIcon size={16} />,
+    },
+  ];
+
   if (isLoading) {
     return (
-      <div className="group-details-page">
+      <PageContainer>
         <div className="group-details-loading">
           <LoadingSpinner size="lg" />
           <p>Loading group details...</p>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   if (error || !group) {
     return (
-      <div className="group-details-page">
+      <PageContainer>
         <div className="group-details-error">
           <p>{error || 'Group not found'}</p>
           <Button
@@ -150,145 +176,130 @@ export const GroupDetailsPage: React.FC = () => {
             Back to Groups
           </Button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="group-details-page">
-      <div className="group-details-header">
-        <div className="group-details-header-text">
-          <h1 className="group-details-title">{group.group_name}</h1>
-          {group.description && (
-            <p className="group-details-description">
-              {group.description}
-            </p>
+    <PageContainer>
+      <PageHeader
+        title={group.group_name}
+        subtitle={group.description || undefined}
+        icon={<GroupIcon size={28} />}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="md"
+              onClick={() => navigate(ROUTES.GROUPS)}
+            >
+              Back to Groups
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setIsEditModalOpen(true)}
+            >
+              Edit Group
+            </Button>
+          </>
+        }
+      />
+
+      {/* Group Information Card */}
+      <Card title="Group Information" className="group-info-card">
+        <div className="group-info-grid">
+          <div className="group-info-item">
+            <span className="group-info-label">Group Name</span>
+            <span className="group-info-value">{group.group_name}</span>
+          </div>
+          
+          <div className="group-info-item">
+            <span className="group-info-label">Description</span>
+            <span className="group-info-value">{group.description || 'No description'}</span>
+          </div>
+          
+          <div className="group-info-item">
+            <span className="group-info-label">Members</span>
+            <Badge variant="secondary">
+              {statistics?.total_members ?? group.member_count ?? 0} member{(statistics?.total_members ?? group.member_count ?? 0) !== 1 ? 's' : ''}
+            </Badge>
+          </div>
+          
+          <div className="group-info-item">
+            <span className="group-info-label">Created</span>
+            <span className="group-info-value">{formatDate(group.created_at)}</span>
+          </div>
+          
+          <div className="group-info-item">
+            <span className="group-info-label">Projects</span>
+            <Badge variant="secondary">
+              {statistics?.total_projects ?? 0} project{(statistics?.total_projects ?? 0) !== 1 ? 's' : ''}
+            </Badge>
+          </div>
+          
+          {group.updated_at && (
+            <div className="group-info-item">
+              <span className="group-info-label">Last Updated</span>
+              <span className="group-info-value">{formatDate(group.updated_at)}</span>
+            </div>
           )}
         </div>
-        
-        <div className="group-details-header-actions">
-          <Button
-            variant="outline"
-            onClick={() => setIsEditModalOpen(true)}
-          >
-            Edit Group
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => navigate(ROUTES.GROUPS)}
-          >
-            Back to Groups
-          </Button>
-        </div>
-      </div>
+      </Card>
 
-      <div className="group-details-content">
-        <Card title="Group Information" className="group-info-card">
-          <div className="group-info-grid">
-            <div className="group-info-item">
-              <span className="group-info-label">Group Name</span>
-              <span className="group-info-value">{group.group_name}</span>
+      {/* Tabs Section */}
+      <TabNavigation 
+        tabs={tabs} 
+        activeTab={activeTab} 
+        onChange={(tabId) => setActiveTab(tabId as TabType)}
+        contained
+      >
+        {activeTab === 'members' && (
+          <div className="members-tab-content">
+            <div className="members-tab-header">
+              <h3 className="members-tab-title">Group Members ({members.length})</h3>
+              <Button 
+                variant="primary"
+                size="md"
+                onClick={() => setIsAddMembersModalOpen(true)}
+              >
+                Add Members
+              </Button>
             </div>
             
-            <div className="group-info-item">
-              <span className="group-info-label">Description</span>
-              <span className="group-info-value">{group.description || 'No description'}</span>
-            </div>
-            
-            <div className="group-info-item">
-              <span className="group-info-label">Members</span>
-              <Badge variant="secondary">
-                {statistics?.total_members ?? group.member_count ?? 0} member{(statistics?.total_members ?? group.member_count ?? 0) !== 1 ? 's' : ''}
-              </Badge>
-            </div>
-            
-            <div className="group-info-item">
-              <span className="group-info-label">Created</span>
-              <span className="group-info-value">{formatDate(group.created_at)}</span>
-            </div>
-            
-            <div className="group-info-item">
-              <span className="group-info-label">Projects</span>
-              <Badge variant="secondary">
-                {statistics?.total_projects ?? 0} project{(statistics?.total_projects ?? 0) !== 1 ? 's' : ''}
-              </Badge>
-            </div>
-            
-            {group.updated_at && (
-              <div className="group-info-item">
-                <span className="group-info-label">Last Updated</span>
-                <span className="group-info-value">{formatDate(group.updated_at)}</span>
+            {membersError && (
+              <div className="members-error-banner" role="alert">
+                Error loading members: {membersError}
               </div>
             )}
-          </div>
-        </Card>
-
-        <div className="group-details-tabs">
-          {/* Tabs Navigation */}
-          <div className="tabs-nav">
-            <button
-              className={`tab-button ${activeTab === 'members' ? 'active' : ''}`}
-              onClick={() => setActiveTab('members')}
-            >
-              Members ({members.length})
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'permissions' ? 'active' : ''}`}
-              onClick={() => setActiveTab('permissions')}
-            >
-              Permission Groups
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          <div className="tab-content">
-            {activeTab === 'members' && (
-              <Card>
-                <div className="members-tab-header">
-                  <h3 className="members-tab-title">Group Members ({members.length})</h3>
-                  <Button 
-                    variant="primary"
-                    onClick={() => setIsAddMembersModalOpen(true)}
-                  >
-                    Add Members
-                  </Button>
-                </div>
-                
-                {membersError && (
-                  <div className="members-error-banner">
-                    Error loading members: {membersError}
-                  </div>
-                )}
-                
-                {members.length === 0 && !membersError ? (
-                  <div className="members-empty-state">
-                    <p>No members in this group yet.</p>
-                    <Button
-                      variant="primary"
-                      onClick={() => setIsAddMembersModalOpen(true)}
-                    >
-                      Add Your First Member
-                    </Button>
-                  </div>
-                ) : (
-                  <GroupMembersTable 
-                    members={members} 
-                    onRemove={setConfirmRemove}
-                    removingMember={isRemoving}
-                  />
-                )}
-              </Card>
-            )}
-
-            {activeTab === 'permissions' && group && (
-              <GroupPermissionsTab
-                groupHash={group.group_hash}
-                groupName={group.group_name}
+            
+            {members.length === 0 && !membersError ? (
+              <div className="members-empty-state">
+                <p>No members in this group yet.</p>
+                <Button
+                  variant="primary"
+                  onClick={() => setIsAddMembersModalOpen(true)}
+                >
+                  Add Your First Member
+                </Button>
+              </div>
+            ) : (
+              <GroupMembersTable 
+                members={members} 
+                onRemove={setConfirmRemove}
+                removingMember={isRemoving}
               />
             )}
           </div>
-        </div>
-      </div>
+        )}
+
+        {activeTab === 'permissions' && group && (
+          <GroupPermissionsTab
+            groupHash={group.group_hash}
+            groupName={group.group_name}
+          />
+        )}
+      </TabNavigation>
 
       {/* Add Members Modal */}
       <BulkMemberAssignmentModal
@@ -322,6 +333,6 @@ export const GroupDetailsPage: React.FC = () => {
           isLoading={isRemoving === confirmRemove.user_hash}
         />
       )}
-    </div>
+    </PageContainer>
   );
 };

@@ -210,7 +210,7 @@ export function ProjectAnalyticsDashboard(): React.JSX.Element {
         </div>
 
         {data.projects.length > 0 ? (
-          <div className="projects-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.projects.map((project) => (
               <ProjectAnalyticsCard
                 key={project.id}

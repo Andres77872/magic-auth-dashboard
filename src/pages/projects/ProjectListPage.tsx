@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { 
   PageContainer,
   PageHeader,
-  SearchBar,
   Button,
   DataView,
   DataViewCard,
@@ -193,35 +192,6 @@ export const ProjectListPage: React.FC = () => {
         }
       />
 
-      {/* Search Section */}
-      <div className="search-filter-section">
-        <SearchBar
-          onSearch={handleSearchChange}
-          placeholder="Search projects by name or description..."
-          defaultValue={searchQuery}
-        />
-        <div className="view-controls">
-          <Button
-            variant={viewMode === 'table' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('table')}
-            aria-pressed={viewMode === 'table'}
-            aria-label="Switch to table view"
-          >
-            Table View
-          </Button>
-          <Button
-            variant={viewMode === 'grid' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            aria-pressed={viewMode === 'grid'}
-            aria-label="Switch to grid view"
-          >
-            Grid View
-          </Button>
-        </div>
-      </div>
-
       {/* Error State */}
       {error ? (
         <div className="data-view-error">
@@ -235,13 +205,17 @@ export const ProjectListPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* Data View - Unified Table and Grid */
+        /* Data View - Unified Table and Grid with Integrated Toolbar */
         <DataView<ProjectDetails>
           data={projects}
           columns={columns}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          showViewToggle={false}
+          showViewToggle={true}
+          showSearch={true}
+          searchValue={searchQuery}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Search projects by name or description..."
           renderCard={renderCard}
           gridColumns={{
             mobile: 1,

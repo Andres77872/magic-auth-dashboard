@@ -1,32 +1,23 @@
 import React from 'react';
+import { cn } from '@/utils/component-utils';
 
 export interface PageContainerProps {
   children: React.ReactNode;
   className?: string;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  as?: 'div' | 'main' | 'section' | 'article';
 }
 
-/**
- * Standardized page container with consistent spacing and max-width
- * Wrap all page content with this component for consistent layout
- */
 export function PageContainer({
   children,
   className = '',
   maxWidth = 'full',
+  as: Component = 'div',
 }: PageContainerProps): React.JSX.Element {
-  const containerClasses = [
-    'page-container',
-    `page-container-${maxWidth}`,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
-    <div className={containerClasses}>
+    <Component className={cn('page-container', `page-container--${maxWidth}`, className)}>
       {children}
-    </div>
+    </Component>
   );
 }
 

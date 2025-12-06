@@ -1,5 +1,4 @@
 import { API_CONFIG, HTTP_STATUS, STORAGE_KEYS } from '@/utils/constants';
-import { encodeFormData, prepareMagicAuthData } from '@/utils/form-data';
 import type { ApiResponse } from '@/types/api.types';
 import { HttpMethod } from '@/types/api.types';
 
@@ -10,6 +9,7 @@ interface RequestConfig {
   params?: Record<string, string | number>;
   skipAuth?: boolean;
   retries?: number;
+  isFormData?: boolean;
 }
 
 class ApiClient {
@@ -19,7 +19,7 @@ class ApiClient {
   constructor(baseURL: string = API_CONFIG.BASE_URL) {
     this.baseURL = baseURL;
     this.defaultHeaders = {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
   }
@@ -141,11 +141,24 @@ class ApiClient {
           signal: AbortSignal.timeout(API_CONFIG.TIMEOUT),
         };
 
-        // Add body for non-GET requests - NOW USING FORM DATA ✅
+        // Add body for non-GET requests
         if (config.body && config.method !== HttpMethod.GET) {
-          const cleanedData = this.cleanRequestData(config.body as Record<string, unknown>);
-          const preparedData = prepareMagicAuthData(cleanedData);
-          requestInit.body = encodeFormData(preparedData);
+          if (config.isFormData) {
+            // Send as form data (application/x-www-form-urlencoded)
+            const formData = new URLSearchParams();
+            const bodyData = config.body as Record<string, unknown>;
+            Object.entries(bodyData).forEach(([key, value]) => {
+              if (value !== undefined && value !== null) {
+                formData.append(key, String(value));
+              }
+            });
+            requestInit.body = formData;
+            headers['Content-Type'] = 'application/x-www-form-urlencoded';
+          } else {
+            // Send as JSON
+            const cleanedData = this.cleanRequestData(config.body as Record<string, unknown>);
+            requestInit.body = JSON.stringify(cleanedData);
+          }
         }
 
         const response = await fetch(url, requestInit);
@@ -192,6 +205,15 @@ class ApiClient {
       method: HttpMethod.POST,
       body: data,
       skipAuth,
+    });
+  }
+
+  async postForm<T>(endpoint: string, data?: unknown, skipAuth = false): Promise<ApiResponse<T>> {
+    return this.requestWithRetry<T>(endpoint, {
+      method: HttpMethod.POST,
+      body: data,
+      skipAuth,
+      isFormData: true,
     });
   }
 

@@ -1,0 +1,139 @@
+/* Toggle Primitive Styles */
+
+.toggle-wrapper {
+  display: inline-flex;
+}
+
+.toggle-wrapper-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Label */
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-wrapper-disabled .toggle-label {
+  cursor: not-allowed;
+}
+
+/* Hidden Input */
+.toggle-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Track */
+.toggle-track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  background: var(--color-bg-tertiary);
+  border-radius: 9999px;
+  transition: var(--transition-base);
+}
+
+/* Sizes */
+.toggle-track-sm {
+  width: 32px;
+  height: 18px;
+}
+
+.toggle-track-md {
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-track-lg {
+  width: 56px;
+  height: 30px;
+}
+
+/* States */
+.toggle-input:hover + .toggle-track {
+  background: var(--color-bg-hover);
+}
+
+.toggle-input:focus-visible + .toggle-track {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.toggle-track-checked {
+  background: var(--color-primary);
+}
+
+.toggle-input:hover + .toggle-track-checked {
+  background: var(--color-primary-hover);
+}
+
+/* Thumb */
+.toggle-thumb {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-base);
+}
+
+.toggle-track-sm .toggle-thumb {
+  width: 14px;
+  height: 14px;
+  left: 2px;
+}
+
+.toggle-track-md .toggle-thumb {
+  width: 20px;
+  height: 20px;
+  left: 2px;
+}
+
+.toggle-track-lg .toggle-thumb {
+  width: 26px;
+  height: 26px;
+  left: 2px;
+}
+
+.toggle-track-checked .toggle-thumb {
+  transform: translateX(100%);
+}
+
+.toggle-track-sm.toggle-track-checked .toggle-thumb {
+  transform: translateX(14px);
+}
+
+.toggle-track-md.toggle-track-checked .toggle-thumb {
+  transform: translateX(20px);
+}
+
+.toggle-track-lg.toggle-track-checked .toggle-thumb {
+  transform: translateX(26px);
+}
+
+/* Label Text */
+.toggle-label-text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.toggle-wrapper-sm .toggle-label-text {
+  font-size: var(--font-size-xs);
+}
+
+.toggle-wrapper-lg .toggle-label-text {
+  font-size: var(--font-size-base);
+}

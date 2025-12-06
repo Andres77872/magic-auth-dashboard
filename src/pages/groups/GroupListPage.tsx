@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   PageContainer,
   PageHeader,
-  SearchBar,
   FilterBar,
   Button,
   Pagination,
@@ -268,35 +267,20 @@ export const GroupListPage: React.FC = () => {
         subtitle="Manage user groups and their memberships"
         icon={<GroupIcon size={28} />}
         actions={
-          <>
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => setViewMode(viewMode === 'table' ? 'grid' : 'table')}
-              aria-label={`Switch to ${viewMode === 'table' ? 'grid' : 'table'} view`}
-            >
-              {viewMode === 'table' ? 'Grid View' : 'Table View'}
-            </Button>
-            <Button
-              variant="primary"
-              size="md"
-              leftIcon={<PlusIcon size={16} />}
-              onClick={handleOpenCreateModal}
-              aria-label="Create new group"
-            >
-              Create Group
-            </Button>
-          </>
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={<PlusIcon size={16} />}
+            onClick={handleOpenCreateModal}
+            aria-label="Create new group"
+          >
+            Create Group
+          </Button>
         }
       />
 
-      {/* Search and Filter */}
-      <div className="search-filter-section">
-        <SearchBar
-          onSearch={handleSearch}
-          placeholder="Search groups by name or description..."
-          defaultValue={filters.search || ''}
-        />
+      {/* Filter Section */}
+      <div className="filter-section">
         <FilterBar
           filters={filterBarFilters}
           onClearAll={handleClearFilters}
@@ -316,13 +300,17 @@ export const GroupListPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* Data View - Unified Table and Grid */
+        /* Data View - Unified Table and Grid with Integrated Toolbar */
         <DataView<UserGroup>
           data={groups}
           columns={columns}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          showViewToggle={false}
+          showViewToggle={true}
+          showSearch={true}
+          searchValue={filters.search || ''}
+          onSearchChange={handleSearch}
+          searchPlaceholder="Search groups by name or description..."
           renderCard={renderCard}
           gridColumns={{
             mobile: 1,

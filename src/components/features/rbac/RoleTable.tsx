@@ -1,6 +1,6 @@
 import React from 'react';
-import { Table, Badge } from '@/components/common';
-import type { TableColumn } from '@/components/common/Table';
+import { DataView, Badge } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
 import { ActionsMenu } from '@/components/common';
 import type { ActionMenuItem } from '@/components/common';
 import { EditIcon, DeleteIcon, ViewIcon } from '@/components/icons';
@@ -23,7 +23,7 @@ export const RoleTable: React.FC<RoleTableProps> = ({
   onView,
   emptyAction
 }) => {
-  const columns: TableColumn<Role>[] = [
+  const columns: DataViewColumn<Role>[] = [
     {
       key: 'group_name',
       header: 'Role Name',
@@ -111,9 +111,11 @@ export const RoleTable: React.FC<RoleTableProps> = ({
   ];
 
   return (
-    <Table<Role>
+    <DataView<Role>
       data={roles}
       columns={columns}
+      viewMode="table"
+      showViewToggle={false}
       isLoading={loading}
       emptyMessage="No roles found"
       emptyAction={emptyAction}

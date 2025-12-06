@@ -1,4 +1,6 @@
 import React from 'react';
+import { Card, Badge } from '../primitives';
+import { cn } from '@/utils/component-utils';
 
 export interface Tab {
   id: string;
@@ -13,29 +15,24 @@ export interface TabNavigationProps {
   activeTab: string;
   onChange: (tabId: string) => void;
   className?: string;
+  contained?: boolean;
+  children?: React.ReactNode;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-/**
- * Standardized tab navigation component
- * Use this for consistent tab UI across all pages
- */
 export function TabNavigation({
   tabs,
   activeTab,
   onChange,
   className = '',
+  contained = false,
+  children,
+  size = 'md',
 }: TabNavigationProps): React.JSX.Element {
-  return (
-    <div className={`tab-navigation ${className}`.trim()} role="tablist">
+  const tabNavigation = (
+    <div className={cn('tab-navigation', `tab-navigation--${size}`, className)} role="tablist">
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
-        const buttonClasses = [
-          'tab-navigation-item',
-          isActive && 'tab-navigation-item-active',
-          tab.disabled && 'tab-navigation-item-disabled',
-        ]
-          .filter(Boolean)
-          .join(' ');
 
         return (
           <button
@@ -45,22 +42,47 @@ export function TabNavigation({
             aria-selected={isActive}
             aria-controls={`tabpanel-${tab.id}`}
             id={`tab-${tab.id}`}
-            className={buttonClasses}
+            className={cn(
+              'tab-navigation__item',
+              isActive && 'tab-navigation__item--active',
+              tab.disabled && 'tab-navigation__item--disabled'
+            )}
             onClick={() => !tab.disabled && onChange(tab.id)}
             disabled={tab.disabled}
+            tabIndex={isActive ? 0 : -1}
           >
-            {tab.icon && <span className="tab-navigation-icon" aria-hidden="true">{tab.icon}</span>}
-            <span className="tab-navigation-label">{tab.label}</span>
+            {tab.icon && <span className="tab-navigation__icon" aria-hidden="true">{tab.icon}</span>}
+            <span className="tab-navigation__label">{tab.label}</span>
             {tab.count !== undefined && (
-              <span className="tab-navigation-count" aria-label={`${tab.count} items`}>
+              <Badge variant="secondary" size="sm" className="tab-navigation__count">
                 {tab.count}
-              </span>
+              </Badge>
             )}
           </button>
         );
       })}
     </div>
   );
+
+  if (contained) {
+    return (
+      <Card className="tab-navigation__container" padding="none">
+        {tabNavigation}
+        {children && (
+          <div 
+            className="tab-navigation__panel"
+            role="tabpanel"
+            id={`tabpanel-${activeTab}`}
+            aria-labelledby={`tab-${activeTab}`}
+          >
+            {children}
+          </div>
+        )}
+      </Card>
+    );
+  }
+
+  return tabNavigation;
 }
 
 export default TabNavigation;

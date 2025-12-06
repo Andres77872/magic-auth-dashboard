@@ -28,7 +28,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
       <div className="project-cards" role="region" aria-label="Loading projects" aria-busy="true">
         <div className="cards-grid">
           {Array.from({ length: 6 }).map((_, index) => (
-            <Card key={index} className="project-card" aria-hidden="true">
+            <Card 
+              key={index} 
+              className="project-card" 
+              padding="md"
+              elevated
+              aria-hidden="true"
+            >
               <div className="project-card-header">
                 <div className="project-card-title">
                   <Skeleton variant="title" width="60%" />
@@ -56,12 +62,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     <div className="project-cards" role="region" aria-label="Projects grid">
       <div className="cards-grid">
         {projects.map((project) => (
-          <article 
+          <Card 
             key={project.project_hash} 
             className="project-card"
+            padding="md"
+            elevated
+            role="article"
             aria-labelledby={`project-name-${project.project_hash}`}
           >
-            <Card>
             <div className="project-card-header">
               <div className="project-card-title">
                 <h3 id={`project-name-${project.project_hash}`}>
@@ -106,8 +114,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 </div>
               </dl>
             </footer>
-            </Card>
-          </article>
+          </Card>
         ))}
       </div>
 

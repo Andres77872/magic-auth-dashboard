@@ -41,8 +41,8 @@
   color: var(--primary-color);
 }
 
-/* Projects Grid */
-.projects-grid {
+/* Projects Grid - Scoped to Admin Projects Manager */
+.admin-projects-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--spacing-md);
@@ -184,7 +184,7 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .projects-grid {
+  .admin-projects-grid {
     grid-template-columns: 1fr;
   }
 
@@ -219,6 +219,6 @@
   animation: fadeInUp 0.3s ease-out;
 }
 
-.projects-grid .project-card:nth-child(n) {
+.admin-projects-grid .project-card:nth-child(n) {
   animation-delay: calc(0.05s * var(--index, 1));
 }

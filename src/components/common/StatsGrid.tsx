@@ -1,5 +1,6 @@
 import React from 'react';
 import StatCard, { type StatCardProps } from './StatCard';
+import { cn } from '@/utils/component-utils';
 
 export interface StatsGridProps {
   stats: StatCardProps[];
@@ -8,28 +9,16 @@ export interface StatsGridProps {
   className?: string;
 }
 
-/**
- * Standardized stats grid for displaying multiple stat cards
- * Use this for consistent statistics layout
- */
 export function StatsGrid({
   stats,
   columns = 4,
   loading = false,
   className = '',
 }: StatsGridProps): React.JSX.Element {
-  const gridClasses = [
-    'stats-grid',
-    `stats-grid-cols-${columns}`,
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
   return (
-    <div className={gridClasses}>
+    <div className={cn('stats-grid', `stats-grid--cols-${columns}`, className)} role="group" aria-label="Statistics">
       {stats.map((stat, index) => (
-        <StatCard key={`stat-${index}`} {...stat} loading={loading} />
+        <StatCard key={stat.title || `stat-${index}`} {...stat} loading={loading} />
       ))}
     </div>
   );

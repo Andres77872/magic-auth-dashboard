@@ -1,6 +1,6 @@
-/* ==================================
-   SEARCH BAR - Standardized Component
-   ================================== */
+/* ============================================================
+   SEARCH BAR COMPONENT - BEM Naming
+   ============================================================ */
 
 .search-bar {
   position: relative;
@@ -8,38 +8,37 @@
   max-width: 600px;
 }
 
-.search-bar-input {
-  width: 100%;
-  padding-right: 2.5rem;
+/* Size Modifiers */
+.search-bar--sm {
+  max-width: 400px;
 }
 
-.search-bar-clear {
+.search-bar--md {
+  max-width: 600px;
+}
+
+.search-bar--lg {
+  max-width: 800px;
+}
+
+.search-bar__input {
+  width: 100%;
+  padding-right: var(--spacing-10);
+}
+
+.search-bar__clear {
   position: absolute;
-  right: 0.75rem;
+  right: var(--spacing-2);
   top: 50%;
   transform: translateY(-50%);
-  width: 1.5rem;
-  height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-gray-200, #e5e7eb);
-  border: none;
-  border-radius: 50%;
-  color: var(--color-text-secondary, #6b7280);
-  cursor: pointer;
-  font-size: 1.25rem;
-  line-height: 1;
-  transition: all 0.2s ease;
+  padding: var(--spacing-1);
+  border-radius: var(--border-radius-sm);
 }
 
-.search-bar-clear:hover {
-  background: var(--color-gray-300, #d1d5db);
-  color: var(--color-text-primary, #111827);
-}
-
-.search-bar-clear:focus {
-  outline: 2px solid var(--color-primary, #3b82f6);
-  outline-offset: 2px;
+/* Responsive */
+@media (max-width: 640px) {
+  .search-bar {
+    max-width: 100%;
+  }
 }
 

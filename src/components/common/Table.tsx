@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Skeleton } from './Skeleton';
+import { Skeleton } from '../primitives';
 import { EmptyState } from './EmptyState';
-import { ChevronIcon } from '@/components/icons';
+import { ChevronIcon, DocumentIcon } from '@/components/icons';
+import { cn } from '@/utils/component-utils';
 
 export interface TableColumn<T> {
   key: keyof T;
@@ -83,12 +84,7 @@ export function Table<T extends Record<string, any>>({
     );
   };
 
-  const tableClasses = [
-    'table-wrapper',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const tableClasses = cn('table-wrapper', className);
 
   return (
     <div className={tableClasses}>
@@ -151,16 +147,12 @@ export function Table<T extends Record<string, any>>({
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="table-empty">
-                  {emptyIcon || emptyAction ? (
-                    <EmptyState
-                      icon={emptyIcon || <span>📭</span>}
-                      title={emptyMessage}
-                      description=""
-                      action={emptyAction}
-                    />
-                  ) : (
-                    emptyMessage
-                  )}
+                  <EmptyState
+                    icon={emptyIcon || <DocumentIcon size={32} />}
+                    title={emptyMessage}
+                    description=""
+                    action={emptyAction}
+                  />
                 </td>
               </tr>
             ) : (

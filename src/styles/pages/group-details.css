@@ -1,13 +1,6 @@
-/* Group Details Page Styles */
-
-.group-details-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-lg);
-  max-width: 1400px;
-  margin: 0 auto;
-}
+/* ==================================
+   GROUP DETAILS PAGE - Design System v2.4
+   ================================== */
 
 /* Loading and Error States */
 .group-details-loading,
@@ -16,170 +9,92 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-3xl);
-  gap: var(--spacing-md);
+  padding: var(--spacing-12, 48px);
+  gap: var(--spacing-4, 16px);
   text-align: center;
+  min-height: 400px;
 }
 
 .group-details-loading p,
 .group-details-error p {
-  font-size: var(--font-size-md);
-  color: var(--color-text-secondary);
+  font-size: var(--font-size-base, 16px);
+  color: var(--color-text-secondary, #6b7280);
   margin: 0;
 }
 
-.group-details-error {
-  color: var(--color-error);
+.group-details-error p {
+  color: var(--color-error, #ef4444);
 }
 
-/* Header Section */
-.group-details-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--spacing-md);
-  padding-bottom: var(--spacing-lg);
-  border-bottom: 1px solid var(--color-border-light);
-}
+/* ==================================
+   GROUP INFORMATION CARD
+   ================================== */
 
-.group-details-header-text {
-  flex: 1;
-}
-
-.group-details-title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-primary);
-  margin: 0;
-  line-height: var(--line-height-tight);
-}
-
-.group-details-description {
-  font-size: var(--font-size-md);
-  color: var(--color-text-secondary);
-  margin: var(--spacing-xs) 0 0;
-  line-height: var(--line-height-normal);
-}
-
-.group-details-header-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-/* Content Section */
-.group-details-content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-lg);
-}
-
-/* Group Info Card */
 .group-info-card {
-  background-color: var(--color-background-primary);
+  margin-bottom: var(--spacing-6, 24px);
 }
 
 .group-info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--spacing-lg);
-  padding: var(--spacing-md) 0;
+  gap: var(--spacing-6, 24px);
+  padding: var(--spacing-4, 16px) 0;
 }
 
 .group-info-item {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-2, 8px);
 }
 
 .group-info-label {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs, 12px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-secondary, #6b7280);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .group-info-value {
-  font-size: var(--font-size-md);
-  color: var(--color-text-primary);
-  line-height: var(--line-height-normal);
+  font-size: var(--font-size-base, 16px);
+  color: var(--color-text-primary, #1a1a1a);
+  line-height: var(--line-height-normal, 1.5);
 }
 
-/* Tabs Section */
-.group-details-tabs {
+/* ==================================
+   MEMBERS TAB
+   ================================== */
+
+.members-tab-content {
   display: flex;
   flex-direction: column;
-  background-color: var(--color-background-primary);
-  border-radius: var(--border-radius-lg);
-  overflow: hidden;
+  gap: var(--spacing-4, 16px);
 }
 
-.tabs-nav {
-  display: flex;
-  border-bottom: 2px solid var(--color-border-light);
-  background-color: var(--color-background-secondary);
-}
-
-.tab-button {
-  flex: 1;
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: none;
-  border: none;
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-}
-
-.tab-button:hover {
-  background-color: var(--color-background-hover);
-  color: var(--color-text-primary);
-}
-
-.tab-button.active {
-  color: var(--color-primary);
-  background-color: var(--color-background-primary);
-}
-
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: var(--color-primary);
-}
-
-.tab-content {
-  padding: var(--spacing-lg);
-}
-
-/* Members Tab */
 .members-tab-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-4, 16px);
+  padding-bottom: var(--spacing-4, 16px);
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
 }
 
 .members-tab-title {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  font-size: var(--font-size-lg, 18px);
+  font-weight: var(--font-weight-semibold, 600);
+  color: var(--color-text-primary, #1a1a1a);
   margin: 0;
 }
 
 .members-error-banner {
-  padding: var(--spacing-md);
-  background-color: var(--color-error-background);
-  border: 1px solid var(--color-error-border);
-  border-radius: var(--border-radius-md);
-  color: var(--color-error);
-  margin-bottom: var(--spacing-md);
-  font-size: var(--font-size-sm);
+  padding: var(--spacing-4, 16px);
+  background-color: var(--color-error-50, #fef2f2);
+  border: 1px solid var(--color-error-200, #fecaca);
+  border-radius: var(--border-radius-md, 8px);
+  color: var(--color-error-700, #b91c1c);
+  margin-bottom: var(--spacing-4, 16px);
+  font-size: var(--font-size-sm, 14px);
 }
 
 .members-empty-state {
@@ -187,86 +102,51 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-3xl) var(--spacing-lg);
+  padding: var(--spacing-12, 48px) var(--spacing-6, 24px);
   text-align: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-4, 16px);
 }
 
 .members-empty-state p {
-  font-size: var(--font-size-md);
-  color: var(--color-text-secondary);
+  font-size: var(--font-size-base, 16px);
+  color: var(--color-text-secondary, #6b7280);
   margin: 0;
 }
 
-/* Responsive Design */
+/* ==================================
+   RESPONSIVE DESIGN
+   ================================== */
+
 @media (max-width: 1024px) {
-  .group-details-page {
-    padding: var(--spacing-md);
-  }
-
-  .group-details-header {
-    flex-direction: column;
-  }
-
-  .group-details-header-actions {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
   .group-info-grid {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--spacing-md);
+    gap: var(--spacing-4, 16px);
   }
 }
 
 @media (max-width: 768px) {
-  .group-details-page {
-    padding: var(--spacing-sm);
-  }
-
-  .group-details-title {
-    font-size: var(--font-size-xl);
-  }
-
-  .group-details-description {
-    font-size: var(--font-size-sm);
-  }
-
-  .group-details-header-actions {
-    flex-direction: column;
-  }
-
-  .group-details-header-actions button {
-    width: 100%;
-  }
-
   .group-info-grid {
     grid-template-columns: 1fr;
   }
 
-  .tabs-nav {
-    flex-direction: column;
-  }
-
-  .tab-button.active::after {
-    top: 0;
-    bottom: auto;
-    left: 0;
-    width: 3px;
-    height: 100%;
-  }
-
-  .tab-content {
-    padding: var(--spacing-md);
-  }
-
   .members-tab-header {
     flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
+    align-items: stretch;
+    gap: var(--spacing-3, 12px);
   }
 
   .members-tab-header button {
     width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .group-details-loading,
+  .group-details-error {
+    padding: var(--spacing-8, 32px) var(--spacing-4, 16px);
+  }
+
+  .members-empty-state {
+    padding: var(--spacing-8, 32px) var(--spacing-4, 16px);
   }
 }

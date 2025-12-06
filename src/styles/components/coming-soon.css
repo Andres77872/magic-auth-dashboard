@@ -1,4 +1,7 @@
-/* Coming Soon Component Styles */
+/* ============================================================
+   COMING SOON COMPONENT - BEM Naming
+   ============================================================ */
+
 .coming-soon {
   display: flex;
   align-items: center;
@@ -7,62 +10,67 @@
   padding: var(--spacing-8);
 }
 
-.coming-soon-content {
+.coming-soon__card {
   text-align: center;
   max-width: 500px;
-  background: var(--color-surface);
-  padding: var(--spacing-12);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--shadow-lg);
-  border: var(--border-card);
 }
 
-.coming-soon-icon {
-  margin-bottom: var(--spacing-6);
+.coming-soon__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--spacing-6);
+  background: var(--color-primary-50);
+  border-radius: var(--border-radius-full);
   color: var(--color-primary-500);
 }
 
-.coming-soon-content h1 {
-  font-size: var(--font-size-3xl);
+.coming-soon__title {
+  font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--spacing-4);
+  margin: 0 0 var(--spacing-3) 0;
 }
 
-.coming-soon-content .description {
-  font-size: var(--font-size-lg);
+.coming-soon__description {
+  font-size: var(--font-size-base);
   color: var(--color-text-secondary);
   line-height: var(--line-height-relaxed);
-  margin-bottom: var(--spacing-8);
+  margin: 0 0 var(--spacing-6) 0;
 }
 
-.feature-info {
+.coming-soon__feature {
   background: var(--color-primary-50);
   border: 1px solid var(--color-primary-200);
   border-radius: var(--border-radius-lg);
-  padding: var(--spacing-6);
-  margin-bottom: var(--spacing-8);
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
 }
 
-.feature-info h3 {
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+.coming-soon__feature-badge {
+  display: inline-block;
+  padding: var(--spacing-1) var(--spacing-3);
+  background: var(--color-primary-100);
   color: var(--color-primary-700);
-  margin-bottom: var(--spacing-3);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--border-radius-full);
+  margin-bottom: var(--spacing-2);
 }
 
-.feature-info p {
-  font-size: var(--font-size-base);
+.coming-soon__feature-text {
+  font-size: var(--font-size-sm);
   color: var(--color-primary-600);
   margin: 0;
   line-height: var(--line-height-relaxed);
 }
 
-.back-link {
-  margin-top: var(--spacing-6);
+.coming-soon__actions {
+  display: flex;
+  justify-content: center;
 }
-
-/* Button styles are now centralized in globals.css */
 
 /* Responsive Design */
 @media (max-width: 640px) {
@@ -70,15 +78,7 @@
     padding: var(--spacing-4);
   }
 
-  .coming-soon-content {
-    padding: var(--spacing-8);
-  }
-
-  .coming-soon-content h1 {
-    font-size: var(--font-size-2xl);
-  }
-
-  .coming-soon-content .description {
-    font-size: var(--font-size-base);
+  .coming-soon__title {
+    font-size: var(--font-size-xl);
   }
 } 

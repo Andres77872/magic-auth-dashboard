@@ -1,42 +1,42 @@
-/* ==================================
-   STATS GRID - Standardized Component
-   ================================== */
+/* ============================================================
+   STATS GRID COMPONENT - BEM Naming
+   ============================================================ */
 
 .stats-grid {
   display: grid;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: var(--spacing-6);
+  margin-bottom: var(--spacing-8);
 }
 
-/* Grid Columns */
-.stats-grid-cols-2 {
+/* Grid Column Modifiers */
+.stats-grid--cols-2 {
   grid-template-columns: repeat(2, 1fr);
 }
 
-.stats-grid-cols-3 {
+.stats-grid--cols-3 {
   grid-template-columns: repeat(3, 1fr);
 }
 
-.stats-grid-cols-4 {
+.stats-grid--cols-4 {
   grid-template-columns: repeat(4, 1fr);
 }
 
-.stats-grid-cols-5 {
+.stats-grid--cols-5 {
   grid-template-columns: repeat(5, 1fr);
 }
 
 /* Responsive */
 @media (max-width: 1200px) {
-  .stats-grid-cols-5,
-  .stats-grid-cols-4 {
+  .stats-grid--cols-5,
+  .stats-grid--cols-4 {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 992px) {
-  .stats-grid-cols-5,
-  .stats-grid-cols-4,
-  .stats-grid-cols-3 {
+  .stats-grid--cols-5,
+  .stats-grid--cols-4,
+  .stats-grid--cols-3 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
