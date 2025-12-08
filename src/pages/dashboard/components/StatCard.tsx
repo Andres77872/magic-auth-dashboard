@@ -62,17 +62,6 @@ export function StatCard({ data, isLoading = false }: StatCardProps): React.JSX.
     }
   };
 
-  const getChangeColor = (type: 'increase' | 'decrease' | 'neutral') => {
-    switch (type) {
-      case 'increase':
-        return 'text-success';
-      case 'decrease':
-        return 'text-destructive';
-      default:
-        return 'text-muted-foreground';
-    }
-  };
-
   if (isLoading) {
     return (
       <Card className="relative overflow-hidden border-l-4 border-l-muted">

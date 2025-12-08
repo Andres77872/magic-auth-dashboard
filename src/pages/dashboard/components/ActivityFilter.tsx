@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Search, SlidersHorizontal, X, Calendar } from 'lucide-react';
 import type { ActivityFilters } from '@/types/analytics.types';
+// Note: Using analytics.types ActivityFilters here for dashboard filtering
 
 interface ActivityFilterProps {
   filters: ActivityFilters;

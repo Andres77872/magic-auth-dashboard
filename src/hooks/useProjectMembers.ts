@@ -15,10 +15,17 @@ interface UseProjectMembersReturn {
   isLoading: boolean;
   error: string | null;
   fetchMembers: (projectHash: string, params?: PaginationParams) => Promise<void>;
-  addMember: (projectHash: string, userHash: string) => Promise<void>;
-  removeMember: (projectHash: string, userHash: string) => Promise<void>;
 }
 
+/**
+ * Hook for fetching project members.
+ * 
+ * Note: Direct member management (add/remove) is not available through this API.
+ * Users gain project access through the Groups-of-Groups architecture:
+ * User -> User Group -> Project Group -> Project
+ * 
+ * To manage project access, use the group management APIs instead.
+ */
 export function useProjectMembers(): UseProjectMembersReturn {
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,59 +50,11 @@ export function useProjectMembers(): UseProjectMembersReturn {
     }
   }, []);
 
-  const addMember = useCallback(async (projectHash: string, userHash: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await projectService.addProjectMember(projectHash, userHash);
-      
-      if (response.success) {
-        // Refresh the members list
-        await fetchMembers(projectHash);
-      } else {
-        setError(response.message || 'Failed to add project member');
-        throw new Error(response.message || 'Failed to add member');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchMembers]);
-
-  const removeMember = useCallback(async (projectHash: string, userHash: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await projectService.removeProjectMember(projectHash, userHash);
-      
-      if (response.success) {
-        // Remove from local state
-        setMembers(prev => prev.filter(m => m.user_hash !== userHash));
-      } else {
-        setError(response.message || 'Failed to remove project member');
-        throw new Error(response.message || 'Failed to remove member');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   return {
     members,
     isLoading,
     error,
     fetchMembers,
-    addMember,
-    removeMember,
   };
 }
 

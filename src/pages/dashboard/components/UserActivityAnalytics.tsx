@@ -289,9 +289,9 @@ export function UserActivityAnalytics(): React.JSX.Element {
                 {data.security.securityEvents.map((event, index) => (
                   <div key={index} className={cn(
                     'flex items-center justify-between p-2 rounded-md border',
-                    event.severity === 'critical' && 'bg-destructive/5 border-destructive/20',
-                    event.severity === 'warning' && 'bg-warning/5 border-warning/20',
-                    event.severity === 'info' && 'bg-info/5 border-info/20'
+                    event.severity === 'high' && 'bg-destructive/5 border-destructive/20',
+                    event.severity === 'medium' && 'bg-warning/5 border-warning/20',
+                    event.severity === 'low' && 'bg-info/5 border-info/20'
                   )}>
                     <span className="text-sm text-foreground">{event.type}</span>
                     <Badge variant="outline" className="text-xs">

@@ -67,7 +67,10 @@ export function useGroups(options: UseGroupsOptions = {}): UseGroupsReturn {
       if (response.success && response.user_groups) {
         setGroups(response.user_groups);
         if (response.pagination) {
-          setPagination(response.pagination);
+          setPagination({
+            ...response.pagination,
+            has_more: response.pagination.has_more ?? false
+          });
         }
       } else {
         setError(response.message || 'Failed to fetch groups');

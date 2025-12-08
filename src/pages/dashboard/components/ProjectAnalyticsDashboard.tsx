@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { FolderKanban, ShieldCheck, Activity, AlertCircle, RefreshCw, FolderPlus } from 'lucide-react';
 import type { ProjectAnalyticsData, DateRange, DateRangePreset } from '@/types/analytics.types';
 

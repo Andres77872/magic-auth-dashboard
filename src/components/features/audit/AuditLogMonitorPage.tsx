@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageContainer } from '@/components/common/PageContainer';
@@ -33,7 +32,7 @@ export function AuditLogMonitorPage({
   const { user } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState(defaultTab);
-  const [filters, setFilters] = useState<ActivityFilters>({});
+  const [filters, _setFilters] = useState<ActivityFilters>({});
 
   // Check if user is root (has access to all tabs)
   const isRoot = user?.user_type === 'root';
@@ -60,31 +59,19 @@ export function AuditLogMonitorPage({
 
   // Handle export events
   const handleExportStart = useCallback(() => {
-    showToast({
-      title: 'Export Started',
-      description: 'Preparing your export file...',
-      variant: 'default',
-    });
+    showToast('Export Started: Preparing your export file...', 'info');
   }, [showToast]);
 
   const handleExportComplete = useCallback(
     (filename: string) => {
-      showToast({
-        title: 'Export Complete',
-        description: `Downloaded ${filename}`,
-        variant: 'success',
-      });
+      showToast(`Export Complete: Downloaded ${filename}`, 'success');
     },
     [showToast]
   );
 
   const handleExportError = useCallback(
     (error: string) => {
-      showToast({
-        title: 'Export Failed',
-        description: error,
-        variant: 'error',
-      });
+      showToast(`Export Failed: ${error}`, 'error');
     },
     [showToast]
   );
@@ -93,7 +80,7 @@ export function AuditLogMonitorPage({
     <PageContainer className={className}>
       <PageHeader
         title="Audit Log Monitor"
-        description="Monitor system activities, security events, and audit statistics"
+        subtitle="Monitor system activities, security events, and audit statistics"
         icon={<Activity className="h-6 w-6" aria-hidden="true" />}
         actions={
           <ActivityExport

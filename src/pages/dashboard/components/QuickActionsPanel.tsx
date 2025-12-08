@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { useUserType } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
 import { Zap, Crown } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import type { QuickAction } from '@/types/dashboard.types';
 
 export function QuickActionsPanel(): React.JSX.Element {
