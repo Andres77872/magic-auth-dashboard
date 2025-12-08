@@ -13,7 +13,14 @@ import {
   Users,
   Check,
   ArrowRight,
-  Sparkles,
+  Key,
+  Layers,
+  Github,
+  BookOpen,
+  UserPlus,
+  FileKey,
+  ClipboardList,
+  RefreshCw,
 } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -36,43 +43,61 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
   );
 }
 
-interface AccessCardProps {
-  badge: string;
-  badgeVariant: 'primary' | 'secondary';
+interface CapabilityItemProps {
   title: string;
-  description: string;
-  features: string[];
-  highlighted?: boolean;
+  items: string[];
 }
 
-function AccessCard({ badge, badgeVariant, title, description, features, highlighted }: AccessCardProps) {
+function CapabilityItem({ title, items }: CapabilityItemProps) {
   return (
-    <Card
-      className={`relative overflow-hidden transition-all duration-300 ${
-        highlighted
-          ? 'border-primary/50 bg-gradient-to-b from-primary/5 to-transparent shadow-lg shadow-primary/10'
-          : 'border-border/50 bg-card/50 backdrop-blur-sm hover:border-border'
-      }`}
-    >
-      {highlighted && (
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
-      )}
-      <CardContent className="p-6">
-        <Badge variant={badgeVariant} size="lg" className="mb-4">
-          {badge}
-        </Badge>
-        <h3 className="mb-2 text-xl font-semibold text-foreground">{title}</h3>
-        <p className="mb-6 text-sm leading-relaxed text-muted-foreground">{description}</p>
-        <ul className="space-y-3">
-          {features.map((feature, index) => (
-            <li key={index} className="flex items-center gap-3 text-sm text-muted-foreground">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 text-success">
-                <Check size={12} />
-              </div>
-              {feature}
-            </li>
-          ))}
-        </ul>
+    <div>
+      <h4 className="mb-3 font-semibold text-foreground">{title}</h4>
+      <ul className="space-y-2">
+        {items.map((item, index) => (
+          <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Check size={12} />
+            </div>
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+interface FlowCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  flowItems: { label: string; variant: 'primary' | 'secondary' }[];
+  note: string;
+}
+
+function FlowCard({ icon, title, description, flowItems, note }: FlowCardProps) {
+  return (
+    <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5">
+      <CardContent className="p-6 sm:p-8">
+        <div className="flex flex-col">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            {icon}
+          </div>
+          <h3 className="mb-2 text-xl font-bold text-foreground">{title}</h3>
+          <p className="mb-5 text-sm text-muted-foreground">{description}</p>
+          <div className="mb-5 flex flex-wrap items-center gap-2">
+            {flowItems.map((item, index) => (
+              <React.Fragment key={index}>
+                <Badge variant={item.variant} size="md">
+                  {item.label}
+                </Badge>
+                {index < flowItems.length - 1 && (
+                  <ArrowRight size={14} className="text-muted-foreground" />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">{note}</p>
+        </div>
       </CardContent>
     </Card>
   );
@@ -84,47 +109,70 @@ export function LandingPage(): React.JSX.Element {
   const features = [
     {
       icon: <User size={24} />,
-      title: '3-Tier User Management',
+      title: 'User Management',
       description:
-        'Hierarchical access control with ROOT, ADMIN, and USER levels. Manage permissions with precision and flexibility.',
+        'Complete user lifecycle with hierarchical access levels (Root, Admin, User). Profile management, status control, and secure password handling.',
     },
     {
       icon: <ShieldCheck size={24} />,
       title: 'Role-Based Access Control',
       description:
-        'Granular permissions system with custom roles and permission groups. Define exactly what each user can do.',
+        'Granular RBAC with permission groups and roles. Define custom permissions and assign them to users or groups for precise access control.',
     },
     {
       icon: <FolderKanban size={24} />,
-      title: 'Project Management',
+      title: 'Multi-Project Support',
       description:
-        'Multi-tenant architecture with project-level isolation. Perfect for SaaS applications and enterprise systems.',
+        'Multi-tenant architecture with project isolation. Users can belong to multiple projects with different permissions in each context.',
     },
     {
       icon: <Users size={24} />,
-      title: 'Group Management',
+      title: 'Groups Architecture',
       description:
-        'Organize users into groups for efficient permission assignment. Global and project-specific group support.',
+        'Groups-of-Groups model: User Groups → Project Groups → Projects. Scalable team management with inherited permissions.',
     },
     {
       icon: <Activity size={24} />,
-      title: 'System Health Monitoring',
+      title: 'Audit & Monitoring',
       description:
-        'Real-time diagnostics and health checks for your authentication system. Monitor performance and catch issues early.',
+        'Comprehensive audit logs and activity tracking. Monitor user actions, system health, and cache performance in real-time.',
     },
     {
       icon: <Lock size={24} />,
-      title: 'Secure by Default',
+      title: 'JWT Authentication',
       description:
-        'Built with security best practices. Encrypted connections, secure session management, and comprehensive audit logs.',
+        'Secure session management with JWT tokens and Redis-backed storage. Token refresh, project switching, and automatic invalidation.',
     },
   ];
 
-  const trustIndicators = [
-    'WCAG 2.2 AA Compliant',
-    'Real-time Monitoring',
-    'Multi-tenant Support',
-  ];
+  const apiCapabilities = {
+    authentication: [
+      'Login with username/email',
+      'User registration with group assignment',
+      'Session validation & token refresh',
+      'Project context switching',
+    ],
+    users: [
+      'Profile management (self-service)',
+      'User search with filters',
+      'Status management (activate/deactivate)',
+      'Password reset workflows',
+    ],
+    permissions: [
+      'Permission groups with categories',
+      'Role-based permission assignment',
+      'User group bulk assignments',
+      'Permission inheritance resolution',
+    ],
+    admin: [
+      'Dashboard statistics',
+      'Bulk operations (users, roles)',
+      'Cache management',
+      'System health monitoring',
+    ],
+  };
+
+  const techStack = ['React', 'TypeScript', 'FastAPI', 'MySQL', 'Redis'];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -154,10 +202,30 @@ export function LandingPage(): React.JSX.Element {
             </div>
             <span className="text-xl font-bold text-foreground">Magic Auth</span>
           </div>
-          <Button onClick={() => setIsLoginModalOpen(true)} size="md">
-            <Lock size={16} />
-            Sign In
-          </Button>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://auth-v2.arz.ai/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground md:flex"
+            >
+              <BookOpen size={14} />
+              API Docs
+            </a>
+            <a
+              href="https://github.com/Andres77872/magic-auth-dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:flex"
+            >
+              <Github size={14} />
+              GitHub
+            </a>
+            <Button onClick={() => setIsLoginModalOpen(true)} size="md">
+              <Lock size={16} />
+              Sign In
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -166,40 +234,80 @@ export function LandingPage(): React.JSX.Element {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary">
-              <Sparkles size={16} />
-              <span>Enterprise-Grade Security</span>
+              <Shield size={16} />
+              <span>Core Authentication Infrastructure</span>
             </div>
 
             <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              Enterprise Authentication{' '}
+              Magic Auth{' '}
               <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                Management Platform
+                Dashboard
               </span>
             </h1>
 
-            <p className="mb-10 text-lg leading-relaxed text-muted-foreground sm:text-xl">
-              Secure, scalable, and sophisticated access control for modern applications. Manage users, projects, and
-              permissions with granular control.
+            <p className="mb-8 text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              The centralized authentication and authorization system powering all my projects. 
+              Built with enterprise-grade architecture for user management, role-based access control, 
+              multi-project support, and real-time monitoring.
             </p>
+
+            {/* Tech Stack */}
+            <div className="mb-10 flex flex-wrap items-center justify-center gap-2">
+              {techStack.map((tech) => (
+                <Badge key={tech} variant="secondary" size="md">
+                  {tech}
+                </Badge>
+              ))}
+            </div>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button onClick={() => setIsLoginModalOpen(true)} size="xl" className="group">
-                <Lock size={20} />
-                Get Started
+                <Key size={20} />
+                Access Dashboard
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </Button>
+              <a
+                href="https://auth-v2.arz.ai/docs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
+              >
+                <BookOpen size={16} />
+                API Documentation
+              </a>
             </div>
 
-            {/* Trust Indicators */}
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
-              {trustIndicators.map((indicator, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 text-success">
-                    <Check size={12} />
-                  </div>
-                  {indicator}
-                </div>
-              ))}
+            {/* Quick Links */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-sm">
+              <a
+                href="https://github.com/Andres77872/magic-auth-dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Github size={16} />
+                Frontend
+              </a>
+              <span className="text-border">•</span>
+              <a
+                href="https://github.com/Andres77872/api.auth"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Github size={16} />
+                Backend
+              </a>
+              <span className="text-border">•</span>
+              <a
+                href="https://auth-v2.arz.ai/redoc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <BookOpen size={16} />
+                ReDoc
+              </a>
             </div>
           </div>
         </div>
@@ -209,9 +317,9 @@ export function LandingPage(): React.JSX.Element {
       <section className="relative z-10 py-20 sm:py-28" aria-label="Key Features">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-16 max-w-2xl text-center">
-            <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">Powerful Features</h2>
+            <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">Core Features</h2>
             <p className="text-lg text-muted-foreground">
-              Everything you need for enterprise authentication management
+              Production-ready authentication infrastructure with enterprise-grade architecture
             </p>
           </div>
 
@@ -223,29 +331,122 @@ export function LandingPage(): React.JSX.Element {
         </div>
       </section>
 
-      {/* Access Levels Section */}
-      <section className="relative z-10 py-20 sm:py-28" aria-label="Access Levels">
+      {/* API Capabilities Section */}
+      <section className="relative z-10 py-20 sm:py-28" aria-label="API Capabilities">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-16 max-w-2xl text-center">
-            <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">Authorized Access Levels</h2>
-            <p className="text-lg text-muted-foreground">Two powerful access tiers for complete system control</p>
+            <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">API Capabilities</h2>
+            <p className="text-lg text-muted-foreground">
+              RESTful API with comprehensive endpoints for all auth operations
+            </p>
           </div>
 
-          <div className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-2">
-            <AccessCard
-              badge="ROOT"
-              badgeVariant="primary"
-              title="System Administrator"
-              description="Complete system access with full administrative privileges. Manage all users, projects, and system-wide configurations."
-              features={['Full system access', 'User management', 'System configuration', 'Security settings']}
-              highlighted
+          <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+            <CardContent className="p-8">
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                <CapabilityItem title="Authentication" items={apiCapabilities.authentication} />
+                <CapabilityItem title="User Management" items={apiCapabilities.users} />
+                <CapabilityItem title="Permissions" items={apiCapabilities.permissions} />
+                <CapabilityItem title="Administration" items={apiCapabilities.admin} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* System Flows Section */}
+      <section className="relative z-10 py-20 sm:py-28" aria-label="System Flows">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-16 max-w-2xl text-center">
+            <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">System Architecture</h2>
+            <p className="text-lg text-muted-foreground">
+              How data flows through the authentication system
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Groups-of-Groups Architecture */}
+            <FlowCard
+              icon={<Layers size={28} />}
+              title="Groups-of-Groups Architecture"
+              description="Hierarchical model for scalable access management and team organization."
+              flowItems={[
+                { label: 'User', variant: 'primary' },
+                { label: 'User Group', variant: 'secondary' },
+                { label: 'Project Group', variant: 'secondary' },
+                { label: 'Projects', variant: 'primary' },
+              ]}
+              note="Users belong to User Groups, which have access to Project Groups containing multiple Projects."
             />
-            <AccessCard
-              badge="ADMIN"
-              badgeVariant="secondary"
-              title="Project Manager"
-              description="Project-level access for managing users and permissions within assigned projects. Perfect for team leads and project managers."
-              features={['Project management', 'Team member access', 'Permission assignment', 'Activity monitoring']}
+
+            {/* Permission Assignment Flow */}
+            <FlowCard
+              icon={<FileKey size={28} />}
+              title="Permission Assignment"
+              description="Flexible permission inheritance through roles, groups, and direct assignment."
+              flowItems={[
+                { label: 'Permission', variant: 'primary' },
+                { label: 'Permission Group', variant: 'secondary' },
+                { label: 'Role / User Group', variant: 'secondary' },
+                { label: 'User', variant: 'primary' },
+              ]}
+              note="Permissions cascade through groups and roles, with direct user overrides supported."
+            />
+
+            {/* Authentication Flow */}
+            <FlowCard
+              icon={<Key size={28} />}
+              title="Authentication Flow"
+              description="Secure JWT-based authentication with Redis session management."
+              flowItems={[
+                { label: 'Credentials', variant: 'primary' },
+                { label: 'Validation', variant: 'secondary' },
+                { label: 'JWT Token', variant: 'secondary' },
+                { label: 'Session', variant: 'primary' },
+              ]}
+              note="Supports login, token refresh, project switching, and automatic session invalidation."
+            />
+
+            {/* User Management Flow */}
+            <FlowCard
+              icon={<UserPlus size={28} />}
+              title="User Management"
+              description="Complete user lifecycle from registration to access control."
+              flowItems={[
+                { label: 'Register', variant: 'primary' },
+                { label: 'Assign Group', variant: 'secondary' },
+                { label: 'Set Role', variant: 'secondary' },
+                { label: 'Active', variant: 'primary' },
+              ]}
+              note="Supports user types (Root, Admin, Consumer), status management, and password workflows."
+            />
+
+            {/* Audit Log Flow */}
+            <FlowCard
+              icon={<ClipboardList size={28} />}
+              title="Audit & Activity Tracking"
+              description="Comprehensive logging of all system events and user actions."
+              flowItems={[
+                { label: 'Action', variant: 'primary' },
+                { label: 'Event Log', variant: 'secondary' },
+                { label: 'Filter/Search', variant: 'secondary' },
+                { label: 'Report', variant: 'primary' },
+              ]}
+              note="Track logins, permission changes, user modifications, and system events."
+            />
+
+            {/* Project Context Flow */}
+            <FlowCard
+              icon={<RefreshCw size={28} />}
+              title="Project Context Switching"
+              description="Multi-tenant support with seamless project context management."
+              flowItems={[
+                { label: 'Session', variant: 'primary' },
+                { label: 'Switch Request', variant: 'secondary' },
+                { label: 'Validate Access', variant: 'secondary' },
+                { label: 'New Context', variant: 'primary' },
+              ]}
+              note="Users can switch between accessible projects without re-authentication."
             />
           </div>
         </div>
@@ -254,26 +455,39 @@ export function LandingPage(): React.JSX.Element {
       {/* CTA Section */}
       <section className="relative z-10 py-20 sm:py-28" aria-label="Call to action">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5">
-            <CardContent className="py-16 text-center">
-              <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">Ready to Get Started?</h2>
-              <p className="mx-auto mb-8 max-w-md text-lg text-muted-foreground">
-                Sign in now to access your Magic Auth Dashboard
+          <Card className="mx-auto max-w-3xl overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5">
+            <CardContent className="p-8 text-center sm:p-12">
+              <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">Explore the Dashboard</h2>
+              <p className="mb-8 text-lg text-muted-foreground">
+                Sign in to access the full authentication management interface, 
+                or check out the API documentation and source code
               </p>
-              <Button onClick={() => setIsLoginModalOpen(true)} size="xl" className="group">
-                <Lock size={20} />
-                Sign In to Dashboard
-                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-              </Button>
-              <p className="mt-6 text-sm text-muted-foreground">
-                Admin and ROOT users only{' '}
-                <span className="mx-2 text-border">|</span>
+              <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+                <Button onClick={() => setIsLoginModalOpen(true)} size="xl" className="group">
+                  <Lock size={20} />
+                  Sign In
+                  <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+                </Button>
+                <a
+                  href="https://auth-v2.arz.ai/docs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline" size="xl">
+                    <BookOpen size={20} />
+                    View API Docs
+                  </Button>
+                </a>
+              </div>
+              <p className="mt-8 text-sm text-muted-foreground">
+                Open source on GitHub{' '}
+                <span className="mx-1 text-border">•</span>
                 Need access?{' '}
                 <a
                   href="mailto:andres@arz.ai"
                   className="font-medium text-primary underline-offset-4 transition-colors hover:underline"
                 >
-                  Contact Administrator
+                  Contact me
                 </a>
               </p>
             </CardContent>
@@ -284,16 +498,75 @@ export function LandingPage(): React.JSX.Element {
       {/* Footer */}
       <footer className="relative z-10 border-t border-border/50 py-8" role="contentinfo">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Shield size={18} />
-              </div>
-              <span className="font-semibold text-foreground">Magic Auth</span>
+          <div className="flex flex-col items-center gap-6">
+            {/* Links */}
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+              <a
+                href="https://auth-v2.arz.ai/docs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground transition-colors hover:text-primary"
+              >
+                API Docs
+              </a>
+              <a
+                href="https://auth-v2.arz.ai/redoc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground transition-colors hover:text-primary"
+              >
+                ReDoc
+              </a>
+              <a
+                href="https://github.com/Andres77872/magic-auth-dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary"
+              >
+                <Github size={14} />
+                Frontend
+              </a>
+              <a
+                href="https://github.com/Andres77872/api.auth"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary"
+              >
+                <Github size={14} />
+                Backend
+              </a>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Enterprise-grade authentication management - {new Date().getFullYear()}
-            </p>
+            {/* Bottom row */}
+            <div className="flex flex-col items-center justify-between gap-4 sm:w-full sm:flex-row">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <Shield size={18} />
+                </div>
+                <span className="font-semibold text-foreground">Magic Auth</span>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <a
+                  href="https://arz.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground transition-colors hover:text-primary"
+                >
+                  arz.ai
+                </a>
+                <span className="text-border">•</span>
+                <a
+                  href="https://arizmendi.io"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground transition-colors hover:text-primary"
+                >
+                  arizmendi.io
+                </a>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Andrés Arizmendi — {new Date().getFullYear()}
+              </p>
+            </div>
           </div>
         </div>
       </footer>
@@ -305,4 +578,3 @@ export function LandingPage(): React.JSX.Element {
 }
 
 export default LandingPage;
-
