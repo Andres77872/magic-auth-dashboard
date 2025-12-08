@@ -1,14 +1,7 @@
 import { useState, useCallback } from 'react';
 import { groupService } from '@/services';
 import type { PaginationParams } from '@/types/api.types';
-
-interface GroupMember {
-  user_hash: string;
-  username: string;
-  email: string;
-  user_type: string;
-  added_at: string;
-}
+import type { GroupMember } from '@/types/group.types';
 
 interface UseGroupMembersReturn {
   members: GroupMember[];
@@ -32,8 +25,10 @@ export function useGroupMembers(): UseGroupMembersReturn {
     try {
       const response = await groupService.getGroupMembers(groupHash, params);
       
-      if (response.success && response.data) {
-        setMembers(Array.isArray(response.data) ? response.data : []);
+      // API returns members directly in response, not wrapped in data
+      if (response.success) {
+        const membersData = response.members || response.data || [];
+        setMembers(Array.isArray(membersData) ? membersData : []);
       } else {
         setError(response.message || 'Failed to fetch group members');
       }

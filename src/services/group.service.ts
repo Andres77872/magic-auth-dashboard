@@ -31,15 +31,15 @@ class GroupService {
     return response as GroupDetailsResponse;
   }
 
-  // Create new group
+  // Create new group - uses form data per API spec
   async createGroup(groupData: CreateGroupRequest): Promise<CreateGroupResponse> {
-    const response = await apiClient.post<CreateGroupResponse>('/admin/user-groups', groupData);
+    const response = await apiClient.postForm<CreateGroupResponse>('/admin/user-groups', groupData);
     return response as CreateGroupResponse;
   }
 
-  // Update group
+  // Update group - uses form data per API spec
   async updateGroup(groupHash: string, data: Partial<CreateGroupRequest>): Promise<CreateGroupResponse> {
-    const response = await apiClient.put<CreateGroupResponse>(`/admin/user-groups/${groupHash}`, data);
+    const response = await apiClient.putForm<CreateGroupResponse>(`/admin/user-groups/${groupHash}`, data);
     return response as CreateGroupResponse;
   }
 
@@ -68,12 +68,12 @@ class GroupService {
     );
   }
 
-  // Add user to group
+  // Add user to group - uses form data per API spec
   async addMemberToGroup(
     groupHash: string,
     memberData: AssignUserToGroupRequest
   ): Promise<AssignUserToGroupResponse> {
-    const response = await apiClient.post<AssignUserToGroupResponse>(
+    const response = await apiClient.postForm<AssignUserToGroupResponse>(
       `/admin/user-groups/${groupHash}/members`,
       memberData
     );
@@ -90,11 +90,12 @@ class GroupService {
     );
   }
 
-  // Bulk add members to group
+  // Bulk add members to group - uses JSON body per API spec
   async bulkAddMembers(
     groupHash: string,
     userHashes: string[]
   ): Promise<ApiResponse<{ added_count: number; errors: any[] }>> {
+    // Bulk operations use JSON body, not form data
     return await apiClient.post<{ added_count: number; errors: any[] }>(
       `/admin/user-groups/${groupHash}/members/bulk`,
       { user_hashes: userHashes }
@@ -106,32 +107,32 @@ class GroupService {
     return await apiClient.get<UserGroup[]>(`/admin/user-groups/users/${userHash}/groups`);
   }
 
-  // Grant user group access to project
-  async grantGroupProjectAccess(
+  // Grant user group access to a project group
+  async grantProjectGroupAccess(
     groupHash: string,
-    projectHash: string
+    projectGroupHash: string
   ): Promise<ApiResponse<any>> {
-    return await apiClient.post<any>(
-      `/admin/user-groups/${groupHash}/projects`,
-      { project_hash: projectHash }
+    return await apiClient.postForm<any>(
+      `/admin/user-groups/${groupHash}/project-groups`,
+      { project_group_hash: projectGroupHash }
     );
   }
 
-  // Revoke user group access from project
-  async revokeGroupProjectAccess(
+  // Revoke user group access from a project group
+  async revokeProjectGroupAccess(
     groupHash: string,
-    projectHash: string
+    projectGroupHash: string
   ): Promise<ApiResponse<void>> {
     return await apiClient.delete<void>(
-      `/admin/user-groups/${groupHash}/projects/${projectHash}`
+      `/admin/user-groups/${groupHash}/project-groups/${projectGroupHash}`
     );
   }
 
-  // Get projects accessible by a user group
-  async getGroupProjects(
+  // Get project groups accessible by a user group
+  async getGroupProjectGroups(
     groupHash: string,
     params: PaginationParams = {}
-  ): Promise<ApiResponse<any[]>> {
+  ): Promise<ApiResponse<any>> {
     const cleanParams: Record<string, any> = {};
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
@@ -139,8 +140,8 @@ class GroupService {
       }
     });
     
-    return await apiClient.get<any[]>(
-      `/admin/user-groups/${groupHash}/projects`,
+    return await apiClient.get<any>(
+      `/admin/user-groups/${groupHash}/project-groups`,
       cleanParams
     );
   }

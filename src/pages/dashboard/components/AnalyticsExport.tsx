@@ -1,11 +1,31 @@
 import React, { useState } from 'react';
 import { analyticsService } from '@/services/analytics.service';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+import { Download, FileText, FileJson, FileType, CheckCircle, Loader2 } from 'lucide-react';
 import type { ExportOptions, ExportData, ActivityFilters, DateRangePreset } from '@/types/analytics.types';
 
 interface AnalyticsExportProps {
   filters?: ActivityFilters;
   className?: string;
 }
+
+const FORMAT_OPTIONS = [
+  { value: 'csv', label: 'CSV', description: 'Spreadsheet data', icon: FileText },
+  { value: 'json', label: 'JSON', description: 'Structured data', icon: FileJson },
+  { value: 'pdf', label: 'PDF', description: 'Report format', icon: FileType },
+];
+
+const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last7days', label: '7 Days' },
+  { value: 'last30days', label: '30 Days' },
+];
 
 export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExportProps): React.JSX.Element {
   const [isExporting, setIsExporting] = useState(false);
@@ -40,7 +60,6 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
       document.body.removeChild(link);
     } catch (error) {
       console.error('Export failed:', error);
-      // Handle error appropriately
     } finally {
       setIsExporting(false);
     }
@@ -85,204 +104,162 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
   };
 
   return (
-    <div className={`analytics-export ${className}`}>
-      <div className="export-header">
-        <h3>Export Analytics Data</h3>
-        <p>Download analytics data in your preferred format</p>
-      </div>
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+            <Download className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <CardTitle>Export Analytics Data</CardTitle>
+            <CardDescription>Download analytics data in your preferred format</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
 
-      <div className="export-options">
-        <div className="option-group">
-          <label className="option-label">Export Format</label>
-          <div className="format-options">
-            <label className="format-option">
-              <input
-                type="radio"
-                name="format"
-                value="csv"
-                checked={exportOptions.format === 'csv'}
-                onChange={(e) => setExportOptions(prev => ({ ...prev, format: e.target.value as 'csv' }))}
-              />
-              <div className="format-content">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10,9 9,9 8,9"/>
-                </svg>
-                <span>CSV</span>
-                <small>Spreadsheet data</small>
-              </div>
-            </label>
-
-            <label className="format-option">
-              <input
-                type="radio"
-                name="format"
-                value="json"
-                checked={exportOptions.format === 'json'}
-                onChange={(e) => setExportOptions(prev => ({ ...prev, format: e.target.value as 'json' }))}
-              />
-              <div className="format-content">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <path d="M9 13h6"/>
-                  <path d="M9 17h6"/>
-                </svg>
-                <span>JSON</span>
-                <small>Structured data</small>
-              </div>
-            </label>
-
-            <label className="format-option">
-              <input
-                type="radio"
-                name="format"
-                value="pdf"
-                checked={exportOptions.format === 'pdf'}
-                onChange={(e) => setExportOptions(prev => ({ ...prev, format: e.target.value as 'pdf' }))}
-              />
-              <div className="format-content">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <path d="M16 13H8"/>
-                  <path d="M16 17H8"/>
-                  <path d="M10 9H8"/>
-                </svg>
-                <span>PDF</span>
-                <small>Report format</small>
-              </div>
-            </label>
+      <CardContent className="space-y-6">
+        {/* Format selection */}
+        <div className="space-y-3">
+          <Label>Export Format</Label>
+          <div className="grid grid-cols-3 gap-3">
+            {FORMAT_OPTIONS.map((format) => {
+              const Icon = format.icon;
+              const isSelected = exportOptions.format === format.value;
+              return (
+                <button
+                  key={format.value}
+                  onClick={() => setExportOptions(prev => ({ ...prev, format: format.value as 'csv' | 'json' | 'pdf' }))}
+                  className={cn(
+                    'p-4 rounded-lg border-2 transition-all text-left',
+                    isSelected 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                  )}
+                >
+                  <Icon className={cn('h-5 w-5 mb-2', isSelected ? 'text-primary' : 'text-muted-foreground')} />
+                  <p className="text-sm font-medium text-foreground">{format.label}</p>
+                  <p className="text-xs text-muted-foreground">{format.description}</p>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div className="option-group">
-          <label className="option-label">Date Range</label>
-          <div className="date-range-options">
-            <div className="date-presets">
-              {(['today', 'yesterday', 'last7days', 'last30days'] as DateRangePreset[]).map((preset) => (
-                <button
-                  key={preset}
-                  onClick={() => handleDateRangePreset(preset)}
-                  className="preset-button"
-                >
-                  {preset === 'today' && 'Today'}
-                  {preset === 'yesterday' && 'Yesterday'}
-                  {preset === 'last7days' && 'Last 7 Days'}
-                  {preset === 'last30days' && 'Last 30 Days'}
-                </button>
-              ))}
-            </div>
-
-            <div className="custom-date-range">
-              <input
+        {/* Date range */}
+        <div className="space-y-3">
+          <Label>Date Range</Label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {DATE_PRESETS.map((preset) => (
+              <Button
+                key={preset.value}
+                variant="outline"
+                size="sm"
+                onClick={() => handleDateRangePreset(preset.value)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="start-date" className="text-xs">From</Label>
+              <Input
+                id="start-date"
                 type="date"
                 value={exportOptions.dateRange.start}
                 onChange={(e) => setExportOptions(prev => ({
                   ...prev,
                   dateRange: { ...prev.dateRange, start: e.target.value }
                 }))}
-                className="date-input"
+                className="w-[160px]"
               />
-              <span>to</span>
-              <input
+            </div>
+            <span className="text-muted-foreground mt-6">to</span>
+            <div className="space-y-1.5">
+              <Label htmlFor="end-date" className="text-xs">To</Label>
+              <Input
+                id="end-date"
                 type="date"
                 value={exportOptions.dateRange.end}
                 onChange={(e) => setExportOptions(prev => ({
                   ...prev,
                   dateRange: { ...prev.dateRange, end: e.target.value }
                 }))}
-                className="date-input"
+                className="w-[160px]"
               />
             </div>
           </div>
         </div>
 
+        {/* PDF options */}
         {exportOptions.format === 'pdf' && (
-          <div className="option-group">
-            <label className="checkbox-option">
-              <input
-                type="checkbox"
-                checked={exportOptions.includeCharts}
-                onChange={(e) => setExportOptions(prev => ({
-                  ...prev,
-                  includeCharts: e.target.checked
-                }))}
-              />
-              <span>Include charts and visualizations</span>
-            </label>
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border">
+            <Checkbox
+              id="include-charts"
+              checked={exportOptions.includeCharts}
+              onCheckedChange={(checked) => setExportOptions(prev => ({
+                ...prev,
+                includeCharts: checked === true
+              }))}
+            />
+            <Label htmlFor="include-charts" className="text-sm cursor-pointer">
+              Include charts and visualizations
+            </Label>
           </div>
         )}
-      </div>
 
-      <div className="export-actions">
-        <button
+        {/* Export button */}
+        <Button 
           onClick={handleExport}
           disabled={isExporting}
-          className="export-button primary"
+          className="w-full"
+          size="lg"
         >
           {isExporting ? (
             <>
-              <svg 
-                width="16" 
-                height="16" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2"
-                className="spinning"
-              >
-                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-              </svg>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Exporting...
             </>
           ) : (
             <>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7,10 12,15 17,10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
+              <Download className="h-4 w-4 mr-2" />
               Export Data
             </>
           )}
-        </button>
-      </div>
+        </Button>
 
-      {exportData && (
-        <div className="export-success">
-          <div className="success-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="20,6 9,17 4,12"/>
-            </svg>
+        {/* Success message */}
+        {exportData && (
+          <div className="p-4 rounded-lg bg-success/10 border border-success/30">
+            <div className="flex items-start gap-3">
+              <div className="h-8 w-8 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+                <CheckCircle className="h-4 w-4 text-success" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-foreground mb-1">Export Completed</h4>
+                <p className="text-xs text-muted-foreground space-y-0.5">
+                  <span className="block">File: <strong className="text-foreground">{exportData.filename}</strong></span>
+                  <span className="block">Size: <strong className="text-foreground">{formatFileSize(exportData.size)}</strong></span>
+                  <span className="block">Generated: <strong className="text-foreground">{new Date(exportData.generatedAt).toLocaleString()}</strong></span>
+                </p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 mt-2"
+                  asChild
+                >
+                  <a href={exportData.url} download={exportData.filename}>
+                    <Download className="h-3 w-3 mr-1" />
+                    Download Again
+                  </a>
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="success-content">
-            <h4>Export Completed</h4>
-            <p>
-              File: <strong>{exportData.filename}</strong><br/>
-              Size: <strong>{formatFileSize(exportData.size)}</strong><br/>
-              Generated: <strong>{new Date(exportData.generatedAt).toLocaleString()}</strong>
-            </p>
-            <a
-              href={exportData.url}
-              download={exportData.filename}
-              className="download-link"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7,10 12,15 17,10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Download Again
-            </a>
-          </div>
-        </div>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-export default AnalyticsExport; 
+export default AnalyticsExport;

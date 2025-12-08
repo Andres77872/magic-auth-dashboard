@@ -4,11 +4,10 @@ import { Card, Badge, Skeleton, EmptyState, Button } from '@/components/common';
 import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
 import { userService, globalRolesService, permissionAssignmentsService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import { UserIcon, ErrorIcon, RefreshIcon, EditIcon, ArrowLeftIcon, SecurityIcon, LockIcon } from '@/components/icons';
+import { User, XCircle, RefreshCw, Pencil, ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
 import type { UserType, UserProfileResponse } from '@/types/auth.types';
 import type { GlobalRole } from '@/types/global-roles.types';
 import type { PermissionSource } from '@/types/permission-assignments.types';
-import '@/styles/pages/user-profile.css';
 
 export function UserProfilePage(): React.JSX.Element {
   const [profileData, setProfileData] = useState<UserProfileResponse | null>(null);
@@ -197,14 +196,14 @@ export function UserProfilePage(): React.JSX.Element {
         </div>
         <div className="page-content">
           <EmptyState
-            icon={<ErrorIcon size="lg" />}
+            icon={<XCircle size={32} />}
             title="Failed to Load User Profile"
             description={error}
             action={
               <Button 
                 onClick={() => userHash && fetchUser(userHash)}
                 variant="primary"
-                leftIcon={<RefreshIcon size={16} aria-hidden="true" />}
+                leftIcon={<RefreshCw size={16} aria-hidden="true" />}
                 aria-label="Retry loading user profile"
               >
                 Try Again
@@ -232,14 +231,14 @@ export function UserProfilePage(): React.JSX.Element {
         </div>
         <div className="page-content">
           <EmptyState
-            icon={<UserIcon size="lg" />}
+            icon={<User size={32} />}
             title="User Not Found"
             description="The user you're looking for doesn't exist or has been deleted."
             action={
               <Button 
                 onClick={handleGoBack}
                 variant="primary"
-                leftIcon={<ArrowLeftIcon size={16} aria-hidden="true" />}
+                leftIcon={<ArrowLeft size={16} aria-hidden="true" />}
                 aria-label="Go back to users list"
               >
                 Back to Users
@@ -281,7 +280,7 @@ export function UserProfilePage(): React.JSX.Element {
           <Button 
             onClick={handleEditUser}
             variant="primary"
-            leftIcon={<EditIcon size={16} aria-hidden="true" />}
+            leftIcon={<Pencil size={16} aria-hidden="true" />}
             aria-label="Edit user profile"
           >
             Edit User
@@ -388,7 +387,7 @@ export function UserProfilePage(): React.JSX.Element {
                 {globalRole && (
                   <div className="global-role-info">
                     <div className="flex items-center gap-2 mb-3">
-                      <SecurityIcon size={20} />
+                      <ShieldCheck size={20} />
                       <h3 className="font-semibold">Global Role</h3>
                     </div>
                     <div className="role-display">
@@ -416,7 +415,7 @@ export function UserProfilePage(): React.JSX.Element {
                 {permissionSources && (
                   <div className="permission-sources mt-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <LockIcon size={20} />
+                      <Lock size={20} />
                       <h3 className="font-semibold">Permission Sources</h3>
                     </div>
                     <div className="sources-grid">
@@ -535,12 +534,14 @@ export function UserProfilePage(): React.JSX.Element {
                       <div className="project-access-groups">
                         <h5>Access Groups:</h5>
                         <div className="access-groups-list">
-                          {project.access_groups.map((group) => (
+                          {project.access_groups.map((group: any) => (
                             <div key={group.group_hash} className="access-group">
                               <span className="group-name">{group.group_name}</span>
-                              <span className="group-permissions">
-                                {group.permissions.length} permissions
-                              </span>
+                              {group.permission_group_count !== undefined && (
+                                <span className="group-permissions">
+                                  {group.permission_group_count} permission groups
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>

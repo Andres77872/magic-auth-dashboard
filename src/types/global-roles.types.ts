@@ -57,9 +57,21 @@ export interface CreateGlobalPermissionGroupRequest {
   group_category?: string;
 }
 
+export interface UpdateGlobalPermissionGroupRequest {
+  group_display_name?: string;
+  group_description?: string;
+  group_category?: string;
+}
+
 export interface CreateGlobalPermissionRequest {
   permission_name: string;
   permission_display_name: string;
+  permission_description?: string;
+  permission_category?: string;
+}
+
+export interface UpdateGlobalPermissionRequest {
+  permission_display_name?: string;
   permission_description?: string;
   permission_category?: string;
 }

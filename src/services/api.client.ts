@@ -149,7 +149,16 @@ class ApiClient {
             const bodyData = config.body as Record<string, unknown>;
             Object.entries(bodyData).forEach(([key, value]) => {
               if (value !== undefined && value !== null) {
-                formData.append(key, String(value));
+                // Handle arrays by appending multiple values with the same key
+                if (Array.isArray(value)) {
+                  value.forEach(item => {
+                    if (item !== undefined && item !== null) {
+                      formData.append(key, String(item));
+                    }
+                  });
+                } else {
+                  formData.append(key, String(value));
+                }
               }
             });
             requestInit.body = formData;
@@ -224,6 +233,14 @@ class ApiClient {
     });
   }
 
+  async putForm<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    return this.requestWithRetry<T>(endpoint, {
+      method: HttpMethod.PUT,
+      body: data,
+      isFormData: true,
+    });
+  }
+
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.DELETE,
@@ -234,6 +251,14 @@ class ApiClient {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.PATCH,
       body: data,
+    });
+  }
+
+  async patchForm<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+    return this.requestWithRetry<T>(endpoint, {
+      method: HttpMethod.PATCH,
+      body: data,
+      isFormData: true,
     });
   }
 

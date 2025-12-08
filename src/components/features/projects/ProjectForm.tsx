@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Button, Input, Textarea } from '@/components/common';
-import { FormField } from '@/components/forms';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import type { ProjectFormData, ProjectFormErrors } from '@/types/project.types';
 import { 
   validateRequired, 
@@ -92,12 +94,17 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="project-form">
-      <div className="form-section">
-        <h3>{mode === 'create' ? 'Project Information' : 'Edit Project'}</h3>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">
+          {mode === 'create' ? 'Project Information' : 'Edit Project'}
+        </h3>
         
-        <div className="form-grid">
-          <FormField label="Project Name *" htmlFor="project_name" error={errors.project_name}>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="project_name">
+              Project Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="project_name"
               type="text"
@@ -105,24 +112,27 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
               onChange={handleInputChange('project_name')}
               placeholder="Enter project name"
               disabled={isSubmitting}
-              required
+              error={errors.project_name}
+              fullWidth
             />
-          </FormField>
+          </div>
 
-          <FormField label="Project Description" htmlFor="project_description" error={errors.project_description}>
+          <div className="space-y-2">
+            <Label htmlFor="project_description">Project Description</Label>
             <Textarea
               id="project_description"
               value={formData.project_description}
               onChange={handleInputChange('project_description')}
               placeholder="Enter project description (optional)"
               disabled={isSubmitting}
+              error={errors.project_description}
               rows={4}
             />
-          </FormField>
+          </div>
         </div>
       </div>
 
-      <div className="form-actions">
+      <div className="flex gap-3 pt-4">
         <Button
           type="button"
           variant="outline"
@@ -133,8 +143,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
         </Button>
         <Button
           type="submit"
+          variant="primary"
           loading={isSubmitting}
-          disabled={isSubmitting}
         >
           {mode === 'create' ? 'Create Project' : 'Update Project'}
         </Button>

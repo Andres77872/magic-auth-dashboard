@@ -1,259 +1,305 @@
 import React, { useState } from 'react';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
-  LogoIcon,
-  SecurityIcon,
-  UserIcon,
-  ProjectIcon,
-  HealthIcon,
-  LockIcon,
-  GroupIcon,
-  CheckIcon,
-} from '@/components/icons';
+  Shield,
+  ShieldCheck,
+  User,
+  FolderKanban,
+  Activity,
+  Lock,
+  Users,
+  Check,
+  ArrowRight,
+  Sparkles,
+} from 'lucide-react';
+
+interface FeatureCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}
+
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
+  return (
+    <Card className="group relative overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
+      <CardContent className="p-6">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+          {icon}
+        </div>
+        <h3 className="mb-2 text-lg font-semibold text-foreground">{title}</h3>
+        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface AccessCardProps {
+  badge: string;
+  badgeVariant: 'primary' | 'secondary';
+  title: string;
+  description: string;
+  features: string[];
+  highlighted?: boolean;
+}
+
+function AccessCard({ badge, badgeVariant, title, description, features, highlighted }: AccessCardProps) {
+  return (
+    <Card
+      className={`relative overflow-hidden transition-all duration-300 ${
+        highlighted
+          ? 'border-primary/50 bg-gradient-to-b from-primary/5 to-transparent shadow-lg shadow-primary/10'
+          : 'border-border/50 bg-card/50 backdrop-blur-sm hover:border-border'
+      }`}
+    >
+      {highlighted && (
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
+      )}
+      <CardContent className="p-6">
+        <Badge variant={badgeVariant} size="lg" className="mb-4">
+          {badge}
+        </Badge>
+        <h3 className="mb-2 text-xl font-semibold text-foreground">{title}</h3>
+        <p className="mb-6 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        <ul className="space-y-3">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 text-success">
+                <Check size={12} />
+              </div>
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function LandingPage(): React.JSX.Element {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  const features = [
+    {
+      icon: <User size={24} />,
+      title: '3-Tier User Management',
+      description:
+        'Hierarchical access control with ROOT, ADMIN, and USER levels. Manage permissions with precision and flexibility.',
+    },
+    {
+      icon: <ShieldCheck size={24} />,
+      title: 'Role-Based Access Control',
+      description:
+        'Granular permissions system with custom roles and permission groups. Define exactly what each user can do.',
+    },
+    {
+      icon: <FolderKanban size={24} />,
+      title: 'Project Management',
+      description:
+        'Multi-tenant architecture with project-level isolation. Perfect for SaaS applications and enterprise systems.',
+    },
+    {
+      icon: <Users size={24} />,
+      title: 'Group Management',
+      description:
+        'Organize users into groups for efficient permission assignment. Global and project-specific group support.',
+    },
+    {
+      icon: <Activity size={24} />,
+      title: 'System Health Monitoring',
+      description:
+        'Real-time diagnostics and health checks for your authentication system. Monitor performance and catch issues early.',
+    },
+    {
+      icon: <Lock size={24} />,
+      title: 'Secure by Default',
+      description:
+        'Built with security best practices. Encrypted connections, secure session management, and comprehensive audit logs.',
+    },
+  ];
+
+  const trustIndicators = [
+    'WCAG 2.2 AA Compliant',
+    'Real-time Monitoring',
+    'Multi-tenant Support',
+  ];
+
   return (
-    <div className="landing-page">
-      {/* Animated background elements */}
-      <div className="landing-bg-grid" aria-hidden="true"></div>
-      <div className="landing-bg-gradient-orb landing-bg-gradient-orb-1" aria-hidden="true"></div>
-      <div className="landing-bg-gradient-orb landing-bg-gradient-orb-2" aria-hidden="true"></div>
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      {/* Background Effects */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div className="absolute -left-40 -top-40 h-80 w-80 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
+      </div>
 
       {/* Navigation */}
-      <nav className="landing-nav" role="navigation" aria-label="Main navigation">
-        <div className="landing-nav-content">
-          <div className="landing-nav-brand">
-            <LogoIcon size={40} className="landing-nav-logo" aria-label="Magic Auth Logo" />
-            <span className="landing-nav-brand-text">Magic Auth</span>
+      <nav
+        className="relative z-10 border-b border-border/50 bg-background/80 backdrop-blur-md"
+        role="navigation"
+        aria-label="Main navigation"
+      >
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Shield size={24} />
+            </div>
+            <span className="text-xl font-bold text-foreground">Magic Auth</span>
           </div>
-          <button
-            className="btn btn-primary btn-md"
-            onClick={() => setIsLoginModalOpen(true)}
-            aria-label="Sign in to your account"
-          >
-            <LockIcon size={16} />
+          <Button onClick={() => setIsLoginModalOpen(true)} size="md">
+            <Lock size={16} />
             Sign In
-          </button>
+          </Button>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="landing-hero" role="banner" aria-label="Hero section">
-        <div className="landing-hero-content">
-          <div className="landing-hero-badge">
-            <SecurityIcon size={16} />
-            <span>Enterprise-Grade Security</span>
-          </div>
-          
-          <h1 className="landing-hero-title">
-            Enterprise Authentication
-            <span className="landing-hero-title-gradient"> Management Platform</span>
-          </h1>
-          
-          <p className="landing-hero-subtitle">
-            Secure, scalable, and sophisticated access control for modern applications.
-            Manage users, projects, and permissions with granular control.
-          </p>
-          
-          <div className="landing-hero-actions">
-            <button
-              className="btn btn-primary btn-lg landing-hero-cta"
-              onClick={() => setIsLoginModalOpen(true)}
-            >
-              <LockIcon size={20} />
-              Get Started
-            </button>
-          </div>
+      <section className="relative z-10 py-20 sm:py-28 lg:py-32" role="banner" aria-label="Hero section">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary">
+              <Sparkles size={16} />
+              <span>Enterprise-Grade Security</span>
+            </div>
 
-          {/* Trust indicators */}
-          <div className="landing-trust-indicators">
-            <div className="landing-trust-item">
-              <CheckIcon size={16} />
-              <span>WCAG 2.2 AA Compliant</span>
+            <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+              Enterprise Authentication{' '}
+              <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Management Platform
+              </span>
+            </h1>
+
+            <p className="mb-10 text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              Secure, scalable, and sophisticated access control for modern applications. Manage users, projects, and
+              permissions with granular control.
+            </p>
+
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              <Button onClick={() => setIsLoginModalOpen(true)} size="xl" className="group">
+                <Lock size={20} />
+                Get Started
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </Button>
             </div>
-            <div className="landing-trust-item">
-              <CheckIcon size={16} />
-              <span>Real-time Monitoring</span>
-            </div>
-            <div className="landing-trust-item">
-              <CheckIcon size={16} />
-              <span>Multi-tenant Support</span>
+
+            {/* Trust Indicators */}
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
+              {trustIndicators.map((indicator, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 text-success">
+                    <Check size={12} />
+                  </div>
+                  {indicator}
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="landing-features" aria-label="Key Features">
-        <div className="landing-features-content">
-          <div className="landing-section-header">
-            <h2 className="landing-section-title">Powerful Features</h2>
-            <p className="landing-section-subtitle">
+      <section className="relative z-10 py-20 sm:py-28" aria-label="Key Features">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-16 max-w-2xl text-center">
+            <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">Powerful Features</h2>
+            <p className="text-lg text-muted-foreground">
               Everything you need for enterprise authentication management
             </p>
           </div>
 
-          <div className="landing-features-grid">
-            <article className="landing-feature-card">
-              <div className="landing-feature-icon">
-                <UserIcon size={24} />
-              </div>
-              <h3 className="landing-feature-title">3-Tier User Management</h3>
-              <p className="landing-feature-description">
-                Hierarchical access control with ROOT, ADMIN, and USER levels.
-                Manage permissions with precision and flexibility.
-              </p>
-            </article>
-
-            <article className="landing-feature-card">
-              <div className="landing-feature-icon">
-                <SecurityIcon size={24} />
-              </div>
-              <h3 className="landing-feature-title">Role-Based Access Control</h3>
-              <p className="landing-feature-description">
-                Granular permissions system with custom roles and permission groups.
-                Define exactly what each user can do.
-              </p>
-            </article>
-
-            <article className="landing-feature-card">
-              <div className="landing-feature-icon">
-                <ProjectIcon size={24} />
-              </div>
-              <h3 className="landing-feature-title">Project Management</h3>
-              <p className="landing-feature-description">
-                Multi-tenant architecture with project-level isolation.
-                Perfect for SaaS applications and enterprise systems.
-              </p>
-            </article>
-
-            <article className="landing-feature-card">
-              <div className="landing-feature-icon">
-                <GroupIcon size={24} />
-              </div>
-              <h3 className="landing-feature-title">Group Management</h3>
-              <p className="landing-feature-description">
-                Organize users into groups for efficient permission assignment.
-                Global and project-specific group support.
-              </p>
-            </article>
-
-            <article className="landing-feature-card">
-              <div className="landing-feature-icon">
-                <HealthIcon size={24} />
-              </div>
-              <h3 className="landing-feature-title">System Health Monitoring</h3>
-              <p className="landing-feature-description">
-                Real-time diagnostics and health checks for your authentication system.
-                Monitor performance and catch issues early.
-              </p>
-            </article>
-
-            <article className="landing-feature-card">
-              <div className="landing-feature-icon">
-                <LockIcon size={24} />
-              </div>
-              <h3 className="landing-feature-title">Secure by Default</h3>
-              <p className="landing-feature-description">
-                Built with security best practices. Encrypted connections,
-                secure session management, and comprehensive audit logs.
-              </p>
-            </article>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature, index) => (
+              <FeatureCard key={index} {...feature} />
+            ))}
           </div>
         </div>
       </section>
 
       {/* Access Levels Section */}
-      <section className="landing-access-levels" aria-label="Access Levels">
-        <div className="landing-access-levels-content">
-          <div className="landing-section-header">
-            <h2 className="landing-section-title">Authorized Access Levels</h2>
-            <p className="landing-section-subtitle">
-              Two powerful access tiers for complete system control
-            </p>
+      <section className="relative z-10 py-20 sm:py-28" aria-label="Access Levels">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-16 max-w-2xl text-center">
+            <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">Authorized Access Levels</h2>
+            <p className="text-lg text-muted-foreground">Two powerful access tiers for complete system control</p>
           </div>
 
-          <div className="landing-access-levels-grid">
-            <article className="landing-access-card landing-access-card-root">
-              <div className="landing-access-badge landing-access-badge-root">
-                ROOT
-              </div>
-              <h3 className="landing-access-title">System Administrator</h3>
-              <p className="landing-access-description">
-                Complete system access with full administrative privileges.
-                Manage all users, projects, and system-wide configurations.
-              </p>
-              <ul className="landing-access-features">
-                <li><CheckIcon size={16} /> Full system access</li>
-                <li><CheckIcon size={16} /> User management</li>
-                <li><CheckIcon size={16} /> System configuration</li>
-                <li><CheckIcon size={16} /> Security settings</li>
-              </ul>
-            </article>
-
-            <article className="landing-access-card landing-access-card-admin">
-              <div className="landing-access-badge landing-access-badge-admin">
-                ADMIN
-              </div>
-              <h3 className="landing-access-title">Project Manager</h3>
-              <p className="landing-access-description">
-                Project-level access for managing users and permissions within
-                assigned projects. Perfect for team leads and project managers.
-              </p>
-              <ul className="landing-access-features">
-                <li><CheckIcon size={16} /> Project management</li>
-                <li><CheckIcon size={16} /> Team member access</li>
-                <li><CheckIcon size={16} /> Permission assignment</li>
-                <li><CheckIcon size={16} /> Activity monitoring</li>
-              </ul>
-            </article>
+          <div className="mx-auto grid max-w-4xl gap-8 lg:grid-cols-2">
+            <AccessCard
+              badge="ROOT"
+              badgeVariant="primary"
+              title="System Administrator"
+              description="Complete system access with full administrative privileges. Manage all users, projects, and system-wide configurations."
+              features={['Full system access', 'User management', 'System configuration', 'Security settings']}
+              highlighted
+            />
+            <AccessCard
+              badge="ADMIN"
+              badgeVariant="secondary"
+              title="Project Manager"
+              description="Project-level access for managing users and permissions within assigned projects. Perfect for team leads and project managers."
+              features={['Project management', 'Team member access', 'Permission assignment', 'Activity monitoring']}
+            />
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="landing-cta" aria-label="Call to action">
-        <div className="landing-cta-content">
-          <h2 className="landing-cta-title">Ready to Get Started?</h2>
-          <p className="landing-cta-subtitle">
-            Sign in now to access your Magic Auth Dashboard
-          </p>
-          <button
-            className="btn btn-primary btn-lg landing-cta-button"
-            onClick={() => setIsLoginModalOpen(true)}
-          >
-            <LockIcon size={20} />
-            Sign In to Dashboard
-          </button>
-          <p className="landing-cta-note">
-            Admin and ROOT users only · Need access?{' '}
-            <a href="mailto:andres@arz.ai" className="landing-cta-link">
-              Contact Administrator
-            </a>
-          </p>
+      <section className="relative z-10 py-20 sm:py-28" aria-label="Call to action">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5">
+            <CardContent className="py-16 text-center">
+              <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">Ready to Get Started?</h2>
+              <p className="mx-auto mb-8 max-w-md text-lg text-muted-foreground">
+                Sign in now to access your Magic Auth Dashboard
+              </p>
+              <Button onClick={() => setIsLoginModalOpen(true)} size="xl" className="group">
+                <Lock size={20} />
+                Sign In to Dashboard
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              </Button>
+              <p className="mt-6 text-sm text-muted-foreground">
+                Admin and ROOT users only{' '}
+                <span className="mx-2 text-border">|</span>
+                Need access?{' '}
+                <a
+                  href="mailto:andres@arz.ai"
+                  className="font-medium text-primary underline-offset-4 transition-colors hover:underline"
+                >
+                  Contact Administrator
+                </a>
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="landing-footer" role="contentinfo">
-        <div className="landing-footer-content">
-          <div className="landing-footer-brand">
-            <LogoIcon size={32} />
-            <span className="landing-footer-brand-text">Magic Auth</span>
+      <footer className="relative z-10 border-t border-border/50 py-8" role="contentinfo">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Shield size={18} />
+              </div>
+              <span className="font-semibold text-foreground">Magic Auth</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Enterprise-grade authentication management - {new Date().getFullYear()}
+            </p>
           </div>
-          <p className="landing-footer-text">
-            Enterprise-grade authentication management © {new Date().getFullYear()}
-          </p>
         </div>
       </footer>
 
       {/* Login Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-      />
+      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </div>
   );
 }

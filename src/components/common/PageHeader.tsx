@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/utils/component-utils';
+import { cn } from '@/lib/utils';
 
 export interface PageHeaderProps {
   title: string;
@@ -21,19 +21,25 @@ export function PageHeader({
   className = '',
 }: PageHeaderProps): React.JSX.Element {
   return (
-    <header className={cn('page-header', className)}>
-      <div className="page-header__content">
-        <div className="page-header__text">
-          <div className="page-header__title-row">
-            {icon && <span className="page-header__icon" aria-hidden="true">{icon}</span>}
-            <h1 className="page-header__title">{title}</h1>
-            {badge && <span className="page-header__badge">{badge}</span>}
+    <header className={cn('space-y-4 pb-6', className)}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            {icon && (
+              <span className="text-muted-foreground" aria-hidden="true">
+                {icon}
+              </span>
+            )}
+            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+            {badge && <span>{badge}</span>}
           </div>
-          {subtitle && <p className="page-header__subtitle">{subtitle}</p>}
+          {subtitle && (
+            <p className="text-sm text-muted-foreground">{subtitle}</p>
+          )}
         </div>
-        {actions && <div className="page-header__actions">{actions}</div>}
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
-      {children && <div className="page-header__extra">{children}</div>}
+      {children && <div>{children}</div>}
     </header>
   );
 }

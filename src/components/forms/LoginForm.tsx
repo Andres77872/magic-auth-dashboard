@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/utils/routes';
 import { VALIDATION } from '@/utils/constants';
 import { LoadingSpinner, Input, Button } from '@/components/common';
-import { UserIcon, EyeIcon, LockIcon, ErrorIcon } from '@/components/icons';
+import { Checkbox } from '@/components/ui/checkbox';
+import { User, Eye, EyeOff, Lock, XCircle } from 'lucide-react';
 
 interface LoginFormData {
   username: string;
@@ -23,7 +24,6 @@ export function LoginForm(): React.JSX.Element {
   const location = useLocation();
   const { login, isLoading, state } = useAuth();
 
-  // Form state
   const [formData, setFormData] = useState<LoginFormData>({
     username: '',
     password: '',
@@ -34,26 +34,22 @@ export function LoginForm(): React.JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Clear errors when form data changes
   useEffect(() => {
     if (Object.keys(errors).length > 0 || state.error) {
       setErrors({});
     }
   }, [formData.username, formData.password, state.error]);
 
-  // Handle form input changes
   const handleInputChange = (field: keyof LoginFormData, value: string | boolean): void => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  // Validate form data
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    // Username validation
     if (!formData.username.trim()) {
       newErrors.username = 'Username is required';
     } else if (formData.username.length < VALIDATION.USERNAME_MIN_LENGTH) {
@@ -64,7 +60,6 @@ export function LoginForm(): React.JSX.Element {
       newErrors.username = 'Username can only contain letters, numbers, dots, hyphens, and underscores';
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < VALIDATION.PASSWORD_MIN_LENGTH) {
@@ -75,7 +70,6 @@ export function LoginForm(): React.JSX.Element {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
@@ -90,16 +84,10 @@ export function LoginForm(): React.JSX.Element {
       const success = await login(formData.username, formData.password);
 
       if (success) {
-        // Get redirect destination from location state or default
         const from = (location.state as { from?: string })?.from || ROUTES.DASHBOARD;
         void navigate(from, { replace: true });
-      } else {
-        // Login returned false - this means authentication failed
-        // The error will be shown via state.error from the auth context
-        // No need to set a general error here as the auth context handles it
       }
     } catch (error) {
-      // This catches unexpected errors (network issues, etc.)
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
       setErrors({
         general: errorMessage,
@@ -109,36 +97,35 @@ export function LoginForm(): React.JSX.Element {
     }
   };
 
-  // Show loading state
   if (isLoading) {
     return (
-      <div className="auth-login-loading">
+      <div className="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" message="Checking authentication..." />
       </div>
     );
   }
 
   return (
-    <form onSubmit={(e) => void handleSubmit(e)} className="auth-login-form" noValidate>
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
       {/* General error message */}
       {(errors.general || state.error) && (
-        <div className="auth-login-error" role="alert" aria-live="polite">
-          <div className="auth-login-error-icon">
-            <ErrorIcon size="md" />
+        <div
+          className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4"
+          role="alert"
+          aria-live="polite"
+        >
+          <div className="flex h-5 w-5 shrink-0 items-center justify-center text-destructive">
+            <XCircle size={20} />
           </div>
-          <div className="auth-login-error-content">
-            <span className="auth-login-error-text">
-              {errors.general || state.error}
-            </span>
-            <p className="auth-login-error-help">
-              Please check your credentials and try again.
-            </p>
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-destructive">{errors.general || state.error}</p>
+            <p className="text-xs text-muted-foreground">Please check your credentials and try again.</p>
           </div>
         </div>
       )}
 
       {/* Username field */}
-      <div className="auth-login-field">
+      <div>
         <Input
           id="username"
           type="text"
@@ -147,7 +134,7 @@ export function LoginForm(): React.JSX.Element {
           onChange={(e) => handleInputChange('username', e.target.value)}
           error={errors.username}
           placeholder="Enter your username"
-          leftIcon={<UserIcon size="md" />}
+          leftIcon={<User size={18} />}
           autoComplete="username"
           autoFocus
           disabled={isSubmitting}
@@ -157,7 +144,7 @@ export function LoginForm(): React.JSX.Element {
       </div>
 
       {/* Password field */}
-      <div className="auth-login-field">
+      <div>
         <Input
           id="password"
           type={showPassword ? 'text' : 'password'}
@@ -166,18 +153,18 @@ export function LoginForm(): React.JSX.Element {
           onChange={(e) => handleInputChange('password', e.target.value)}
           error={errors.password}
           placeholder="Enter your password"
-          leftIcon={<LockIcon size="md" />}
+          leftIcon={<Lock size={18} />}
           rightIcon={
             <button
               type="button"
-              className="auth-login-password-toggle"
+              className="flex h-full items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus:outline-none"
               onClick={() => setShowPassword(!showPassword)}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               aria-pressed={showPassword}
               disabled={isSubmitting}
               tabIndex={-1}
             >
-              <EyeIcon size="md" isVisible={showPassword} />
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           }
           autoComplete="current-password"
@@ -188,22 +175,23 @@ export function LoginForm(): React.JSX.Element {
       </div>
 
       {/* Remember me checkbox */}
-      <div className="auth-login-field auth-login-checkbox-field">
-        <label className="auth-login-checkbox-label">
-          <input
-            type="checkbox"
-            checked={formData.rememberMe}
-            onChange={(e) => handleInputChange('rememberMe', e.target.checked)}
-            className="auth-login-checkbox-input"
-            disabled={isSubmitting}
-          />
-          <span className="auth-login-checkbox-checkmark"></span>
-          <span className="auth-login-checkbox-text">Remember me for 30 days</span>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="rememberMe"
+          checked={formData.rememberMe}
+          onCheckedChange={(checked) => handleInputChange('rememberMe', checked === true)}
+          disabled={isSubmitting}
+        />
+        <label
+          htmlFor="rememberMe"
+          className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          Remember me for 30 days
         </label>
       </div>
 
       {/* Submit button */}
-      <div className="auth-login-submit">
+      <div className="pt-2">
         <Button
           type="submit"
           variant="primary"
@@ -217,10 +205,13 @@ export function LoginForm(): React.JSX.Element {
       </div>
 
       {/* Footer links */}
-      <div className="auth-login-footer">
-        <p className="auth-login-footer-text">
+      <div className="pt-2 text-center">
+        <p className="text-xs text-muted-foreground">
           Admin and ROOT users only. Need access?{' '}
-          <a href="mailto:andres@arz.ai" className="auth-login-footer-link">
+          <a
+            href="mailto:andres@arz.ai"
+            className="font-medium text-primary underline-offset-4 transition-colors hover:underline"
+          >
             Contact Administrator
           </a>
         </p>

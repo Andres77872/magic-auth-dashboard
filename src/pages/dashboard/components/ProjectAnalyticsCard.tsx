@@ -1,4 +1,9 @@
 import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import { Users, Activity, Clock, ChevronRight, FolderKanban, User } from 'lucide-react';
 import type { ProjectMetrics } from '@/types/analytics.types';
 
 interface ProjectAnalyticsCardProps {
@@ -6,18 +11,19 @@ interface ProjectAnalyticsCardProps {
   onClick?: () => void;
 }
 
-export function ProjectAnalyticsCard({ project, onClick }: ProjectAnalyticsCardProps): React.JSX.Element {
-  const getHealthColor = (score: number) => {
-    if (score >= 80) return 'var(--color-success)';
-    if (score >= 60) return 'var(--color-warning)';
-    return 'var(--color-error)';
-  };
+const healthConfig = {
+  excellent: { color: 'text-success', bg: 'bg-success', label: 'Excellent' },
+  good: { color: 'text-success', bg: 'bg-success', label: 'Good' },
+  fair: { color: 'text-warning', bg: 'bg-warning', label: 'Fair' },
+  poor: { color: 'text-destructive', bg: 'bg-destructive', label: 'Needs Attention' },
+};
 
-  const getHealthLabel = (score: number) => {
-    if (score >= 80) return 'Excellent';
-    if (score >= 60) return 'Good';
-    if (score >= 40) return 'Fair';
-    return 'Needs Attention';
+export function ProjectAnalyticsCard({ project, onClick }: ProjectAnalyticsCardProps): React.JSX.Element {
+  const getHealthLevel = (score: number) => {
+    if (score >= 80) return 'excellent';
+    if (score >= 60) return 'good';
+    if (score >= 40) return 'fair';
+    return 'poor';
   };
 
   const formatLastActivity = (dateString: string) => {
@@ -30,141 +36,112 @@ export function ProjectAnalyticsCard({ project, onClick }: ProjectAnalyticsCardP
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+      return `${diffInHours}h ago`;
     } else if (diffInDays < 7) {
-      return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+      return `${diffInDays}d ago`;
     } else {
       return date.toLocaleDateString();
     }
   };
 
+  const healthLevel = getHealthLevel(project.healthScore);
+  const config = healthConfig[healthLevel];
+
   return (
-    <div 
-      className={`project-analytics-card ${onClick ? 'clickable' : ''}`}
+    <Card 
+      className={cn(
+        'transition-all duration-200 overflow-hidden',
+        onClick && 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 group'
+      )}
       onClick={onClick}
     >
-      <div className="analytics-card-header">
-        <div className="project-info">
-          <h3 className="project-name">{project.name}</h3>
-          <div className="project-id">ID: {project.id}</div>
-        </div>
-        
-        <div className="health-indicator">
-          <div 
-            className="health-score health-color-dynamic"
-            style={{ '--dynamic-health-color': getHealthColor(project.healthScore) } as React.CSSProperties}
-          >
-            {project.healthScore}%
-          </div>
-          <div className="health-label">{getHealthLabel(project.healthScore)}</div>
-        </div>
-      </div>
-
-      <div className="card-metrics">
-        <div className="metric-row">
-          <div className="metric-item">
-            <div className="metric-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </div>
-            <div className="metric-content">
-              <div className="metric-value">{project.memberCount}</div>
-              <div className="metric-label">Members</div>
-            </div>
-          </div>
-
-          <div className="metric-item">
-            <div className="metric-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
-              </svg>
-            </div>
-            <div className="metric-content">
-              <div className="metric-value">{project.activityCount}</div>
-              <div className="metric-label">Activities</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="last-activity">
-          <div className="activity-icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12,6 12,12 16,14"/>
-            </svg>
-          </div>
-          <span className="activity-text">Last activity {formatLastActivity(project.lastActivity)}</span>
-        </div>
-      </div>
-
-      {project.recentActivities && project.recentActivities.length > 0 && (
-        <div className="recent-activities">
-          <h4 className="activities-title">Recent Activity</h4>
-          <div className="activities-list">
-            {project.recentActivities.slice(0, 3).map((activity) => (
-              <div key={activity.id} className="activity-preview">
-                <div className="activity-type-indicator">
-                  {activity.type.includes('user') && (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                      <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                  )}
-                  {activity.type.includes('project') && (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2l5 0l2 3h9a2 2 0 0 1 2 2z"/>
-                    </svg>
-                  )}
-                  {activity.type.includes('group') && (
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                  )}
-                </div>
-                <div className="activity-summary">
-                  <div className="activity-title">{activity.title}</div>
-                  <div className="activity-time">{formatLastActivity(activity.timestamp)}</div>
-                </div>
-              </div>
-            ))}
+      <CardContent className="p-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-foreground truncate">{project.name}</h3>
+            <p className="text-xs text-muted-foreground">ID: {project.id}</p>
           </div>
           
-          {project.recentActivities.length > 3 && (
-            <div className="more-activities">
-              +{project.recentActivities.length - 3} more activities
+          <div className="text-right shrink-0">
+            <div className={cn('text-2xl font-bold', config.color)}>
+              {project.healthScore}%
+            </div>
+            <Badge variant="outline" className={cn('text-[10px]', config.color)}>
+              {config.label}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Metrics */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="text-lg font-semibold text-foreground">{project.memberCount}</p>
+              <p className="text-[10px] text-muted-foreground">Members</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/30">
+            <Activity className="h-4 w-4 text-muted-foreground" />
+            <div>
+              <p className="text-lg font-semibold text-foreground">{project.activityCount}</p>
+              <p className="text-[10px] text-muted-foreground">Activities</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Last activity */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
+          <Clock className="h-3.5 w-3.5" />
+          <span>Last activity {formatLastActivity(project.lastActivity)}</span>
+        </div>
+
+        {/* Recent activities */}
+        {project.recentActivities && project.recentActivities.length > 0 && (
+          <div className="border-t border-border pt-4 mb-4">
+            <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2">Recent Activity</h4>
+            <div className="space-y-2">
+              {project.recentActivities.slice(0, 3).map((activity) => (
+                <div key={activity.id} className="flex items-center gap-2">
+                  <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    {activity.type.includes('user') && <User className="h-3 w-3 text-muted-foreground" />}
+                    {activity.type.includes('project') && <FolderKanban className="h-3 w-3 text-muted-foreground" />}
+                    {activity.type.includes('group') && <Users className="h-3 w-3 text-muted-foreground" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-foreground truncate">{activity.title}</p>
+                    <p className="text-[10px] text-muted-foreground">{formatLastActivity(activity.timestamp)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            {project.recentActivities.length > 3 && (
+              <p className="text-xs text-muted-foreground mt-2">
+                +{project.recentActivities.length - 3} more activities
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Health bar & action */}
+        <div className="space-y-3">
+          <Progress 
+            value={project.healthScore} 
+            className={cn('h-1.5', config.bg)}
+          />
+          
+          {onClick && (
+            <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+              <span>View Details</span>
+              <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
             </div>
           )}
         </div>
-      )}
-
-      <div className="card-footer">
-        <div className="health-bar">
-          <div 
-            className="health-fill health-fill-dynamic"
-            style={{ 
-              '--dynamic-width': `${project.healthScore}%`,
-              '--dynamic-health-bg': getHealthColor(project.healthScore)
-            } as React.CSSProperties}
-          />
-        </div>
-        
-        {onClick && (
-          <div className="view-details">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
-          </div>
-        )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
-export default ProjectAnalyticsCard; 
+export default ProjectAnalyticsCard;

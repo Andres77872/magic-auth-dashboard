@@ -48,13 +48,13 @@ export type {
 
 // Common components
 export { ErrorBoundary } from './ErrorBoundary';
+export { ErrorState } from './ErrorState';
 export { ComingSoon } from './ComingSoon';
 export { EmptyState } from './EmptyState';
 export { ToastContainer } from './ToastContainer';
 export { OptimisticContent } from './OptimisticContent';
 export { TableSkeleton } from './TableSkeleton';
 export { default as ConfirmDialog } from './ConfirmDialog';
-export { default as Table } from './Table';
 export { default as DataView } from './DataView';
 export { default as DataViewCard } from './DataViewCard';
 export { DataViewToolbar } from './DataViewToolbar';
@@ -73,11 +73,11 @@ export { EntityFilter } from './EntityFilter';
 
 // Types
 export type { ConfirmDialogProps } from './ConfirmDialog';
-export type { TableProps, TableColumn } from './Table';
-export type { DataViewProps, DataViewColumn, DataViewCardProps } from './DataView';
-export type { DataViewCardProps as DataViewCardComponentProps } from './DataViewCard';
+export type { DataViewProps, DataViewColumn, GridColumnsConfig } from './DataView';
+export type { DataViewCardProps, DataViewCardStat } from './DataViewCard';
 export type { DataViewToolbarProps } from './DataViewToolbar';
 export type { EmptyStateProps } from './EmptyState';
+export type { ErrorStateProps } from './ErrorState';
 export type { ActionsMenuProps, ActionMenuItem } from './ActionsMenu';
 export type { FilterBarProps, Filter, FilterOption } from './FilterBar';
 export type { PageContainerProps } from './PageContainer';

@@ -4,6 +4,7 @@ import {
   PageContainer,
   PageHeader,
   Card,
+  CardContent,
   Badge, 
   Button, 
   LoadingSpinner, 
@@ -14,6 +15,7 @@ import {
 import { groupService } from '@/services';
 import { GroupMembersTable } from '@/components/features/groups/GroupMembersTable';
 import { GroupPermissionsTab } from '@/components/features/groups/GroupPermissionsTab';
+import { GroupProjectGroupsTab } from '@/components/features/groups/GroupProjectGroupsTab';
 import { BulkMemberAssignmentModal } from '@/components/features/groups/BulkMemberAssignmentModal';
 import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
 import type { GroupMember } from '@/components/features/groups/GroupMembersTable';
@@ -22,10 +24,9 @@ import type { UserGroup, GroupFormData } from '@/types/group.types';
 import { useUsersByGroup } from '@/hooks/useUsersByGroup';
 import { useToast } from '@/hooks';
 import { formatDate } from '@/utils/component-utils';
-import { GroupIcon, UserIcon, LockIcon } from '@/components/icons';
-import '../../styles/pages/group-details.css';
+import { Users, User, Lock, FolderOpen, Plus } from 'lucide-react';
 
-type TabType = 'members' | 'permissions';
+type TabType = 'members' | 'project-groups' | 'permissions';
 
 export const GroupDetailsPage: React.FC = () => {
   const { groupHash } = useParams<{ groupHash: string }>();
@@ -47,13 +48,13 @@ export const GroupDetailsPage: React.FC = () => {
   const [isRemoving, setIsRemoving] = useState<string | null>(null);
 
   // Map users to GroupMember type for the table
-  const members: GroupMember[] = groupUsers.map(user => ({
+  // API returns joined_at for group membership date
+  const members: GroupMember[] = groupUsers.map((user: any) => ({
     user_hash: user.user_hash,
     username: user.username,
     email: user.email,
     user_type: user.user_type,
-    joined_at: user.created_at,
-    is_active: user.is_active
+    joined_at: user.joined_at || user.created_at
   }));
 
   useEffect(() => {
@@ -143,22 +144,27 @@ export const GroupDetailsPage: React.FC = () => {
     {
       id: 'members',
       label: 'Members',
-      icon: <UserIcon size={16} />,
+      icon: <User size={16} />,
       count: members.length,
+    },
+    {
+      id: 'project-groups',
+      label: 'Project Groups',
+      icon: <FolderOpen size={16} />,
     },
     {
       id: 'permissions',
       label: 'Permission Groups',
-      icon: <LockIcon size={16} />,
+      icon: <Lock size={16} />,
     },
   ];
 
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="group-details-loading">
+        <div className="flex flex-col items-center justify-center gap-4 py-16">
           <LoadingSpinner size="lg" />
-          <p>Loading group details...</p>
+          <p className="text-sm text-muted-foreground">Loading group details...</p>
         </div>
       </PageContainer>
     );
@@ -167,8 +173,9 @@ export const GroupDetailsPage: React.FC = () => {
   if (error || !group) {
     return (
       <PageContainer>
-        <div className="group-details-error">
-          <p>{error || 'Group not found'}</p>
+        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+          <Users size={48} className="text-muted-foreground" />
+          <p className="text-muted-foreground">{error || 'Group not found'}</p>
           <Button
             variant="primary"
             onClick={() => navigate(ROUTES.GROUPS)}
@@ -185,7 +192,7 @@ export const GroupDetailsPage: React.FC = () => {
       <PageHeader
         title={group.group_name}
         subtitle={group.description || undefined}
-        icon={<GroupIcon size={28} />}
+        icon={<Users size={28} />}
         actions={
           <>
             <Button
@@ -207,44 +214,51 @@ export const GroupDetailsPage: React.FC = () => {
       />
 
       {/* Group Information Card */}
-      <Card title="Group Information" className="group-info-card">
-        <div className="group-info-grid">
-          <div className="group-info-item">
-            <span className="group-info-label">Group Name</span>
-            <span className="group-info-value">{group.group_name}</span>
-          </div>
-          
-          <div className="group-info-item">
-            <span className="group-info-label">Description</span>
-            <span className="group-info-value">{group.description || 'No description'}</span>
-          </div>
-          
-          <div className="group-info-item">
-            <span className="group-info-label">Members</span>
-            <Badge variant="secondary">
-              {statistics?.total_members ?? group.member_count ?? 0} member{(statistics?.total_members ?? group.member_count ?? 0) !== 1 ? 's' : ''}
-            </Badge>
-          </div>
-          
-          <div className="group-info-item">
-            <span className="group-info-label">Created</span>
-            <span className="group-info-value">{formatDate(group.created_at)}</span>
-          </div>
-          
-          <div className="group-info-item">
-            <span className="group-info-label">Projects</span>
-            <Badge variant="secondary">
-              {statistics?.total_projects ?? 0} project{(statistics?.total_projects ?? 0) !== 1 ? 's' : ''}
-            </Badge>
-          </div>
-          
-          {group.updated_at && (
-            <div className="group-info-item">
-              <span className="group-info-label">Last Updated</span>
-              <span className="group-info-value">{formatDate(group.updated_at)}</span>
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <h3 className="text-lg font-semibold mb-4">Group Information</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Group Name</span>
+              <p className="font-medium">{group.group_name}</p>
             </div>
-          )}
-        </div>
+            
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Description</span>
+              <p className="font-medium">{group.description || 'No description'}</p>
+            </div>
+            
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Members</span>
+              <div>
+                <Badge variant="secondary">
+                  {statistics?.total_members ?? group.member_count ?? 0} member{(statistics?.total_members ?? group.member_count ?? 0) !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Created</span>
+              <p className="font-medium">{formatDate(group.created_at)}</p>
+            </div>
+            
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Projects</span>
+              <div>
+                <Badge variant="secondary">
+                  {statistics?.total_projects ?? 0} project{(statistics?.total_projects ?? 0) !== 1 ? 's' : ''}
+                </Badge>
+              </div>
+            </div>
+            
+            {group.updated_at && (
+              <div className="space-y-1">
+                <span className="text-sm text-muted-foreground">Last Updated</span>
+                <p className="font-medium">{formatDate(group.updated_at)}</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
       </Card>
 
       {/* Tabs Section */}
@@ -255,12 +269,13 @@ export const GroupDetailsPage: React.FC = () => {
         contained
       >
         {activeTab === 'members' && (
-          <div className="members-tab-content">
-            <div className="members-tab-header">
-              <h3 className="members-tab-title">Group Members ({members.length})</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Group Members ({members.length})</h3>
               <Button 
                 variant="primary"
                 size="md"
+                leftIcon={<Plus size={16} />}
                 onClick={() => setIsAddMembersModalOpen(true)}
               >
                 Add Members
@@ -268,16 +283,18 @@ export const GroupDetailsPage: React.FC = () => {
             </div>
             
             {membersError && (
-              <div className="members-error-banner" role="alert">
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive" role="alert">
                 Error loading members: {membersError}
               </div>
             )}
             
             {members.length === 0 && !membersError ? (
-              <div className="members-empty-state">
-                <p>No members in this group yet.</p>
+              <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+                <User size={48} className="text-muted-foreground" />
+                <p className="text-muted-foreground">No members in this group yet.</p>
                 <Button
                   variant="primary"
+                  leftIcon={<Plus size={16} />}
                   onClick={() => setIsAddMembersModalOpen(true)}
                 >
                   Add Your First Member
@@ -291,6 +308,13 @@ export const GroupDetailsPage: React.FC = () => {
               />
             )}
           </div>
+        )}
+
+        {activeTab === 'project-groups' && group && (
+          <GroupProjectGroupsTab
+            groupHash={group.group_hash}
+            groupName={group.group_name}
+          />
         )}
 
         {activeTab === 'permissions' && group && (

@@ -125,11 +125,11 @@ export function useProjectGroups(options: UseProjectGroupsOptions = {}): UseProj
 
   const assignToProject = useCallback(async (groupHash: string, projectHash: string): Promise<void> => {
     try {
-      const response = await projectGroupService.assignGroupToProject(groupHash, projectHash);
+      const response = await projectGroupService.assignProjectToGroup(groupHash, projectHash);
       if (!response.success) {
-        throw new Error(response.message || 'Failed to assign project group to project');
+        throw new Error(response.message || 'Failed to assign project to project group');
       }
-      // Optionally refresh project groups to get updated project_count
+      // Refresh project groups to get updated project_count
       fetchProjectGroups();
     } catch (error) {
       throw error;
@@ -138,11 +138,11 @@ export function useProjectGroups(options: UseProjectGroupsOptions = {}): UseProj
 
   const removeFromProject = useCallback(async (groupHash: string, projectHash: string): Promise<void> => {
     try {
-      const response = await projectGroupService.removeGroupFromProject(groupHash, projectHash);
+      const response = await projectGroupService.removeProjectFromGroup(groupHash, projectHash);
       if (!response.success) {
-        throw new Error(response.message || 'Failed to remove project group from project');
+        throw new Error(response.message || 'Failed to remove project from project group');
       }
-      // Optionally refresh project groups to get updated project_count
+      // Refresh project groups to get updated project_count
       fetchProjectGroups();
     } catch (error) {
       throw error;

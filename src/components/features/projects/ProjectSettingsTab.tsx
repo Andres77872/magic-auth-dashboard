@@ -1,10 +1,30 @@
 import React, { useState } from 'react';
-import { Card, Button, ConfirmDialog, Modal, Input, Select } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { ConfirmDialog } from '@/components/common';
 import { ProjectForm } from './ProjectForm';
 import { projectService, userService } from '@/services';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/utils/routes';
 import type { ProjectDetails, ProjectFormData } from '@/types/project.types';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface ProjectSettingsTabProps {
   project: ProjectDetails;
@@ -110,7 +130,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
       setIsLoadingUsers(true);
       const response = await userService.getUsers({
         limit: 100,
-        user_type: 'admin', // Only allow admins to own projects
+        user_type_filter: 'admin', // Only allow admins to own projects
       });
       
       if (response.success && response.data) {
@@ -162,86 +182,94 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
     fetchUsers();
   };
 
-  const userOptions = users.map(user => ({
-    value: user.user_hash,
-    label: `${user.username} (${user.email})`,
-  }));
-
   return (
-    <div className="project-settings-container">
+    <div className="space-y-6">
       {error && (
-        <Card className="error-card">
-          <div className="project-settings-error-message">
-            ⚠️ {error}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setError(null)}
-              className="float-right"
-            >
-              ×
-            </Button>
+        <div className="flex items-center justify-between p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <span>{error}</span>
           </div>
-        </Card>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setError(null)}
+            className="h-6 w-6"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       )}
 
       {/* Project Information */}
-      <Card className="settings-section">
-        <h3 className="settings-section-title">Project Information</h3>
-        <p className="settings-section-description">
-          Update the basic information about your project.
-        </p>
-        
-        <ProjectForm
-          mode="edit"
-          initialData={{
-            project_name: project.project_name,
-            project_description: project.project_description,
-          }}
-          onSubmit={handleUpdate}
-          onCancel={() => navigate(ROUTES.PROJECTS)}
-          isSubmitting={isUpdating}
-        />
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Information</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Update the basic information about your project.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <ProjectForm
+            mode="edit"
+            initialData={{
+              project_name: project.project_name,
+              project_description: project.project_description,
+            }}
+            onSubmit={handleUpdate}
+            onCancel={() => navigate(ROUTES.PROJECTS)}
+            isSubmitting={isUpdating}
+          />
+        </CardContent>
       </Card>
 
       {/* Project Management */}
-      <Card className="settings-section">
-        <h3 className="settings-section-title">Project Management</h3>
-        <p className="settings-section-description">
-          Transfer ownership or change project status.
-        </p>
-        
-        <div className="settings-actions">
-          <Button
-            variant="outline"
-            onClick={openTransferModal}
-          >
-            Transfer Ownership
-          </Button>
-          
-          <Button
-            variant={project.is_active !== false ? "secondary" : "primary"}
-            onClick={() => setShowArchiveConfirm(true)}
-            loading={isArchiving}
-          >
-            {project.is_active !== false ? "Archive Project" : "Unarchive Project"}
-          </Button>
-        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Project Management</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Transfer ownership or change project status.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={openTransferModal}
+            >
+              Transfer Ownership
+            </Button>
+            
+            <Button
+              variant={project.is_active !== false ? "secondary" : "primary"}
+              onClick={() => setShowArchiveConfirm(true)}
+              loading={isArchiving}
+            >
+              {project.is_active !== false ? "Archive Project" : "Unarchive Project"}
+            </Button>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Danger Zone */}
-      <Card className="danger-zone">
-        <h3 className="danger-zone-title">⚠️ Danger Zone</h3>
-        <p className="danger-zone-description">
-          Irreversible and destructive actions. Please be cautious.
-        </p>
-        
-        <Button
-          variant="danger"
-          onClick={() => setShowDeleteConfirm(true)}
-        >
-          Delete Project
-        </Button>
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Irreversible and destructive actions. Please be cautious.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            Delete Project
+          </Button>
+        </CardContent>
       </Card>
 
       {/* Archive Confirmation */}
@@ -260,115 +288,125 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
       )}
 
       {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <Modal
-          isOpen={true}
-          onClose={() => {
-            setShowDeleteConfirm(false);
-            setDeleteConfirmation('');
-          }}
-          title="Delete Project"
-          size="md"
-        >
-          <div className="project-modal-content-wide">
-            <div className="alert-danger">
-              <p className="project-modal-error-message">
-                ⚠️ This action cannot be undone!
+      <Dialog open={showDeleteConfirm} onOpenChange={(open) => {
+        if (!open) {
+          setShowDeleteConfirm(false);
+          setDeleteConfirmation('');
+        }
+      }}>
+        <DialogContent size="md">
+          <DialogHeader>
+            <DialogTitle>Delete Project</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 space-y-2">
+              <p className="text-sm font-semibold text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                This action cannot be undone!
               </p>
-              <p className="project-modal-warning-message">
+              <p className="text-sm text-muted-foreground">
                 This will permanently delete the project "{project.project_name}" and all associated data.
               </p>
             </div>
             
-            <p className="project-modal-description">
-              Please type <strong>{project.project_name}</strong> to confirm:
-            </p>
-            
-            <Input
-              placeholder="Enter project name"
-              value={deleteConfirmation}
-              onChange={(e) => setDeleteConfirmation(e.target.value)}
-              className="project-modal-input"
-            />
-            
-            <div className="project-modal-actions">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeleteConfirmation('');
-                }}
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleDelete}
-                disabled={deleteConfirmation !== project.project_name || isDeleting}
-                loading={isDeleting}
-              >
-                Delete Project
-              </Button>
+            <div className="space-y-2">
+              <Label>
+                Please type <strong>{project.project_name}</strong> to confirm:
+              </Label>
+              <Input
+                placeholder="Enter project name"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                fullWidth
+              />
             </div>
           </div>
-        </Modal>
-      )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setDeleteConfirmation('');
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteConfirmation !== project.project_name || isDeleting}
+              loading={isDeleting}
+            >
+              Delete Project
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Transfer Ownership Modal */}
-      {showTransferModal && (
-        <Modal
-          isOpen={true}
-          onClose={() => {
-            setShowTransferModal(false);
-            setSelectedNewOwner('');
-          }}
-          title="Transfer Project Ownership"
-          size="md"
-        >
-          <div className="project-modal-content-wide">
-            <p className="project-modal-description">
+      <Dialog open={showTransferModal} onOpenChange={(open) => {
+        if (!open) {
+          setShowTransferModal(false);
+          setSelectedNewOwner('');
+        }
+      }}>
+        <DialogContent size="md">
+          <DialogHeader>
+            <DialogTitle>Transfer Project Ownership</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
               Select a new owner for the project "{project.project_name}". Only admin users can own projects.
             </p>
             
             {isLoadingUsers ? (
-              <div className="project-modal-loading-centered">
-                Loading users...
+              <div className="flex items-center justify-center py-8">
+                <Spinner size="lg" />
               </div>
             ) : (
-              <div className="project-modal-form-field">
+              <div className="space-y-2">
+                <Label>New Owner</Label>
                 <Select
-                  placeholder="Select new owner..."
                   value={selectedNewOwner}
-                  onChange={(value) => setSelectedNewOwner(value)}
-                  options={userOptions}
-                />
+                  onValueChange={setSelectedNewOwner}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select new owner..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users.map(user => (
+                      <SelectItem key={user.user_hash} value={user.user_hash}>
+                        {user.username} ({user.email})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
-            
-            <div className="project-modal-actions">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowTransferModal(false);
-                  setSelectedNewOwner('');
-                }}
-                disabled={isTransferring}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleTransferOwnership}
-                disabled={!selectedNewOwner || isTransferring}
-                loading={isTransferring}
-              >
-                Transfer Ownership
-              </Button>
-            </div>
           </div>
-        </Modal>
-      )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowTransferModal(false);
+                setSelectedNewOwner('');
+              }}
+              disabled={isTransferring}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleTransferOwnership}
+              disabled={!selectedNewOwner || isTransferring}
+              loading={isTransferring}
+            >
+              Transfer Ownership
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 

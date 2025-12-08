@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useGlobalRoles, usePermissionAssignments } from '@/hooks';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@/components/common';
-import { UserIcon, CheckIcon, CloseIcon, SecurityIcon, LockIcon } from '@/components/icons';
-import '../../styles/pages/global-roles.css';
+import { User, Check, X, ShieldCheck, Lock } from 'lucide-react';
 
 export function GlobalRolesPage() {
   const {
@@ -71,7 +70,7 @@ export function GlobalRolesPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <UserIcon size={20} aria-hidden="true" />
+              <User size={20} aria-hidden="true" />
               Your Role
             </CardTitle>
           </CardHeader>
@@ -145,7 +144,7 @@ export function GlobalRolesPage() {
               </div>
               <div className="flex gap-2">
                 <Button type="submit">
-                  <CheckIcon size={16} aria-hidden="true" />
+                  <Check size={16} aria-hidden="true" />
                   Create Role
                 </Button>
                 <Button
@@ -153,7 +152,7 @@ export function GlobalRolesPage() {
                   variant="outline"
                   onClick={() => setShowCreateForm(false)}
                 >
-                  <CloseIcon size={16} aria-hidden="true" />
+                  <X size={16} aria-hidden="true" />
                   Cancel
                 </Button>
               </div>
@@ -166,7 +165,7 @@ export function GlobalRolesPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <SecurityIcon size={20} aria-hidden="true" />
+            <ShieldCheck size={20} aria-hidden="true" />
             Global Roles
           </CardTitle>
         </CardHeader>
@@ -218,7 +217,7 @@ export function GlobalRolesPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <LockIcon size={20} aria-hidden="true" />
+            <Lock size={20} aria-hidden="true" />
             Permission Groups
           </CardTitle>
         </CardHeader>
@@ -239,7 +238,7 @@ export function GlobalRolesPage() {
                   className="p-4 border rounded-lg hover:bg-accent transition-colors"
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <LockIcon size={16} aria-hidden="true" />
+                    <Lock size={16} aria-hidden="true" />
                     <h4 className="font-semibold">{group.group_display_name}</h4>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
@@ -263,7 +262,7 @@ export function GlobalRolesPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckIcon size={20} aria-hidden="true" />
+              <Check size={20} aria-hidden="true" />
               Your Active Permissions
             </CardTitle>
           </CardHeader>

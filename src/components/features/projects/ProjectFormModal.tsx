@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Input, Textarea } from '@/components/common';
-import { FormField } from '@/components/forms';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { projectService } from '@/services';
 import { useToast } from '@/hooks';
 import type { ProjectFormData, ProjectFormErrors, ProjectDetails } from '@/types/project.types';
@@ -133,22 +142,16 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleCancel}
-      title={mode === 'create' ? 'Create New Project' : 'Edit Project'}
-      size="md"
-      closeOnBackdrop={!isSubmitting}
-      closeOnEscape={!isSubmitting}
-    >
-      <form onSubmit={handleSubmit} className="project-form-modal">
-        <div className="modal-form-content">
-          <FormField
-            label="Project Name"
-            htmlFor="project_name"
-            error={errors.project_name}
-            required
-          >
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
+      <DialogContent size="md">
+        <DialogHeader>
+          <DialogTitle>{mode === 'create' ? 'Create New Project' : 'Edit Project'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="project_name">
+              Project Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="project_name"
               type="text"
@@ -156,47 +159,45 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
               onChange={handleInputChange('project_name')}
               placeholder="Enter project name"
               disabled={isSubmitting}
-              required
+              error={errors.project_name}
               autoFocus
+              fullWidth
             />
-          </FormField>
+          </div>
 
-          <FormField
-            label="Project Description"
-            htmlFor="project_description"
-            error={errors.project_description}
-          >
+          <div className="space-y-2">
+            <Label htmlFor="project_description">Project Description</Label>
             <Textarea
               id="project_description"
               value={formData.project_description}
               onChange={handleInputChange('project_description')}
               placeholder="Enter project description (optional)"
               disabled={isSubmitting}
+              error={errors.project_description}
               rows={4}
             />
-          </FormField>
-        </div>
+          </div>
 
-        <div className="modal-form-actions">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            loading={isSubmitting}
-            disabled={isSubmitting}
-          >
-            {mode === 'create' ? 'Create Project' : 'Update Project'}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+            >
+              {mode === 'create' ? 'Create Project' : 'Update Project'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

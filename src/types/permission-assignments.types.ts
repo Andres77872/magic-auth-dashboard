@@ -1,22 +1,37 @@
 export interface PermissionGroupAssignment {
   group_hash: string;
   group_name: string;
-  permission_group_hash: string;
-  permission_group_name: string;
+  group_display_name?: string;
+  group_category?: string;
   assigned_at: string;
-  assigned_by: string;
+  assigned_by?: string;
+}
+
+export interface UserGroupPermissionGroupsResponse {
+  user_group: {
+    hash: string;
+    name: string;
+  };
+  permission_groups: PermissionGroupAssignment[];
+  count: number;
 }
 
 export interface DirectPermissionAssignment {
-  user_hash: string;
-  username: string;
-  permission_group_hash: string;
-  permission_group_name: string;
-  group_hash: string; // Alias for permission_group_hash
-  group_name: string; // Alias for permission_group_name
+  group_hash: string;
+  group_name: string;
+  group_display_name?: string;
   assigned_at: string;
-  assigned_by: string;
+  assigned_by?: string;
   notes?: string;
+}
+
+export interface UserDirectPermissionGroupsResponse {
+  user: {
+    hash: string;
+    username: string;
+  };
+  direct_permission_groups: DirectPermissionAssignment[];
+  count: number;
 }
 
 export interface PermissionSource {

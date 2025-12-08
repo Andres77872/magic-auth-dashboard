@@ -1,7 +1,8 @@
 import React from 'react';
-import { DataView, Badge } from '@/components/common';
+import { DataView, DataViewCard } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
-import { GroupIcon } from '@/components/icons';
+import { Badge } from '@/components/ui/badge';
+import { Users, Calendar } from 'lucide-react';
 import { formatDate, formatCount } from '@/utils/component-utils';
 import type { UserGroup } from '@/types/group.types';
 import { GroupActionsMenu } from './GroupActionsMenu';
@@ -30,11 +31,11 @@ export const GroupTable: React.FC<GroupTableProps> = ({
       key: 'group_name',
       header: 'Group Name',
       sortable: true,
-      render: (_value: any, group: UserGroup) => (
-        <div className="table-group-name-cell">
-          <div className="table-group-name">{group.group_name}</div>
+      render: (_value: unknown, group: UserGroup) => (
+        <div>
+          <div className="font-medium">{group.group_name}</div>
           {group.description && (
-            <div className="table-group-description">
+            <div className="text-sm text-muted-foreground truncate max-w-xs">
               {group.description}
             </div>
           )}
@@ -47,7 +48,8 @@ export const GroupTable: React.FC<GroupTableProps> = ({
       sortable: true,
       align: 'center',
       width: '150px',
-      render: (_value: any, group: UserGroup) => (
+      hideOnMobile: true,
+      render: (_value: unknown, group: UserGroup) => (
         <Badge variant="secondary">
           {formatCount(group.member_count || 0, 'member')}
         </Badge>
@@ -58,14 +60,15 @@ export const GroupTable: React.FC<GroupTableProps> = ({
       header: 'Created',
       sortable: true,
       width: '180px',
-      render: (_value: any, group: UserGroup) => formatDate(group.created_at)
+      hideOnMobile: true,
+      render: (_value: unknown, group: UserGroup) => formatDate(group.created_at)
     },
     {
       key: 'group_hash',
       header: 'Actions',
       width: '80px',
       align: 'center',
-      render: (_value: any, group: UserGroup) => (
+      render: (_value: unknown, group: UserGroup) => (
         <GroupActionsMenu 
           group={group}
           onEdit={onEdit}
@@ -76,19 +79,49 @@ export const GroupTable: React.FC<GroupTableProps> = ({
     }
   ];
 
+  const renderGroupCard = (group: UserGroup) => (
+    <DataViewCard
+      title={group.group_name}
+      subtitle={group.description}
+      icon={<Users className="h-5 w-5" />}
+      stats={[
+        {
+          label: 'Members',
+          value: group.member_count || 0,
+          icon: <Users className="h-3.5 w-3.5" />
+        },
+        {
+          label: 'Created',
+          value: formatDate(group.created_at),
+          icon: <Calendar className="h-3.5 w-3.5" />
+        }
+      ]}
+      actions={
+        <GroupActionsMenu 
+          group={group}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onView={onView}
+        />
+      }
+      onClick={onView ? () => onView(group) : undefined}
+    />
+  );
+
   return (
     <DataView<UserGroup>
       data={groups}
       columns={columns}
-      viewMode="table"
-      showViewToggle={false}
+      keyExtractor={(group) => group.group_hash}
+      renderCard={renderGroupCard}
+      responsiveCardView
+      responsiveBreakpoint="md"
       onSort={onSort}
       isLoading={loading}
       emptyMessage="No groups found"
-      emptyIcon={<GroupIcon size="xl" />}
+      emptyIcon={<Users className="h-10 w-10" />}
       emptyAction={emptyAction}
       skeletonRows={6}
-      className="groups-table"
     />
   );
 };

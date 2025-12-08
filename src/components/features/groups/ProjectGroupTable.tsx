@@ -1,10 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { DataView, Badge, Button } from '@/components/common';
+import { DataView } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ProjectGroupActionsMenu } from './ProjectGroupActionsMenu';
-import { GroupIcon, PlusIcon } from '@/components/icons';
+import { FolderOpen, Plus } from 'lucide-react';
 import { formatDate } from '@/utils/component-utils';
+import { ROUTES } from '@/utils/routes';
 import type { ProjectGroup } from '@/services/project-group.service';
 
 interface ProjectGroupTableProps {
@@ -30,43 +33,17 @@ export function ProjectGroupTable({
       header: 'Group Name',
       sortable: true,
       render: (_value, group) => (
-        <div className="table-group-name-cell">
+        <div>
           <Link 
-            to={`/dashboard/groups/project-groups/${group.group_hash}`}
-            className="table-group-name"
-            style={{ 
-              color: 'var(--color-primary-500)',
-              textDecoration: 'none',
-              transition: 'color var(--transition-fast)'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.color = 'var(--color-primary-600)'}
-            onMouseOut={(e) => e.currentTarget.style.color = 'var(--color-primary-500)'}
+            to={`${ROUTES.PROJECT_GROUPS}/${group.group_hash}`}
+            className="font-medium text-primary hover:underline"
           >
             {group.group_name}
           </Link>
           {group.description && (
-            <div className="table-group-description">
+            <div className="text-sm text-muted-foreground truncate max-w-xs">
               {group.description}
             </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'permissions',
-      header: 'Permissions',
-      sortable: false,
-      render: (_value, group) => (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-1)' }}>
-          {group.permissions.slice(0, 3).map((permission, index) => (
-            <Badge key={index} variant="secondary" size="sm">
-              {permission}
-            </Badge>
-          ))}
-          {group.permissions.length > 3 && (
-            <Badge variant="secondary" size="sm">
-              +{group.permissions.length - 3} more
-            </Badge>
           )}
         </div>
       ),
@@ -78,7 +55,7 @@ export function ProjectGroupTable({
       align: 'center',
       width: '120px',
       render: (_value, group) => (
-        <Badge variant="info" size="sm">
+        <Badge variant="info">
           {group.project_count} {group.project_count !== 1 ? 'projects' : 'project'}
         </Badge>
       ),
@@ -89,7 +66,7 @@ export function ProjectGroupTable({
       sortable: true,
       width: '140px',
       render: (_value, group) => (
-        <span className="user-date">
+        <span className="text-sm text-muted-foreground">
           {formatDate(group.created_at)}
         </span>
       ),
@@ -113,11 +90,10 @@ export function ProjectGroupTable({
 
   const emptyAction = (
     <Button 
-      variant="primary" 
-      size="md"
-      onClick={() => window.location.href = '/dashboard/groups/project-groups/create'}
+      variant="primary"
+      onClick={() => window.location.href = ROUTES.PROJECT_GROUPS_CREATE}
     >
-      <PlusIcon size="sm" />
+      <Plus className="h-4 w-4" />
       Create Project Group
     </Button>
   );
@@ -130,8 +106,8 @@ export function ProjectGroupTable({
       showViewToggle={false}
       isLoading={isLoading}
       onSort={onSort}
-      emptyMessage="No project groups found. Create your first project group to organize permissions across projects."
-      emptyIcon={<GroupIcon size="xl" />}
+      emptyMessage="No project groups found. Create your first project group to organize related projects together."
+      emptyIcon={<FolderOpen className="h-10 w-10" />}
       emptyAction={emptyAction}
       className="project-group-table"
       skeletonRows={6}

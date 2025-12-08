@@ -68,9 +68,11 @@ export function usePermissionAssignments(): UsePermissionAssignmentsReturn {
   // Fetch My Permissions
   const fetchMyPermissions = useCallback(async () => {
     try {
-      const response = await permissionAssignmentsService.getMyPermissions();
-      if (response.success && response.data) {
-        setMyPermissions(response.data);
+      const response: any = await permissionAssignmentsService.getMyPermissions();
+      // API returns permissions array in response
+      const perms = response.permissions || response.data || [];
+      if (response.success !== false) {
+        setMyPermissions(perms);
       }
     } catch (err) {
       console.error('Failed to fetch my permissions:', err);
@@ -80,9 +82,11 @@ export function usePermissionAssignments(): UsePermissionAssignmentsReturn {
   // Fetch My Permission Sources
   const fetchMyPermissionSources = useCallback(async () => {
     try {
-      const response = await permissionAssignmentsService.getMyPermissionSources();
-      if (response.success && response.data) {
-        setMyPermissionSources(response.data);
+      const response: any = await permissionAssignmentsService.getMyPermissionSources();
+      // API returns sources object in response
+      const sources = response.sources || response.data?.sources || null;
+      if (response.success !== false && sources) {
+        setMyPermissionSources(sources);
       }
     } catch (err) {
       console.error('Failed to fetch my permission sources:', err);
@@ -113,11 +117,13 @@ export function usePermissionAssignments(): UsePermissionAssignmentsReturn {
   }, []);
 
   const getUserGroupPermissionGroups = useCallback(async (groupHash: string): Promise<PermissionGroupAssignment[]> => {
-    const response = await permissionAssignmentsService.getUserGroupPermissionGroups(groupHash);
-    if (!response.success || !response.data) {
+    const response: any = await permissionAssignmentsService.getUserGroupPermissionGroups(groupHash);
+    // API returns permission_groups array in response
+    const groups = response.permission_groups || response.data?.permission_groups || [];
+    if (response.success === false) {
       throw new Error('Failed to fetch user group permission groups');
     }
-    return response.data;
+    return groups;
   }, []);
 
   const bulkAssignPermissionGroupsToUserGroup = useCallback(async (groupHash: string, permissionGroupHashes: string[]) => {
@@ -155,38 +161,42 @@ export function usePermissionAssignments(): UsePermissionAssignmentsReturn {
   }, []);
 
   const getUserDirectPermissionGroups = useCallback(async (userHash: string): Promise<DirectPermissionAssignment[]> => {
-    const response = await permissionAssignmentsService.getUserDirectPermissionGroups(userHash);
-    if (!response.success || !response.data) {
+    const response: any = await permissionAssignmentsService.getUserDirectPermissionGroups(userHash);
+    // API returns direct_permission_groups array in response
+    const groups = response.direct_permission_groups || response.data?.direct_permission_groups || [];
+    if (response.success === false) {
       throw new Error('Failed to fetch user direct permission groups');
     }
-    return response.data;
+    return groups;
   }, []);
 
   // Current User Functions
   const getMyPermissions = useCallback(async (): Promise<string[]> => {
-    const response = await permissionAssignmentsService.getMyPermissions();
-    if (!response.success || !response.data) {
+    const response: any = await permissionAssignmentsService.getMyPermissions();
+    const perms = response.permissions || response.data || [];
+    if (response.success === false) {
       throw new Error('Failed to fetch my permissions');
     }
-    setMyPermissions(response.data);
-    return response.data;
+    setMyPermissions(perms);
+    return perms;
   }, []);
 
   const checkMyPermission = useCallback(async (permissionName: string): Promise<boolean> => {
     try {
-      const response = await permissionAssignmentsService.checkMyPermission(permissionName);
-      return response.data?.has_permission ?? false;
+      const response: any = await permissionAssignmentsService.checkMyPermission(permissionName);
+      return response.has_permission ?? response.data?.has_permission ?? false;
     } catch (err) {
       return false;
     }
   }, []);
 
   const getMyPermissionGroups = useCallback(async (): Promise<DirectPermissionAssignment[]> => {
-    const response = await permissionAssignmentsService.getMyPermissionGroups();
-    if (!response.success || !response.data) {
+    const response: any = await permissionAssignmentsService.getMyPermissionGroups();
+    const groups = response.direct_permission_groups || response.data?.direct_permission_groups || [];
+    if (response.success === false) {
       throw new Error('Failed to fetch my permission groups');
     }
-    return response.data;
+    return groups;
   }, []);
 
   const getMyPermissionSources = useCallback(async () => {
@@ -221,36 +231,40 @@ export function usePermissionAssignments(): UsePermissionAssignmentsReturn {
   }, []);
 
   const getProjectCatalogPermissionGroups = useCallback(async (projectHash: string): Promise<CatalogEntry[]> => {
-    const response = await permissionAssignmentsService.getProjectCatalogPermissionGroups(projectHash);
-    if (!response.success || !response.data) {
+    const response: any = await permissionAssignmentsService.getProjectCatalogPermissionGroups(projectHash);
+    const catalog = response.catalog || response.permission_groups || response.data || [];
+    if (response.success === false) {
       throw new Error('Failed to fetch project catalog permission groups');
     }
-    return response.data;
+    return catalog;
   }, []);
 
   const getPermissionGroupProjectCatalog = useCallback(async (permissionGroupHash: string): Promise<CatalogEntry[]> => {
-    const response = await permissionAssignmentsService.getPermissionGroupProjectCatalog(permissionGroupHash);
-    if (!response.success || !response.data) {
+    const response: any = await permissionAssignmentsService.getPermissionGroupProjectCatalog(permissionGroupHash);
+    const catalog = response.catalog || response.projects || response.data || [];
+    if (response.success === false) {
       throw new Error('Failed to fetch permission group project catalog');
     }
-    return response.data;
+    return catalog;
   }, []);
 
   // Usage Analytics Functions
   const getPermissionGroupUserGroups = useCallback(async (permissionGroupHash: string): Promise<any[]> => {
-    const response = await permissionAssignmentsService.getPermissionGroupUserGroups(permissionGroupHash);
-    if (!response.success || !response.data) {
+    const response: any = await permissionAssignmentsService.getPermissionGroupUserGroups(permissionGroupHash);
+    const userGroups = response.user_groups || response.data || [];
+    if (response.success === false) {
       throw new Error('Failed to fetch permission group user groups');
     }
-    return response.data;
+    return userGroups;
   }, []);
 
   const getPermissionGroupUsers = useCallback(async (permissionGroupHash: string): Promise<any[]> => {
-    const response = await permissionAssignmentsService.getPermissionGroupUsers(permissionGroupHash);
-    if (!response.success || !response.data) {
+    const response: any = await permissionAssignmentsService.getPermissionGroupUsers(permissionGroupHash);
+    const users = response.users || response.data || [];
+    if (response.success === false) {
       throw new Error('Failed to fetch permission group users');
     }
-    return response.data;
+    return users;
   }, []);
 
   // Refresh functions

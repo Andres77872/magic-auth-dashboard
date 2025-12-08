@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Input, Checkbox, LoadingSpinner, EmptyState } from '@/components/common';
-import { UserIcon, SearchIcon } from '@/components/icons';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/common';
+import { User as UserIcon, Search } from 'lucide-react';
 import { userService } from '@/services';
 import type { User } from '@/types/auth.types';
 import { useToast } from '@/hooks';
-import '../../../styles/components/bulk-member-assignment-modal.css';
 
 interface BulkMemberAssignmentModalProps {
   isOpen: boolean;
@@ -115,115 +125,112 @@ export const BulkMemberAssignmentModal: React.FC<BulkMemberAssignmentModalProps>
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={`Add Members to ${groupName}`}
-      size="lg"
-      closeOnBackdrop={!isSubmitting}
-      closeOnEscape={!isSubmitting}
-    >
-      <div className="bulk-member-assignment-modal">
-        <div className="bulk-member-search">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent size="lg">
+        <DialogHeader>
+          <DialogTitle>Add Members to {groupName}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
           <Input
             type="text"
             placeholder="Search users by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            leftIcon={<SearchIcon size="sm" />}
+            leftIcon={<Search className="h-4 w-4" />}
             disabled={isLoading}
+            fullWidth
           />
-        </div>
 
-        {selectedUserHashes.length > 0 && (
-          <div className="bulk-member-selection-info">
-            <span className="selection-count">
-              {selectedUserHashes.length} user{selectedUserHashes.length !== 1 ? 's' : ''} selected
-            </span>
-            <button
-              type="button"
-              className="clear-selection-btn"
-              onClick={() => setSelectedUserHashes([])}
-            >
-              Clear selection
-            </button>
-          </div>
-        )}
-
-        <div className="bulk-member-list-container">
-          {isLoading ? (
-            <div className="bulk-member-loading">
-              <LoadingSpinner size="md" />
-              <p>Loading users...</p>
+          {selectedUserHashes.length > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {selectedUserHashes.length} user{selectedUserHashes.length !== 1 ? 's' : ''} selected
+              </span>
+              <button
+                type="button"
+                className="text-primary hover:underline"
+                onClick={() => setSelectedUserHashes([])}
+              >
+                Clear selection
+              </button>
             </div>
-          ) : filteredUsers.length === 0 ? (
-            <EmptyState
-              icon={<UserIcon size="lg" />}
-              title={searchTerm ? 'No users found' : 'No available users'}
-              description={
-                searchTerm 
-                  ? 'Try adjusting your search criteria'
-                  : 'All users are already members of this group'
-              }
-            />
-          ) : (
-            <>
-              <div className="bulk-member-list-header">
-                <Checkbox
-                  checked={selectedUserHashes.length === filteredUsers.length}
-                  indeterminate={
-                    selectedUserHashes.length > 0 && 
-                    selectedUserHashes.length < filteredUsers.length
-                  }
-                  onChange={handleToggleAll}
-                  label="Select all"
-                />
-              </div>
-              <div className="bulk-member-list">
-                {filteredUsers.map(user => (
-                  <div key={user.user_hash} className="bulk-member-item">
-                    <Checkbox
-                      checked={selectedUserHashes.includes(user.user_hash)}
-                      onChange={() => handleToggleUser(user.user_hash)}
-                      label={
-                        <div className="bulk-member-info">
-                          <div className="bulk-member-name">{user.username}</div>
-                          {user.email && (
-                            <div className="bulk-member-email">{user.email}</div>
-                          )}
-                        </div>
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            </>
           )}
-        </div>
 
-        <div className="bulk-member-actions">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleSubmit}
-            loading={isSubmitting}
-            disabled={isSubmitting || selectedUserHashes.length === 0}
-          >
-            Add {selectedUserHashes.length > 0 ? `${selectedUserHashes.length} ` : ''}
-            Member{selectedUserHashes.length !== 1 ? 's' : ''}
-          </Button>
+          <div className="max-h-[400px] overflow-y-auto border rounded-md">
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <Spinner size="lg" />
+                <p className="text-sm text-muted-foreground mt-2">Loading users...</p>
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <EmptyState
+                icon={<UserIcon className="h-10 w-10" />}
+                title={searchTerm ? 'No users found' : 'No available users'}
+                description={
+                  searchTerm 
+                    ? 'Try adjusting your search criteria'
+                    : 'All users are already members of this group'
+                }
+              />
+            ) : (
+              <>
+                <div className="flex items-center gap-2 p-3 border-b bg-muted/50">
+                  <Checkbox
+                    checked={selectedUserHashes.length === filteredUsers.length}
+                    onCheckedChange={handleToggleAll}
+                    label="Select all"
+                  />
+                </div>
+                <div className="divide-y">
+                  {filteredUsers.map(user => (
+                    <div 
+                      key={user.user_hash} 
+                      className="flex items-center gap-3 p-3 hover:bg-accent/50 transition-colors"
+                    >
+                      <Checkbox
+                        checked={selectedUserHashes.includes(user.user_hash)}
+                        onCheckedChange={() => handleToggleUser(user.user_hash)}
+                      />
+                      <label 
+                        className="flex-1 cursor-pointer"
+                        onClick={() => handleToggleUser(user.user_hash)}
+                      >
+                        <div className="font-medium">{user.username}</div>
+                        {user.email && (
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
+                        )}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleSubmit}
+              loading={isSubmitting}
+              disabled={isSubmitting || selectedUserHashes.length === 0}
+            >
+              Add {selectedUserHashes.length > 0 ? `${selectedUserHashes.length} ` : ''}
+              Member{selectedUserHashes.length !== 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
         </div>
-      </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 };
 

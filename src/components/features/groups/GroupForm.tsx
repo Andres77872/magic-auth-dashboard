@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { Input, Textarea, Button, Card } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import type { GroupFormData } from '@/types/group.types';
 import { 
   validateRequired, 
@@ -93,77 +97,67 @@ export const GroupForm: React.FC<GroupFormProps> = ({
   };
 
   return (
-    <Card 
-      className="group-form-card"
-      title={mode === 'create' ? 'Create New Group' : 'Edit Group'}
-    >
-      <form onSubmit={handleSubmit} className="group-form">
-        {errors.general && (
-          <div className="error-banner">
-            {errors.general}
-          </div>
-        )}
+    <Card>
+      <CardHeader>
+        <CardTitle>{mode === 'create' ? 'Create New Group' : 'Edit Group'}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {errors.general && (
+            <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
+              {errors.general}
+            </div>
+          )}
 
-        <div className="group-form-group-spaced">
-          <label 
-            htmlFor="group_name"
-            className="group-form-label"
-          >
-            Group Name <span className="text-error">*</span>
-          </label>
-          <Input
-            id="group_name"
-            type="text"
-            value={formData.group_name}
-            onChange={(e) => handleInputChange('group_name', e.target.value)}
-            placeholder="Enter group name"
-            error={errors.group_name}
-            required
-          />
-          <div className="field-hint">
-            Choose a descriptive name for your group (3-50 characters)
+          <div className="space-y-2">
+            <Label htmlFor="group_name">
+              Group Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="group_name"
+              type="text"
+              value={formData.group_name}
+              onChange={(e) => handleInputChange('group_name', e.target.value)}
+              placeholder="Enter group name"
+              error={errors.group_name}
+              helperText={!errors.group_name ? "Choose a descriptive name for your group (3-50 characters)" : undefined}
+              fullWidth
+            />
           </div>
-        </div>
 
-        <div className="group-form-group-description">
-          <label 
-            htmlFor="description"
-            className="group-form-label"
-          >
-            Description
-          </label>
-          <Textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => handleInputChange('description', e.target.value)}
-            placeholder="Enter group description (optional)"
-            rows={3}
-            error={errors.description}
-          />
-          <div className="field-hint">
-            Optional description to help others understand this group's purpose
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              placeholder="Enter group description (optional)"
+              rows={3}
+              error={errors.description}
+              helperText={!errors.description ? "Optional description to help others understand this group's purpose" : undefined}
+            />
           </div>
-        </div>
 
-        <div className="form-actions">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => window.history.back()}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : (mode === 'create' ? 'Create Group' : 'Update Group')}
-          </Button>
-        </div>
-      </form>
+          <div className="flex gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => window.history.back()}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+            >
+              {mode === 'create' ? 'Create Group' : 'Update Group'}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
     </Card>
   );
 }; 

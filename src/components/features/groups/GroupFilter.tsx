@@ -1,5 +1,14 @@
 import React, { useState, useCallback } from 'react';
-import { Input, Button, Select } from '@/components/common';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Search, X } from 'lucide-react';
 import type { GroupListParams } from '@/types/group.types';
 
 interface GroupFilterProps {
@@ -54,39 +63,47 @@ export const GroupFilter: React.FC<GroupFilterProps> = ({
   const hasActiveFilters = searchTerm.length > 0;
 
   return (
-    <div className="group-filters-container">
-      <div className="filter-row-flex">
-        <div className="search-field">
-          <Input
-            type="search"
-            placeholder="Search groups by name or description..."
-            value={searchTerm}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            className="search-input"
-          />
-        </div>
-        
-        <div className="sort-field">
-          <Select
-            value={currentSortValue}
-            onChange={(value) => {
-              const [sort_by, sort_order] = value.split(':');
-              onFiltersChange({ sort_by, sort_order: sort_order as 'asc' | 'desc' });
-            }}
-            options={sortOptions}
-            placeholder="Sort by"
-          />
-        </div>
-        
-        <Button
-          variant="outline"
-          onClick={onClear}
-          disabled={!hasActiveFilters}
-          size="md"
-        >
-          Clear Filters
-        </Button>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <div className="flex-1">
+        <Input
+          type="search"
+          placeholder="Search groups by name or description..."
+          value={searchTerm}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          leftIcon={<Search className="h-4 w-4" />}
+          fullWidth
+        />
       </div>
+      
+      <div className="w-full sm:w-48">
+        <Select
+          value={currentSortValue}
+          onValueChange={(value) => {
+            const [sort_by, sort_order] = value.split(':');
+            onFiltersChange({ sort_by, sort_order: sort_order as 'asc' | 'desc' });
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            {sortOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      <Button
+        variant="outline"
+        onClick={onClear}
+        disabled={!hasActiveFilters}
+      >
+        <X className="h-4 w-4" />
+        Clear Filters
+      </Button>
     </div>
   );
 }; 

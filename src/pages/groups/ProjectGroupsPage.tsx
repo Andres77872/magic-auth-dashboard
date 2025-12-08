@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Input, Card } from '@/components/common';
-import { ProjectGroupTable } from '@/components/features/groups';
+import { 
+  PageContainer,
+  PageHeader,
+  Button,
+  DataView,
+  DataViewCard,
+  Badge,
+  ErrorState,
+  Pagination
+} from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
+import { ProjectGroupActionsMenu } from '@/components/features/groups/ProjectGroupActionsMenu';
 import { useProjectGroups } from '@/hooks';
+import { FolderOpen, Plus } from 'lucide-react';
+import { formatDate } from '@/utils/component-utils';
 import type { ProjectGroup } from '@/services/project-group.service';
 
 export function ProjectGroupsPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   const {
     projectGroups,
@@ -23,189 +34,206 @@ export function ProjectGroupsPage(): React.JSX.Element {
     navigate('/dashboard/groups/project-groups/create');
   };
 
-  const handleEditGroup = (group: ProjectGroup) => {
+  const handleEditGroup = useCallback((group: ProjectGroup) => {
     navigate(`/dashboard/groups/project-groups/${group.group_hash}/edit`);
-  };
+  }, [navigate]);
 
-  const handleViewGroup = (group: ProjectGroup) => {
+  const handleViewGroup = useCallback((group: ProjectGroup) => {
     navigate(`/dashboard/groups/project-groups/${group.group_hash}`);
-  };
+  }, [navigate]);
 
-  const handleDeleteGroup = async (group: ProjectGroup) => {
+  const handleDeleteGroup = useCallback(async (group: ProjectGroup) => {
     try {
       await deleteProjectGroup(group.group_hash);
-      // Refresh the list
       await fetchProjectGroups();
-    } catch (error) {
-      console.error('Failed to delete project group:', error);
-      // Handle error (show toast, etc.)
+    } catch (err) {
+      console.error('Failed to delete project group:', err);
     }
-  };
+  }, [deleteProjectGroup, fetchProjectGroups]);
 
-  const handleSearch = (term: string) => {
-    setSearchTerm(term);
+  const handleSearch = useCallback((term: string) => {
     fetchProjectGroups({ search: term, offset: 0 });
-  };
+  }, [fetchProjectGroups]);
 
-  const filteredGroups = projectGroups.filter(group =>
-    group.group_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSort = useCallback((key: keyof ProjectGroup, direction: 'asc' | 'desc') => {
+    fetchProjectGroups({ sort_by: key as string, sort_order: direction });
+  }, [fetchProjectGroups]);
+
+  const handlePageChange = useCallback((page: number) => {
+    const offset = (page - 1) * (pagination?.limit || 20);
+    fetchProjectGroups({ offset });
+  }, [pagination?.limit, fetchProjectGroups]);
+
+  const columns: DataViewColumn<ProjectGroup>[] = useMemo(() => [
+    {
+      key: 'group_name',
+      header: 'Group Name',
+      sortable: true,
+      render: (_value, group) => (
+        <div className="space-y-0.5">
+          <button 
+            onClick={() => handleViewGroup(group)}
+            className="font-medium text-primary hover:underline text-left"
+          >
+            {group.group_name}
+          </button>
+          {group.description && (
+            <p className="text-sm text-muted-foreground truncate max-w-xs">
+              {group.description}
+            </p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'project_count',
+      header: 'Projects',
+      sortable: true,
+      align: 'center',
+      width: '120px',
+      render: (_value, group) => (
+        <Badge variant="info">
+          {group.project_count} {group.project_count !== 1 ? 'projects' : 'project'}
+        </Badge>
+      ),
+    },
+    {
+      key: 'created_at',
+      header: 'Created',
+      sortable: true,
+      width: '140px',
+      render: (_value, group) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDate(group.created_at)}
+        </span>
+      ),
+    },
+    {
+      key: 'group_hash',
+      header: 'Actions',
+      width: '80px',
+      align: 'center',
+      render: (_value, group) => (
+        <ProjectGroupActionsMenu
+          group={group}
+          onEdit={handleEditGroup}
+          onDelete={handleDeleteGroup}
+          onView={handleViewGroup}
+        />
+      ),
+    },
+  ], [handleEditGroup, handleDeleteGroup, handleViewGroup]);
+
+  const renderCard = useCallback((group: ProjectGroup) => (
+    <DataViewCard
+      title={group.group_name}
+      description={group.description}
+      icon={<FolderOpen size={20} />}
+      stats={[
+        {
+          label: 'Projects',
+          value: <Badge variant="info">{group.project_count}</Badge>
+        },
+        {
+          label: 'Created',
+          value: formatDate(group.created_at)
+        }
+      ]}
+      actions={
+        <ProjectGroupActionsMenu
+          group={group}
+          onEdit={handleEditGroup}
+          onDelete={handleDeleteGroup}
+          onView={handleViewGroup}
+        />
+      }
+      onClick={() => handleViewGroup(group)}
+    />
+  ), [handleEditGroup, handleDeleteGroup, handleViewGroup]);
+
+  const currentPage = Math.floor((pagination?.offset || 0) / (pagination?.limit || 20)) + 1;
+  const totalPages = pagination ? Math.ceil(pagination.total / pagination.limit) : 0;
 
   if (error) {
     return (
-      <div className="page-container">
-        <Card className="error-card">
-          <h2>Error Loading Project Groups</h2>
-          <p>{error}</p>
-          <Button onClick={() => fetchProjectGroups()}>
-            Try Again
-          </Button>
-        </Card>
-      </div>
+      <PageContainer>
+        <ErrorState
+          icon={<FolderOpen size={24} />}
+          title="Failed to load project groups"
+          message={error}
+          onRetry={() => fetchProjectGroups()}
+          retryLabel="Try Again"
+          variant="card"
+          size="md"
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1>Project Groups</h1>
-          <p className="page-description">
-            Manage permission-based groups that can be assigned to multiple projects.
-          </p>
-        </div>
-        
-        <div className="page-actions">
-          <Button 
-            variant="primary" 
+    <PageContainer>
+      <PageHeader
+        title="Project Groups"
+        subtitle="Manage permission-based groups that can be assigned to multiple projects"
+        icon={<FolderOpen size={28} />}
+        actions={
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={<Plus size={16} />}
             onClick={handleCreateGroup}
           >
             Create Project Group
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="page-content">
-        <div className="content-toolbar">
-          <div className="search-section">
-            <Input
-              placeholder="Search project groups..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="max-w-300"
-            />
-          </div>
-
-          <div className="view-controls">
-            <button
-              className={`view-toggle ${viewMode === 'table' ? 'active' : ''}`}
-              onClick={() => setViewMode('table')}
-            >
-              Table
-            </button>
-            <button
-              className={`view-toggle ${viewMode === 'cards' ? 'active' : ''}`}
-              onClick={() => setViewMode('cards')}
-            >
-              Cards
-            </button>
-          </div>
-        </div>
-
-        <div className="content-main">
-          {viewMode === 'table' ? (
-            <ProjectGroupTable
-              projectGroups={filteredGroups}
-              isLoading={isLoading}
-              onEdit={handleEditGroup}
-              onDelete={handleDeleteGroup}
-              onView={handleViewGroup}
-            />
-          ) : (
-            <div className="project-groups-grid">
-              {filteredGroups.map(group => (
-                <ProjectGroupCard
-                  key={group.group_hash}
-                  group={group}
-                  onEdit={handleEditGroup}
-                  onDelete={handleDeleteGroup}
-                  onView={handleViewGroup}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-
-        {pagination && pagination.total > pagination.limit && (
-          <div className="content-footer">
-            <div className="pagination-info">
-              Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total} project groups
-            </div>
-            {/* Add pagination component here if needed */}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Project Group Card component for grid view
-interface ProjectGroupCardProps {
-  group: ProjectGroup;
-  onEdit: (group: ProjectGroup) => void;
-  onDelete: (group: ProjectGroup) => void;
-  onView: (group: ProjectGroup) => void;
-}
-
-function ProjectGroupCard({ group, onEdit, onDelete, onView }: ProjectGroupCardProps) {
-  return (
-    <Card className="project-group-card">
-      <div className="card-header">
-        <h3 
-          className="group-name cursor-pointer"
-          onClick={() => onView(group)}
-        >
-          {group.group_name}
-        </h3>
-        <div className="card-actions">
-          <Button size="sm" variant="outline" onClick={() => onEdit(group)}>
-            Edit
+      <DataView<ProjectGroup>
+        data={projectGroups}
+        columns={columns}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        showViewToggle={true}
+        showSearch={true}
+        onSearchChange={handleSearch}
+        searchPlaceholder="Search project groups..."
+        renderCard={renderCard}
+        gridColumns={{
+          mobile: 1,
+          tablet: 2,
+          desktop: 3
+        }}
+        onSort={handleSort}
+        isLoading={isLoading}
+        emptyMessage="No project groups found"
+        emptyIcon={<FolderOpen size={32} />}
+        emptyAction={
+          <Button
+            variant="primary"
+            leftIcon={<Plus size={16} />}
+            onClick={handleCreateGroup}
+          >
+            Create Your First Project Group
           </Button>
+        }
+        skeletonRows={6}
+      />
+
+      {pagination && pagination.total > pagination.limit && (
+        <div className="mt-6 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            Showing {projectGroups.length} of {pagination.total} project groups
+          </span>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={pagination.total}
+            itemsPerPage={pagination.limit}
+            onPageChange={handlePageChange}
+          />
         </div>
-      </div>
-      
-      <div className="card-content">
-        {group.description && (
-          <p className="group-description">{group.description}</p>
-        )}
-        
-        <div className="group-stats">
-          <div className="stat">
-            <span className="stat-label">Permissions:</span>
-            <span className="stat-value">{group.permissions.length}</span>
-          </div>
-          <div className="stat">
-            <span className="stat-label">Projects:</span>
-            <span className="stat-value">{group.project_count}</span>
-          </div>
-        </div>
-      </div>
-      
-      <div className="card-footer">
-        <small className="text-muted">
-          Created {new Date(group.created_at).toLocaleDateString()}
-        </small>
-        <Button 
-          size="sm" 
-          variant="outline" 
-          onClick={() => onDelete(group)}
-          className="text-error"
-        >
-          Delete
-        </Button>
-      </div>
-    </Card>
+      )}
+    </PageContainer>
   );
 }
 

@@ -8,6 +8,7 @@ export { GroupFormModal } from './GroupFormModal';
 export { GroupActionsMenu } from './GroupActionsMenu';
 export { GroupMembersTable } from './GroupMembersTable';
 export { GroupPermissionsTab } from './GroupPermissionsTab';
+export { GroupProjectGroupsTab } from './GroupProjectGroupsTab';
 export { BulkMemberAssignmentModal } from './BulkMemberAssignmentModal';
 export { ProjectGroupTable } from './ProjectGroupTable';
 export { ProjectGroupActionsMenu } from './ProjectGroupActionsMenu';

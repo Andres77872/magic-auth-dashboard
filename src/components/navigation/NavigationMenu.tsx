@@ -4,6 +4,7 @@ import type { UserType } from '@/types/auth.types';
 import { NAVIGATION_ITEMS } from '@/utils/routes';
 import { NavigationItem } from './NavigationItem';
 import { usePermissions } from '@/hooks';
+import { cn } from '@/lib/utils';
 
 interface NavigationMenuProps {
   userType: UserType | null;
@@ -27,19 +28,39 @@ export function NavigationMenu({ userType, collapsed }: NavigationMenuProps): Re
 
   const filteredItems = getFilteredNavigationItems();
 
-  // Check if navigation item is active with exact matching only
-  // This prevents parent routes from matching child routes
+  // Check if navigation item is active - supports both exact and prefix matching
   const isItemActive = (itemPath: string) => {
     const currentPath = location.pathname;
     
-    // Only exact match - no substring matching
-    // This ensures /dashboard/permissions doesn't match /dashboard/permissions/role-management
-    return currentPath === itemPath;
+    // Exact match for root paths
+    if (itemPath === '/dashboard') {
+      return currentPath === itemPath;
+    }
+    
+    // Prefix match for nested routes (e.g., /dashboard/users matches /dashboard/users/123)
+    return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
   };
 
   return (
-    <nav className="navigation-menu" role="navigation" aria-label="Dashboard navigation">
-      <ul className="nav-list">
+    <nav 
+      className={cn(
+        'flex flex-col py-2',
+        collapsed ? 'px-2' : 'px-3'
+      )} 
+      role="navigation" 
+      aria-label="Dashboard navigation"
+    >
+      {/* Navigation section label */}
+      {!collapsed && (
+        <div className="px-3 mb-2">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Main Menu
+          </span>
+        </div>
+      )}
+
+      {/* Navigation items */}
+      <ul className="list-none m-0 p-0 space-y-1">
         {filteredItems.map((item) => (
           <NavigationItem
             key={item.id}
@@ -49,17 +70,6 @@ export function NavigationMenu({ userType, collapsed }: NavigationMenuProps): Re
           />
         ))}
       </ul>
-      
-      {/* Navigation footer */}
-      <div className="navigation-footer">
-        {!collapsed && (
-          <div className="nav-footer-content">
-            <div className="user-type-indicator">
-              <span className="access-level">Access Level: {userType?.toUpperCase()}</span>
-            </div>
-          </div>
-        )}
-      </div>
     </nav>
   );
 }

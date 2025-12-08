@@ -1,5 +1,8 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Badge, Button } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Users, Calendar } from 'lucide-react';
 import type { UserGroup } from '@/types/group.types';
 import { ROUTES } from '@/utils/routes';
 import { formatDate } from '@/utils';
@@ -18,12 +21,12 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
   };
 
   return (
-    <Card className="group-card" padding="md" elevated>
-      <CardHeader>
-        <div>
-          <CardTitle>{group.group_name}</CardTitle>
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between pb-2">
+        <div className="space-y-1">
+          <CardTitle className="text-base">{group.group_name}</CardTitle>
           {group.description && (
-            <p className="card-subtitle">{group.description}</p>
+            <p className="text-sm text-muted-foreground">{group.description}</p>
           )}
         </div>
         <Button 
@@ -35,17 +38,19 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="group-stats">
-          <div className="stat-item">
-            <span className="stat-label">Members</span>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Members</span>
             <Badge variant="secondary">
               {group.member_count || 0}
             </Badge>
           </div>
           
-          <div className="stat-item">
-            <span className="stat-label">Created</span>
-            <span className="stat-value text-sm">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Created</span>
+            <span className="text-sm">
               {formatDate(group.created_at)}
             </span>
           </div>

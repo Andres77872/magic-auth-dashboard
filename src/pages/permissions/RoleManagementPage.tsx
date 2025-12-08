@@ -15,16 +15,15 @@ import {
   DataView
 } from '@/components/common';
 import {
-  GlobalRoleCard,
-  GlobalRoleForm,
-  PermissionGroupCard,
-  RoleAssignmentModal
-} from '@/components/features/roles';
-import { PlusIcon, SecurityIcon, LockIcon, UserIcon } from '@/components/icons';
+  RoleAssignmentModal,
+  RoleCard,
+  RoleForm,
+  PermissionGroupCard
+} from '@/components/features/permissions';
+import { Plus, ShieldCheck, Lock, User } from 'lucide-react';
 import { useToast } from '@/hooks';
 import type { GlobalRole, GlobalPermissionGroup } from '@/types/global-roles.types';
 import type { Tab, StatCardProps } from '@/components/common';
-import '../../styles/pages/role-management.css';
 
 export function RoleManagementPage(): React.JSX.Element {
   const {
@@ -111,9 +110,9 @@ export function RoleManagementPage(): React.JSX.Element {
     }
   };
 
-  const handleDeleteRole = async (roleHash: string) => {
+  const handleDeleteRole = async (role: GlobalRole) => {
     try {
-      await deleteRole(roleHash);
+      await deleteRole(role.role_hash);
       showToast('Role deleted successfully', 'success');
     } catch (error) {
       showToast('Failed to delete role', 'error');
@@ -145,10 +144,8 @@ export function RoleManagementPage(): React.JSX.Element {
     setShowRoleForm(true);
   };
 
-  const handleViewRolePermissions = (roleHash: string) => {
-    const role = roles.find(r => r.role_hash === roleHash);
-    setSelectedRole(role || null);
-    // Permission groups would be loaded here with additional hook method
+  const handleViewRolePermissions = (role: GlobalRole) => {
+    setSelectedRole(role);
   };
 
   // Generate tabs
@@ -156,19 +153,19 @@ export function RoleManagementPage(): React.JSX.Element {
     {
       id: 'roles',
       label: 'Roles',
-      icon: <SecurityIcon size={16} />,
+      icon: <ShieldCheck size={16} />,
       count: roles.length,
     },
     {
       id: 'groups',
       label: 'Permission Groups',
-      icon: <LockIcon size={16} />,
+      icon: <Lock size={16} />,
       count: permissionGroups.length,
     },
     {
       id: 'assignments',
       label: 'Assignments',
-      icon: <UserIcon size={16} />,
+      icon: <User size={16} />,
     },
   ];
 
@@ -177,17 +174,17 @@ export function RoleManagementPage(): React.JSX.Element {
     {
       title: 'Roles',
       value: roles.length,
-      icon: <SecurityIcon size={20} />,
+      icon: <ShieldCheck size={20} />,
     },
     {
       title: 'Permission Groups',
       value: permissionGroups.length,
-      icon: <LockIcon size={20} />,
+      icon: <Lock size={20} />,
     },
     {
       title: 'Users',
       value: users.length,
-      icon: <UserIcon size={20} />,
+      icon: <User size={20} />,
     },
   ];
 
@@ -196,7 +193,7 @@ export function RoleManagementPage(): React.JSX.Element {
       <PageHeader
         title="Role Management"
         subtitle="Manage global roles, permission groups, and role assignments"
-        icon={<SecurityIcon size={28} />}
+        icon={<ShieldCheck size={28} />}
         actions={
           <>
             {activeTab === 'roles' && (
@@ -207,7 +204,7 @@ export function RoleManagementPage(): React.JSX.Element {
                   setEditingRole(null);
                   setShowRoleForm(true);
                 }}
-                leftIcon={<PlusIcon size={16} />}
+                leftIcon={<Plus size={16} />}
               >
                 Create Role
               </Button>
@@ -217,7 +214,7 @@ export function RoleManagementPage(): React.JSX.Element {
                 variant="primary"
                 size="md"
                 onClick={() => setShowAssignmentModal(true)}
-                leftIcon={<UserIcon size={16} />}
+                leftIcon={<User size={16} />}
               >
                 Assign Roles
               </Button>
@@ -246,7 +243,7 @@ export function RoleManagementPage(): React.JSX.Element {
         size="lg"
         showCloseButton={true}
       >
-        <GlobalRoleForm
+        <RoleForm
           mode={editingRole ? 'edit' : 'create'}
           initialData={editingRole || undefined}
           onSubmit={editingRole ? handleUpdateRole : handleCreateRole}
@@ -277,12 +274,12 @@ export function RoleManagementPage(): React.JSX.Element {
           searchPlaceholder="Search roles..."
           defaultViewMode="grid"
           renderCard={(role) => (
-            <GlobalRoleCard
+            <RoleCard
               key={role.role_hash}
               role={role}
               onEdit={handleEditRole}
               onDelete={handleDeleteRole}
-              onViewPermissions={handleViewRolePermissions}
+              onManagePermissionGroups={() => handleViewRolePermissions(role)}
               onAssignUsers={() => {
                 setSelectedRole(role);
                 setShowAssignmentModal(true);
@@ -293,10 +290,10 @@ export function RoleManagementPage(): React.JSX.Element {
           )}
           isLoading={loadingRoles}
           emptyMessage="No roles found"
-          emptyIcon={<SecurityIcon size={48} aria-hidden="true" />}
+          emptyIcon={<ShieldCheck size={48} aria-hidden="true" />}
           emptyAction={
             <Button onClick={() => setShowRoleForm(true)} variant="primary">
-              <PlusIcon size={18} aria-hidden="true" />
+              <Plus size={18} aria-hidden="true" />
               Create Role
             </Button>
           }
@@ -327,7 +324,7 @@ export function RoleManagementPage(): React.JSX.Element {
             />
           ) : Object.keys(groupedPermissionGroups).length === 0 ? (
             <Card className="empty-state-card" padding="lg">
-              <LockIcon size={48} aria-hidden="true" />
+              <Lock size={48} aria-hidden="true" />
               <h3>No permission groups found</h3>
               <p>Permission groups are managed by the system</p>
             </Card>
@@ -348,14 +345,15 @@ export function RoleManagementPage(): React.JSX.Element {
                   ]}
                   viewMode="grid"
                   defaultViewMode="grid"
-                  renderCard={(group) => (
+                  renderCard={(group: GlobalPermissionGroup) => (
                     <PermissionGroupCard
                       key={group.group_hash}
                       group={group}
                       permissionCount={0}
-                      onViewPermissions={(hash) => console.log('View permissions:', hash)}
-                      onAssignToRole={selectedRole ? (hash) => handleAssignPermissionGroup(selectedRole.role_hash, hash) : undefined}
-                      isAssigned={false}
+                      onManagePermissions={selectedRole 
+                        ? () => handleAssignPermissionGroup(selectedRole.role_hash, group.group_hash) 
+                        : undefined
+                      }
                     />
                   )}
                   gridColumns={{
@@ -375,7 +373,7 @@ export function RoleManagementPage(): React.JSX.Element {
         <Card padding="lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <SecurityIcon size={20} aria-hidden="true" />
+              <ShieldCheck size={20} aria-hidden="true" />
               Role Assignment Overview
             </CardTitle>
           </CardHeader>
@@ -404,7 +402,7 @@ export function RoleManagementPage(): React.JSX.Element {
 
             <div className="assignment-actions">
               <Button onClick={() => setShowAssignmentModal(true)} variant="primary">
-                <UserIcon size={18} aria-hidden="true" />
+                <User size={18} aria-hidden="true" />
                 Assign Roles to Users
               </Button>
             </div>

@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ActionsMenu, ConfirmDialog } from '@/components/common';
-import type { ActionMenuItem } from '@/components/common';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ConfirmDialog } from '@/components/common';
+import { MoreHorizontal, Eye, Pencil, Trash2, Archive } from 'lucide-react';
 import { usePermissions, useToast } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
-import { ViewIcon, EditIcon, DeleteIcon, LockIcon } from '@/components/icons';
 import { projectService } from '@/services';
 import type { ProjectDetails } from '@/types/project.types';
 
@@ -103,44 +110,46 @@ export const ProjectActionsMenu: React.FC<ProjectActionsMenuProps> = ({
   const canArchive = hasPermission('projects:archive');
   const isActive = project.is_active ?? true;
 
-  const menuItems: ActionMenuItem[] = [
-    {
-      key: 'view',
-      label: 'View Details',
-      icon: <ViewIcon size={16} />,
-      onClick: handleViewDetails,
-    },
-    {
-      key: 'edit',
-      label: 'Edit Project',
-      icon: <EditIcon size={16} />,
-      onClick: handleEditProject,
-      hidden: !canEdit,
-    },
-    {
-      key: 'archive',
-      label: isActive ? 'Archive Project' : 'Unarchive Project',
-      icon: <LockIcon size={16} />,
-      onClick: handleArchiveClick,
-      hidden: !canArchive,
-    },
-    {
-      key: 'delete',
-      label: 'Delete Project',
-      icon: <DeleteIcon size={16} />,
-      onClick: handleDeleteClick,
-      hidden: !canDelete,
-      destructive: true,
-    },
-  ];
-
   return (
     <>
-      <ActionsMenu
-        items={menuItems}
-        ariaLabel={`Actions for ${project.project_name}`}
-        placement="bottom-right"
-      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <span className="sr-only">Actions for {project.project_name}</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={handleViewDetails}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem onClick={handleEditProject}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit Project
+            </DropdownMenuItem>
+          )}
+          {canArchive && (
+            <DropdownMenuItem onClick={handleArchiveClick}>
+              <Archive className="mr-2 h-4 w-4" />
+              {isActive ? 'Archive Project' : 'Unarchive Project'}
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleDeleteClick}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Project
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

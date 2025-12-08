@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Input, Textarea, Button } from '@/components/common';
-import { FormField } from '@/components/forms';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import type { GroupFormData, UserGroup } from '@/types/group.types';
 
 interface GroupFormModalProps {
@@ -108,28 +117,22 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={mode === 'create' ? 'Create New Group' : 'Edit Group'}
-      size="md"
-      closeOnBackdrop={!isSubmitting}
-      closeOnEscape={!isSubmitting}
-    >
-      <form onSubmit={handleSubmit}>
-        <div className="modal-form-content">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent size="md">
+        <DialogHeader>
+          <DialogTitle>{mode === 'create' ? 'Create New Group' : 'Edit Group'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
           {errors.general && (
-            <div className="form-alert form-alert-error" role="alert">
+            <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm" role="alert">
               {errors.general}
             </div>
           )}
 
-          <FormField
-            label="Group Name"
-            htmlFor="group_name"
-            error={errors.group_name}
-            required
-          >
+          <div className="space-y-2">
+            <Label htmlFor="group_name">
+              Group Name <span className="text-destructive">*</span>
+            </Label>
             <Input
               id="group_name"
               type="text"
@@ -137,17 +140,15 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({
               onChange={(e) => handleInputChange('group_name', e.target.value)}
               placeholder="Enter group name"
               disabled={isSubmitting}
-              required
-              autoFocus
+              error={errors.group_name}
               helperText={!errors.group_name ? "Choose a descriptive name for your group (3-50 characters)" : undefined}
+              autoFocus
+              fullWidth
             />
-          </FormField>
+          </div>
 
-          <FormField
-            label="Description"
-            htmlFor="description"
-            error={errors.description}
-          >
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -155,32 +156,32 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({
               placeholder="Enter group description (optional)"
               rows={4}
               disabled={isSubmitting}
+              error={errors.description}
               helperText={!errors.description ? "Optional description to help others understand this group's purpose" : undefined}
             />
-          </FormField>
-        </div>
+          </div>
 
-        <div className="modal-form-actions">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          
-          <Button
-            type="submit"
-            variant="primary"
-            loading={isSubmitting}
-            disabled={isSubmitting}
-          >
-            {mode === 'create' ? 'Create Group' : 'Update Group'}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+            >
+              {mode === 'create' ? 'Create Group' : 'Update Group'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

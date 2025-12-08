@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useState, useId } from 'react';
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { ToastVariant, ToastAction } from '../types';
-import './Toast.css';
 
 export interface ToastProps {
   id?: string;
@@ -12,30 +13,23 @@ export interface ToastProps {
   className?: string;
 }
 
-const icons = {
-  success: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  error: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
-    </svg>
-  ),
-  warning: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M12 9v4M12 17h.01" strokeLinecap="round" />
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-    </svg>
-  ),
-  info: (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 16v-4M12 8h.01" strokeLinecap="round" />
-    </svg>
-  ),
+const variantStyles: Record<ToastVariant, { container: string; icon: React.ReactNode }> = {
+  success: {
+    container: 'border-success/50 bg-success/10',
+    icon: <CheckCircle className="h-5 w-5 text-success" />,
+  },
+  error: {
+    container: 'border-destructive/50 bg-destructive/10',
+    icon: <XCircle className="h-5 w-5 text-destructive" />,
+  },
+  warning: {
+    container: 'border-warning/50 bg-warning/10',
+    icon: <AlertTriangle className="h-5 w-5 text-warning" />,
+  },
+  info: {
+    container: 'border-info/50 bg-info/10',
+    icon: <Info className="h-5 w-5 text-info" />,
+  },
 };
 
 export const Toast = forwardRef<HTMLDivElement, ToastProps>(
@@ -75,28 +69,31 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
       }, 300);
     };
 
-    const classes = [
-      'toast',
-      `toast-${variant}`,
-      isVisible && 'toast-visible',
-      isExiting && 'toast-exiting',
-      className,
-    ]
-      .filter(Boolean)
-      .join(' ');
+    const styles = variantStyles[variant];
 
     return (
-      <div ref={ref} className={classes} role="alert" aria-live="polite">
-        <div className="toast-icon" aria-hidden="true">
-          {icons[variant]}
+      <div 
+        ref={ref} 
+        className={cn(
+          'flex items-start gap-3 p-4 rounded-lg border shadow-lg transition-all duration-300',
+          styles.container,
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2',
+          isExiting && 'opacity-0 translate-y-2',
+          className
+        )} 
+        role="alert" 
+        aria-live="polite"
+      >
+        <div className="shrink-0" aria-hidden="true">
+          {styles.icon}
         </div>
 
-        <div className="toast-body">
-          <p className="toast-message">{message}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground">{message}</p>
           {action && (
             <button
               type="button"
-              className="toast-action"
+              className="mt-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
               onClick={action.onClick}
             >
               {action.label}
@@ -106,13 +103,11 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
 
         <button
           type="button"
-          className="toast-close"
+          className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
           onClick={handleClose}
           aria-label="Close notification"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <X className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
     );

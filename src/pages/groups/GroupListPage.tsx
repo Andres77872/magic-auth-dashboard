@@ -9,13 +9,14 @@ import {
   ConfirmDialog,
   DataView,
   DataViewCard,
-  Badge
+  Badge,
+  ErrorState
 } from '@/components/common';
 import type { Filter, DataViewColumn } from '@/components/common';
 import { useGroups } from '@/hooks';
 import { GroupActionsMenu } from '@/components/features/groups/GroupActionsMenu';
 import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
-import { GroupIcon, PlusIcon } from '@/components/icons';
+import { Users, Plus } from 'lucide-react';
 import { useToast } from '@/hooks';
 import { formatDate, formatCount } from '@/utils/component-utils';
 import type { GroupListParams, UserGroup, GroupFormData } from '@/types/group.types';
@@ -163,12 +164,12 @@ export const GroupListPage: React.FC = () => {
       header: 'Group Name',
       sortable: true,
       render: (_value: any, group: UserGroup) => (
-        <div className="table-group-name-cell">
-          <div className="table-group-name">{group.group_name}</div>
+        <div className="space-y-0.5">
+          <div className="font-medium">{group.group_name}</div>
           {group.description && (
-            <div className="table-group-description">
+            <p className="text-sm text-muted-foreground truncate max-w-xs">
               {group.description}
-            </div>
+            </p>
           )}
         </div>
       )
@@ -213,7 +214,7 @@ export const GroupListPage: React.FC = () => {
     <DataViewCard
       title={group.group_name}
       description={group.description}
-      icon={<GroupIcon size={24} />}
+      icon={<Users size={24} />}
       stats={[
         {
           label: 'Members',
@@ -265,12 +266,12 @@ export const GroupListPage: React.FC = () => {
       <PageHeader
         title="User Groups"
         subtitle="Manage user groups and their memberships"
-        icon={<GroupIcon size={28} />}
+        icon={<Users size={28} />}
         actions={
           <Button
             variant="primary"
             size="md"
-            leftIcon={<PlusIcon size={16} />}
+            leftIcon={<Plus size={16} />}
             onClick={handleOpenCreateModal}
             aria-label="Create new group"
           >
@@ -280,7 +281,7 @@ export const GroupListPage: React.FC = () => {
       />
 
       {/* Filter Section */}
-      <div className="filter-section">
+      <div className="mb-4">
         <FilterBar
           filters={filterBarFilters}
           onClearAll={handleClearFilters}
@@ -289,16 +290,15 @@ export const GroupListPage: React.FC = () => {
 
       {/* Error State */}
       {error ? (
-        <div className="data-view-error">
-          <div className="error-content">
-            <GroupIcon size={32} />
-            <h3>Failed to load groups</h3>
-            <p>{error}</p>
-            <Button onClick={() => fetchGroups()} variant="primary">
-              Try Again
-            </Button>
-          </div>
-        </div>
+        <ErrorState
+          icon={<Users size={24} />}
+          title="Failed to load groups"
+          message={error}
+          onRetry={() => fetchGroups()}
+          retryLabel="Try Again"
+          variant="card"
+          size="md"
+        />
       ) : (
         /* Data View - Unified Table and Grid with Integrated Toolbar */
         <DataView<UserGroup>
@@ -320,11 +320,11 @@ export const GroupListPage: React.FC = () => {
           onSort={handleSort}
           isLoading={isLoading}
           emptyMessage="No groups found"
-          emptyIcon={<GroupIcon size={32} />}
+          emptyIcon={<Users size={32} />}
           emptyAction={
             <Button
               variant="primary"
-              leftIcon={<PlusIcon size={16} />}
+              leftIcon={<Plus size={16} />}
               onClick={handleOpenCreateModal}
               aria-label="Create your first group"
             >
@@ -332,16 +332,16 @@ export const GroupListPage: React.FC = () => {
             </Button>
           }
           skeletonRows={6}
-          className="groups-data-view"
+          className=""
         />
       )}
 
       {/* Pagination */}
       {pagination && pagination.total > pagination.limit && (
-        <div className="pagination-section">
-          <div className="pagination-info">
-            <span>Showing {groups.length} of {pagination.total} groups</span>
-          </div>
+        <div className="mt-6 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            Showing {groups.length} of {pagination.total} groups
+          </span>
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

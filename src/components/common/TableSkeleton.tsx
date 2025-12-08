@@ -1,6 +1,14 @@
 import React from 'react';
-import { Skeleton } from '../primitives';
-import { cn } from '@/utils/component-utils';
+import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface TableSkeletonProps {
   rows?: number;
@@ -16,31 +24,35 @@ export function TableSkeleton({
   showHeader = true,
 }: TableSkeletonProps): React.JSX.Element {
   return (
-    <div className={cn('table-skeleton', className)} role="status" aria-label="Loading table data">
-      <table className="table-skeleton__table">
+    <div
+      className={cn('rounded-md border', className)}
+      role="status"
+      aria-label="Loading table data"
+    >
+      <Table>
         {showHeader && (
-          <thead className="table-skeleton__header">
-            <tr>
+          <TableHeader className="bg-muted/50">
+            <TableRow>
               {Array.from({ length: columns }).map((_, index) => (
-                <th key={`header-${index}`} className="table-skeleton__header-cell">
-                  <Skeleton variant="text" width="80%" />
-                </th>
+                <TableHead key={`header-${index}`}>
+                  <Skeleton className="h-4 w-4/5" />
+                </TableHead>
               ))}
-            </tr>
-          </thead>
+            </TableRow>
+          </TableHeader>
         )}
-        <tbody className="table-skeleton__body">
+        <TableBody>
           {Array.from({ length: rows }).map((_, rowIndex) => (
-            <tr key={`row-${rowIndex}`} className="table-skeleton__row">
+            <TableRow key={`row-${rowIndex}`}>
               {Array.from({ length: columns }).map((_, colIndex) => (
-                <td key={`cell-${rowIndex}-${colIndex}`} className="table-skeleton__cell">
-                  <Skeleton variant="text" width="90%" />
-                </td>
+                <TableCell key={`cell-${rowIndex}-${colIndex}`}>
+                  <Skeleton className="h-4 w-[90%]" />
+                </TableCell>
               ))}
-            </tr>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

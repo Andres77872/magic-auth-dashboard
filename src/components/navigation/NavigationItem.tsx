@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import type { NavItem } from '@/utils/routes';
 import { 
-  DashboardIcon, 
-  UserIcon, 
-  ProjectIcon, 
-  GroupIcon, 
-  SecurityIcon, 
-  SettingsIcon, 
-  ChevronIcon,
-  UserBadgeIcon
-} from '@/components/icons';
+  ChevronDown, 
+  LayoutDashboard, 
+  User, 
+  FolderKanban, 
+  Users, 
+  ShieldCheck, 
+  Settings, 
+  UserCog 
+} from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 interface NavigationItemProps {
   item: NavItem;
@@ -25,63 +27,105 @@ export function NavigationItem({
   collapsed,
   level = 0,
 }: NavigationItemProps): React.JSX.Element {
-  const [showTooltip, setShowTooltip] = useState(false);
   const hasChildren = item.children && item.children.length > 0;
 
-  // Get icon component based on icon name
+  // Get icon component based on icon name - consistent 20px size
   const getIcon = (iconName: string) => {
-    const iconSize = 20; // MD size from design system
+    const iconSize = 20;
     const icons: Record<string, React.ReactElement> = {
-      dashboard: <DashboardIcon size={iconSize} aria-hidden="true" />,
-      users: <UserIcon size={iconSize} aria-hidden="true" />,
-      folder: <ProjectIcon size={iconSize} aria-hidden="true" />,
-      'users-group': <GroupIcon size={iconSize} aria-hidden="true" />,
-      shield: <SecurityIcon size={iconSize} aria-hidden="true" />,
-      'user-badge': <UserBadgeIcon size={iconSize} aria-hidden="true" />,
-      settings: <SettingsIcon size={iconSize} aria-hidden="true" />,
+      dashboard: <LayoutDashboard size={iconSize} aria-hidden="true" />,
+      users: <User size={iconSize} aria-hidden="true" />,
+      folder: <FolderKanban size={iconSize} aria-hidden="true" />,
+      'users-group': <Users size={iconSize} aria-hidden="true" />,
+      shield: <ShieldCheck size={iconSize} aria-hidden="true" />,
+      'user-badge': <UserCog size={iconSize} aria-hidden="true" />,
+      settings: <Settings size={iconSize} aria-hidden="true" />,
     };
 
-    return icons[iconName] || <DashboardIcon size={iconSize} aria-hidden="true" />;
+    return icons[iconName] || <LayoutDashboard size={iconSize} aria-hidden="true" />;
   };
 
-  return (
-    <li className={`nav-item ${isActive ? 'active' : ''} ${hasChildren ? 'has-children' : ''}`}>
-      {/* Tooltip for collapsed sidebar */}
-      {collapsed && showTooltip && (
-        <div className="nav-tooltip" role="tooltip">
-          {item.label}
-        </div>
+  const linkContent = (
+    <Link
+      to={item.path}
+      className={cn(
+        'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg',
+        'no-underline transition-all duration-200',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+        // Default state
+        'text-muted-foreground',
+        // Hover state
+        'hover:bg-muted hover:text-foreground',
+        // Collapsed state centering
+        collapsed && 'justify-center px-0',
+        // Active state
+        isActive && [
+          'bg-primary text-primary-foreground shadow-md',
+          'hover:bg-primary/90 hover:text-primary-foreground',
+        ]
+      )}
+      aria-label={collapsed ? item.label : undefined}
+      aria-current={isActive ? 'page' : undefined}
+    >
+      {/* Active indicator bar */}
+      {isActive && !collapsed && (
+        <span 
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground/30 rounded-r-full"
+          aria-hidden="true" 
+        />
       )}
 
-      <Link
-        to={item.path}
-        className="nav-link"
-        onMouseEnter={() => collapsed && setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-        onFocus={() => collapsed && setShowTooltip(true)}
-        onBlur={() => setShowTooltip(false)}
-        aria-label={collapsed ? item.label : undefined}
-        aria-current={isActive ? 'page' : undefined}
-        title={collapsed ? item.label : undefined}
+      {/* Icon */}
+      <span 
+        className={cn(
+          'flex items-center justify-center shrink-0 transition-transform duration-200',
+          !collapsed && 'group-hover:scale-110',
+          collapsed && 'w-10 h-10 rounded-lg',
+          collapsed && !isActive && 'group-hover:bg-muted',
+          collapsed && isActive && 'bg-primary-foreground/10'
+        )}
       >
-        <span className="nav-icon">
-          {getIcon(item.icon)}
-        </span>
-        
-        {!collapsed && (
-          <span className="nav-label">{item.label}</span>
-        )}
+        {getIcon(item.icon)}
+      </span>
+      
+      {/* Label */}
+      {!collapsed && (
+        <span className="flex-1 text-sm font-medium truncate">{item.label}</span>
+      )}
 
-        {!collapsed && hasChildren && (
-          <span className="nav-arrow" aria-hidden="true">
-            <ChevronIcon size={16} />
-          </span>
-        )}
-      </Link>
+      {/* Expand indicator for items with children */}
+      {!collapsed && hasChildren && (
+        <span className="ml-auto transition-transform" aria-hidden="true">
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </span>
+      )}
+    </Link>
+  );
+
+  return (
+    <li className="relative">
+      {collapsed ? (
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {linkContent}
+            </TooltipTrigger>
+            <TooltipContent 
+              side="right" 
+              sideOffset={12}
+              className="font-medium"
+            >
+              {item.label}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        linkContent
+      )}
 
       {/* Nested items (for future expansion) */}
       {!collapsed && hasChildren && (
-        <ul className="nav-submenu">
+        <ul className="list-none m-0 p-0 pl-4 mt-1 space-y-1">
           {item.children?.map((child) => (
             <NavigationItem
               key={child.id}

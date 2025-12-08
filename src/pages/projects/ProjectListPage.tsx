@@ -6,13 +6,14 @@ import {
   DataView,
   DataViewCard,
   Badge,
-  Pagination
+  Pagination,
+  ErrorState
 } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { ProjectActionsMenu } from '@/components/features/projects/ProjectActionsMenu';
 import { ProjectFormModal } from '@/components/features/projects/ProjectFormModal';
 import { useProjects } from '@/hooks';
-import { ProjectIcon, PlusIcon } from '@/components/icons';
+import { FolderKanban, Plus } from 'lucide-react';
 import { formatDate, formatCount } from '@/utils/component-utils';
 import type { ProjectDetails } from '@/types/project.types';
 
@@ -146,7 +147,7 @@ export const ProjectListPage: React.FC = () => {
     <DataViewCard
       title={project.project_name}
       description={project.project_description}
-      icon={<ProjectIcon size={24} />}
+      icon={<FolderKanban size={24} />}
       badges={[
         <Badge key="status" variant={project.is_active ? 'success' : 'error'}>
           {project.is_active ? 'Active' : 'Inactive'}
@@ -178,12 +179,12 @@ export const ProjectListPage: React.FC = () => {
       <PageHeader
         title="Project Management"
         subtitle="Manage and organize your projects"
-        icon={<ProjectIcon size={28} />}
+        icon={<FolderKanban size={28} />}
         actions={
           <Button 
             variant="primary"
             size="md"
-            leftIcon={<PlusIcon size={16} />}
+            leftIcon={<Plus size={16} />}
             onClick={handleCreateClick}
             aria-label="Create a new project"
           >
@@ -194,16 +195,15 @@ export const ProjectListPage: React.FC = () => {
 
       {/* Error State */}
       {error ? (
-        <div className="data-view-error">
-          <div className="error-content">
-            <ProjectIcon size={32} />
-            <h3>Failed to load projects</h3>
-            <p>{error}</p>
-            <Button onClick={fetchProjects} variant="primary">
-              Try Again
-            </Button>
-          </div>
-        </div>
+        <ErrorState
+          icon={<FolderKanban size={24} />}
+          title="Failed to load projects"
+          message={error}
+          onRetry={fetchProjects}
+          retryLabel="Try Again"
+          variant="card"
+          size="md"
+        />
       ) : (
         /* Data View - Unified Table and Grid with Integrated Toolbar */
         <DataView<ProjectDetails>
@@ -225,11 +225,11 @@ export const ProjectListPage: React.FC = () => {
           onSort={(key, direction) => handleSortChange(key as string, direction)}
           isLoading={isLoading}
           emptyMessage={searchQuery ? 'No projects match your search criteria' : 'No projects found'}
-          emptyIcon={<ProjectIcon size={32} />}
+          emptyIcon={<FolderKanban size={32} />}
           emptyAction={
             <Button
               variant="primary"
-              leftIcon={<PlusIcon size={16} />}
+              leftIcon={<Plus size={16} />}
               onClick={handleCreateClick}
               aria-label="Create your first project"
             >

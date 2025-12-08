@@ -1,5 +1,3 @@
-// ⚠️ DEPRECATED: Use DataView from @/components/common instead
-// These components are kept for backward compatibility but should not be used in new code
 export { ProjectTable } from './ProjectTable';
 export { ProjectCard } from './ProjectCard';
 export { ProjectFilter } from './ProjectFilter';
@@ -11,4 +9,9 @@ export { ProjectMembersTab } from './ProjectMembersTab';
 export { ProjectSettingsTab } from './ProjectSettingsTab';
 export { ProjectGroupsTab } from './ProjectGroupsTab';
 export { ProjectPermissionsTab } from './ProjectPermissionsTab';
-export { AssignGroupToProjectModal } from './AssignGroupToProjectModal'; 
+
+// NOTE: Project access is managed through Groups-of-Groups architecture:
+// User -> User Group -> Project Group -> Project
+// Access is granted via:
+// 1. POST /admin/project-groups/{hash}/projects - Add project to project group
+// 2. POST /admin/user-groups/{hash}/project-groups - Grant user group access to project group 

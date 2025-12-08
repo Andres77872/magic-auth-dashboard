@@ -1,5 +1,8 @@
 import React from 'react';
-import { UserIcon, CheckIcon, WarningIcon, GroupIcon } from '@/components/icons';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { User as UserIcon, Check, AlertTriangle, Users } from 'lucide-react';
 import type { User } from '@/types/auth.types';
 
 interface UserStatsProps {
@@ -15,26 +18,30 @@ interface StatCardProps {
   isLoading?: boolean;
 }
 
-function StatCard({ icon, label, value, variant = 'default', isLoading }: StatCardProps) {
-  const variantClasses = {
-    default: 'stat-card-default',
-    success: 'stat-card-success',
-    warning: 'stat-card-warning',
-    info: 'stat-card-info',
-  };
+const variantStyles = {
+  default: 'bg-card text-foreground [&_.stat-icon]:bg-muted [&_.stat-icon]:text-muted-foreground',
+  success: 'bg-card text-foreground [&_.stat-icon]:bg-green-100 [&_.stat-icon]:text-green-600 dark:[&_.stat-icon]:bg-green-950 dark:[&_.stat-icon]:text-green-400',
+  warning: 'bg-card text-foreground [&_.stat-icon]:bg-yellow-100 [&_.stat-icon]:text-yellow-600 dark:[&_.stat-icon]:bg-yellow-950 dark:[&_.stat-icon]:text-yellow-400',
+  info: 'bg-card text-foreground [&_.stat-icon]:bg-blue-100 [&_.stat-icon]:text-blue-600 dark:[&_.stat-icon]:bg-blue-950 dark:[&_.stat-icon]:text-blue-400',
+};
 
+function StatCard({ icon, label, value, variant = 'default', isLoading }: StatCardProps) {
   return (
-    <div className={`user-stat-card ${variantClasses[variant]}`}>
-      <div className="stat-icon">{icon}</div>
-      <div className="stat-content">
-        <div className="stat-label">{label}</div>
-        {isLoading ? (
-          <div className="stat-value skeleton skeleton-text"></div>
-        ) : (
-          <div className="stat-value">{value}</div>
-        )}
-      </div>
-    </div>
+    <Card className={cn('overflow-hidden', variantStyles[variant])}>
+      <CardContent className="flex items-center gap-4 p-4">
+        <div className="stat-icon flex h-12 w-12 items-center justify-center rounded-lg">
+          {icon}
+        </div>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-muted-foreground">{label}</span>
+          {isLoading ? (
+            <Skeleton className="h-7 w-16" />
+          ) : (
+            <span className="text-2xl font-bold">{value}</span>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -50,7 +57,7 @@ export function UserStats({ users, isLoading }: UserStatsProps): React.JSX.Eleme
   };
 
   return (
-    <div className="user-stats-container">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
         icon={<UserIcon size={20} aria-hidden="true" />}
         label="Total Users"
@@ -59,21 +66,21 @@ export function UserStats({ users, isLoading }: UserStatsProps): React.JSX.Eleme
         isLoading={isLoading}
       />
       <StatCard
-        icon={<CheckIcon size={20} aria-hidden="true" />}
+        icon={<Check size={20} aria-hidden="true" />}
         label="Active Users"
         value={activeUsers}
         variant="success"
         isLoading={isLoading}
       />
       <StatCard
-        icon={<WarningIcon size={20} aria-hidden="true" />}
+        icon={<AlertTriangle size={20} aria-hidden="true" />}
         label="Inactive Users"
         value={inactiveUsers}
         variant="warning"
         isLoading={isLoading}
       />
       <StatCard
-        icon={<GroupIcon size={20} aria-hidden="true" />}
+        icon={<Users size={20} aria-hidden="true" />}
         label="Admin Users"
         value={usersByType.admin}
         variant="info"

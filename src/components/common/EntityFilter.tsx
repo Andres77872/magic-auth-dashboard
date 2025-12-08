@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Select, Button } from '../primitives';
-import { SearchIcon, CloseIcon } from '@/components/icons';
+import { Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useDebouncedCallback } from '@/hooks';
-import { cn } from '@/utils/component-utils';
 
 export interface FilterOption {
   value: string;
@@ -27,10 +36,6 @@ export interface EntityFilterProps<T extends Record<string, any>> {
   className?: string;
 }
 
-/**
- * Generic EntityFilter component for consistent filtering UI across the application
- * Follows Design System guidelines for spacing, icons, and interactions
- */
 export function EntityFilter<T extends Record<string, any>>({
   filters,
   onFiltersChange,
@@ -42,20 +47,17 @@ export function EntityFilter<T extends Record<string, any>>({
     (filters.search as string) || ''
   );
 
-  // Debounced search handler (300ms delay per UX guidelines)
   const debouncedSearch = useDebouncedCallback((value: string) => {
     onFiltersChange({
       search: value.trim() || undefined,
-      offset: 0, // Reset to first page on search
+      offset: 0,
     } as unknown as Partial<T>);
   }, 300);
 
-  // Handle search input changes
   useEffect(() => {
     debouncedSearch(searchValue);
   }, [searchValue, debouncedSearch]);
 
-  // Sync with external filter changes
   useEffect(() => {
     if (filters.search !== searchValue) {
       setSearchValue((filters.search as string) || '');
@@ -63,15 +65,14 @@ export function EntityFilter<T extends Record<string, any>>({
   }, [filters.search]);
 
   const handleFilterChange = (key: keyof T, value: string) => {
-    // Parse boolean values from string
-    let parsedValue: any = value;
+    let parsedValue: unknown = value;
     if (value === 'true') parsedValue = true;
     if (value === 'false') parsedValue = false;
     if (value === '') parsedValue = undefined;
 
     onFiltersChange({
       [key]: parsedValue,
-      offset: 0, // Reset to first page on filter change
+      offset: 0,
     } as unknown as Partial<T>);
   };
 
@@ -88,7 +89,6 @@ export function EntityFilter<T extends Record<string, any>>({
     if (onClear) {
       onClear();
     } else {
-      // Default clear behavior - reset all filters
       const clearedFilters = Object.keys(filters).reduce((acc, key) => {
         return { ...acc, [key]: undefined };
       }, {} as Partial<T>);
@@ -96,7 +96,6 @@ export function EntityFilter<T extends Record<string, any>>({
     }
   };
 
-  // Check if any filters are active
   const hasActiveFilters = Object.entries(filters).some(
     ([key, value]) =>
       key !== 'limit' &&
@@ -107,9 +106,8 @@ export function EntityFilter<T extends Record<string, any>>({
       value !== ''
   );
 
-  // Get active filter tags
   const getActiveFilterTags = () => {
-    const tags: Array<{ key: string; label: string; value: any }> = [];
+    const tags: Array<{ key: string; label: string; value: string }> = [];
 
     Object.entries(filters).forEach(([key, value]) => {
       if (
@@ -145,82 +143,101 @@ export function EntityFilter<T extends Record<string, any>>({
   const activeTags = getActiveFilterTags();
 
   return (
-    <div className={cn('entity-filter', className)}>
-      <div className="entity-filter__row">
-        <div className="entity-filter__search">
+    <div className={cn('space-y-3', className)}>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
           <Input
             type="search"
             placeholder={config.searchPlaceholder || 'Search...'}
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            leftIcon={<SearchIcon size={16} aria-hidden="true" />}
+            className="pl-10"
           />
         </div>
 
         {config.filterOptions?.map((filterOption) => (
-          <div key={String(filterOption.key)} className="entity-filter__select">
-            <Select
-              value={String(filters[filterOption.key] || '')}
-              onChange={(value) => handleFilterChange(filterOption.key, value)}
-              options={filterOption.options}
-              placeholder={filterOption.label}
-            />
-          </div>
+          <Select
+            key={String(filterOption.key)}
+            value={filters[filterOption.key] ? String(filters[filterOption.key]) : undefined}
+            onValueChange={(value) => handleFilterChange(filterOption.key, value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder={filterOption.label} />
+            </SelectTrigger>
+            <SelectContent>
+              {filterOption.options
+                .filter((option) => option.value !== '')
+                .map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         ))}
 
         {config.sortOptions && (
-          <div className="entity-filter__select">
-            <Select
-              value={`${filters.sort_by || 'created_at'}:${filters.sort_order || 'desc'}`}
-              onChange={handleSortChange}
-              options={config.sortOptions}
-              placeholder="Sort by"
-            />
-          </div>
+          <Select
+            value={`${filters.sort_by || 'created_at'}:${filters.sort_order || 'desc'}`}
+            onValueChange={handleSortChange}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              {config.sortOptions
+                .filter((option) => option.value !== '')
+                .map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         )}
 
         {hasActiveFilters && (
-          <Button
-            variant="outline"
-            size="md"
-            onClick={handleClearFilters}
-          >
-            <CloseIcon size={14} aria-hidden="true" />
+          <Button variant="outline" size="sm" onClick={handleClearFilters} className="gap-1">
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
             Clear
           </Button>
         )}
       </div>
 
       {(searchValue || activeTags.length > 0) && (
-        <div className="entity-filter__tags">
-          <span className="entity-filter__tags-label">Active filters:</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Active filters:</span>
 
           {searchValue && (
-            <span className="entity-filter__tag">
+            <Badge variant="secondary" className="gap-1 pr-1">
               Search: "{searchValue}"
               <button
                 type="button"
                 onClick={() => setSearchValue('')}
-                className="entity-filter__tag-remove"
+                className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 aria-label="Remove search filter"
               >
-                <CloseIcon size={12} aria-hidden="true" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
-            </span>
+            </Badge>
           )}
 
           {activeTags.map((tag) => (
-            <span key={tag.key} className="entity-filter__tag">
+            <Badge key={tag.key} variant="secondary" className="gap-1 pr-1">
               {tag.label}: {tag.value}
               <button
                 type="button"
                 onClick={() => handleFilterChange(tag.key as keyof T, '')}
-                className="entity-filter__tag-remove"
+                className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 aria-label={`Remove ${tag.label} filter`}
               >
-                <CloseIcon size={12} aria-hidden="true" />
+                <X className="h-3 w-3" aria-hidden="true" />
               </button>
-            </span>
+            </Badge>
           ))}
         </div>
       )}

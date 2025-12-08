@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, Button, LoadingSpinner } from '@/components/common';
+import { 
+  PageContainer,
+  PageHeader,
+  Button,
+  Card,
+  CardContent,
+  LoadingSpinner,
+  ErrorState
+} from '@/components/common';
 import { ProjectGroupForm } from '@/components/features/groups';
-import { useProjectGroups } from '@/hooks';
+import { useProjectGroups, useToast } from '@/hooks';
 import { projectGroupService } from '@/services';
+import { FolderOpen, ArrowLeft } from 'lucide-react';
 import type { CreateProjectGroupRequest, ProjectGroup } from '@/services/project-group.service';
 
 export function ProjectGroupEditPage(): React.JSX.Element {
   const navigate = useNavigate();
   const { groupHash } = useParams<{ groupHash: string }>();
   const { updateProjectGroup } = useProjectGroups();
+  const { showToast } = useToast();
   
   const [group, setGroup] = useState<ProjectGroup | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,10 +58,10 @@ export function ProjectGroupEditPage(): React.JSX.Element {
     setIsLoading(true);
     try {
       await updateProjectGroup(group.group_hash, data);
+      showToast(`Project group "${data.group_name}" updated successfully`, 'success');
       navigate('/dashboard/groups/project-groups');
     } catch (error) {
-      console.error('Failed to update project group:', error);
-      // Handle error (show toast, etc.)
+      showToast(error instanceof Error ? error.message : 'Failed to update project group', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -63,63 +73,59 @@ export function ProjectGroupEditPage(): React.JSX.Element {
 
   if (isLoadingGroup) {
     return (
-      <div className="page-container">
-        <div className="page-content">
-          <Card className="loading-card">
-            <LoadingSpinner size="md" message="Loading project group..." />
-          </Card>
+      <PageContainer>
+        <div className="flex items-center justify-center py-16">
+          <LoadingSpinner size="lg" message="Loading project group..." />
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   if (error || !group) {
     return (
-      <div className="page-container">
-        <div className="page-content">
-          <Card className="error-card">
-            <h2>Error Loading Project Group</h2>
-            <p>{error || 'Project group not found'}</p>
-            <Button onClick={() => navigate('/dashboard/groups/project-groups')}>
-              Back to Project Groups
-            </Button>
-          </Card>
-        </div>
-      </div>
+      <PageContainer>
+        <ErrorState
+          icon={<FolderOpen size={24} />}
+          title="Error Loading Project Group"
+          message={error || 'Project group not found'}
+          onRetry={() => navigate('/dashboard/groups/project-groups')}
+          retryLabel="Back to Project Groups"
+          variant="card"
+          size="md"
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div className="page-title-section">
-          <h1>Edit Project Group</h1>
-          <p className="page-description">
-            Update the details and permissions for "{group.group_name}".
-          </p>
-        </div>
-        
-        <div className="page-actions">
+    <PageContainer>
+      <PageHeader
+        title="Edit Project Group"
+        subtitle={`Update the details for "${group.group_name}"`}
+        icon={<FolderOpen size={28} />}
+        actions={
           <Button 
             variant="outline" 
+            size="md"
+            leftIcon={<ArrowLeft size={16} />}
             onClick={handleCancel}
           >
-            Cancel
+            Back
           </Button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="page-content">
-        <Card className="form-card">
+      <Card className="max-w-2xl">
+        <CardContent className="pt-6">
           <ProjectGroupForm
             group={group}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
             isLoading={isLoading}
           />
-        </Card>
-      </div>
-    </div>
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
 

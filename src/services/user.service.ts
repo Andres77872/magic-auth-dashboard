@@ -8,7 +8,13 @@ import type {
   UpdateProfileResponse,
   UserListParams,
   UserListResponse,
-  AdminUserListResponse
+  AdminUserListResponse,
+  UserSearchParams,
+  UserSearchResponse,
+  UpdateUserStatusResponse,
+  ResetPasswordResponse,
+  DeleteUserResponse,
+  AdminProjectsResponse
 } from '@/types/user.types';
 import type { User, UserProfileResponse } from '@/types/auth.types';
 import type { ApiResponse } from '@/types/api.types';
@@ -45,7 +51,7 @@ class UserService {
 
   // Create CONSUMER user (via registration)
   async createConsumerUser(userData: RegisterRequest): Promise<RegisterResponse> {
-    const response = await apiClient.post<RegisterResponse>('/auth/register', userData);
+    const response = await apiClient.postForm<RegisterResponse>('/auth/register', userData, true);
     return response as RegisterResponse;
   }
 
@@ -83,29 +89,48 @@ class UserService {
     return response as UserProfileResponse;
   }
 
-  // Update user
-  async updateUser(userHash: string, data: Partial<User>): Promise<ApiResponse<User>> {
-    return await apiClient.put<User>(`/users/${userHash}`, data);
+  // Update user details (Admin/Root) - uses form data per API spec
+  // Note: user_type changes should use changeUserType method instead
+  async updateUser(userHash: string, data: { username?: string; email?: string }): Promise<ApiResponse<User>> {
+    return await apiClient.putForm<User>(`/users/${userHash}`, data);
   }
 
-  // Delete user
-  async deleteUser(userHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/users/${userHash}`);
+  // Delete user (soft-delete)
+  async deleteUser(userHash: string): Promise<DeleteUserResponse> {
+    const response = await apiClient.delete<DeleteUserResponse>(`/users/${userHash}`);
+    return response as DeleteUserResponse;
   }
 
-  // Activate/Deactivate user
-  async toggleUserStatus(userHash: string, isActive: boolean): Promise<ApiResponse<User>> {
-    return await apiClient.put<User>(`/users/${userHash}/status`, { is_active: isActive });
+  // Search users by username or email
+  async searchUsers(params: UserSearchParams): Promise<UserSearchResponse> {
+    const cleanParams: Record<string, any> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+        cleanParams[key] = value;
+      }
+    });
+    
+    const response = await apiClient.get<UserSearchResponse>('/users/search/query', cleanParams);
+    return response as UserSearchResponse;
   }
 
-  // Reset user password
-  async resetUserPassword(userHash: string): Promise<ApiResponse<{ new_password: string }>> {
-    return await apiClient.post<{ new_password: string }>(`/users/${userHash}/reset-password`);
+  // Activate/Deactivate user - uses query param per API spec
+  async toggleUserStatus(userHash: string, isActive: boolean): Promise<UpdateUserStatusResponse> {
+    const response = await apiClient.put<UpdateUserStatusResponse>(
+      `/users/${userHash}/status?is_active=${isActive}`
+    );
+    return response as UpdateUserStatusResponse;
   }
 
-  // Change user type (ROOT only)
+  // Reset user password (Admin) - returns temporary password
+  async resetUserPassword(userHash: string): Promise<ResetPasswordResponse> {
+    const response = await apiClient.post<ResetPasswordResponse>(`/users/${userHash}/reset-password`);
+    return response as ResetPasswordResponse;
+  }
+
+  // Change user type (ROOT only) - uses form data per API spec
   async changeUserType(userHash: string, newType: string): Promise<ApiResponse<User>> {
-    return await apiClient.patch<User>(`/users/${userHash}/type`, { user_type: newType });
+    return await apiClient.patchForm<User>(`/users/${userHash}/type`, { user_type: newType });
   }
 
   // Get user type information
@@ -113,40 +138,45 @@ class UserService {
     return await apiClient.get<any>(`/user-types/${userHash}/info`);
   }
 
-  // Update user type with project assignment
+  // Update user type with project assignment - uses form data per API spec
   async updateUserType(
     userHash: string,
     userType: string,
     assignedProjectId?: number
   ): Promise<ApiResponse<any>> {
-    return await apiClient.put<any>(
+    const data: Record<string, any> = { user_type: userType };
+    if (assignedProjectId !== undefined) {
+      data.assigned_project_id = assignedProjectId;
+    }
+    return await apiClient.putForm<any>(
       `/user-types/${userHash}/type`,
-      { user_type: userType, assigned_project_id: assignedProjectId }
+      data
     );
   }
 
   // Get admin user's assigned projects
-  async getAdminProjects(userHash: string): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>(`/user-types/admin/${userHash}/projects`);
+  async getAdminProjects(userHash: string): Promise<AdminProjectsResponse> {
+    const response = await apiClient.get<AdminProjectsResponse>(`/user-types/admin/${userHash}/projects`);
+    return response as AdminProjectsResponse;
   }
 
-  // Update admin user's projects (multi-project assignment)
+  // Update admin user's projects (multi-project assignment) - uses form data per API spec
   async updateAdminProjects(
     userHash: string,
     projectIds: number[]
   ): Promise<ApiResponse<any>> {
-    return await apiClient.put<any>(
+    return await apiClient.putForm<any>(
       `/user-types/admin/${userHash}/projects`,
       { assigned_project_ids: projectIds }
     );
   }
 
-  // Add admin to a project
+  // Add admin to a project - uses form data per API spec
   async addAdminToProject(
     userHash: string,
     projectId: number
   ): Promise<ApiResponse<any>> {
-    return await apiClient.post<any>(
+    return await apiClient.postForm<any>(
       `/user-types/admin/${userHash}/projects/add`,
       { project_id: projectId }
     );
@@ -185,12 +215,12 @@ class UserService {
     );
   }
 
-  // Update admin user's single project (legacy endpoint)
+  // Update admin user's single project (legacy endpoint) - uses form data
   async updateAdminProject(
     userHash: string,
     assignedProjectId: number
   ): Promise<ApiResponse<any>> {
-    return await apiClient.put<any>(
+    return await apiClient.putForm<any>(
       `/user-types/admin/${userHash}/project`,
       { assigned_project_id: assignedProjectId }
     );

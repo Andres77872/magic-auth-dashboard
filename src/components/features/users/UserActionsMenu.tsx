@@ -1,11 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePermissions, useUserType, useAuth, useToast } from '@/hooks';
-import { Modal, Select, Button, ActionsMenu } from '@/components/common';
-import type { ActionMenuItem } from '@/components/common';
-import { userService } from '@/services';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { userService, groupService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import { ViewIcon, EditIcon, GroupIcon, LockIcon, CheckIcon, DeleteIcon, WarningIcon, ProjectIcon, ErrorIcon } from '@/components/icons';
+import { Eye, Pencil, Users, Lock, Check, Trash2, AlertTriangle, FolderKanban, MoreHorizontal, AlertCircle } from 'lucide-react';
 import type { User, UserType } from '@/types/auth.types';
 import { AdminProjectsManager } from './AdminProjectsManager';
 import { UserDetailsModal } from './UserDetailsModal';
@@ -81,19 +102,69 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActions
     }
   };
 
-  const handleDeleteUser = () => {
-    console.log('Delete user:', user.user_hash);
-    // TODO: Implement delete user functionality in future milestone
+  const handleDeleteUser = async () => {
+    if (!window.confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      const response = await userService.deleteUser(user.user_hash);
+      if (response.success) {
+        showToast(`User "${user.username}" has been deleted`, 'success');
+        onUserUpdated?.();
+      } else {
+        showToast(response.message || 'Failed to delete user', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      showToast('Failed to delete user', 'error');
+    }
   };
 
-  const handleChangeStatus = () => {
-    console.log('Change status for user:', user.user_hash);
-    // TODO: Implement status change functionality in future milestone
+  const handleChangeStatus = async () => {
+    const newStatus = !user.is_active;
+    const action = newStatus ? 'activate' : 'deactivate';
+    
+    if (!window.confirm(`Are you sure you want to ${action} user "${user.username}"?`)) {
+      return;
+    }
+    
+    try {
+      const response = await userService.toggleUserStatus(user.user_hash, newStatus);
+      if (response.success) {
+        showToast(`User "${user.username}" has been ${newStatus ? 'activated' : 'deactivated'}`, 'success');
+        onUserUpdated?.();
+      } else {
+        showToast(response.message || `Failed to ${action} user`, 'error');
+      }
+    } catch (error) {
+      console.error(`Error ${action} user:`, error);
+      showToast(`Failed to ${action} user`, 'error');
+    }
   };
 
-  const handleResetPassword = () => {
-    console.log('Reset password for user:', user.user_hash);
-    // TODO: Implement password reset functionality in future milestone
+  const handleResetPassword = async () => {
+    if (!window.confirm(`Are you sure you want to reset the password for "${user.username}"? A temporary password will be generated.`)) {
+      return;
+    }
+    
+    try {
+      const response = await userService.resetUserPassword(user.user_hash);
+      if (response.success) {
+        const tempPassword = response.reset_data?.temporary_password;
+        if (tempPassword) {
+          showToast(`Password reset. Temporary password: ${tempPassword}`, 'success');
+        } else {
+          showToast('Password has been reset successfully', 'success');
+        }
+        onUserUpdated?.();
+      } else {
+        showToast(response.message || 'Failed to reset password', 'error');
+      }
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      showToast('Failed to reset password', 'error');
+    }
   };
 
   const handleViewDetails = () => {
@@ -104,13 +175,18 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActions
     setShowAssignGroupModal(true);
   };
 
-  const handleGroupAssigned = async (_groupHash: string) => {
+  const handleGroupAssigned = async (groupHash: string) => {
     try {
-      // TODO: Implement group assignment API call when API is available
-      showToast('User assigned to group successfully', 'success');
-      setShowAssignGroupModal(false);
-      onUserUpdated?.();
+      const response = await groupService.addMemberToGroup(groupHash, { user_hash: user.user_hash });
+      if (response.success) {
+        showToast('User assigned to group successfully', 'success');
+        setShowAssignGroupModal(false);
+        onUserUpdated?.();
+      } else {
+        showToast(response.message || 'Failed to assign user to group', 'error');
+      }
     } catch (error) {
+      console.error('Error assigning user to group:', error);
       showToast('Failed to assign user to group', 'error');
     }
   };
@@ -160,73 +236,70 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActions
     setChangeTypeError('');
   };
 
-  // Build menu items based on permissions
-  const menuItems: ActionMenuItem[] = [
-    {
-      key: 'view',
-      label: 'View Details',
-      icon: <ViewIcon size={16} />,
-      onClick: handleViewDetails,
-    },
-    {
-      key: 'edit',
-      label: 'Edit User',
-      icon: <EditIcon size={16} />,
-      onClick: handleEditUser,
-      hidden: !canEditUser(user),
-    },
-    {
-      key: 'assign-group',
-      label: 'Assign to Group',
-      icon: <GroupIcon size={16} />,
-      onClick: handleAssignGroup,
-      hidden: !canEditUser(user),
-    },
-    {
-      key: 'change-type',
-      label: 'Change User Type',
-      icon: <GroupIcon size={16} />,
-      onClick: handleChangeUserType,
-      hidden: !canChangeUserType(user),
-    },
-    {
-      key: 'manage-projects',
-      label: 'Manage Projects',
-      icon: <ProjectIcon size={16} />,
-      onClick: handleManageProjects,
-      hidden: user.user_type !== 'admin' || currentUserType !== 'root',
-    },
-    {
-      key: 'reset-password',
-      label: 'Reset Password',
-      icon: <LockIcon size={16} />,
-      onClick: handleResetPassword,
-      hidden: !canEditUser(user),
-    },
-    {
-      key: 'change-status',
-      label: 'Change Status',
-      icon: <CheckIcon size={16} />,
-      onClick: handleChangeStatus,
-      hidden: !canEditUser(user),
-    },
-    {
-      key: 'delete',
-      label: 'Delete User',
-      icon: <DeleteIcon size={16} />,
-      onClick: handleDeleteUser,
-      destructive: true,
-      hidden: !canDeleteUser(user),
-    },
-  ];
-
   return (
     <>
-      <ActionsMenu
-        items={menuItems}
-        ariaLabel={`Actions for ${user.username}`}
-        placement="bottom-right"
-      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <span className="sr-only">Actions for {user.username}</span>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={handleViewDetails}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </DropdownMenuItem>
+          {canEditUser(user) && (
+            <DropdownMenuItem onClick={handleEditUser}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit User
+            </DropdownMenuItem>
+          )}
+          {canEditUser(user) && (
+            <DropdownMenuItem onClick={handleAssignGroup}>
+              <Users className="mr-2 h-4 w-4" />
+              Assign to Group
+            </DropdownMenuItem>
+          )}
+          {canChangeUserType(user) && (
+            <DropdownMenuItem onClick={handleChangeUserType}>
+              <Users className="mr-2 h-4 w-4" />
+              Change User Type
+            </DropdownMenuItem>
+          )}
+          {user.user_type === 'admin' && currentUserType === 'root' && (
+            <DropdownMenuItem onClick={handleManageProjects}>
+              <FolderKanban className="mr-2 h-4 w-4" />
+              Manage Projects
+            </DropdownMenuItem>
+          )}
+          {canEditUser(user) && (
+            <DropdownMenuItem onClick={handleResetPassword}>
+              <Lock className="mr-2 h-4 w-4" />
+              Reset Password
+            </DropdownMenuItem>
+          )}
+          {canEditUser(user) && (
+            <DropdownMenuItem onClick={handleChangeStatus}>
+              <Check className="mr-2 h-4 w-4" />
+              Change Status
+            </DropdownMenuItem>
+          )}
+          {canDeleteUser(user) && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleDeleteUser}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete User
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* User Details Modal */}
       <UserDetailsModal
@@ -259,61 +332,68 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActions
       />
 
       {/* Change User Type Modal */}
-      <Modal
-        isOpen={showChangeTypeModal}
-        onClose={handleCancelTypeChange}
-        title="Change User Type"
-        size="md"
-        className="change-user-type-modal"
-        closeOnBackdrop={!isChangingType}
-        closeOnEscape={!isChangingType}
-      >
-        <div className="modal-body">
-          <div className="user-info">
-            <h4>User: {user.username}</h4>
-            <p>Current Type: <strong>{user.user_type.toUpperCase()}</strong></p>
-          </div>
-
-          <div className="warning-section">
-            <WarningIcon size={24} aria-hidden="true" />
-            <p>Changing a user's type will immediately affect their permissions and access level.</p>
-          </div>
-
-          <Select
-            label="New User Type"
-            options={availableUserTypes}
-            value={selectedUserType}
-            onChange={(value) => setSelectedUserType(value as UserType)}
-            disabled={isChangingType}
-            fullWidth
-          />
-          
-          {changeTypeError && (
-            <div className="form-error" role="alert">
-              <ErrorIcon size={12} aria-hidden="true" />
-              {changeTypeError}
+      <Dialog open={showChangeTypeModal} onOpenChange={(open) => !isChangingType && !open && handleCancelTypeChange()}>
+        <DialogContent size="md">
+          <DialogHeader>
+            <DialogTitle>Change User Type</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <p className="font-medium">User: {user.username}</p>
+              <p className="text-sm text-muted-foreground">Current Type: <strong>{user.user_type.toUpperCase()}</strong></p>
             </div>
-          )}
-        </div>
 
-        <div className="modal-footer">
-          <Button
-            variant="outline"
-            onClick={handleCancelTypeChange}
-            disabled={isChangingType}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleConfirmTypeChange}
-            loading={isChangingType}
-            disabled={selectedUserType === user.user_type}
-          >
-            Change User Type
-          </Button>
-        </div>
-      </Modal>
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <AlertTriangle className="h-5 w-5 text-warning mt-0.5" aria-hidden="true" />
+              <p className="text-sm text-muted-foreground">Changing a user's type will immediately affect their permissions and access level.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>New User Type</Label>
+              <Select
+                value={selectedUserType}
+                onValueChange={(value) => setSelectedUserType(value as UserType)}
+                disabled={isChangingType}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUserTypes.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {changeTypeError && (
+              <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                {changeTypeError}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCancelTypeChange}
+              disabled={isChangingType}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleConfirmTypeChange}
+              loading={isChangingType}
+              disabled={selectedUserType === user.user_type}
+            >
+              Change User Type
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

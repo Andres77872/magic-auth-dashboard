@@ -1,7 +1,15 @@
 import React from 'react';
-import { Modal, Badge, Button } from '@/components/common';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { UserAvatar } from './UserAvatar';
-import { EditIcon, GroupIcon, ProjectIcon, ClockIcon } from '@/components/icons';
+import { Pencil, Users, FolderKanban, Clock } from 'lucide-react';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
 import type { User } from '@/types/auth.types';
 
@@ -21,126 +29,114 @@ export function UserDetailsModal({
   if (!user) return <></>;
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="User Details"
-      size="md"
-    >
-      <div className="modal-body">
-        {/* User Header */}
-        <div className="user-details-header">
-          <UserAvatar 
-            username={user.username} 
-            userType={user.user_type}
-            size="lg"
-          />
-          <div className="user-details-header-info">
-            <h3 className="user-details-username">{user.username}</h3>
-            <p className="user-details-hash">{truncateHash(user.user_hash)}</p>
-            <div className="user-details-badges">
-              <Badge 
-                variant={getUserTypeBadgeVariant(user.user_type)}
-                size="sm"
-              >
-                {user.user_type.toUpperCase()}
-              </Badge>
-              <Badge 
-                variant={user.is_active ? 'success' : 'secondary'} 
-                size="sm" 
-                dot
-              >
-                {user.is_active ? 'Active' : 'Inactive'}
-              </Badge>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>User Details</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* User Header */}
+          <div className="flex items-center gap-4">
+            <UserAvatar 
+              username={user.username} 
+              userType={user.user_type}
+              size="lg"
+            />
+            <div className="flex flex-col gap-1">
+              <h3 className="text-lg font-semibold">{user.username}</h3>
+              <p className="text-sm text-muted-foreground">{truncateHash(user.user_hash)}</p>
+              <div className="flex items-center gap-2">
+                <Badge variant={getUserTypeBadgeVariant(user.user_type)}>
+                  {user.user_type.toUpperCase()}
+                </Badge>
+                <Badge variant={user.is_active ? 'success' : 'secondary'}>
+                  {user.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
             </div>
           </div>
+
+          {/* User Information */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-medium text-foreground">Contact Information</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <span className="text-xs text-muted-foreground">Email</span>
+                <p className="text-sm">{user.email || 'Not provided'}</p>
+              </div>
+              <div className="space-y-1">
+                <span className="text-xs text-muted-foreground">Created At</span>
+                <p className="flex items-center gap-1 text-sm">
+                  <Clock size={14} />
+                  {formatDateTime(user.created_at)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Groups */}
+          {user.groups && user.groups.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Users size={16} aria-hidden="true" />
+                Groups ({user.groups.length})
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {user.groups.map(group => (
+                  <Badge key={group.group_hash} variant="secondary">
+                    {group.group_name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Projects */}
+          {user.projects && user.projects.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <FolderKanban size={16} aria-hidden="true" />
+                Projects ({user.projects.length})
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {user.projects.map(project => (
+                  <Badge key={project.project_hash} variant="outline">
+                    {project.project_name}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* User Type Info */}
+          {user.user_type_info && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-foreground">User Type Information</h4>
+              <div className="rounded-md bg-muted p-3">
+                {user.user_type_info.error ? (
+                  <p className="text-sm text-destructive">{user.user_type_info.error}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No additional information available</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* User Information */}
-        <div className="user-details-section">
-          <h4 className="user-details-section-title">Contact Information</h4>
-          <div className="user-details-grid">
-            <div className="user-details-field">
-              <span className="user-details-label">Email</span>
-              <span className="user-details-value">{user.email || 'Not provided'}</span>
-            </div>
-            <div className="user-details-field">
-              <span className="user-details-label">Created At</span>
-              <span className="user-details-value">
-                <ClockIcon size={14} />
-                {formatDateTime(user.created_at)}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Groups */}
-        {user.groups && user.groups.length > 0 && (
-          <div className="user-details-section">
-            <h4 className="user-details-section-title">
-              <GroupIcon size={16} aria-hidden="true" />
-              Groups ({user.groups.length})
-            </h4>
-            <div className="user-details-badges-list">
-              {user.groups.map(group => (
-                <Badge key={group.group_hash} variant="secondary" size="sm">
-                  {group.group_name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Projects */}
-        {user.projects && user.projects.length > 0 && (
-          <div className="user-details-section">
-            <h4 className="user-details-section-title">
-              <ProjectIcon size={16} aria-hidden="true" />
-              Projects ({user.projects.length})
-            </h4>
-            <div className="user-details-badges-list">
-              {user.projects.map(project => (
-                <Badge key={project.project_hash} variant="info" size="sm">
-                  {project.project_name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* User Type Info */}
-        {user.user_type_info && (
-          <div className="user-details-section">
-            <h4 className="user-details-section-title">User Type Information</h4>
-            <div className="user-details-info-box">
-              {user.user_type_info.error ? (
-                <p className="text-error">{user.user_type_info.error}</p>
-              ) : (
-                <p className="text-muted">No additional information available</p>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="modal-footer">
-        {onEdit && (
-          <Button
-            variant="primary"
-            onClick={onEdit}
-            leftIcon={<EditIcon size={16} aria-hidden="true" />}
-          >
-            Edit User
+        <DialogFooter>
+          {onEdit && (
+            <Button onClick={onEdit}>
+              <Pencil size={16} aria-hidden="true" />
+              Edit User
+            </Button>
+          )}
+          <Button variant="outline" onClick={onClose}>
+            Close
           </Button>
-        )}
-        <Button
-          variant="outline"
-          onClick={onClose}
-        >
-          Close
-        </Button>
-      </div>
-    </Modal>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

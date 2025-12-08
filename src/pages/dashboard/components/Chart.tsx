@@ -1,4 +1,6 @@
 import React from 'react';
+import { cn } from '@/lib/utils';
+import { BarChart3 } from 'lucide-react';
 import type { ChartConfig } from '@/types/analytics.types';
 
 interface ChartProps {
@@ -6,8 +8,20 @@ interface ChartProps {
   className?: string;
 }
 
+// Modern color palette for charts
+const CHART_COLORS = [
+  'rgb(59, 130, 246)',   // primary blue
+  'rgb(34, 197, 94)',    // green
+  'rgb(245, 158, 11)',   // amber
+  'rgb(239, 68, 68)',    // red
+  'rgb(6, 182, 212)',    // cyan
+  'rgb(168, 162, 158)',  // gray
+  'rgb(139, 92, 246)',   // purple
+  'rgb(236, 72, 153)',   // pink
+];
+
 export function Chart({ config, className = '' }: ChartProps): React.JSX.Element {
-  const { type, data, title, color = 'var(--color-primary-500)', height = 200 } = config;
+  const { type, data, title, color = 'rgb(59, 130, 246)', height = 200 } = config;
 
   const maxValue = Math.max(...data.map(d => d.value));
   const minValue = Math.min(...data.map(d => d.value));
@@ -15,7 +29,7 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
 
   const renderLineChart = () => {
     const width = 400;
-    const chartHeight = height - 40; // Leave space for labels
+    const chartHeight = height - 40;
     const padding = 40;
 
     if (data.length === 0) return null;
@@ -29,43 +43,80 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
       return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
     }).join(' ');
 
+    // Create gradient area
+    const areaPath = `${pathData} L ${padding + (data.length - 1) * stepX} ${chartHeight + 20} L ${padding} ${chartHeight + 20} Z`;
+
     return (
-      <div className="line-chart">
-        <svg width={width} height={height} className="chart-svg">
+      <div className="w-full overflow-hidden">
+        <svg width="100%" viewBox={`0 0 ${width} ${height}`} className="block">
           {/* Grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = 20 + chartHeight * (1 - ratio);
+            return (
+              <g key={ratio}>
+                <line
+                  x1={padding}
+                  x2={width - padding}
+                  y1={y}
+                  y2={y}
+                  stroke="currentColor"
+                  strokeOpacity="0.1"
+                  strokeDasharray="4 4"
+                />
+                <text
+                  x={padding - 8}
+                  y={y + 4}
+                  textAnchor="end"
+                  className="fill-muted-foreground text-[10px]"
+                >
+                  {Math.round(minValue + range * ratio)}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Area gradient */}
           <defs>
-            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--color-gray-200)" strokeWidth="0.5"/>
-            </pattern>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
           </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-          
+
+          {/* Area fill */}
+          <path d={areaPath} fill="url(#areaGradient)" />
+
           {/* Data line */}
           <path
             d={pathData}
             fill="none"
             stroke={color}
-            strokeWidth="2"
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          
+
           {/* Data points */}
           {data.map((point, index) => {
             const x = padding + index * stepX;
             const y = chartHeight - (point.value - minValue) * stepY + 20;
             return (
-              <circle
-                key={index}
-                cx={x}
-                cy={y}
-                r="3"
-                fill={color}
-                className="chart-point"
-              />
+              <g key={index}>
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="4"
+                  fill="white"
+                  stroke={color}
+                  strokeWidth="2"
+                  className="hover:r-6 transition-all cursor-pointer"
+                />
+                {/* Tooltip on hover */}
+                <title>{`${point.label}: ${point.value}`}</title>
+              </g>
             );
           })}
-          
+
           {/* Labels */}
           {data.map((point, index) => {
             const x = padding + index * stepX;
@@ -75,8 +126,7 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
                 x={x}
                 y={height - 5}
                 textAnchor="middle"
-                fontSize="10"
-                fill="var(--color-gray-600)"
+                className="fill-muted-foreground text-[10px]"
               >
                 {point.label}
               </text>
@@ -92,12 +142,30 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
     const chartHeight = height - 40;
     const padding = 40;
     const barWidth = Math.max(20, (width - 2 * padding) / data.length - 10);
+    const gap = 10;
 
     return (
-      <div className="bar-chart">
-        <svg width={width} height={height} className="chart-svg">
+      <div className="w-full overflow-hidden">
+        <svg width="100%" viewBox={`0 0 ${width} ${height}`} className="block">
+          {/* Grid lines */}
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y = 20 + chartHeight * (1 - ratio);
+            return (
+              <line
+                key={ratio}
+                x1={padding}
+                x2={width - padding}
+                y1={y}
+                y2={y}
+                stroke="currentColor"
+                strokeOpacity="0.1"
+                strokeDasharray="4 4"
+              />
+            );
+          })}
+
           {data.map((point, index) => {
-            const x = padding + index * (barWidth + 10);
+            const x = padding + index * (barWidth + gap);
             const barHeight = (point.value / maxValue) * chartHeight;
             const y = chartHeight - barHeight + 20;
 
@@ -109,26 +177,27 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
                   width={barWidth}
                   height={barHeight}
                   fill={color}
-                  className="chart-bar"
+                  rx="4"
+                  ry="4"
+                  className="transition-opacity hover:opacity-80 cursor-pointer"
                 />
                 <text
                   x={x + barWidth / 2}
                   y={height - 5}
                   textAnchor="middle"
-                  fontSize="10"
-                  fill="var(--color-gray-600)"
+                  className="fill-muted-foreground text-[10px]"
                 >
                   {point.label}
                 </text>
                 <text
                   x={x + barWidth / 2}
-                  y={y - 5}
+                  y={y - 8}
                   textAnchor="middle"
-                  fontSize="10"
-                  fill="var(--color-gray-600)"
+                  className="fill-foreground text-[10px] font-medium"
                 >
                   {point.value}
                 </text>
+                <title>{`${point.label}: ${point.value}`}</title>
               </g>
             );
           })}
@@ -139,21 +208,20 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
 
   const renderPieChart = () => {
     const size = Math.min(height, 300);
-    const radius = size / 2 - 20;
+    const radius = size / 2 - 30;
     const centerX = size / 2;
     const centerY = size / 2;
 
     const total = data.reduce((sum, point) => sum + point.value, 0);
-    let currentAngle = 0;
+    let currentAngle = -90; // Start from top
 
     return (
-      <div className="pie-chart">
-        <svg width={size} height={size} className="chart-svg">
+      <div className="flex flex-col sm:flex-row items-center gap-6">
+        <svg width={size} height={size} className="shrink-0">
           {data.map((point, index) => {
             const angle = (point.value / total) * 360;
             const startAngle = currentAngle;
             const endAngle = currentAngle + angle;
-
             currentAngle += angle;
 
             const startRadians = (startAngle * Math.PI) / 180;
@@ -173,50 +241,32 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
               'Z'
             ].join(' ');
 
-            const colors = [
-              'var(--color-primary-500)',
-              'var(--color-success)',
-              'var(--color-warning)',
-              'var(--color-error)',
-              'var(--color-info)',
-              'var(--color-gray-500)',
-            ];
-
             return (
               <path
                 key={index}
                 d={pathData}
-                fill={colors[index % colors.length]}
+                fill={CHART_COLORS[index % CHART_COLORS.length]}
                 stroke="white"
                 strokeWidth="2"
-                className="chart-slice"
-              />
+                className="transition-opacity hover:opacity-80 cursor-pointer"
+              >
+                <title>{`${point.label}: ${point.value} (${((point.value / total) * 100).toFixed(1)}%)`}</title>
+              </path>
             );
           })}
         </svg>
-        
-        <div className="pie-legend">
-          {data.map((point, index) => {
-            const colors = [
-              'var(--color-primary-500)',
-              'var(--color-success)',
-              'var(--color-warning)',
-              'var(--color-error)',
-              'var(--color-info)',
-              'var(--color-gray-500)',
-            ];
-            
-            return (
-              <div key={index} className="legend-item">
-                <div 
-                  className="legend-color legend-color-dynamic"
-                  style={{ '--dynamic-legend-color': colors[index % colors.length] } as React.CSSProperties}
-                />
-                <span className="legend-label">{point.label}</span>
-                <span className="legend-value">{point.value}</span>
-              </div>
-            );
-          })}
+
+        <div className="flex flex-wrap gap-3">
+          {data.map((point, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <div 
+                className="h-3 w-3 rounded-sm shrink-0"
+                style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+              />
+              <span className="text-sm text-muted-foreground">{point.label}</span>
+              <span className="text-sm font-medium text-foreground">{point.value}</span>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -224,104 +274,103 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
 
   const renderDoughnutChart = () => {
     const size = Math.min(height, 300);
-    const outerRadius = size / 2 - 20;
+    const outerRadius = size / 2 - 30;
     const innerRadius = outerRadius * 0.6;
     const centerX = size / 2;
     const centerY = size / 2;
 
     const total = data.reduce((sum, point) => sum + point.value, 0);
-    let currentAngle = 0;
+    let currentAngle = -90; // Start from top
 
     return (
-      <div className="doughnut-chart">
-        <svg width={size} height={size} className="chart-svg">
-          {data.map((point, index) => {
-            const angle = (point.value / total) * 360;
-            const startAngle = currentAngle;
-            const endAngle = currentAngle + angle;
+      <div className="flex flex-col sm:flex-row items-center gap-6">
+        <div className="relative">
+          <svg width={size} height={size} className="shrink-0">
+            {data.map((point, index) => {
+              const angle = (point.value / total) * 360;
+              const startAngle = currentAngle;
+              const endAngle = currentAngle + angle;
+              currentAngle += angle;
 
-            currentAngle += angle;
+              const startRadians = (startAngle * Math.PI) / 180;
+              const endRadians = (endAngle * Math.PI) / 180;
 
-            const startRadians = (startAngle * Math.PI) / 180;
-            const endRadians = (endAngle * Math.PI) / 180;
+              const x1 = centerX + outerRadius * Math.cos(startRadians);
+              const y1 = centerY + outerRadius * Math.sin(startRadians);
+              const x2 = centerX + outerRadius * Math.cos(endRadians);
+              const y2 = centerY + outerRadius * Math.sin(endRadians);
 
-            const x1 = centerX + outerRadius * Math.cos(startRadians);
-            const y1 = centerY + outerRadius * Math.sin(startRadians);
-            const x2 = centerX + outerRadius * Math.cos(endRadians);
-            const y2 = centerY + outerRadius * Math.sin(endRadians);
+              const x3 = centerX + innerRadius * Math.cos(endRadians);
+              const y3 = centerY + innerRadius * Math.sin(endRadians);
+              const x4 = centerX + innerRadius * Math.cos(startRadians);
+              const y4 = centerY + innerRadius * Math.sin(startRadians);
 
-            const x3 = centerX + innerRadius * Math.cos(endRadians);
-            const y3 = centerY + innerRadius * Math.sin(endRadians);
-            const x4 = centerX + innerRadius * Math.cos(startRadians);
-            const y4 = centerY + innerRadius * Math.sin(startRadians);
+              const largeArcFlag = angle > 180 ? 1 : 0;
 
-            const largeArcFlag = angle > 180 ? 1 : 0;
+              const pathData = [
+                `M ${x1} ${y1}`,
+                `A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                `L ${x3} ${y3}`,
+                `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4}`,
+                'Z'
+              ].join(' ');
 
-            const pathData = [
-              `M ${x1} ${y1}`,
-              `A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-              `L ${x3} ${y3}`,
-              `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4}`,
-              'Z'
-            ].join(' ');
+              return (
+                <path
+                  key={index}
+                  d={pathData}
+                  fill={CHART_COLORS[index % CHART_COLORS.length]}
+                  stroke="white"
+                  strokeWidth="2"
+                  className="transition-opacity hover:opacity-80 cursor-pointer"
+                >
+                  <title>{`${point.label}: ${point.value} (${((point.value / total) * 100).toFixed(1)}%)`}</title>
+                </path>
+              );
+            })}
+          </svg>
 
-            const colors = [
-              'var(--color-primary-500)',
-              'var(--color-success)',
-              'var(--color-warning)',
-              'var(--color-error)',
-              'var(--color-info)',
-              'var(--color-gray-500)',
-            ];
-
-            return (
-              <path
-                key={index}
-                d={pathData}
-                fill={colors[index % colors.length]}
-                stroke="white"
-                strokeWidth="2"
-                className="chart-slice"
-              />
-            );
-          })}
-          
           {/* Center text */}
-          <text
-            x={centerX}
-            y={centerY}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="16"
-            fontWeight="bold"
-            fill="var(--color-gray-800)"
-          >
-            {total}
-          </text>
-        </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-2xl font-bold text-foreground">{total}</span>
+            <span className="text-xs text-muted-foreground">Total</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          {data.map((point, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <div 
+                className="h-3 w-3 rounded-sm shrink-0"
+                style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+              />
+              <span className="text-sm text-muted-foreground">{point.label}</span>
+              <span className="text-sm font-medium text-foreground">{point.value}</span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
 
   if (data.length === 0) {
     return (
-      <div className={`chart chart-empty ${className}`}>
-        <div className="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-          <p>No data to display</p>
-        </div>
+      <div className={cn(
+        'flex flex-col items-center justify-center py-12 text-center rounded-lg border border-dashed border-border bg-muted/30',
+        className
+      )}>
+        <BarChart3 className="h-12 w-12 text-muted-foreground/50 mb-3" />
+        <p className="text-sm text-muted-foreground">No data to display</p>
       </div>
     );
   }
 
   return (
-    <div className={`chart chart-${type} ${className}`}>
-      {title && <h4 className="chart-title">{title}</h4>}
-      <div className="chart-content">
+    <div className={cn('space-y-4', className)}>
+      {title && (
+        <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      )}
+      <div className="min-h-[200px]">
         {type === 'line' && renderLineChart()}
         {type === 'bar' && renderBarChart()}
         {type === 'pie' && renderPieChart()}
@@ -331,4 +380,4 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
   );
 }
 
-export default Chart; 
+export default Chart;

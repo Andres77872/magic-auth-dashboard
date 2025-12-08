@@ -1,6 +1,6 @@
 import React, { forwardRef, useId } from 'react';
+import { cn } from '@/lib/utils';
 import type { FormSize, Orientation } from '../types';
-import './Radio.css';
 
 export interface RadioGroupProps {
   value?: string;
@@ -37,17 +37,6 @@ export const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>(
     const groupId = name || generatedId;
     const errorId = `${groupId}-error`;
 
-    const wrapperClasses = [
-      'radio-group',
-      `radio-group-${orientation}`,
-      disabled && 'radio-group-disabled',
-      error && 'radio-group-error',
-      className,
-    ]
-      .filter(Boolean)
-      .join(' ');
-
-    // Clone children to pass down props
     interface RadioChildProps {
       name?: string;
       size?: FormSize;
@@ -71,20 +60,30 @@ export const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>(
     });
 
     return (
-      <div ref={ref} className={wrapperClasses} role="radiogroup" aria-labelledby={label ? `${groupId}-label` : undefined}>
+      <div 
+        ref={ref} 
+        className={cn(
+          'flex flex-col gap-1.5',
+          disabled && 'opacity-50',
+          error && 'text-destructive',
+          className
+        )} 
+        role="radiogroup" 
+        aria-labelledby={label ? `${groupId}-label` : undefined}
+      >
         {label && (
-          <div id={`${groupId}-label`} className="radio-group-label">
+          <div id={`${groupId}-label`} className="text-sm font-medium text-foreground">
             {label}
-            {required && <span className="radio-group-required" aria-hidden="true">*</span>}
+            {required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
           </div>
         )}
 
-        <div className="radio-group-options">
+        <div className={cn('flex gap-3', orientation === 'vertical' ? 'flex-col' : 'flex-row flex-wrap')}>
           {enhancedChildren}
         </div>
 
         {error && (
-          <div id={errorId} className="radio-group-error-message" role="alert">
+          <div id={errorId} className="text-xs text-destructive" role="alert">
             {error}
           </div>
         )}

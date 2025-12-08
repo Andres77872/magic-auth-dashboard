@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Input } from '@/components/common';
+import { Input } from '@/components/ui/input';
+import { Search, X } from 'lucide-react';
 
 interface ProjectFilterProps {
   filters: {
@@ -40,28 +41,26 @@ export const ProjectFilter: React.FC<ProjectFilterProps> = ({
   };
 
   return (
-    <div className="project-filter">
-      <div className="filter-row">
-        <div className="search-field">
-          <Input
-            type="text"
-            placeholder="Search projects by name or description..."
-            value={searchValue}
-            onChange={handleSearchChange}
-            rightIcon={
-              searchValue && (
-                <button
-                  type="button"
-                  onClick={handleClearSearch}
-                  className="clear-search-btn"
-                >
-                  ✕
-                </button>
-              )
-            }
-          />
-        </div>
-      </div>
+    <div>
+      <Input
+        type="text"
+        placeholder="Search projects by name or description..."
+        value={searchValue}
+        onChange={handleSearchChange}
+        leftIcon={<Search className="h-4 w-4" />}
+        rightIcon={
+          searchValue && (
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              className="hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )
+        }
+        fullWidth
+      />
     </div>
   );
 }; 

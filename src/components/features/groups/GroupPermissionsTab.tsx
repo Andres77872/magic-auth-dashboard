@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, LoadingSpinner, ConfirmDialog, EmptyState, Modal } from '@/components/common';
-import { LockIcon, PlusIcon, DeleteIcon, InfoIcon } from '@/components/icons';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { ConfirmDialog, EmptyState } from '@/components/common';
+import { Lock, Plus, Trash2, Info } from 'lucide-react';
 import { permissionAssignmentsService, globalRolesService } from '@/services';
 import type { PermissionGroupAssignment } from '@/types/permission-assignments.types';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
 import { useToast } from '@/contexts/ToastContext';
-import '../../../styles/components/group-permissions-tab.css';
 
 interface GroupPermissionsTabProps {
   groupHash: string;
@@ -24,12 +35,19 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
   const { addToast } = useToast();
 
   // Fetch assigned permission groups
+  // GET /permissions/admin/user-groups/{group_hash}/permission-groups
   const fetchAssignedGroups = async () => {
     try {
       setLoading(true);
-      const response = await permissionAssignmentsService.getUserGroupPermissionGroups(groupHash);
-      if (response.success && response.data) {
-        setAssignedGroups(response.data);
+      const response: any = await permissionAssignmentsService.getUserGroupPermissionGroups(groupHash);
+      
+      // API returns permission_groups array directly in response
+      if (response.permission_groups) {
+        setAssignedGroups(response.permission_groups);
+      } else if (response.success === false) {
+        throw new Error(response.message || 'Failed to fetch permission groups');
+      } else {
+        setAssignedGroups([]);
       }
     } catch (error) {
       console.error('Failed to fetch assigned permission groups:', error);
@@ -40,14 +58,18 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
   };
 
   // Fetch all available permission groups
+  // GET /roles/permission-groups
   const fetchAvailableGroups = async () => {
     try {
       const response: any = await globalRolesService.getPermissionGroups();
-      const permissionGroupsData = response.permission_groups || response.data || [];
-      if (response.success && permissionGroupsData.length >= 0) {
+      
+      // API returns permission_groups array directly in response
+      const permissionGroupsData = response.permission_groups || [];
+      
+      if (response.success !== false) {
         // Filter out already assigned groups
-        const assignedHashes = new Set(assignedGroups.map((g: any) => g.permission_group_hash));
-        const available = permissionGroupsData.filter((g: any) => !assignedHashes.has(g.group_hash));
+        const assignedHashes = new Set(assignedGroups.map((g: PermissionGroupAssignment) => g.group_hash));
+        const available = permissionGroupsData.filter((g: GlobalPermissionGroup) => !assignedHashes.has(g.group_hash));
         setAvailableGroups(available);
       }
     } catch (error) {
@@ -101,7 +123,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       setIsRemoving(true);
       const response = await permissionAssignmentsService.removePermissionGroupFromUserGroup(
         groupHash,
-        confirmRemove.permission_group_hash
+        confirmRemove.group_hash
       );
 
       if (response.success) {
@@ -138,72 +160,64 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
 
   if (loading) {
     return (
-      <div className="group-permissions-tab">
-        <div className="loading-container">
-          <LoadingSpinner />
-          <p>Loading permission groups...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-12">
+        <Spinner size="lg" />
+        <p className="text-sm text-muted-foreground mt-2">Loading permission groups...</p>
       </div>
     );
   }
 
   return (
-    <div className="group-permissions-tab">
+    <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <div className="permissions-header">
-            <div>
-              <CardTitle>Permission Groups</CardTitle>
-              <p className="subtitle">
-                Manage permission groups assigned to <strong>{groupName}</strong>
-              </p>
-            </div>
-            <Button
-              onClick={() => setShowAddModal(true)}
-              leftIcon={<PlusIcon size="sm" aria-hidden="true" />}
-            >
-              Assign Permission Groups
-            </Button>
+        <CardHeader className="flex flex-row items-start justify-between">
+          <div className="space-y-1">
+            <CardTitle>Permission Groups</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Manage permission groups assigned to <strong>{groupName}</strong>
+            </p>
           </div>
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Assign Permission Groups
+          </Button>
         </CardHeader>
         <CardContent>
           {assignedGroups.length === 0 ? (
             <EmptyState
-              icon={<LockIcon size="xl" aria-hidden="true" />}
+              icon={<Lock className="h-10 w-10" aria-hidden="true" />}
               title="No Permission Groups Assigned"
               description="This user group doesn't have any permission groups assigned. Click 'Assign Permission Groups' to add some."
             />
           ) : (
-            <div className="assigned-groups-grid">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {assignedGroups.map(assignment => (
-                <Card key={assignment.permission_group_hash} className="permission-group-card">
-                  <CardContent>
-                    <div className="group-card-header">
-                      <div className="group-info">
-                        <LockIcon size="md" className="group-icon" aria-hidden="true" />
-                        <div>
-                          <h4>{assignment.permission_group_name}</h4>
-                          <Badge variant="secondary">
-                            {assignment.permission_group_hash}
+                <Card key={assignment.group_hash}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3">
+                        <Lock className="h-5 w-5 text-primary mt-0.5" aria-hidden="true" />
+                        <div className="space-y-1">
+                          <h4 className="font-medium">{assignment.group_display_name || assignment.group_name}</h4>
+                          <Badge variant="secondary" className="text-xs">
+                            {assignment.group_hash.slice(0, 12)}...
                           </Badge>
                         </div>
                       </div>
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => setConfirmRemove(assignment)}
-                        leftIcon={<DeleteIcon size="sm" aria-hidden="true" />}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
                         aria-label="Remove permission group"
-                      />
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </Button>
                     </div>
-                    <div className="group-meta">
-                      <span className="meta-item">
-                        Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}
-                      </span>
+                    <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                      <p>Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}</p>
                       {assignment.assigned_by && (
-                        <span className="meta-item">
-                          By: {assignment.assigned_by}
-                        </span>
+                        <p>By: {assignment.assigned_by}</p>
                       )}
                     </div>
                   </CardContent>
@@ -215,88 +229,92 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       </Card>
 
       {/* Add Permission Groups Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => !isAssigning && setShowAddModal(false)}
-        title="Assign Permission Groups"
-        size="lg"
-        closeOnBackdrop={!isAssigning}
-        closeOnEscape={!isAssigning}
-      >
-        {availableGroups.length === 0 ? (
-          <EmptyState
-            icon={<InfoIcon size="xl" aria-hidden="true" />}
-            title="No Available Permission Groups"
-            description="All permission groups have been assigned to this user group."
-          />
-        ) : (
-          <>
-            <div className="selection-info">
-              <Badge variant="info">
-                {selectedGroups.length} selected
-              </Badge>
-            </div>
+      <Dialog open={showAddModal} onOpenChange={(open) => !isAssigning && !open && setShowAddModal(false)}>
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle>Assign Permission Groups</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {availableGroups.length === 0 ? (
+              <EmptyState
+                icon={<Info className="h-10 w-10" aria-hidden="true" />}
+                title="No Available Permission Groups"
+                description="All permission groups have been assigned to this user group."
+              />
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <Badge variant="info">
+                    {selectedGroups.length} selected
+                  </Badge>
+                </div>
 
-            {Object.entries(groupedByCategory).map(([category, groups]) => (
-              <div key={category} className="category-section">
-                <h3 className="category-title">
-                  {category}
-                  <Badge variant="secondary">{groups.length}</Badge>
-                </h3>
-                <div className="groups-list">
-                  {groups.map(group => (
-                    <div
-                      key={group.group_hash}
-                      className={`group-item ${selectedGroups.includes(group.group_hash) ? 'selected' : ''}`}
-                      onClick={() => toggleGroupSelection(group.group_hash)}
-                    >
-                      <div className="group-item-content">
-                        <input
-                          type="checkbox"
-                          checked={selectedGroups.includes(group.group_hash)}
-                          onChange={() => toggleGroupSelection(group.group_hash)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <div className="group-item-info">
-                          <h4>{group.group_display_name}</h4>
-                          <p className="group-name">{group.group_name}</p>
-                          {group.group_description && (
-                            <p className="group-description">{group.group_description}</p>
-                          )}
-                        </div>
+                <div className="max-h-[400px] overflow-y-auto space-y-4">
+                  {Object.entries(groupedByCategory).map(([category, groups]) => (
+                    <div key={category} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold">{category}</h3>
+                        <Badge variant="secondary">{groups.length}</Badge>
                       </div>
-                      <Badge variant="secondary">{group.group_category}</Badge>
+                      <div className="space-y-2">
+                        {groups.map(group => (
+                          <div
+                            key={group.group_hash}
+                            className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                              selectedGroups.includes(group.group_hash)
+                                ? 'border-primary bg-primary/5'
+                                : 'hover:bg-accent/50'
+                            }`}
+                            onClick={() => toggleGroupSelection(group.group_hash)}
+                          >
+                            <Checkbox
+                              checked={selectedGroups.includes(group.group_hash)}
+                              onCheckedChange={() => toggleGroupSelection(group.group_hash)}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium">{group.group_display_name}</h4>
+                              <p className="text-sm text-muted-foreground">{group.group_name}</p>
+                              {group.group_description && (
+                                <p className="text-sm text-muted-foreground mt-1 truncate">
+                                  {group.group_description}
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant="secondary">{group.group_category}</Badge>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
-          </>
-        )}
-        <div className="modal-footer">
-          <Button
-            variant="outline"
-            onClick={() => setShowAddModal(false)}
-            disabled={isAssigning}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleBulkAssign}
-            disabled={selectedGroups.length === 0 || isAssigning}
-            loading={isAssigning}
-          >
-            Assign {selectedGroups.length > 0 ? `(${selectedGroups.length})` : ''}
-          </Button>
-        </div>
-      </Modal>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAddModal(false)}
+              disabled={isAssigning}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkAssign}
+              disabled={selectedGroups.length === 0 || isAssigning}
+              loading={isAssigning}
+            >
+              Assign {selectedGroups.length > 0 ? `(${selectedGroups.length})` : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Remove Confirmation Dialog */}
       {confirmRemove && (
         <ConfirmDialog
           isOpen={true}
           title="Remove Permission Group"
-          message={`Are you sure you want to remove the permission group "${confirmRemove.permission_group_name}" from this user group?`}
+          message={`Are you sure you want to remove the permission group "${confirmRemove.group_display_name || confirmRemove.group_name}" from this user group?`}
           confirmText="Remove"
           cancelText="Cancel"
           onConfirm={handleRemove}

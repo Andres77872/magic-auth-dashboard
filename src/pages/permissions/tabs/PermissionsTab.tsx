@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input, Select, ConfirmDialog, DataView } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
-import { PlusIcon, EditIcon, DeleteIcon } from '@/components/icons';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { PermissionModal } from '@/components/features/permissions';
 import { useToast, usePermissionManagement } from '@/hooks';
 import { globalRolesService } from '@/services';
@@ -47,14 +47,21 @@ export const PermissionsTab: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleEditSubmit = async (_data: any) => {
+  const handleEditSubmit = async (data: any) => {
     if (!editingPermission) return;
     
     try {
-      // Note: Update endpoint not available in API
-      showToast('Edit functionality not available in current API', 'info');
-      setIsEditModalOpen(false);
-      setEditingPermission(null);
+      const response = await globalRolesService.updatePermission(editingPermission.permission_hash, {
+        permission_display_name: data.permission_display_name,
+        permission_description: data.permission_description,
+        permission_category: data.permission_category
+      });
+      if (response.success) {
+        showToast(`Permission "${data.permission_display_name}" updated successfully`, 'success');
+        await refreshPermissions();
+        setIsEditModalOpen(false);
+        setEditingPermission(null);
+      }
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Failed to update permission', 'error');
       throw error;
@@ -72,10 +79,13 @@ export const PermissionsTab: React.FC = () => {
 
     setIsDeleting(true);
     try {
-      // Note: Delete endpoint not available in API
-      showToast('Delete functionality not available in current API', 'info');
-      setIsDeleteDialogOpen(false);
-      setPermissionToDelete(null);
+      const response = await globalRolesService.deletePermission(permissionToDelete.permission_hash);
+      if (response.success) {
+        showToast(`Permission "${permissionToDelete.permission_display_name}" deleted successfully`, 'success');
+        await refreshPermissions();
+        setIsDeleteDialogOpen(false);
+        setPermissionToDelete(null);
+      }
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Failed to delete permission', 'error');
     } finally {
@@ -131,7 +141,7 @@ export const PermissionsTab: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            leftIcon={<EditIcon size={16} />}
+            leftIcon={<Pencil size={16} />}
             onClick={() => handleEdit(row)}
             aria-label={`Edit ${row.permission_display_name}`}
           >
@@ -140,7 +150,7 @@ export const PermissionsTab: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            leftIcon={<DeleteIcon size={16} />}
+            leftIcon={<Trash2 size={16} />}
             onClick={() => handleDelete(row)}
             aria-label={`Delete ${row.permission_display_name}`}
           >
@@ -168,7 +178,7 @@ export const PermissionsTab: React.FC = () => {
         </div>
         <Button
           variant="primary"
-          leftIcon={<PlusIcon size={16} />}
+          leftIcon={<Plus size={16} />}
           onClick={handleOpenCreateModal}
         >
           Create Permission
@@ -209,7 +219,7 @@ export const PermissionsTab: React.FC = () => {
         emptyAction={
           <Button
             variant="primary"
-            leftIcon={<PlusIcon size={16} />}
+            leftIcon={<Plus size={16} />}
             onClick={handleOpenCreateModal}
           >
             Create Your First Permission

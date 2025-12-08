@@ -1,7 +1,11 @@
 import React from 'react';
 import { QuickActionCard } from './QuickActionCard';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useUserType } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
+import { Zap, Crown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { QuickAction } from '@/types/dashboard.types';
 
 export function QuickActionsPanel(): React.JSX.Element {
@@ -10,7 +14,6 @@ export function QuickActionsPanel(): React.JSX.Element {
   const generateQuickActions = (): QuickAction[] => {
     const actions: QuickAction[] = [];
 
-    // Actions available to ADMIN+ users
     if (isAdminOrHigher) {
       actions.push(
         {
@@ -18,7 +21,7 @@ export function QuickActionsPanel(): React.JSX.Element {
           title: 'Create User',
           description: 'Add new users to the system',
           icon: 'user-plus',
-          href: ROUTES.USERS_CREATE,
+          href: ROUTES.USERS,
           color: 'primary',
           requiredUserType: 'admin',
         },
@@ -27,7 +30,7 @@ export function QuickActionsPanel(): React.JSX.Element {
           title: 'Create Project',
           description: 'Set up new projects and workspaces',
           icon: 'folder-plus',
-          href: ROUTES.PROJECTS_CREATE,
+          href: ROUTES.PROJECTS,
           color: 'success',
           requiredUserType: 'admin',
         },
@@ -45,31 +48,39 @@ export function QuickActionsPanel(): React.JSX.Element {
           title: 'Permissions',
           description: 'Configure roles and access control',
           icon: 'shield',
-          href: ROUTES.PERMISSIONS,
+          href: ROUTES.PERMISSION_MANAGEMENT,
           color: 'warning',
+          requiredUserType: 'admin',
+        },
+        {
+          id: 'audit-logs',
+          title: 'Audit Logs',
+          description: 'View system activity and events',
+          icon: 'bar-chart',
+          href: ROUTES.AUDIT,
+          color: 'info',
           requiredUserType: 'admin',
         }
       );
     }
 
-    // Actions available only to ROOT users
     if (isRoot) {
       actions.push(
         {
-          id: 'system-settings',
-          title: 'System Settings',
-          description: 'Configure system-wide settings',
-          icon: 'settings',
-          href: ROUTES.SYSTEM_SETTINGS,
+          id: 'role-management',
+          title: 'Role Management',
+          description: 'Manage global roles and permission groups',
+          icon: 'shield',
+          href: ROUTES.ROLE_MANAGEMENT,
           color: 'warning',
           requiredUserType: 'root',
         },
         {
-          id: 'view-reports',
-          title: 'System Health',
-          description: 'Monitor system performance',
-          icon: 'bar-chart',
-          href: ROUTES.SYSTEM_HEALTH,
+          id: 'system-settings',
+          title: 'System Management',
+          description: 'Configure system-wide settings and health',
+          icon: 'settings',
+          href: ROUTES.SYSTEM,
           color: 'info',
           requiredUserType: 'root',
         }
@@ -83,39 +94,44 @@ export function QuickActionsPanel(): React.JSX.Element {
 
   if (quickActions.length === 0) {
     return (
-      <section className="quick-actions-panel" aria-labelledby="quick-actions-title">
-        <header className="quick-actions-header">
-          <h2 id="quick-actions-title">Quick Actions</h2>
-          <p>No actions available for your user type</p>
-        </header>
-      </section>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+          <CardDescription>No actions available for your user type</CardDescription>
+        </CardHeader>
+      </Card>
     );
   }
 
   return (
-    <section className="quick-actions-panel" aria-labelledby="quick-actions-title">
-      <header className="quick-actions-header">
-        <h2 id="quick-actions-title">Quick Actions</h2>
-        <p>Streamlined access to common administrative tasks</p>
-      </header>
-
-      <ul className="quick-actions-grid" role="list">
-        {quickActions.map((action) => (
-          <li key={action.id}>
-            <QuickActionCard action={action} />
-          </li>
-        ))}
-      </ul>
-
-      <footer className="quick-actions-footer">
-        <p className="actions-note">
-          {isRoot 
-            ? 'You have full system access as a ROOT user' 
-            : 'Contact your administrator for additional permissions'
-          }
-        </p>
-      </footer>
-    </section>
+    <Card className="mt-6">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
+              <Zap className="h-5 w-5 text-warning" />
+            </div>
+            <div>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Streamlined access to common administrative tasks</CardDescription>
+            </div>
+          </div>
+          {isRoot && (
+            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 gap-1">
+              <Crown className="h-3 w-3" />
+              ROOT Access
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {quickActions.map((action) => (
+            <QuickActionCard key={action.id} action={action} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

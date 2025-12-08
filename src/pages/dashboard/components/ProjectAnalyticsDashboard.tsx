@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { ProjectAnalyticsCard } from './ProjectAnalyticsCard';
 import { analyticsService } from '@/services/analytics.service';
-import { LoadingSpinner } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { FolderKanban, ShieldCheck, Activity, AlertCircle, RefreshCw, FolderPlus } from 'lucide-react';
 import type { ProjectAnalyticsData, DateRange, DateRangePreset } from '@/types/analytics.types';
+
+const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last7days', label: '7 Days' },
+  { value: 'last30days', label: '30 Days' },
+];
 
 export function ProjectAnalyticsDashboard(): React.JSX.Element {
   const [data, setData] = useState<ProjectAnalyticsData | null>(null);
@@ -64,197 +77,213 @@ export function ProjectAnalyticsDashboard(): React.JSX.Element {
   };
 
   const handleProjectClick = (projectId: string) => {
-    // TODO: Navigate to detailed project view or expand inline
     console.log('Project clicked:', projectId);
   };
 
   if (error) {
     return (
-      <div className="analytics-error">
-        <div className="error-content">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="15" y1="9" x2="9" y2="15"/>
-            <line x1="9" y1="9" x2="15" y2="15"/>
-          </svg>
-          <h3>Failed to Load Project Analytics</h3>
-          <p>{error}</p>
-          <button onClick={fetchAnalytics} className="retry-button">
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Failed to Load Project Analytics</h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-md">{error}</p>
+          <Button variant="outline" onClick={fetchAnalytics}>
+            <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isLoading || !data) {
     return (
-      <div className="analytics-loading">
-        <LoadingSpinner size="lg" message="Loading project analytics..." />
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center gap-3">
+            <Spinner size="lg" />
+            <p className="text-sm text-muted-foreground">Loading project analytics...</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="project-analytics-dashboard">
-      <div className="analytics-header">
-        <div className="header-content">
-          <h2>Project Analytics</h2>
-          <p>Monitor project health, activity, and member engagement</p>
-        </div>
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
+              <FolderKanban className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <CardTitle>Project Analytics</CardTitle>
+              <CardDescription>Monitor project health, activity, and member engagement</CardDescription>
+            </div>
+          </div>
 
-        <div className="date-range-selector">
-          <div className="date-presets">
-            {(['today', 'yesterday', 'last7days', 'last30days'] as DateRangePreset[]).map((preset) => (
-              <button
-                key={preset}
-                onClick={() => handleDateRangeChange(preset)}
-                className={`preset-button ${dateRange.preset === preset ? 'active' : ''}`}
+          {/* Date range selector */}
+          <div className="flex items-center gap-2">
+            {DATE_PRESETS.map((preset) => (
+              <Button
+                key={preset.value}
+                variant={dateRange.preset === preset.value ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => handleDateRangeChange(preset.value)}
               >
-                {preset === 'today' && 'Today'}
-                {preset === 'yesterday' && 'Yesterday'}
-                {preset === 'last7days' && 'Last 7 Days'}
-                {preset === 'last30days' && 'Last 30 Days'}
-              </button>
+                {preset.label}
+              </Button>
             ))}
           </div>
         </div>
-      </div>
+      </CardHeader>
 
-      <div className="analytics-overview">
-        <div className="overview-cards">
-          <div className="overview-card">
-            <div className="card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2l5 0l2 3h9a2 2 0 0 1 2 2z"/>
-              </svg>
+      <CardContent className="space-y-6">
+        {/* Overview cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+            <div className="flex items-center gap-3 mb-2">
+              <FolderKanban className="h-5 w-5 text-primary" />
+              <span className="text-sm text-muted-foreground">Total Projects</span>
             </div>
-            <div className="card-content">
-              <div className="card-value">{data.totalProjects}</div>
-              <div className="card-label">Total Projects</div>
-            </div>
+            <p className="text-2xl font-bold text-foreground">{data.totalProjects}</p>
           </div>
-
-          <div className="overview-card">
-            <div className="card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                <polyline points="9,12 11,14 15,10"/>
-              </svg>
+          
+          <div className="p-4 rounded-lg bg-success/5 border border-success/10">
+            <div className="flex items-center gap-3 mb-2">
+              <ShieldCheck className="h-5 w-5 text-success" />
+              <span className="text-sm text-muted-foreground">Avg Health Score</span>
             </div>
-            <div className="card-content">
-              <div className="card-value">{data.avgHealthScore.toFixed(1)}%</div>
-              <div className="card-label">Average Health Score</div>
-            </div>
+            <p className="text-2xl font-bold text-foreground">{data.avgHealthScore.toFixed(1)}%</p>
           </div>
-
-          <div className="overview-card">
-            <div className="card-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
-              </svg>
+          
+          <div className="p-4 rounded-lg bg-info/5 border border-info/10">
+            <div className="flex items-center gap-3 mb-2">
+              <Activity className="h-5 w-5 text-info" />
+              <span className="text-sm text-muted-foreground">Total Activities</span>
             </div>
-            <div className="card-content">
-              <div className="card-value">{data.totalActivity.toLocaleString()}</div>
-              <div className="card-label">Total Activities</div>
-            </div>
+            <p className="text-2xl font-bold text-foreground">{data.totalActivity.toLocaleString()}</p>
           </div>
         </div>
-      </div>
 
-      {data.engagement && (
-        <div className="engagement-overview">
-          <h3>Engagement Insights</h3>
-          <div className="engagement-content">
-            <div className="popular-actions">
-              <h4>Popular Actions</h4>
-              <div className="actions-list">
+        {/* Engagement insights */}
+        {data.engagement && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Popular Actions */}
+            <div className="p-4 rounded-lg border border-border">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Popular Actions</h3>
+              <div className="space-y-2">
                 {data.engagement.popularActions.slice(0, 5).map((action, index) => (
-                  <div key={index} className="action-item">
-                    <div className="action-name">{action.action}</div>
-                    <div className="action-count">{action.count} times</div>
+                  <div key={index} className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                    <span className="text-sm text-foreground">{action.action}</span>
+                    <Badge variant="outline">{action.count} times</Badge>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="member-engagement">
-              <h4>Most Active Members</h4>
-              <div className="members-list">
+            {/* Member Engagement */}
+            <div className="p-4 rounded-lg border border-border">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Most Active Members</h3>
+              <div className="space-y-2">
                 {data.engagement.memberEngagement.slice(0, 5).map((member) => (
-                  <div key={member.user_hash} className="member-item">
-                    <div className="member-avatar">
-                      {member.username.charAt(0).toUpperCase()}
+                  <div key={member.user_hash} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                        <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
+                          {member.username.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{member.username}</p>
+                        <p className="text-xs text-muted-foreground">{member.activityCount} activities</p>
+                      </div>
                     </div>
-                    <div className="member-info">
-                      <div className="member-name">{member.username}</div>
-                      <div className="member-activity">{member.activityCount} activities</div>
-                    </div>
-                    <div className="member-last-active">
+                    <span className="text-xs text-muted-foreground">
                       {new Date(member.lastActive).toLocaleDateString()}
-                    </div>
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      <div className="projects-section">
-        <div className="projects-header">
-          <h3>Project Details</h3>
-          <div className="projects-count">
-            {data.projects.length} project{data.projects.length !== 1 ? 's' : ''}
-          </div>
-        </div>
-
-        {data.projects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.projects.map((project) => (
-              <ProjectAnalyticsCard
-                key={project.id}
-                project={project}
-                onClick={() => handleProjectClick(project.id)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="no-projects">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2l5 0l2 3h9a2 2 0 0 1 2 2z"/>
-              <line x1="12" y1="10" x2="12" y2="14"/>
-              <line x1="10" y1="12" x2="14" y2="12"/>
-            </svg>
-            <h4>No Projects Found</h4>
-            <p>You don't have access to any projects yet.</p>
           </div>
         )}
-      </div>
 
-      {data.engagement && data.engagement.projectActivity.length > 0 && (
-        <div className="activity-timeline">
-          <h3>Activity Timeline</h3>
-          <div className="timeline-chart">
-            {data.engagement.projectActivity.map((day, index) => (
-              <div key={index} className="timeline-item">
-                <div className="timeline-date">{new Date(day.date).toLocaleDateString()}</div>
-                <div className="timeline-bar">
-                  <div 
-                    className="timeline-fill h-dynamic"
-                    style={{ 
-                      '--dynamic-height': `${Math.min(100, (day.activityCount / Math.max(...data.engagement.projectActivity.map(d => d.activityCount))) * 100)}%` 
-                    } as React.CSSProperties}
-                  />
-                </div>
-                <div className="timeline-count">{day.activityCount}</div>
-              </div>
-            ))}
+        {/* Projects section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">Project Details</h3>
+            <Badge variant="secondary">
+              {data.projects.length} project{data.projects.length !== 1 ? 's' : ''}
+            </Badge>
           </div>
+
+          {data.projects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {data.projects.map((project) => (
+                <ProjectAnalyticsCard
+                  key={project.id}
+                  project={project}
+                  onClick={() => handleProjectClick(project.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <FolderPlus className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h4 className="text-lg font-semibold text-foreground mb-2">No Projects Found</h4>
+              <p className="text-sm text-muted-foreground">You don't have access to any projects yet.</p>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* Activity Timeline */}
+        {data.engagement && data.engagement.projectActivity.length > 0 && (
+          <div className="p-4 rounded-lg border border-border">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Activity Timeline</h3>
+            <div className="flex items-end gap-1 h-32">
+              {data.engagement.projectActivity.map((day, index) => {
+                const maxCount = Math.max(...data.engagement!.projectActivity.map(d => d.activityCount));
+                const height = maxCount > 0 ? (day.activityCount / maxCount) * 100 : 0;
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center gap-1 group">
+                    <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                      {day.activityCount}
+                    </span>
+                    <div className="w-full flex-1 flex items-end">
+                      <div 
+                        className="w-full bg-primary/70 hover:bg-primary rounded-t transition-all"
+                        style={{ height: `${Math.max(height, 4)}%` }}
+                        title={`${new Date(day.date).toLocaleDateString()}: ${day.activityCount} activities`}
+                      />
+                    </div>
+                    <span className="text-[9px] text-muted-foreground rotate-45 origin-left whitespace-nowrap">
+                      {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-export default ProjectAnalyticsDashboard; 
+export default ProjectAnalyticsDashboard;

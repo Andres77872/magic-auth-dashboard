@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/utils/component-utils';
+import { cn } from '@/lib/utils';
 
 export interface EmptyStateProps {
   icon: React.ReactNode;
@@ -10,6 +10,27 @@ export interface EmptyStateProps {
   className?: string;
 }
 
+const sizeClasses = {
+  sm: {
+    container: 'py-6',
+    icon: '[&>svg]:h-6 [&>svg]:w-6',
+    title: 'text-sm',
+    description: 'text-xs',
+  },
+  md: {
+    container: 'py-12',
+    icon: '[&>svg]:h-8 [&>svg]:w-8',
+    title: 'text-lg',
+    description: 'text-sm',
+  },
+  lg: {
+    container: 'py-16',
+    icon: '[&>svg]:h-12 [&>svg]:w-12',
+    title: 'text-xl',
+    description: 'text-base',
+  },
+};
+
 export const EmptyState: React.FC<EmptyStateProps> = ({
   icon,
   title,
@@ -18,16 +39,26 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   size = 'md',
   className = '',
 }) => {
+  const sizes = sizeClasses[size];
+
   return (
-    <div className={cn('empty-state', `empty-state--${size}`, className)}>
-      <div className="empty-state__icon" aria-hidden="true">
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center text-center',
+        sizes.container,
+        className
+      )}
+    >
+      <div className={cn('mb-4 text-muted-foreground', sizes.icon)} aria-hidden="true">
         {icon}
       </div>
-      <h3 className="empty-state__title">{title}</h3>
+      <h3 className={cn('font-semibold', sizes.title)}>{title}</h3>
       {description && (
-        <p className="empty-state__description">{description}</p>
+        <p className={cn('mt-1 text-muted-foreground max-w-sm', sizes.description)}>
+          {description}
+        </p>
       )}
-      {action && <div className="empty-state__action">{action}</div>}
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 };

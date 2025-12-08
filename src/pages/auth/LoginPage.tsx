@@ -1,6 +1,6 @@
 import React from 'react';
 import { LoginForm } from '@/components/forms';
-import { LogoIcon, SecurityIcon, UserIcon, ProjectIcon, HealthIcon } from '@/components/icons';
+import { Shield, ShieldCheck, User, FolderKanban, Activity } from 'lucide-react';
 
 export function LoginPage(): React.JSX.Element {
   return (
@@ -16,7 +16,7 @@ export function LoginPage(): React.JSX.Element {
           <div className="brand-content">
             <div className="brand-logo-section">
               <div className="brand-logo-wrapper">
-                <LogoIcon size={72} className="logo-icon" aria-label="Magic Auth Logo" />
+                <Shield size={72} className="logo-icon" aria-label="Magic Auth Logo" />
                 <div className="logo-glow" aria-hidden="true"></div>
               </div>
             </div>
@@ -24,7 +24,7 @@ export function LoginPage(): React.JSX.Element {
             <header className="brand-header">
               <h1 className="brand-title">Magic Auth</h1>
               <div className="brand-subtitle-wrapper">
-                <SecurityIcon size="sm" className="brand-shield-icon" />
+                <ShieldCheck size={16} className="brand-shield-icon" />
                 <h2 className="brand-subtitle">Admin Dashboard</h2>
               </div>
             </header>
@@ -37,7 +37,7 @@ export function LoginPage(): React.JSX.Element {
               <div className="feature-list" role="list" aria-label="Key Features">
                 <div className="feature-item" role="listitem">
                   <div className="feature-icon" aria-hidden="true">
-                    <UserIcon size="sm" />
+                    <User size={16} />
                   </div>
                   <div className="feature-content">
                     <span className="feature-text">3-Tier User Management</span>
@@ -46,7 +46,7 @@ export function LoginPage(): React.JSX.Element {
                 </div>
                 <div className="feature-item" role="listitem">
                   <div className="feature-icon" aria-hidden="true">
-                    <SecurityIcon size="sm" />
+                    <ShieldCheck size={16} />
                   </div>
                   <div className="feature-content">
                     <span className="feature-text">Role-Based Access Control</span>
@@ -55,7 +55,7 @@ export function LoginPage(): React.JSX.Element {
                 </div>
                 <div className="feature-item" role="listitem">
                   <div className="feature-icon" aria-hidden="true">
-                    <ProjectIcon size="sm" />
+                    <FolderKanban size={16} />
                   </div>
                   <div className="feature-content">
                     <span className="feature-text">Project Management</span>
@@ -64,7 +64,7 @@ export function LoginPage(): React.JSX.Element {
                 </div>
                 <div className="feature-item" role="listitem">
                   <div className="feature-icon" aria-hidden="true">
-                    <HealthIcon size="sm" />
+                    <Activity size={16} />
                   </div>
                   <div className="feature-content">
                     <span className="feature-text">System Health Monitoring</span>
@@ -105,7 +105,7 @@ export function LoginPage(): React.JSX.Element {
                 Sign in to access the Magic Auth Dashboard
               </p>
               <div className="form-security-badge" aria-label="Secure connection">
-                <SecurityIcon size="sm" />
+                <ShieldCheck size={16} />
                 <span>Secure Connection</span>
               </div>
             </header>

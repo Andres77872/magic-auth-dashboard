@@ -71,7 +71,7 @@ class AdminService {
     return await response.json();
   }
 
-  // Bulk Operations
+  // Bulk Operations - uses form data per API spec
   async bulkUpdateUsers(
     userHashes: string[],
     options: {
@@ -80,7 +80,7 @@ class AdminService {
       force_password_reset?: boolean;
     }
   ): Promise<ApiResponse<{ updated_count: number; errors: any[] }>> {
-    return await apiClient.post<{ updated_count: number; errors: any[] }>(
+    return await apiClient.postForm<{ updated_count: number; errors: any[] }>(
       '/admin/users/bulk-update',
       { user_hashes: userHashes, ...options }
     );
@@ -90,13 +90,13 @@ class AdminService {
     userHashes: string[],
     confirmDeletion: boolean = true
   ): Promise<ApiResponse<{ deleted_count: number }>> {
-    return await apiClient.post<{ deleted_count: number }>(
+    return await apiClient.postForm<{ deleted_count: number }>(
       '/admin/users/bulk-delete',
       { user_hashes: userHashes, confirm_deletion: confirmDeletion }
     );
   }
 
-  // Bulk Role Assignment
+  // Bulk Role Assignment - uses form data per API spec
   async bulkAssignRoles(
     assignmentsOrProjectHash: Array<{ user_hash: string; role_id: number; project_hash: string }> | string,
     userHashes?: string[],
@@ -104,13 +104,13 @@ class AdminService {
   ): Promise<ApiResponse<{ assigned_count: number; errors: any[] }>> {
     // If first parameter is an array, use the assignments format
     if (Array.isArray(assignmentsOrProjectHash)) {
-      return await apiClient.post<{ assigned_count: number; errors: any[] }>(
+      return await apiClient.postForm<{ assigned_count: number; errors: any[] }>(
         '/admin/bulk-assign-roles',
         { assignments: assignmentsOrProjectHash }
       );
     }
     // Otherwise, use the project-specific format
-    return await apiClient.post<{ assigned_count: number; errors: any[] }>(
+    return await apiClient.postForm<{ assigned_count: number; errors: any[] }>(
       `/admin/projects/${assignmentsOrProjectHash}/bulk-assign-roles`,
       { user_hashes: userHashes, role_names: roleNames }
     );
@@ -128,15 +128,16 @@ class AdminService {
   }
 
   /**
-   * Bulk assign multiple users to multiple groups
+   * Bulk assign multiple users to multiple groups - uses form data per API spec
    * POST /admin/user-groups/bulk-assign
    */
   async bulkAssignUsersToGroups(
-    assignments: Array<{ user_hash: string; group_hash: string }>
+    userHashes: string[],
+    groupNames: string[]
   ): Promise<ApiResponse<{ assigned_count: number; errors: any[] }>> {
-    return await apiClient.post<{ assigned_count: number; errors: any[] }>(
+    return await apiClient.postForm<{ assigned_count: number; errors: any[] }>(
       '/admin/user-groups/bulk-assign',
-      { assignments }
+      { user_hashes: userHashes, group_names: groupNames }
     );
   }
 }

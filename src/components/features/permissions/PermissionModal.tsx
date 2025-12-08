@@ -1,5 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Input, Textarea, Select } from '@/components/common';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { GlobalPermission } from '@/types/global-roles.types';
 
 interface PermissionModalProps {
@@ -105,87 +122,99 @@ export const PermissionModal: React.FC<PermissionModalProps> = ({
   ];
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={mode === 'create' ? 'Create Permission' : 'Edit Permission'}
-      size="md"
-    >
-      <form onSubmit={handleSubmit} className="permission-modal-form">
-        <div className="form-group">
-          <label htmlFor="permission_name">
-            Permission Name <span className="required">*</span>
-          </label>
-          <Input
-            id="permission_name"
-            type="text"
-            value={formData.permission_name}
-            onChange={(e) => setFormData({ ...formData, permission_name: e.target.value })}
-            placeholder="e.g., view_analytics"
-            error={errors.permission_name}
-            disabled={mode === 'edit' || isSubmitting}
-          />
-          <small className="form-help">
-            Use lowercase letters, numbers, and underscores only
-          </small>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent size="md">
+        <DialogHeader>
+          <DialogTitle>{mode === 'create' ? 'Create Permission' : 'Edit Permission'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="permission_name">
+              Permission Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="permission_name"
+              type="text"
+              value={formData.permission_name}
+              onChange={(e) => setFormData({ ...formData, permission_name: e.target.value })}
+              placeholder="e.g., view_analytics"
+              error={errors.permission_name}
+              disabled={mode === 'edit' || isSubmitting}
+              fullWidth
+            />
+            <p className="text-xs text-muted-foreground">
+              Use lowercase letters, numbers, and underscores only
+            </p>
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="permission_display_name">
-            Display Name <span className="required">*</span>
-          </label>
-          <Input
-            id="permission_display_name"
-            type="text"
-            value={formData.permission_display_name}
-            onChange={(e) => setFormData({ ...formData, permission_display_name: e.target.value })}
-            placeholder="e.g., View Analytics"
-            error={errors.permission_display_name}
-            disabled={isSubmitting}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="permission_display_name">
+              Display Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="permission_display_name"
+              type="text"
+              value={formData.permission_display_name}
+              onChange={(e) => setFormData({ ...formData, permission_display_name: e.target.value })}
+              placeholder="e.g., View Analytics"
+              error={errors.permission_display_name}
+              disabled={isSubmitting}
+              fullWidth
+            />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="permission_description">Description</label>
-          <Textarea
-            id="permission_description"
-            value={formData.permission_description}
-            onChange={(e) => setFormData({ ...formData, permission_description: e.target.value })}
-            placeholder="Describe what this permission allows"
-            rows={3}
-            disabled={isSubmitting}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="permission_description">Description</Label>
+            <Textarea
+              id="permission_description"
+              value={formData.permission_description}
+              onChange={(e) => setFormData({ ...formData, permission_description: e.target.value })}
+              placeholder="Describe what this permission allows"
+              rows={3}
+              disabled={isSubmitting}
+            />
+          </div>
 
-        <div className="form-group">
-          <label>Category</label>
-          <Select
-            value={formData.permission_category}
-            onChange={(value) => setFormData({ ...formData, permission_category: value })}
-            options={categoryOptions}
-            disabled={isSubmitting}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select
+              value={formData.permission_category}
+              onValueChange={(value) => setFormData({ ...formData, permission_category: value })}
+              disabled={isSubmitting}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categoryOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="modal-actions">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            loading={isSubmitting}
-          >
-            {mode === 'create' ? 'Create Permission' : 'Save Changes'}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              loading={isSubmitting}
+            >
+              {mode === 'create' ? 'Create Permission' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

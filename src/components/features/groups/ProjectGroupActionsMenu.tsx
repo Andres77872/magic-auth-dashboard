@@ -1,7 +1,14 @@
 import React from 'react';
-import { ActionsMenu } from '@/components/common';
-import type { ActionMenuItem } from '@/components/common';
-import { ViewIcon, EditIcon, DeleteIcon } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/utils/routes';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import type { ProjectGroup } from '@/services/project-group.service';
 
 interface ProjectGroupActionsMenuProps {
@@ -21,7 +28,7 @@ export function ProjectGroupActionsMenu({
     if (onView) {
       onView(group);
     } else {
-      window.location.href = `/dashboard/groups/project-groups/${group.group_hash}`;
+      window.location.href = `${ROUTES.PROJECT_GROUPS}/${group.group_hash}`;
     }
   };
 
@@ -29,7 +36,7 @@ export function ProjectGroupActionsMenu({
     if (onEdit) {
       onEdit(group);
     } else {
-      window.location.href = `/dashboard/groups/project-groups/${group.group_hash}/edit`;
+      window.location.href = `${ROUTES.PROJECT_GROUPS_EDIT}/${group.group_hash}`;
     }
   };
 
@@ -43,37 +50,36 @@ export function ProjectGroupActionsMenu({
     }
   };
 
-  const menuItems: ActionMenuItem[] = [
-    {
-      key: 'view',
-      label: 'View Details',
-      icon: <ViewIcon size="sm" />,
-      onClick: handleViewDetails,
-    },
-    {
-      key: 'edit',
-      label: 'Edit Group',
-      icon: <EditIcon size="sm" />,
-      onClick: handleEdit,
-    },
-  ];
-
-  // Only add delete option if onDelete callback is provided
-  if (onDelete) {
-    menuItems.push({
-      key: 'delete',
-      label: 'Delete Group',
-      icon: <DeleteIcon size="sm" />,
-      onClick: handleDelete,
-      destructive: true,
-    });
-  }
-
   return (
-    <ActionsMenu
-      items={menuItems}
-      ariaLabel={`Actions for ${group.group_name}`}
-      placement="bottom-right"
-    />
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <span className="sr-only">Actions for {group.group_name}</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleViewDetails}>
+          <Eye className="mr-2 h-4 w-4" />
+          View Details
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleEdit}>
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit Group
+        </DropdownMenuItem>
+        {onDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Group
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 } 

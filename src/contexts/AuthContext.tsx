@@ -3,7 +3,7 @@ import type { ReactNode, JSX } from 'react';
 import type { AuthState, AuthAction, User, UserType } from '@/types/auth.types';
 import { AuthActionType } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
-import { rbacService } from '@/services/rbac.service';
+import { permissionAssignmentsService } from '@/services/permission-assignments.service';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { handleApiError } from '@/utils/error-handler';
 import { hasPermission as checkPermission, canAccessRoute as checkRoute } from '@/utils/permissions';
@@ -357,16 +357,10 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     dispatch({ type: AuthActionType.LOAD_PERMISSIONS_START });
 
     try {
-      const response = await rbacService.getUserEffectivePermissions(
-        state.user.user_hash,
-        state.currentProject.project_hash
-      );
+      const response: any = await permissionAssignmentsService.getMyPermissions();
+      const permissionNames = response.permissions || response.data || [];
 
-      if (response.success && response.effective_permissions) {
-        const permissionNames = response.effective_permissions.map(
-          (p) => p.permission_name
-        );
-        
+      if (response.success !== false && Array.isArray(permissionNames)) {
         // Cache permissions for 5 minutes
         cache.set(cacheKey, permissionNames, 5 * 60 * 1000);
         

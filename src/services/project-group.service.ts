@@ -5,7 +5,6 @@ export interface ProjectGroup {
   group_hash: string;
   group_name: string;
   description: string;
-  permissions: string[];
   project_count: number;
   created_at: string;
   updated_at?: string;
@@ -13,8 +12,7 @@ export interface ProjectGroup {
 
 export interface CreateProjectGroupRequest {
   group_name: string;
-  description: string;
-  permissions: string[];
+  description?: string;
 }
 
 export interface CreateProjectGroupResponse extends ApiResponse {
@@ -31,12 +29,17 @@ export interface ProjectGroupListResponse extends ApiResponse {
   };
 }
 
+export interface AssignedProject {
+  project_hash: string;
+  project_name: string;
+  project_description?: string;
+}
+
 export interface ProjectGroupDetailsResponse extends ApiResponse {
   project_group: ProjectGroup;
-  assigned_projects: any[];
+  assigned_projects: AssignedProject[];
   statistics: {
     total_projects: number;
-    total_permissions: number;
   };
 }
 
@@ -60,15 +63,15 @@ class ProjectGroupService {
     return response as ProjectGroupDetailsResponse;
   }
 
-  // Create new project group
+  // Create new project group - uses form data per API spec
   async createProjectGroup(groupData: CreateProjectGroupRequest): Promise<CreateProjectGroupResponse> {
-    const response = await apiClient.post<CreateProjectGroupResponse>('/admin/project-groups', groupData);
+    const response = await apiClient.postForm<CreateProjectGroupResponse>('/admin/project-groups', groupData);
     return response as CreateProjectGroupResponse;
   }
 
-  // Update project group
+  // Update project group - uses form data per API spec
   async updateProjectGroup(groupHash: string, data: Partial<CreateProjectGroupRequest>): Promise<CreateProjectGroupResponse> {
-    const response = await apiClient.put<CreateProjectGroupResponse>(`/admin/project-groups/${groupHash}`, data);
+    const response = await apiClient.putForm<CreateProjectGroupResponse>(`/admin/project-groups/${groupHash}`, data);
     return response as CreateProjectGroupResponse;
   }
 
@@ -77,19 +80,19 @@ class ProjectGroupService {
     return await apiClient.delete<void>(`/admin/project-groups/${groupHash}`);
   }
 
-  // Assign project group to a project
-  async assignGroupToProject(
+  // Assign project to a project group - uses form data per API spec
+  async assignProjectToGroup(
     groupHash: string,
     projectHash: string
   ): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(
+    return await apiClient.postForm<void>(
       `/admin/project-groups/${groupHash}/projects`,
       { project_hash: projectHash }
     );
   }
 
-  // Remove project group from a project
-  async removeGroupFromProject(
+  // Remove project from a project group
+  async removeProjectFromGroup(
     groupHash: string,
     projectHash: string
   ): Promise<ApiResponse<void>> {

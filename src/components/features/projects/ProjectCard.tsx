@@ -1,6 +1,10 @@
 import React from 'react';
-import { Card, Badge, Pagination, Skeleton } from '@/components/common';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Pagination } from '@/components/common';
 import { ProjectActionsMenu } from './ProjectActionsMenu';
+import { Users, Calendar } from 'lucide-react';
 import type { ProjectDetails } from '@/types/project.types';
 import type { PaginationResponse } from '@/types/api.types';
 import { formatDate } from '@/utils';
@@ -25,31 +29,28 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 
   if (isLoading) {
     return (
-      <div className="project-cards" role="region" aria-label="Loading projects" aria-busy="true">
-        <div className="cards-grid">
+      <div role="region" aria-label="Loading projects" aria-busy="true">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <Card 
-              key={index} 
-              className="project-card" 
-              padding="md"
-              elevated
-              aria-hidden="true"
-            >
-              <div className="project-card-header">
-                <div className="project-card-title">
-                  <Skeleton variant="title" width="60%" />
+            <Card key={index} aria-hidden="true">
+              <CardContent className="pt-4 space-y-4">
+                <div className="flex items-start justify-between">
+                  <Skeleton className="h-5 w-3/5" />
+                  <Skeleton className="h-8 w-8" />
                 </div>
-                <div className="project-card-badges">
-                  <Skeleton variant="button" width="80px" />
-                  <Skeleton variant="button" width="80px" />
+                <div className="flex gap-2">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-5 w-20" />
                 </div>
-              </div>
-              <div className="project-card-body">
-                <Skeleton variant="line" count={2} />
-              </div>
-              <div className="project-card-footer">
-                <Skeleton variant="text" width="40%" />
-              </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+                <div className="flex gap-4 pt-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </CardContent>
             </Card>
           ))}
         </div>
@@ -59,25 +60,26 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   }
 
   return (
-    <div className="project-cards" role="region" aria-label="Projects grid">
-      <div className="cards-grid">
+    <div role="region" aria-label="Projects grid">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
           <Card 
-            key={project.project_hash} 
-            className="project-card"
-            padding="md"
-            elevated
+            key={project.project_hash}
             role="article"
             aria-labelledby={`project-name-${project.project_hash}`}
           >
-            <div className="project-card-header">
-              <div className="project-card-title">
-                <h3 id={`project-name-${project.project_hash}`}>
+            <CardContent className="pt-4 space-y-4">
+              <div className="flex items-start justify-between">
+                <h3 
+                  id={`project-name-${project.project_hash}`}
+                  className="font-semibold truncate flex-1"
+                >
                   {project.project_name}
                 </h3>
                 <ProjectActionsMenu project={project} />
               </div>
-              <div className="project-card-badges" role="group" aria-label="Project status">
+              
+              <div className="flex gap-2" role="group" aria-label="Project status">
                 <Badge 
                   variant={project.is_active ? 'success' : 'secondary'}
                   aria-label={project.is_active ? 'Status: Active' : 'Status: Inactive'}
@@ -88,38 +90,30 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                   {project.access_level || 'Standard'}
                 </Badge>
               </div>
-            </div>
 
-            <div className="project-card-body">
               {project.project_description && (
-                <p className="project-description">
+                <p className="text-sm text-muted-foreground line-clamp-2">
                   {project.project_description}
                 </p>
               )}
-            </div>
 
-            <footer className="project-card-footer">
-              <dl className="project-stats">
-                <div className="stat-item">
-                  <dt className="stat-label">Members:</dt>
-                  <dd className="stat-value" aria-label={`${project.member_count || 0} members`}>
-                    {project.member_count || 0}
-                  </dd>
+              <div className="flex gap-4 pt-2 text-sm text-muted-foreground border-t">
+                <div className="flex items-center gap-1" aria-label={`${project.member_count || 0} members`}>
+                  <Users className="h-4 w-4" />
+                  <span>{project.member_count || 0} members</span>
                 </div>
-                <div className="stat-item">
-                  <dt className="stat-label">Created:</dt>
-                  <dd className="stat-value" aria-label={`Created on ${formatDate(project.created_at)}`}>
-                    {formatDate(project.created_at)}
-                  </dd>
+                <div className="flex items-center gap-1" aria-label={`Created on ${formatDate(project.created_at)}`}>
+                  <Calendar className="h-4 w-4" />
+                  <span>{formatDate(project.created_at)}</span>
                 </div>
-              </dl>
-            </footer>
+              </div>
+            </CardContent>
           </Card>
         ))}
       </div>
 
       {pagination && pagination.total > 0 && (
-        <nav className="cards-pagination" aria-label="Projects pagination">
+        <nav className="mt-6" aria-label="Projects pagination">
           <Pagination
             currentPage={Math.floor(pagination.offset / pagination.limit) + 1}
             totalPages={Math.ceil(pagination.total / pagination.limit)}

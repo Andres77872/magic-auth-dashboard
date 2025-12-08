@@ -1,12 +1,32 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Button, LoadingSpinner, Card, Badge, ConfirmDialog, EmptyState, Modal, TabNavigation } from '@/components/common';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { ConfirmDialog, EmptyState, TabNavigation } from '@/components/common';
 import type { Tab } from '@/components/common';
 import { globalRolesService, permissionAssignmentsService } from '@/services';
 import { useToast } from '@/contexts/ToastContext';
 import type { ProjectDetails } from '@/types/project.types';
 import type { GlobalRole, GlobalPermissionGroup } from '@/types/global-roles.types';
-import { PlusIcon, DeleteIcon, InfoIcon } from '@/components/icons';
-import '@/styles/components/project-permissions-tab.css';
+import { Plus, Trash2, Info } from 'lucide-react';
 
 interface ProjectPermissionsTabProps {
   project: ProjectDetails;
@@ -162,12 +182,18 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
   const handleRemoveRoleFromCatalog = async () => {
     if (!confirmRemoveRole) return;
     try {
-      // Note: The API doesn't have a direct remove endpoint documented,
-      // but in practice this would call a DELETE endpoint
-      // For now, just show success and refresh
-      addToast({ message: 'Role removed from catalog', variant: 'success' });
-      setConfirmRemoveRole(null);
-      fetchCatalogData();
+      const response = await globalRolesService.removeRoleFromProjectCatalog(
+        project.project_hash,
+        confirmRemoveRole.role_hash
+      );
+
+      if (response.success) {
+        addToast({ message: 'Role removed from catalog', variant: 'success' });
+        setConfirmRemoveRole(null);
+        fetchCatalogData();
+      } else {
+        addToast({ message: response.message || 'Failed to remove role from catalog', variant: 'error' });
+      }
     } catch (error) {
       console.error('Error removing role from catalog:', error);
       addToast({ message: 'Failed to remove role from catalog', variant: 'error' });
@@ -217,13 +243,13 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
   ];
 
   return (
-    <div className="project-permissions-tab">
+    <div className="space-y-6">
       {/* Info Banner */}
-      <div className="permissions-info-banner">
-        <InfoIcon size={20} aria-hidden="true" />
-        <div className="info-content">
-          <strong>About Permission Catalogs</strong>
-          <p>
+      <div className="flex items-start gap-3 p-4 rounded-lg bg-info/10 border border-info/20">
+        <Info className="h-5 w-5 text-info mt-0.5 flex-shrink-0" aria-hidden="true" />
+        <div className="space-y-1">
+          <strong className="text-sm font-semibold">About Permission Catalogs</strong>
+          <p className="text-sm text-muted-foreground">
             Catalogs are <strong>metadata only</strong> - they suggest recommended roles and permission groups
             for this project but don't affect actual permissions. Use them to organize and document
             which permissions are commonly used for this type of project.
@@ -240,32 +266,32 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
 
       {/* Content */}
       {isLoading ? (
-        <div className="permissions-loading">
-          <LoadingSpinner />
-          <p>Loading catalog...</p>
+        <div className="flex flex-col items-center justify-center py-12">
+          <Spinner size="lg" />
+          <p className="text-sm text-muted-foreground mt-2">Loading catalog...</p>
         </div>
       ) : (
         <>
           {/* Roles Section */}
           {activeSection === 'roles' && (
-            <div className="roles-section">
-              <div className="section-header">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h3>Cataloged Roles</h3>
-                  <p>Suggested global roles for users in this project</p>
+                  <h3 className="text-lg font-semibold">Cataloged Roles</h3>
+                  <p className="text-sm text-muted-foreground">Suggested global roles for users in this project</p>
                 </div>
                 <Button
                   onClick={() => setShowAddRoleModal(true)}
-                  leftIcon={<PlusIcon size={16} aria-hidden="true" />}
                   disabled={availableRoles.length === 0}
                 >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                   Add Role to Catalog
                 </Button>
               </div>
 
               {catalogedRoles.length === 0 ? (
                 <EmptyState
-                  icon={<InfoIcon size={32} aria-hidden="true" />}
+                  icon={<Info className="h-8 w-8" aria-hidden="true" />}
                   title="No Roles in Catalog"
                   description="Add roles to this project's catalog to suggest which roles are commonly used."
                   action={
@@ -277,36 +303,42 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                   }
                 />
               ) : (
-                <div className="catalog-grid">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {catalogedRoles.map(role => (
-                    <Card key={role.role_hash} className="catalog-item">
-                      <div className="catalog-item-header">
-                        <div>
-                          <h4>{role.role_display_name || role.role_name}</h4>
-                          <Badge variant="secondary">{role.role_name}</Badge>
-                          {role.is_system_role && <Badge variant="info">System Role</Badge>}
+                    <Card key={role.role_hash}>
+                      <CardContent className="pt-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <h4 className="font-medium">{role.role_display_name || role.role_name}</h4>
+                            <div className="flex gap-1 flex-wrap">
+                              <Badge variant="secondary">{role.role_name}</Badge>
+                              {role.is_system_role && <Badge variant="info">System Role</Badge>}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setConfirmRemoveRole(role)}
+                            aria-label="Remove from catalog"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setConfirmRemoveRole(role)}
-                          leftIcon={<DeleteIcon size={16} aria-hidden="true" />}
-                          aria-label="Remove from catalog"
-                        />
-                      </div>
-                      {role.role_description && (
-                        <p className="catalog-description">{role.role_description}</p>
-                      )}
-                      {role.catalog_purpose && (
-                        <div className="catalog-meta">
-                          <strong>Purpose:</strong> {role.catalog_purpose}
-                        </div>
-                      )}
-                      {role.notes && (
-                        <div className="catalog-meta">
-                          <strong>Notes:</strong> {role.notes}
-                        </div>
-                      )}
+                        {role.role_description && (
+                          <p className="text-sm text-muted-foreground">{role.role_description}</p>
+                        )}
+                        {role.catalog_purpose && (
+                          <div className="text-sm">
+                            <strong>Purpose:</strong> {role.catalog_purpose}
+                          </div>
+                        )}
+                        {role.notes && (
+                          <div className="text-sm">
+                            <strong>Notes:</strong> {role.notes}
+                          </div>
+                        )}
+                      </CardContent>
                     </Card>
                   ))}
                 </div>
@@ -316,24 +348,24 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
 
           {/* Permission Groups Section */}
           {activeSection === 'permission-groups' && (
-            <div className="permission-groups-section">
-              <div className="section-header">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h3>Cataloged Permission Groups</h3>
-                  <p>Suggested permission groups for this project</p>
+                  <h3 className="text-lg font-semibold">Cataloged Permission Groups</h3>
+                  <p className="text-sm text-muted-foreground">Suggested permission groups for this project</p>
                 </div>
                 <Button
                   onClick={() => setShowAddPermissionGroupModal(true)}
-                  leftIcon={<PlusIcon size={16} aria-hidden="true" />}
                   disabled={availablePermissionGroups.length === 0}
                 >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
                   Add Permission Group
                 </Button>
               </div>
 
               {catalogedPermissionGroups.length === 0 ? (
                 <EmptyState
-                  icon={<InfoIcon size={32} aria-hidden="true" />}
+                  icon={<Info className="h-8 w-8" aria-hidden="true" />}
                   title="No Permission Groups in Catalog"
                   description="Add permission groups to this project's catalog to suggest which groups are commonly used."
                   action={
@@ -345,36 +377,42 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
                   }
                 />
               ) : (
-                <div className="catalog-grid">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {catalogedPermissionGroups.map(group => (
-                    <Card key={group.group_hash} className="catalog-item">
-                      <div className="catalog-item-header">
-                        <div>
-                          <h4>{group.group_display_name || group.group_name}</h4>
-                          <Badge variant="secondary">{group.group_name}</Badge>
-                          {group.group_category && <Badge variant="info">{group.group_category}</Badge>}
+                    <Card key={group.group_hash}>
+                      <CardContent className="pt-4 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <h4 className="font-medium">{group.group_display_name || group.group_name}</h4>
+                            <div className="flex gap-1 flex-wrap">
+                              <Badge variant="secondary">{group.group_name}</Badge>
+                              {group.group_category && <Badge variant="info">{group.group_category}</Badge>}
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setConfirmRemovePermissionGroup(group)}
+                            aria-label="Remove from catalog"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" aria-hidden="true" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setConfirmRemovePermissionGroup(group)}
-                          leftIcon={<DeleteIcon size={16} aria-hidden="true" />}
-                          aria-label="Remove from catalog"
-                        />
-                      </div>
-                      {group.group_description && (
-                        <p className="catalog-description">{group.group_description}</p>
-                      )}
-                      {group.catalog_purpose && (
-                        <div className="catalog-meta">
-                          <strong>Purpose:</strong> {group.catalog_purpose}
-                        </div>
-                      )}
-                      {group.notes && (
-                        <div className="catalog-meta">
-                          <strong>Notes:</strong> {group.notes}
-                        </div>
-                      )}
+                        {group.group_description && (
+                          <p className="text-sm text-muted-foreground">{group.group_description}</p>
+                        )}
+                        {group.catalog_purpose && (
+                          <div className="text-sm">
+                            <strong>Purpose:</strong> {group.catalog_purpose}
+                          </div>
+                        )}
+                        {group.notes && (
+                          <div className="text-sm">
+                            <strong>Notes:</strong> {group.notes}
+                          </div>
+                        )}
+                      </CardContent>
                     </Card>
                   ))}
                 </div>
@@ -385,136 +423,140 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       )}
 
       {/* Add Role Modal */}
-      <Modal
-        isOpen={showAddRoleModal}
-        onClose={() => setShowAddRoleModal(false)}
-        title="Add Role to Catalog"
-        size="md"
-      >
-        <p className="modal-description">
-          Select a global role to add to this project's catalog. This is for UI suggestions only.
-        </p>
+      <Dialog open={showAddRoleModal} onOpenChange={(open) => !open && setShowAddRoleModal(false)}>
+        <DialogContent size="md">
+          <DialogHeader>
+            <DialogTitle>Add Role to Catalog</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select a global role to add to this project's catalog. This is for UI suggestions only.
+            </p>
 
-        <div className="form-group">
-          <label htmlFor="role-select">Select Role</label>
-          <select
-            id="role-select"
-            value={selectedRoleToAdd}
-            onChange={e => setSelectedRoleToAdd(e.target.value)}
-            className="form-select"
-          >
-            <option value="">Choose a role...</option>
-            {availableRoles.map(role => (
-              <option key={role.role_hash} value={role.role_hash}>
-                {role.role_display_name || role.role_name}
-              </option>
-            ))}
-          </select>
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="role-select">Select Role</Label>
+              <Select
+                value={selectedRoleToAdd}
+                onValueChange={setSelectedRoleToAdd}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRoles.map(role => (
+                    <SelectItem key={role.role_hash} value={role.role_hash}>
+                      {role.role_display_name || role.role_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="form-group">
-          <label htmlFor="role-purpose">Purpose (Optional)</label>
-          <input
-            id="role-purpose"
-            type="text"
-            value={rolePurpose}
-            onChange={e => setRolePurpose(e.target.value)}
-            placeholder="e.g., For content editors"
-            className="form-input"
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="role-purpose">Purpose (Optional)</Label>
+              <Input
+                id="role-purpose"
+                type="text"
+                value={rolePurpose}
+                onChange={e => setRolePurpose(e.target.value)}
+                placeholder="e.g., For content editors"
+                fullWidth
+              />
+            </div>
 
-        <div className="form-group">
-          <label htmlFor="role-notes">Notes (Optional)</label>
-          <textarea
-            id="role-notes"
-            value={roleNotes}
-            onChange={e => setRoleNotes(e.target.value)}
-            placeholder="Additional notes about this role's use in the project"
-            className="form-textarea"
-            rows={3}
-          />
-        </div>
-
-        <div className="modal-actions">
-          <Button variant="outline" onClick={() => setShowAddRoleModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAddRoleToCustomCatalog}
-            loading={isAddingRole}
-            disabled={!selectedRoleToAdd}
-          >
-            Add to Catalog
-          </Button>
-        </div>
-      </Modal>
+            <div className="space-y-2">
+              <Label htmlFor="role-notes">Notes (Optional)</Label>
+              <Textarea
+                id="role-notes"
+                value={roleNotes}
+                onChange={e => setRoleNotes(e.target.value)}
+                placeholder="Additional notes about this role's use in the project"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddRoleModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddRoleToCustomCatalog}
+              loading={isAddingRole}
+              disabled={!selectedRoleToAdd}
+            >
+              Add to Catalog
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Permission Group Modal */}
-      <Modal
-        isOpen={showAddPermissionGroupModal}
-        onClose={() => setShowAddPermissionGroupModal(false)}
-        title="Add Permission Group to Catalog"
-        size="md"
-      >
-        <p className="modal-description">
-          Select a permission group to add to this project's catalog. This is for UI suggestions only.
-        </p>
+      <Dialog open={showAddPermissionGroupModal} onOpenChange={(open) => !open && setShowAddPermissionGroupModal(false)}>
+        <DialogContent size="md">
+          <DialogHeader>
+            <DialogTitle>Add Permission Group to Catalog</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select a permission group to add to this project's catalog. This is for UI suggestions only.
+            </p>
 
-        <div className="form-group">
-          <label htmlFor="permission-group-select">Select Permission Group</label>
-          <select
-            id="permission-group-select"
-            value={selectedPermissionGroupToAdd}
-            onChange={e => setSelectedPermissionGroupToAdd(e.target.value)}
-            className="form-select"
-          >
-            <option value="">Choose a permission group...</option>
-            {availablePermissionGroups.map(group => (
-              <option key={group.group_hash} value={group.group_hash}>
-                {group.group_display_name || group.group_name} ({group.group_category})
-              </option>
-            ))}
-          </select>
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="permission-group-select">Select Permission Group</Label>
+              <Select
+                value={selectedPermissionGroupToAdd}
+                onValueChange={setSelectedPermissionGroupToAdd}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a permission group..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePermissionGroups.map(group => (
+                    <SelectItem key={group.group_hash} value={group.group_hash}>
+                      {group.group_display_name || group.group_name} ({group.group_category})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="form-group">
-          <label htmlFor="permission-group-purpose">Purpose (Optional)</label>
-          <input
-            id="permission-group-purpose"
-            type="text"
-            value={permissionGroupPurpose}
-            onChange={e => setPermissionGroupPurpose(e.target.value)}
-            placeholder="e.g., For content management"
-            className="form-input"
-          />
-        </div>
+            <div className="space-y-2">
+              <Label htmlFor="permission-group-purpose">Purpose (Optional)</Label>
+              <Input
+                id="permission-group-purpose"
+                type="text"
+                value={permissionGroupPurpose}
+                onChange={e => setPermissionGroupPurpose(e.target.value)}
+                placeholder="e.g., For content management"
+                fullWidth
+              />
+            </div>
 
-        <div className="form-group">
-          <label htmlFor="permission-group-notes">Notes (Optional)</label>
-          <textarea
-            id="permission-group-notes"
-            value={permissionGroupNotes}
-            onChange={e => setPermissionGroupNotes(e.target.value)}
-            placeholder="Additional notes about this permission group's use in the project"
-            className="form-textarea"
-            rows={3}
-          />
-        </div>
-
-        <div className="modal-actions">
-          <Button variant="outline" onClick={() => setShowAddPermissionGroupModal(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAddPermissionGroupToCatalog}
-            loading={isAddingPermissionGroup}
-            disabled={!selectedPermissionGroupToAdd}
-          >
-            Add to Catalog
-          </Button>
-        </div>
-      </Modal>
+            <div className="space-y-2">
+              <Label htmlFor="permission-group-notes">Notes (Optional)</Label>
+              <Textarea
+                id="permission-group-notes"
+                value={permissionGroupNotes}
+                onChange={e => setPermissionGroupNotes(e.target.value)}
+                placeholder="Additional notes about this permission group's use in the project"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddPermissionGroupModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddPermissionGroupToCatalog}
+              loading={isAddingPermissionGroup}
+              disabled={!selectedPermissionGroupToAdd}
+            >
+              Add to Catalog
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Remove Role Confirmation */}
       {confirmRemoveRole && (

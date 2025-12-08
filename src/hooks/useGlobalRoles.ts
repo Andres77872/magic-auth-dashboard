@@ -7,7 +7,9 @@ import type {
   CreateGlobalRoleRequest,
   UpdateGlobalRoleRequest,
   CreateGlobalPermissionGroupRequest,
-  CreateGlobalPermissionRequest
+  UpdateGlobalPermissionGroupRequest,
+  CreateGlobalPermissionRequest,
+  UpdateGlobalPermissionRequest
 } from '@/types/global-roles.types';
 
 interface UseGlobalRolesReturn {
@@ -36,15 +38,21 @@ interface UseGlobalRolesReturn {
   
   // Permission Group Management
   createPermissionGroup: (data: CreateGlobalPermissionGroupRequest) => Promise<void>;
+  updatePermissionGroup: (groupHash: string, data: UpdateGlobalPermissionGroupRequest) => Promise<void>;
+  deletePermissionGroup: (groupHash: string) => Promise<void>;
   getPermissionGroup: (groupHash: string) => Promise<GlobalPermissionGroup>;
   assignPermissionGroupToRole: (roleHash: string, groupHash: string) => Promise<void>;
+  removePermissionGroupFromRole: (roleHash: string, groupHash: string) => Promise<void>;
   
   // Permission Management
   createPermission: (data: CreateGlobalPermissionRequest) => Promise<void>;
+  updatePermission: (permissionHash: string, data: UpdateGlobalPermissionRequest) => Promise<void>;
+  deletePermission: (permissionHash: string) => Promise<void>;
   checkPermission: (permissionName: string) => Promise<boolean>;
   
   // User Role Assignment
   assignRoleToUser: (userHash: string, roleHash: string) => Promise<void>;
+  removeRoleFromUser: (userHash: string) => Promise<void>;
   getUserRole: (userHash: string) => Promise<GlobalRole>;
   getMyRole: () => Promise<GlobalRole>;
   
@@ -215,6 +223,30 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
     }
   }, [fetchPermissionGroups]);
 
+  const updatePermissionGroup = useCallback(async (groupHash: string, data: UpdateGlobalPermissionGroupRequest) => {
+    setGroupsError(null);
+    try {
+      await globalRolesService.updatePermissionGroup(groupHash, data);
+      await fetchPermissionGroups();
+    } catch (err) {
+      const error = err instanceof Error ? err.message : 'Failed to update permission group';
+      setGroupsError(error);
+      throw new Error(error);
+    }
+  }, [fetchPermissionGroups]);
+
+  const deletePermissionGroup = useCallback(async (groupHash: string) => {
+    setGroupsError(null);
+    try {
+      await globalRolesService.deletePermissionGroup(groupHash);
+      await fetchPermissionGroups();
+    } catch (err) {
+      const error = err instanceof Error ? err.message : 'Failed to delete permission group';
+      setGroupsError(error);
+      throw new Error(error);
+    }
+  }, [fetchPermissionGroups]);
+
   const getPermissionGroup = useCallback(async (groupHash: string): Promise<GlobalPermissionGroup> => {
     const response: any = await globalRolesService.getPermissionGroup(groupHash);
     const permissionGroupData = response.permission_group || response.data;
@@ -232,6 +264,14 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
     }
   }, []);
 
+  const removePermissionGroupFromRole = useCallback(async (roleHash: string, groupHash: string) => {
+    try {
+      await globalRolesService.removePermissionGroupFromRole(roleHash, groupHash);
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to remove permission group from role');
+    }
+  }, []);
+
   // Permission Management
   const createPermission = useCallback(async (data: CreateGlobalPermissionRequest) => {
     setPermissionsError(null);
@@ -245,10 +285,34 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
     }
   }, [fetchPermissions]);
 
+  const updatePermission = useCallback(async (permissionHash: string, data: UpdateGlobalPermissionRequest) => {
+    setPermissionsError(null);
+    try {
+      await globalRolesService.updatePermission(permissionHash, data);
+      await fetchPermissions();
+    } catch (err) {
+      const error = err instanceof Error ? err.message : 'Failed to update permission';
+      setPermissionsError(error);
+      throw new Error(error);
+    }
+  }, [fetchPermissions]);
+
+  const deletePermission = useCallback(async (permissionHash: string) => {
+    setPermissionsError(null);
+    try {
+      await globalRolesService.deletePermission(permissionHash);
+      await fetchPermissions();
+    } catch (err) {
+      const error = err instanceof Error ? err.message : 'Failed to delete permission';
+      setPermissionsError(error);
+      throw new Error(error);
+    }
+  }, [fetchPermissions]);
+
   const checkPermission = useCallback(async (permissionName: string): Promise<boolean> => {
     try {
-      const response = await globalRolesService.checkPermission(permissionName);
-      return response.data?.has_permission ?? false;
+      const response: any = await globalRolesService.checkPermission(permissionName);
+      return response.has_permission ?? response.data?.has_permission ?? false;
     } catch (err) {
       return false;
     }
@@ -260,6 +324,14 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
       await globalRolesService.assignRoleToUser(userHash, roleHash);
     } catch (err) {
       throw new Error(err instanceof Error ? err.message : 'Failed to assign role');
+    }
+  }, []);
+
+  const removeRoleFromUser = useCallback(async (userHash: string) => {
+    try {
+      await globalRolesService.removeRoleFromUser(userHash);
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Failed to remove role from user');
     }
   }, []);
 
@@ -334,15 +406,21 @@ export function useGlobalRoles(): UseGlobalRolesReturn {
     
     // Permission Group Management
     createPermissionGroup,
+    updatePermissionGroup,
+    deletePermissionGroup,
     getPermissionGroup,
     assignPermissionGroupToRole,
+    removePermissionGroupFromRole,
     
     // Permission Management
     createPermission,
+    updatePermission,
+    deletePermission,
     checkPermission,
     
     // User Role Assignment
     assignRoleToUser,
+    removeRoleFromUser,
     getUserRole,
     getMyRole,
     

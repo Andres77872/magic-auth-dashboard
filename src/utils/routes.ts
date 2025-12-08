@@ -32,6 +32,7 @@ export const ROUTES = {
   PROJECT_GROUPS: '/dashboard/groups/project-groups',
   PROJECT_GROUPS_CREATE: '/dashboard/groups/project-groups/create',
   PROJECT_GROUPS_EDIT: '/dashboard/groups/project-groups/edit',
+  PROJECT_GROUPS_DETAILS: '/dashboard/groups/project-groups',
   
   // RBAC Management
   PERMISSIONS: '/dashboard/permissions',
@@ -47,6 +48,12 @@ export const ROUTES = {
   PERMISSION_GROUPS: '/dashboard/permissions/permission-groups',
   PERMISSION_ASSIGNMENTS_MGMT: '/dashboard/permissions/permission-assignments',
   ROLE_MANAGEMENT: '/dashboard/permissions/role-management',
+  
+  // Audit Log Monitor
+  AUDIT: '/dashboard/audit',
+  AUDIT_ACTIVITY: '/dashboard/audit/activity',
+  AUDIT_SECURITY: '/dashboard/audit/security',
+  AUDIT_STATISTICS: '/dashboard/audit/statistics',
   
   // System Management (ROOT only)
   SYSTEM: '/dashboard/system',
@@ -109,6 +116,13 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     label: 'Role Management',
     path: ROUTES.ROLE_MANAGEMENT,
     icon: 'user-badge',
+    allowedUserTypes: ['root', 'admin'],
+  },
+  {
+    id: 'audit',
+    label: 'Audit Logs',
+    path: ROUTES.AUDIT,
+    icon: 'document',
     allowedUserTypes: ['root', 'admin'],
   },
   {

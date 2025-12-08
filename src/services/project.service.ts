@@ -7,8 +7,7 @@ import type {
   ProjectListResponse,
   ProjectDetailsResponse,
   ProjectMembersResponse,
-  ProjectGroupsResponse,
-  AssignGroupToProjectResponse
+  ProjectGroupsResponse
 } from '@/types/project.types';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
 
@@ -33,15 +32,15 @@ class ProjectService {
     return response as ProjectDetailsResponse;
   }
 
-  // Create new project
+  // Create new project - uses form data per API spec
   async createProject(projectData: CreateProjectRequest): Promise<CreateProjectResponse> {
-    const response = await apiClient.post<CreateProjectResponse>('/projects', projectData);
+    const response = await apiClient.postForm<CreateProjectResponse>('/projects', projectData);
     return response as CreateProjectResponse;
   }
 
-  // Update project
+  // Update project - uses form data per API spec
   async updateProject(projectHash: string, data: Partial<CreateProjectRequest>): Promise<CreateProjectResponse> {
-    const response = await apiClient.put<CreateProjectResponse>(`/projects/${projectHash}`, data);
+    const response = await apiClient.putForm<CreateProjectResponse>(`/projects/${projectHash}`, data);
     return response as CreateProjectResponse;
   }
 
@@ -67,21 +66,12 @@ class ProjectService {
     return response as ProjectMembersResponse;
   }
 
-  // Add member to project
-  async addProjectMember(
-    projectHash: string, 
-    userHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(`/projects/${projectHash}/members`, { user_hash: userHash });
-  }
-
-  // Remove member from project
-  async removeProjectMember(
-    projectHash: string, 
-    userHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/projects/${projectHash}/members/${userHash}`);
-  }
+  // NOTE: Users gain project access through the Groups-of-Groups architecture:
+  // User -> User Group -> Project Group -> Project
+  // Access is managed via:
+  // 1. POST /admin/project-groups/{hash}/projects - Add project to project group
+  // 2. POST /admin/user-groups/{hash}/project-groups - Grant user group access to project group
+  // Individual user membership is read-only - manage via group assignments.
 
   // Get project activity
   async getProjectActivity(
@@ -104,25 +94,26 @@ class ProjectService {
     return await apiClient.get<any>(`/projects/${projectHash}/stats`);
   }
 
-  // Transfer project ownership
+  // Transfer project ownership - uses PUT per API spec
   async transferOwnership(
     projectHash: string, 
     newOwnerHash: string
   ): Promise<ApiResponse<void>> {
-    return await apiClient.patch<void>(`/projects/${projectHash}/owner`, { 
+    return await apiClient.putForm<void>(`/projects/${projectHash}/owner`, { 
       new_owner_hash: newOwnerHash 
     });
   }
 
-  // Archive/Unarchive project
+  // Archive/Unarchive project - uses POST per API spec
   async toggleProjectArchive(
     projectHash: string, 
     archived: boolean
   ): Promise<ApiResponse<ProjectDetails>> {
-    return await apiClient.patch<ProjectDetails>(`/projects/${projectHash}/archive`, { archived });
+    return await apiClient.postForm<ProjectDetails>(`/projects/${projectHash}/archive`, { archived });
   }
 
-  // Get project groups (user groups assigned to project)
+  // Get user groups with access to project (via project groups)
+  // GET /projects/{hash}/groups
   async getProjectGroups(
     projectHash: string, 
     params: PaginationParams = {}
@@ -137,26 +128,6 @@ class ProjectService {
     
     const response = await apiClient.get<ProjectGroupsResponse>(`/projects/${projectHash}/groups`, cleanParams);
     return response as ProjectGroupsResponse;
-  }
-
-  // Assign group to project
-  async assignGroupToProject(
-    projectHash: string, 
-    groupHash: string
-  ): Promise<AssignGroupToProjectResponse> {
-    const response = await apiClient.post<AssignGroupToProjectResponse>(
-      `/projects/${projectHash}/groups`, 
-      { group_hash: groupHash }
-    );
-    return response as AssignGroupToProjectResponse;
-  }
-
-  // Remove group from project
-  async removeGroupFromProject(
-    projectHash: string, 
-    groupHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/projects/${projectHash}/groups/${groupHash}`);
   }
 }
 

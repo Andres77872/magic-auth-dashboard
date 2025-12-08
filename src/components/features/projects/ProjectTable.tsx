@@ -1,8 +1,9 @@
 import React from 'react';
-import { DataView, Pagination, Badge } from '@/components/common';
+import { DataView, Pagination } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
+import { Badge } from '@/components/ui/badge';
 import { ProjectActionsMenu } from './ProjectActionsMenu';
-import { ProjectIcon } from '@/components/icons';
+import { FolderKanban } from 'lucide-react';
 import { formatDate, getStatusBadgeVariant } from '@/utils/component-utils';
 import type { ProjectDetails } from '@/types/project.types';
 import type { PaginationResponse } from '@/types/api.types';
@@ -39,10 +40,10 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       header: 'Project Name',
       sortable: true,
       render: (_value: any, project: ProjectDetails) => (
-        <div className="project-name-cell">
-          <div className="project-name">{project.project_name}</div>
+        <div>
+          <div className="font-medium">{project.project_name}</div>
           {project.project_description && (
-            <div className="project-description">{project.project_description}</div>
+            <div className="text-sm text-muted-foreground truncate max-w-xs">{project.project_description}</div>
           )}
         </div>
       ),
@@ -52,7 +53,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       header: 'Members',
       sortable: true,
       render: (_value: any, project: ProjectDetails) => (
-        <span className="member-count">
+        <span className="font-medium">
           {project.member_count || 0}
         </span>
       ),
@@ -72,7 +73,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       header: 'Created',
       sortable: true,
       render: (_value: any, project: ProjectDetails) => (
-        <span className="created-date">
+        <span className="text-sm text-muted-foreground">
           {formatDate(project.created_at)}
         </span>
       ),
@@ -114,13 +115,13 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
         onSort={onSort}
         isLoading={isLoading}
         emptyMessage="No projects found"
-        emptyIcon={<ProjectIcon size={32} />}
+        emptyIcon={<FolderKanban className="h-10 w-10" />}
         skeletonRows={8}
         className="project-table"
       />
       
       {pagination && pagination.total > 0 && (
-        <div className="table-pagination">
+        <div className="mt-4">
           <Pagination
             currentPage={Math.floor(pagination.offset / pagination.limit) + 1}
             totalPages={Math.ceil(pagination.total / pagination.limit)}

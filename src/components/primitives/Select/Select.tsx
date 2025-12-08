@@ -1,6 +1,7 @@
 import React, { forwardRef, useState, useRef, useEffect, useId } from 'react';
+import { ChevronDown, X, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { FormSize, ValidationState, SelectOption } from '../types';
-import './Select.css';
 
 export interface SelectProps {
   options: SelectOption[];
@@ -20,6 +21,12 @@ export interface SelectProps {
   className?: string;
   id?: string;
 }
+
+const sizeStyles: Record<FormSize, { trigger: string; text: string }> = {
+  sm: { trigger: 'h-8 px-2 text-xs', text: 'text-xs' },
+  md: { trigger: 'h-10 px-3 text-sm', text: 'text-sm' },
+  lg: { trigger: 'h-12 px-4 text-base', text: 'text-base' },
+};
 
 export const Select = forwardRef<HTMLDivElement, SelectProps>(
   (
@@ -149,38 +156,29 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
       onChange('');
     };
 
-    const wrapperClasses = [
-      'select-wrapper',
-      `select-wrapper-${size}`,
-      fullWidth && 'select-wrapper-full-width',
-      disabled && 'select-wrapper-disabled',
-      isOpen && 'select-wrapper-open',
-      className,
-    ]
-      .filter(Boolean)
-      .join(' ');
-
-    const triggerClasses = [
-      'select-trigger',
-      `select-trigger-${size}`,
-      finalValidationState && `select-trigger-${finalValidationState}`,
-    ]
-      .filter(Boolean)
-      .join(' ');
-
     return (
-      <div className={wrapperClasses} ref={ref || selectRef}>
+      <div 
+        className={cn('flex flex-col gap-1.5', fullWidth && 'w-full', className)} 
+        ref={ref || selectRef}
+      >
         {label && (
-          <label htmlFor={selectId} className="select-label">
+          <label htmlFor={selectId} className={cn('font-medium text-foreground', sizeStyles[size].text)}>
             {label}
-            {required && <span className="select-required" aria-hidden="true">*</span>}
+            {required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
           </label>
         )}
 
-        <div ref={selectRef} className="select-container">
+        <div ref={selectRef} className="relative">
           <div
             id={selectId}
-            className={triggerClasses}
+            className={cn(
+              'flex items-center justify-between rounded-md border bg-background cursor-pointer transition-colors',
+              sizeStyles[size].trigger,
+              disabled && 'opacity-50 cursor-not-allowed bg-muted',
+              finalValidationState === 'error' && 'border-destructive focus:ring-destructive',
+              finalValidationState === 'success' && 'border-success',
+              !finalValidationState && 'border-input hover:border-ring focus:ring-2 focus:ring-ring'
+            )}
             onClick={() => !disabled && setIsOpen(!isOpen)}
             onKeyDown={handleKeyDown}
             tabIndex={disabled ? -1 : 0}
@@ -193,40 +191,38 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
             aria-required={required}
             aria-disabled={disabled}
           >
-            <span className={`select-value ${!selectedOption ? 'select-placeholder' : ''}`}>
+            <span className={cn('truncate', !selectedOption && 'text-muted-foreground')}>
               {selectedOption ? selectedOption.label : placeholder}
             </span>
 
-            <div className="select-icons">
+            <div className="flex items-center gap-1 shrink-0">
               {clearable && value && !disabled && (
                 <button
                   type="button"
-                  className="select-clear"
+                  className="p-0.5 rounded hover:bg-muted transition-colors"
                   onClick={handleClear}
                   aria-label="Clear selection"
                   tabIndex={-1}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 6L6 18M6 6l12 12" />
-                  </svg>
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               )}
-              <span className="select-arrow" aria-hidden="true">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 9l6 6 6-6" />
-                </svg>
-              </span>
+              <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isOpen && 'rotate-180')} aria-hidden="true" />
             </div>
           </div>
 
           {isOpen && (
-            <div className="select-dropdown" role="listbox" id={`${selectId}-listbox`}>
+            <div 
+              className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-md animate-in fade-in-0 zoom-in-95"
+              role="listbox" 
+              id={`${selectId}-listbox`}
+            >
               {searchable && (
-                <div className="select-search">
+                <div className="p-2 border-b border-border">
                   <input
                     ref={searchInputRef}
                     type="text"
-                    className="select-search-input"
+                    className="w-full px-2 py-1.5 text-sm rounded border border-input bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                     placeholder="Search..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -236,31 +232,27 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
                 </div>
               )}
 
-              <div className="select-options">
+              <div className="max-h-60 overflow-auto p-1">
                 {filteredOptions.length === 0 ? (
-                  <div className="select-no-options">No options found</div>
+                  <div className="px-2 py-3 text-center text-sm text-muted-foreground">No options found</div>
                 ) : (
                   filteredOptions.map((option, index) => (
                     <div
                       key={option.value}
-                      className={[
-                        'select-option',
-                        option.disabled && 'select-option-disabled',
-                        index === highlightedIndex && 'select-option-highlighted',
-                        option.value === value && 'select-option-selected',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
+                      className={cn(
+                        'flex items-center justify-between px-2 py-1.5 rounded-sm cursor-pointer text-sm transition-colors',
+                        option.disabled && 'opacity-50 cursor-not-allowed',
+                        index === highlightedIndex && 'bg-accent',
+                        option.value === value && 'bg-accent font-medium'
+                      )}
                       onClick={() => handleOptionClick(option)}
                       role="option"
                       aria-selected={option.value === value}
                       aria-disabled={option.disabled}
                     >
-                      {option.label}
+                      <span className="truncate">{option.label}</span>
                       {option.value === value && (
-                        <svg className="select-option-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
+                        <Check className="h-4 w-4 text-primary shrink-0" />
                       )}
                     </div>
                   ))
@@ -270,19 +262,17 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
           )}
         </div>
 
-        <div className="select-footer">
-          {error && (
-            <div id={errorId} className="select-message select-message-error" role="alert">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div id={errorId} className="text-xs text-destructive" role="alert">
+            {error}
+          </div>
+        )}
 
-          {!error && helperText && (
-            <div id={helperId} className="select-message select-message-helper">
-              {helperText}
-            </div>
-          )}
-        </div>
+        {!error && helperText && (
+          <div id={helperId} className="text-xs text-muted-foreground">
+            {helperText}
+          </div>
+        )}
       </div>
     );
   }

@@ -1,38 +1,30 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useUserType } from '@/hooks';
-import { ChevronIcon, UserIcon, SettingsIcon, LogoutIcon } from '@/components/icons';
+import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
 import { getUserTypeBadgeClass } from '@/utils/userTypeStyles';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Button,
+} from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 export function UserMenu(): React.JSX.Element {
-  const [isOpen, setIsOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
   const { getUserTypeLabel, userType } = useUserType();
   const navigate = useNavigate();
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-        setShowLogoutConfirm(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Handle keyboard navigation
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      setIsOpen(false);
-      setShowLogoutConfirm(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -43,17 +35,9 @@ export function UserMenu(): React.JSX.Element {
     }
   };
 
-  const handleLogoutClick = () => {
-    setShowLogoutConfirm(true);
-  };
-
   const handleLogoutConfirm = () => {
     setShowLogoutConfirm(false);
     handleLogout();
-  };
-
-  const handleLogoutCancel = () => {
-    setShowLogoutConfirm(false);
   };
 
   if (!user) {
@@ -61,44 +45,40 @@ export function UserMenu(): React.JSX.Element {
   }
 
   return (
-    <div className="user-menu" ref={menuRef} onKeyDown={handleKeyDown}>
-      {/* User avatar/trigger */}
-      <button
-        type="button"
-        className="user-menu-trigger"
-        onClick={() => setIsOpen(!isOpen)}
-        aria-expanded={isOpen}
-        aria-haspopup="true"
-        aria-label="User menu"
-      >
-        <div className="navigation-user-avatar">
-          <span className="avatar-text">
-            {user.username.charAt(0).toUpperCase()}
-          </span>
-        </div>
-        <ChevronIcon 
-          className={`chevron ${isOpen ? 'open' : ''}`}
-          size="sm"
-          direction={isOpen ? "up" : "down"}
-        />
-      </button>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-2 p-2 bg-transparent border-none rounded-md cursor-pointer transition-colors hover:bg-muted focus-visible:outline-[3px] focus-visible:outline-primary-500 focus-visible:outline-offset-2"
+            aria-label="User menu"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
+              <span className="text-white text-sm font-bold">
+                {user.username.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
+          </button>
+        </DropdownMenuTrigger>
 
-      {/* Dropdown menu */}
-      {isOpen && (
-        <div className="user-menu-dropdown" role="menu">
+        <DropdownMenuContent align="end" className="w-[280px]">
           {/* User info header */}
-          <div className="user-menu-header">
-            <div className="user-info-detailed">
-              <div className="navigation-user-avatar-large">
-                <span className="avatar-text-large">
+          <div className="p-4 border-b border-border bg-muted/50">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center">
+                <span className="text-white text-lg font-bold">
                   {user.username.charAt(0).toUpperCase()}
                 </span>
               </div>
-              <div className="user-details">
-                <div className="user-name-large">{user.username}</div>
-                <div className="user-email">{user.email}</div>
+              <div className="flex-1">
+                <div className="text-base font-semibold text-foreground mb-1">{user.username}</div>
+                <div className="text-sm text-muted-foreground mb-1">{user.email}</div>
                 <div 
-                  className={`nav-user-type-badge ${getUserTypeBadgeClass(userType || undefined)}`}
+                  className={cn(
+                    'inline-block text-xs font-bold uppercase tracking-wide px-2 py-1 rounded-sm',
+                    getUserTypeBadgeClass(userType || undefined)
+                  )}
                 >
                   {getUserTypeLabel()}
                 </div>
@@ -107,68 +87,52 @@ export function UserMenu(): React.JSX.Element {
           </div>
 
           {/* Menu items */}
-          <div className="user-menu-items">
-            <Link
-              to={ROUTES.PROFILE}
-              className="user-menu-item"
-              role="menuitem"
-              onClick={() => setIsOpen(false)}
-            >
-              <UserIcon size="sm" />
-              <span>Profile</span>
-            </Link>
+          <div className="p-2">
+            <DropdownMenuItem asChild>
+              <Link to={ROUTES.PROFILE} className="flex items-center gap-3 cursor-pointer">
+                <User className="h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
 
-            <button
-              type="button"
-              className="user-menu-item"
-              role="menuitem"
-              onClick={() => setIsOpen(false)}
-            >
-              <SettingsIcon size="sm" />
+            <DropdownMenuItem className="flex items-center gap-3 cursor-pointer">
+              <Settings className="h-4 w-4" />
               <span>Settings</span>
-            </button>
+            </DropdownMenuItem>
 
-            <hr className="user-menu-divider" />
+            <DropdownMenuSeparator />
 
-            <button
-              type="button"
-              className="user-menu-item logout-item"
-              role="menuitem"
-              onClick={handleLogoutClick}
+            <DropdownMenuItem 
+              className="flex items-center gap-3 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+              onClick={() => setShowLogoutConfirm(true)}
             >
-              <LogoutIcon size="sm" />
+              <LogOut className="h-4 w-4" />
               <span>Sign Out</span>
-            </button>
+            </DropdownMenuItem>
           </div>
-        </div>
-      )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      {/* Logout confirmation modal */}
-      {showLogoutConfirm && (
-        <div className="logout-confirm-overlay">
-          <div className="logout-confirm-dialog" role="dialog" aria-labelledby="logout-title">
-            <h3 id="logout-title">Confirm Sign Out</h3>
-            <p>Are you sure you want to sign out of your account?</p>
-            <div className="logout-confirm-actions">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleLogoutCancel}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleLogoutConfirm}
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      {/* Logout confirmation dialog */}
+      <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Sign Out</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to sign out of your account?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLogoutConfirm(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleLogoutConfirm}>
+              Sign Out
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

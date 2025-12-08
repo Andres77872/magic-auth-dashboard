@@ -1,7 +1,16 @@
+/**
+ * Breadcrumbs Component
+ * 
+ * Navigation breadcrumbs showing current location in the app hierarchy.
+ * Automatically generates breadcrumbs from the current route path.
+ * 
+ * @see docs/DESIGN_SYSTEM/DASHBOARD_PATTERNS.md
+ */
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronIcon } from '@/components/icons';
+import { ChevronRight, Home } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
+import { cn } from '@/lib/utils';
 
 interface BreadcrumbItem {
   label: string;
@@ -19,7 +28,7 @@ export function Breadcrumbs(): React.JSX.Element {
 
     // Home/Dashboard
     breadcrumbs.push({
-      label: 'Dashboard',
+      label: 'Home',
       path: ROUTES.DASHBOARD,
       isActive: location.pathname === ROUTES.DASHBOARD,
     });
@@ -71,44 +80,51 @@ export function Breadcrumbs(): React.JSX.Element {
 
   const breadcrumbs = generateBreadcrumbs();
 
-  if (breadcrumbs.length <= 1) {
-    return <></>; // Don't show breadcrumbs for single-level pages
-  }
-
+  // Always show at least the home breadcrumb for context
   return (
     <nav 
-      className="breadcrumbs" 
+      className="flex items-center" 
       aria-label="Breadcrumb navigation"
       role="navigation"
     >
-      <ol className="breadcrumb-list">
+      <ol className="flex items-center list-none m-0 p-0 gap-1 flex-wrap">
         {breadcrumbs.map((item, index) => (
           <li 
             key={index} 
-            className={`breadcrumb-item ${item.isActive ? 'active' : ''}`}
+            className="flex items-center"
           >
             {item.path && !item.isActive ? (
               <Link 
                 to={item.path} 
-                className="breadcrumb-link"
+                className={cn(
+                  'flex items-center gap-1.5 px-2 py-1 rounded-md text-sm',
+                  'text-muted-foreground no-underline',
+                  'transition-all duration-200',
+                  'hover:text-foreground hover:bg-muted',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
+                )}
                 aria-current={item.isActive ? 'page' : undefined}
               >
-                {item.label}
+                {index === 0 && <Home size={14} className="shrink-0" aria-hidden="true" />}
+                <span className={cn(index === 0 && 'sr-only sm:not-sr-only')}>{item.label}</span>
               </Link>
             ) : (
               <span 
-                className="breadcrumb-text"
+                className={cn(
+                  'flex items-center gap-1.5 px-2 py-1 rounded-md text-sm',
+                  'font-medium text-foreground'
+                )}
                 aria-current={item.isActive ? 'page' : undefined}
               >
-                {item.label}
+                {index === 0 && <Home size={14} className="shrink-0" aria-hidden="true" />}
+                <span>{item.label}</span>
               </span>
             )}
             
             {index < breadcrumbs.length - 1 && (
-              <ChevronIcon 
-                className="breadcrumb-separator" 
-                size="sm"
-                direction="right"
+              <ChevronRight 
+                size={14}
+                className="text-muted-foreground/50 shrink-0 mx-0.5" 
                 aria-hidden="true"
               />
             )}

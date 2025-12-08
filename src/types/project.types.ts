@@ -16,10 +16,16 @@ export interface ProjectDetails {
 }
 
 export interface ProjectStatistics {
-  total_users: number;
+  total_users: number | string;
   active_sessions: number;
-  total_groups: number;
+  total_groups: number | string;
   group_distribution: Record<string, any>;
+}
+
+export interface ProjectGroupInfo {
+  group_hash: string;
+  group_name: string;
+  description?: string;
 }
 
 export interface UserAccess {
@@ -38,6 +44,7 @@ export interface ProjectDetailsResponse extends ApiResponse {
   };
   user_access: UserAccess;
   statistics: ProjectStatistics;
+  project_groups?: ProjectGroupInfo[];
 }
 
 export interface CreateProjectRequest {
@@ -113,7 +120,7 @@ export interface ProjectMembersResponse extends ApiResponse {
   };
 }
 
-// Project Group interfaces (for user groups assigned to projects)
+// Project Groups Response (user groups with access via project groups)
 export interface ProjectGroupsResponse extends ApiResponse {
   user_groups: UserGroup[];
   pagination: {
@@ -124,14 +131,8 @@ export interface ProjectGroupsResponse extends ApiResponse {
   };
 }
 
-export interface AssignGroupToProjectRequest {
-  group_hash: string;
-}
-
-export interface AssignGroupToProjectResponse extends ApiResponse {
-  assignment: {
-    group_hash: string;
-    project_hash: string;
-    assigned_at: string;
-  };
-} 
+// NOTE: Project access is managed through Groups-of-Groups architecture:
+// User -> User Group -> Project Group -> Project
+// Access is granted via:
+// 1. POST /admin/project-groups/{hash}/projects - Add project to project group
+// 2. POST /admin/user-groups/{hash}/project-groups - Grant user group access to project group 

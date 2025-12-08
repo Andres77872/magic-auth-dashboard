@@ -29,9 +29,9 @@ class AuthService {
     return response as LoginResponse;
   }
 
-  // Register new user
+  // Register new user - uses form data per API spec
   async register(userData: RegisterRequest): Promise<RegisterResponse> {
-    const response = await apiClient.post<RegisterResponse>(
+    const response = await apiClient.postForm<RegisterResponse>(
       '/auth/register',
       userData,
       true // Skip auth for registration
@@ -45,9 +45,9 @@ class AuthService {
     return response as ValidationResponse;
   }
 
-  // Check username/email availability
+  // Check username/email availability - uses form data per API spec
   async checkAvailability(data: AvailabilityRequest): Promise<AvailabilityResponse> {
-    return await apiClient.post<AvailabilityResponse>(
+    return await apiClient.postForm<AvailabilityResponse>(
       '/auth/check-availability',
       data,
       true // Skip auth
@@ -74,9 +74,9 @@ class AuthService {
     return response as LoginResponse;
   }
 
-  // Switch project for multi-project users
+  // Switch project for multi-project users - uses form data per API spec
   async switchProject(projectHash: string): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>(
+    const response = await apiClient.postForm<LoginResponse>(
       '/auth/switch-project',
       { project_hash: projectHash }
     );

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input, Select, ConfirmDialog, DataView } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
-import { PlusIcon, EditIcon, DeleteIcon, SettingsIcon } from '@/components/icons';
+import { Plus, Pencil, Trash2, Settings } from 'lucide-react';
 import { PermissionGroupModal, ManageGroupPermissionsModal } from '@/components/features/permissions';
 import { useToast, usePermissionManagement } from '@/hooks';
 import { globalRolesService } from '@/services';
@@ -49,14 +49,21 @@ export const PermissionGroupsTab: React.FC = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleEditSubmit = async (_data: any) => {
+  const handleEditSubmit = async (data: any) => {
     if (!editingPermissionGroup) return;
     
     try {
-      // Note: Update endpoint not available in API
-      showToast('Edit functionality not available in current API', 'info');
-      setIsEditModalOpen(false);
-      setEditingPermissionGroup(null);
+      const response = await globalRolesService.updatePermissionGroup(editingPermissionGroup.group_hash, {
+        group_display_name: data.group_display_name,
+        group_description: data.group_description,
+        group_category: data.group_category
+      });
+      if (response.success) {
+        showToast(`Permission group "${data.group_display_name}" updated successfully`, 'success');
+        await refreshPermissionGroups();
+        setIsEditModalOpen(false);
+        setEditingPermissionGroup(null);
+      }
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Failed to update permission group', 'error');
       throw error;
@@ -74,10 +81,13 @@ export const PermissionGroupsTab: React.FC = () => {
 
     setIsDeleting(true);
     try {
-      // Note: Delete endpoint not available in API
-      showToast('Delete functionality not available in current API', 'info');
-      setIsDeleteDialogOpen(false);
-      setPermissionGroupToDelete(null);
+      const response = await globalRolesService.deletePermissionGroup(permissionGroupToDelete.group_hash);
+      if (response.success) {
+        showToast(`Permission group "${permissionGroupToDelete.group_display_name}" deleted successfully`, 'success');
+        await refreshPermissionGroups();
+        setIsDeleteDialogOpen(false);
+        setPermissionGroupToDelete(null);
+      }
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Failed to delete permission group', 'error');
     } finally {
@@ -139,7 +149,7 @@ export const PermissionGroupsTab: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            leftIcon={<SettingsIcon size={16} />}
+            leftIcon={<Settings size={16} />}
             onClick={() => handleManagePermissions(row)}
             aria-label={`Manage permissions for ${row.group_display_name}`}
           >
@@ -148,7 +158,7 @@ export const PermissionGroupsTab: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            leftIcon={<EditIcon size={16} />}
+            leftIcon={<Pencil size={16} />}
             onClick={() => handleEdit(row)}
             aria-label={`Edit ${row.group_display_name}`}
           >
@@ -157,7 +167,7 @@ export const PermissionGroupsTab: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            leftIcon={<DeleteIcon size={16} />}
+            leftIcon={<Trash2 size={16} />}
             onClick={() => handleDelete(row)}
             aria-label={`Delete ${row.group_display_name}`}
           >
@@ -185,7 +195,7 @@ export const PermissionGroupsTab: React.FC = () => {
         </div>
         <Button
           variant="primary"
-          leftIcon={<PlusIcon size={16} />}
+          leftIcon={<Plus size={16} />}
           onClick={handleOpenCreateModal}
         >
           Create Permission Group
@@ -226,7 +236,7 @@ export const PermissionGroupsTab: React.FC = () => {
         emptyAction={
           <Button
             variant="primary"
-            leftIcon={<PlusIcon size={16} />}
+            leftIcon={<Plus size={16} />}
             onClick={handleOpenCreateModal}
           >
             Create Your First Permission Group

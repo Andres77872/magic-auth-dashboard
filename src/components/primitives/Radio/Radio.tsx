@@ -1,6 +1,6 @@
 import React, { forwardRef, useId } from 'react';
+import { cn } from '@/lib/utils';
 import type { FormSize } from '../types';
-import './Radio.css';
 
 export interface RadioProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size' | 'type' | 'onChange'> {
   value: string;
@@ -9,6 +9,12 @@ export interface RadioProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   size?: FormSize;
   label?: React.ReactNode;
 }
+
+const sizeStyles: Record<FormSize, { circle: string; dot: string; text: string }> = {
+  sm: { circle: 'h-4 w-4', dot: 'h-2 w-2', text: 'text-xs' },
+  md: { circle: 'h-5 w-5', dot: 'h-2.5 w-2.5', text: 'text-sm' },
+  lg: { circle: 'h-6 w-6', dot: 'h-3 w-3', text: 'text-base' },
+};
 
 export const Radio = forwardRef<HTMLInputElement, RadioProps>(
   (
@@ -35,26 +41,11 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
       }
     };
 
-    const wrapperClasses = [
-      'radio-wrapper',
-      `radio-wrapper-${size}`,
-      disabled && 'radio-wrapper-disabled',
-      className,
-    ]
-      .filter(Boolean)
-      .join(' ');
-
-    const circleClasses = [
-      'radio-circle',
-      `radio-circle-${size}`,
-      checked && 'radio-circle-checked',
-    ]
-      .filter(Boolean)
-      .join(' ');
+    const styles = sizeStyles[size];
 
     return (
-      <div className={wrapperClasses}>
-        <label className="radio-label">
+      <div className={cn('flex items-center', disabled && 'opacity-50 cursor-not-allowed', className)}>
+        <label className="flex items-center gap-2 cursor-pointer">
           <input
             ref={ref}
             type="radio"
@@ -64,13 +55,24 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
             checked={checked}
             onChange={handleChange}
             disabled={disabled}
-            className="radio-input"
+            className="sr-only peer"
             {...props}
           />
-          <span className={circleClasses} aria-hidden="true">
-            {checked && <span className="radio-dot" />}
+          <span 
+            className={cn(
+              'flex items-center justify-center rounded-full border-2 transition-colors',
+              styles.circle,
+              checked 
+                ? 'border-primary bg-primary' 
+                : 'border-input bg-background hover:border-ring'
+            )} 
+            aria-hidden="true"
+          >
+            {checked && (
+              <span className={cn('rounded-full bg-primary-foreground', styles.dot)} />
+            )}
           </span>
-          {label && <span className="radio-label-text">{label}</span>}
+          {label && <span className={cn('text-foreground', styles.text)}>{label}</span>}
         </label>
       </div>
     );

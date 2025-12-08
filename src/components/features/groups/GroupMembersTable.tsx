@@ -1,19 +1,29 @@
 import React from 'react';
-import { DataView, Badge, ActionsMenu } from '@/components/common';
+import { DataView } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
-import type { ActionMenuItem } from '@/components/common/ActionsMenu';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
 import type { UserType } from '@/types/auth.types';
-import { DeleteIcon } from '@/components/icons';
 
 /**
- * Basic member type used for group member tables.
- * The backend might omit some optional fields, so all are optional except identifiers.
+ * Member type for group member tables.
+ * Matches API response from GET /admin/user-groups/{hash}/members
  */
 export interface GroupMember {
   user_hash: string;
   username: string;
   email: string;
   user_type?: UserType | null;
+  is_active?: boolean;
+  joined_at?: string | null;
+  /** @deprecated Use joined_at instead - kept for backward compatibility */
   created_at?: string | null;
 }
 
@@ -32,10 +42,10 @@ export function GroupMembersTable({
   onRemove,
   removingMember,
 }: GroupMembersTableProps): React.JSX.Element {
-  const getUserTypeBadgeVariant = (userType?: UserType | null) => {
+  const getUserTypeBadgeVariant = (userType?: UserType | null): 'destructive' | 'warning' | 'info' | 'secondary' => {
     switch (userType) {
       case 'root':
-        return 'error';
+        return 'destructive';
       case 'admin':
         return 'warning';
       case 'consumer':
@@ -85,17 +95,17 @@ export function GroupMembersTable({
       sortable: true,
       width: '120px',
       render: (value) => (
-        <Badge variant={getUserTypeBadgeVariant(value as UserType | null)} size="sm">
+        <Badge variant={getUserTypeBadgeVariant(value as UserType | null)}>
           {(value ? String(value) : 'N/A').toUpperCase()}
         </Badge>
       ),
     },
     {
-      key: 'created_at',
+      key: 'joined_at',
       header: 'Joined',
       sortable: true,
       width: '180px',
-      render: (value) => <span>{formatDate(value as string | null)}</span>,
+      render: (_value, member) => <span>{formatDate(member.joined_at || member.created_at)}</span>,
     },
   ];
 
@@ -108,22 +118,29 @@ export function GroupMembersTable({
       width: '80px',
       align: 'center',
       render: (_, member) => {
-        const menuItems: ActionMenuItem[] = [
-          {
-            key: 'remove',
-            label: 'Remove',
-            icon: <DeleteIcon size="sm" />,
-            onClick: () => onRemove(member),
-            disabled: removingMember === member.user_hash,
-            destructive: true,
-          },
-        ];
-
         return (
-          <ActionsMenu
-            items={menuItems}
-            ariaLabel={`Actions for ${member.username}`}
-          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8"
+                disabled={removingMember === member.user_hash}
+              >
+                <span className="sr-only">Actions for {member.username}</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => onRemove(member)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Remove
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
     });

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Button, Input, Select, ConfirmDialog, DataView, ActionsMenu } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import type { ActionMenuItem } from '@/components/common/ActionsMenu';
-import { PlusIcon, DeleteIcon } from '@/components/icons';
+import { Plus, Trash2, Layers } from 'lucide-react';
 import { usePermissionAssignments, useGroups, useUsers, useToast, usePermissionManagement } from '@/hooks';
+import { BulkAssignModal } from '@/components/features/permissions';
 
 interface AssignmentRecord {
   id: string;
@@ -31,6 +32,7 @@ export const AssignmentsTab: React.FC = () => {
   const [assignmentToDelete, setAssignmentToDelete] = useState<AssignmentRecord | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [isBulkAssignModalOpen, setIsBulkAssignModalOpen] = useState(false);
 
   const {
     assignPermissionGroupToUserGroup,
@@ -69,12 +71,12 @@ export const AssignmentsTab: React.FC = () => {
       } else {
         const response = await getUserDirectPermissionGroups(selectedTarget);
         const records: AssignmentRecord[] = response.map(pg => ({
-          id: `${selectedTarget}-${pg.permission_group_hash}`,
+          id: `${selectedTarget}-${pg.group_hash}`,
           type: 'direct_user',
           targetHash: selectedTarget,
           targetName: users.find(u => u.user_hash === selectedTarget)?.username || selectedTarget,
-          permissionGroupHash: pg.permission_group_hash,
-          permissionGroupName: pg.permission_group_name,
+          permissionGroupHash: pg.group_hash,
+          permissionGroupName: pg.group_display_name || pg.group_name,
           assignedAt: pg.assigned_at,
           notes: pg.notes,
         }));
@@ -195,7 +197,7 @@ export const AssignmentsTab: React.FC = () => {
           {
             key: 'remove',
             label: 'Remove',
-            icon: <DeleteIcon size={16} />,
+            icon: <Trash2 size={16} />,
             onClick: () => handleDelete(row),
             destructive: true,
           },
@@ -289,15 +291,26 @@ export const AssignmentsTab: React.FC = () => {
 
               <div className="form-group">
                 <label>&nbsp;</label>
-                <Button
-                  variant="primary"
-                  leftIcon={<PlusIcon size={16} />}
-                  onClick={handleAssign}
-                  disabled={!selectedPermissionGroup}
-                  loading={isAssigning}
-                >
-                  Assign
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="primary"
+                    leftIcon={<Plus size={16} />}
+                    onClick={handleAssign}
+                    disabled={!selectedPermissionGroup}
+                    loading={isAssigning}
+                  >
+                    Assign
+                  </Button>
+                  {viewType === 'user_group' && (
+                    <Button
+                      variant="secondary"
+                      leftIcon={<Layers size={16} />}
+                      onClick={() => setIsBulkAssignModalOpen(true)}
+                    >
+                      Bulk Assign
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -353,6 +366,18 @@ export const AssignmentsTab: React.FC = () => {
         cancelText="Cancel"
         variant="danger"
         isLoading={isDeleting}
+      />
+
+      {/* Bulk Assign Modal */}
+      <BulkAssignModal
+        isOpen={isBulkAssignModalOpen}
+        onClose={() => setIsBulkAssignModalOpen(false)}
+        userGroup={selectedTarget && viewType === 'user_group' ? {
+          hash: selectedTarget,
+          name: selectedTargetName
+        } : null}
+        existingAssignments={assignments.map(a => a.permissionGroupHash)}
+        onSuccess={loadAssignments}
       />
     </div>
   );

@@ -1,7 +1,8 @@
 import React, { forwardRef, useEffect, useRef, useId } from 'react';
 import { createPortal } from 'react-dom';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { ModalSize } from '../types';
-import './Modal.css';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -14,6 +15,14 @@ export interface ModalProps {
   className?: string;
   children: React.ReactNode;
 }
+
+const sizeStyles: Record<ModalSize, string> = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  full: 'max-w-[90vw] max-h-[90vh]',
+};
 
 export const Modal = forwardRef<HTMLDivElement, ModalProps>(
   (
@@ -90,19 +99,18 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
       }
     };
 
-    const classes = [
-      'modal',
-      `modal-${size}`,
-      className,
-    ]
-      .filter(Boolean)
-      .join(' ');
-
     return createPortal(
-      <div className="modal-overlay" onClick={handleBackdropClick}>
+      <div 
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 animate-in fade-in-0"
+        onClick={handleBackdropClick}
+      >
         <div
           ref={ref || modalRef}
-          className={classes}
+          className={cn(
+            'relative w-full bg-card border border-border rounded-lg shadow-lg animate-in zoom-in-95 fade-in-0',
+            sizeStyles[size],
+            className
+          )}
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? titleId : undefined}
@@ -110,28 +118,26 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
           onClick={(e) => e.stopPropagation()}
         >
           {(title || showCloseButton) && (
-            <div className="modal-header">
+            <div className="flex items-center justify-between p-4 border-b border-border">
               {title && (
-                <h2 id={titleId} className="modal-title">
+                <h2 id={titleId} className="text-lg font-semibold text-foreground">
                   {title}
                 </h2>
               )}
               {showCloseButton && (
                 <button
                   type="button"
-                  className="modal-close"
+                  className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onClick={onClose}
                   aria-label="Close modal"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <X className="h-5 w-5" />
                 </button>
               )}
             </div>
           )}
 
-          <div className="modal-content">
+          <div className="p-4">
             {children}
           </div>
         </div>

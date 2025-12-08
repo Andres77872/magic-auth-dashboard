@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { userService, projectService, systemService } from '@/services';
 import { Modal, Button, LoadingSpinner, Badge, ConfirmDialog } from '@/components/common';
-import { ProjectIcon, PlusIcon, DeleteIcon, CheckIcon } from '@/components/icons';
+import { FolderKanban, Plus, Trash2, Check } from 'lucide-react';
 import { useToast } from '@/hooks';
-import '../../../styles/components/admin-projects-manager.css';
 
 interface AdminProjectsManagerProps {
   userHash: string;
@@ -37,20 +36,26 @@ export function AdminProjectsManager({
   const loadProjects = async () => {
     setIsLoading(true);
     try {
-      // Load assigned projects
+      // Load assigned projects - API returns { success, user_hash, assigned_projects }
       const adminProjectsResponse = await userService.getAdminProjects(userHash);
-      if (adminProjectsResponse.success && adminProjectsResponse.data) {
-        setAssignedProjects(adminProjectsResponse.data.projects || []);
-      }
+      const currentAssigned = adminProjectsResponse.success && adminProjectsResponse.assigned_projects
+        ? adminProjectsResponse.assigned_projects.map((p: any) => ({
+            project_id: p.project_id,
+            project_hash: p.project_hash,
+            name: p.project_name,
+            description: p.project_description,
+          }))
+        : [];
+      setAssignedProjects(currentAssigned);
 
       // Load all available projects
       const allProjectsResponse = await projectService.getProjects();
-      if (allProjectsResponse.success && allProjectsResponse.data) {
-        const allProjects = Array.isArray(allProjectsResponse.data) 
-          ? allProjectsResponse.data 
-          : [];
-        const assignedIds = assignedProjects.map((p: any) => p.project_id);
-        setAvailableProjects(allProjects.filter((p: any) => !assignedIds.includes(p.project_id)));
+      if (allProjectsResponse.success) {
+        const projectsList = (allProjectsResponse as any).projects || [];
+        const assignedIds = currentAssigned.map((p: any) => String(p.project_id));
+        setAvailableProjects(
+          projectsList.filter((p: any) => !assignedIds.includes(String(p.project_id)))
+        );
       }
     } catch (error) {
       console.error('Failed to load projects:', error);
@@ -142,14 +147,14 @@ export function AdminProjectsManager({
             <div className="projects-section">
               <div className="section-header">
                 <h3>
-                  <ProjectIcon size={20} />
+                  <FolderKanban size={20} />
                   Assigned Projects ({assignedProjects.length})
                 </h3>
               </div>
 
               {assignedProjects.length === 0 ? (
                 <div className="empty-state">
-                  <ProjectIcon size={24} />
+                  <FolderKanban size={24} />
                   <p>No projects assigned yet</p>
                   <p className="empty-state-hint">
                     Select projects from the available list below
@@ -160,7 +165,7 @@ export function AdminProjectsManager({
                   {assignedProjects.map(project => (
                     <div key={project.project_id} className="project-card assigned">
                       <div className="project-card-header">
-                        <ProjectIcon size={16} />
+                        <FolderKanban size={16} />
                         <div className="project-info">
                           <h4>{project.name}</h4>
                           {project.description && (
@@ -170,7 +175,7 @@ export function AdminProjectsManager({
                       </div>
                       <div className="project-card-footer">
                         <Badge variant="success">
-                          <CheckIcon size={16} />
+                          <Check size={16} />
                           Assigned
                         </Badge>
                         <Button
@@ -179,7 +184,7 @@ export function AdminProjectsManager({
                           onClick={() => handleRemoveProject(project)}
                           disabled={isSaving}
                         >
-                          <DeleteIcon size={16} />
+                          <Trash2 size={16} />
                           Remove
                         </Button>
                       </div>
@@ -193,14 +198,14 @@ export function AdminProjectsManager({
             <div className="projects-section">
               <div className="section-header">
                 <h3>
-                  <PlusIcon size={20} />
+                  <Plus size={20} />
                   Available Projects ({availableProjects.length})
                 </h3>
               </div>
 
               {availableProjects.length === 0 ? (
                 <div className="empty-state">
-                  <CheckIcon size={24} />
+                  <Check size={24} />
                   <p>All projects are already assigned</p>
                 </div>
               ) : (
@@ -208,7 +213,7 @@ export function AdminProjectsManager({
                   {availableProjects.map(project => (
                     <div key={project.project_id} className="project-card available">
                       <div className="project-card-header">
-                        <ProjectIcon size={16} />
+                        <FolderKanban size={16} />
                         <div className="project-info">
                           <h4>{project.name}</h4>
                           {project.description && (
@@ -223,7 +228,7 @@ export function AdminProjectsManager({
                           onClick={() => handleAddProject(project.project_id)}
                           disabled={isSaving}
                         >
-                          <PlusIcon size={16} />
+                          <Plus size={16} />
                           Add Project
                         </Button>
                       </div>

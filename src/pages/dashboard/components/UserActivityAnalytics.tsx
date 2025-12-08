@@ -1,15 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { analyticsService } from '@/services/analytics.service';
-import { LoadingSpinner } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
+import { 
+  Users, 
+  UserCheck, 
+  UserPlus, 
+  TrendingUp, 
+  AlertCircle, 
+  ShieldAlert, 
+  Clock,
+  Server,
+  RefreshCw,
+  Activity
+} from 'lucide-react';
 import type { UserAnalyticsData, DateRange, DateRangePreset } from '@/types/analytics.types';
+
+const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'last7days', label: '7 Days' },
+  { value: 'last30days', label: '30 Days' },
+];
 
 export function UserActivityAnalytics(): React.JSX.Element {
   const [data, setData] = useState<UserAnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange>({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-    end: new Date().toISOString().split('T')[0], // today
+    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    end: new Date().toISOString().split('T')[0],
     preset: 'last30days',
   });
 
@@ -64,214 +88,262 @@ export function UserActivityAnalytics(): React.JSX.Element {
 
   if (error) {
     return (
-      <div className="analytics-error">
-        <div className="error-content">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="15" y1="9" x2="9" y2="15"/>
-            <line x1="9" y1="9" x2="15" y2="15"/>
-          </svg>
-          <h3>Failed to Load Analytics</h3>
-          <p>{error}</p>
-          <button onClick={fetchAnalytics} className="retry-button">
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Failed to Load Analytics</h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-md">{error}</p>
+          <Button variant="outline" onClick={fetchAnalytics}>
+            <RefreshCw className="h-4 w-4 mr-2" />
             Try Again
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   if (isLoading || !data) {
     return (
-      <div className="analytics-loading">
-        <LoadingSpinner size="lg" message="Loading user analytics..." />
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="flex flex-col items-center gap-3">
+            <Spinner size="lg" />
+            <p className="text-sm text-muted-foreground">Loading user analytics...</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="user-analytics">
-      <div className="analytics-header">
-        <div className="header-content">
-          <h2>User Analytics Dashboard</h2>
-          <p>Comprehensive insights into user behavior and system usage</p>
-        </div>
+    <Card>
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+              <Activity className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+            </div>
+            <div>
+              <CardTitle>User Analytics Dashboard</CardTitle>
+              <CardDescription>Comprehensive insights into user behavior and system usage</CardDescription>
+            </div>
+          </div>
 
-        <div className="date-range-selector">
-          <div className="date-presets">
-            {(['today', 'yesterday', 'last7days', 'last30days'] as DateRangePreset[]).map((preset) => (
-              <button
-                key={preset}
-                onClick={() => handleDateRangeChange(preset)}
-                className={`preset-button ${dateRange.preset === preset ? 'active' : ''}`}
+          {/* Date range selector */}
+          <div className="flex items-center gap-2">
+            {DATE_PRESETS.map((preset) => (
+              <Button
+                key={preset.value}
+                variant={dateRange.preset === preset.value ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => handleDateRangeChange(preset.value)}
               >
-                {preset === 'today' && 'Today'}
-                {preset === 'yesterday' && 'Yesterday'}
-                {preset === 'last7days' && 'Last 7 Days'}
-                {preset === 'last30days' && 'Last 30 Days'}
-              </button>
+                {preset.label}
+              </Button>
             ))}
           </div>
         </div>
-      </div>
+      </CardHeader>
 
-      <div className="analytics-grid">
+      <CardContent className="space-y-6">
         {/* User Metrics Overview */}
-        <section className="metrics-overview">
-          <h3>User Metrics</h3>
-          <div className="metrics-cards">
-            <div className="metric-card">
-              <div className="metric-value">{data.metrics.totalUsers.toLocaleString()}</div>
-              <div className="metric-label">Total Users</div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+            <div className="flex items-center gap-3 mb-2">
+              <Users className="h-5 w-5 text-primary" />
+              <span className="text-sm text-muted-foreground">Total Users</span>
             </div>
-            <div className="metric-card">
-              <div className="metric-value">{data.metrics.activeUsers.toLocaleString()}</div>
-              <div className="metric-label">Active Users</div>
+            <p className="text-2xl font-bold text-foreground">{data.metrics.totalUsers.toLocaleString()}</p>
+          </div>
+          
+          <div className="p-4 rounded-lg bg-success/5 border border-success/10">
+            <div className="flex items-center gap-3 mb-2">
+              <UserCheck className="h-5 w-5 text-success" />
+              <span className="text-sm text-muted-foreground">Active Users</span>
             </div>
-            <div className="metric-card">
-              <div className="metric-value">+{data.metrics.newUsersThisWeek.toLocaleString()}</div>
-              <div className="metric-label">New This Week</div>
+            <p className="text-2xl font-bold text-foreground">{data.metrics.activeUsers.toLocaleString()}</p>
+          </div>
+          
+          <div className="p-4 rounded-lg bg-info/5 border border-info/10">
+            <div className="flex items-center gap-3 mb-2">
+              <UserPlus className="h-5 w-5 text-info" />
+              <span className="text-sm text-muted-foreground">New This Week</span>
             </div>
-            <div className="metric-card">
-              <div className="metric-value">{data.metrics.userGrowthRate.toFixed(1)}%</div>
-              <div className="metric-label">Growth Rate</div>
+            <p className="text-2xl font-bold text-foreground">+{data.metrics.newUsersThisWeek.toLocaleString()}</p>
+          </div>
+          
+          <div className="p-4 rounded-lg bg-warning/5 border border-warning/10">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="h-5 w-5 text-warning" />
+              <span className="text-sm text-muted-foreground">Growth Rate</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{data.metrics.userGrowthRate.toFixed(1)}%</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* User Type Distribution */}
+          <div className="p-4 rounded-lg border border-border">
+            <h3 className="text-sm font-semibold text-foreground mb-4">User Distribution</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-md bg-destructive/5">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-destructive" />
+                  <span className="text-sm text-foreground">ROOT Users</span>
+                </div>
+                <Badge variant="outline" className="bg-destructive/10 text-destructive">
+                  {data.metrics.usersByType.root}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-md bg-warning/5">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-warning" />
+                  <span className="text-sm text-foreground">ADMIN Users</span>
+                </div>
+                <Badge variant="outline" className="bg-warning/10 text-warning">
+                  {data.metrics.usersByType.admin}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-md bg-primary/5">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 w-2 rounded-full bg-primary" />
+                  <span className="text-sm text-foreground">CONSUMER Users</span>
+                </div>
+                <Badge variant="outline" className="bg-primary/10 text-primary">
+                  {data.metrics.usersByType.consumer}
+                </Badge>
+              </div>
             </div>
           </div>
-        </section>
 
-        {/* User Type Distribution */}
-        <section className="user-types">
-          <h3>User Distribution</h3>
-          <div className="user-type-chart">
-            <div className="user-type-item">
-              <div className="type-indicator root"></div>
-              <span className="type-label">ROOT Users</span>
-              <span className="type-count">{data.metrics.usersByType.root}</span>
+          {/* User Engagement */}
+          <div className="p-4 rounded-lg border border-border">
+            <h3 className="text-sm font-semibold text-foreground mb-4">User Engagement</h3>
+            <div className="flex items-center gap-3 p-3 rounded-md bg-muted/30 mb-4">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Average Session Duration</p>
+                <p className="text-lg font-semibold text-foreground">{Math.round(data.engagement.avgSessionDuration / 60)} minutes</p>
+              </div>
             </div>
-            <div className="user-type-item">
-              <div className="type-indicator admin"></div>
-              <span className="type-label">ADMIN Users</span>
-              <span className="type-count">{data.metrics.usersByType.admin}</span>
-            </div>
-            <div className="user-type-item">
-              <div className="type-indicator consumer"></div>
-              <span className="type-label">CONSUMER Users</span>
-              <span className="type-count">{data.metrics.usersByType.consumer}</span>
-            </div>
-          </div>
-        </section>
 
-        {/* User Engagement */}
-        <section className="engagement-section">
-          <h3>User Engagement</h3>
-          <div className="engagement-stats">
-            <div className="stat-item">
-              <div className="stat-label">Average Session Duration</div>
-              <div className="stat-value">{Math.round(data.engagement.avgSessionDuration / 60)} minutes</div>
-            </div>
-          </div>
-
-          <div className="most-active-users">
-            <h4>Most Active Users</h4>
-            <div className="active-users-list">
+            <h4 className="text-xs font-medium text-muted-foreground uppercase mb-3">Most Active Users</h4>
+            <div className="space-y-2">
               {data.engagement.mostActiveUsers.slice(0, 5).map((user) => (
-                <div key={user.user_hash} className="active-user-item">
-                  <div className="analytics-user-avatar">
-                    {user.username.charAt(0).toUpperCase()}
+                <div key={user.user_hash} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                      <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{user.username}</p>
+                      <p className="text-xs text-muted-foreground">{user.activityCount} activities</p>
+                    </div>
                   </div>
-                  <div className="user-info">
-                    <div className="user-name">{user.username}</div>
-                    <div className="user-activity">{user.activityCount} activities</div>
-                  </div>
-                  <div className="last-active">
+                  <span className="text-xs text-muted-foreground">
                     {new Date(user.lastActive).toLocaleDateString()}
-                  </div>
+                  </span>
                 </div>
               ))}
             </div>
           </div>
-        </section>
+        </div>
 
-        {/* Security Metrics */}
-        <section className="security-section">
-          <h3>Security Overview</h3>
-          <div className="security-alerts">
-            <div className="alert-summary">
-              <div className="alert-item failed-logins">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" y1="9" x2="9" y2="15"/>
-                  <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
-                <span className="alert-count">{data.security.failedLoginAttempts}</span>
-                <span className="alert-label">Failed Logins</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Security Metrics */}
+          <div className="p-4 rounded-lg border border-border">
+            <h3 className="text-sm font-semibold text-foreground mb-4">Security Overview</h3>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="p-3 rounded-md bg-destructive/5 border border-destructive/10">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                  <span className="text-lg font-bold text-foreground">{data.security.failedLoginAttempts}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Failed Logins</p>
               </div>
-              <div className="alert-item suspicious">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                  <path d="M12 8v4"/>
-                  <circle cx="12" cy="16" r="1"/>
-                </svg>
-                <span className="alert-count">{data.security.suspiciousActivities}</span>
-                <span className="alert-label">Suspicious Activities</span>
+              <div className="p-3 rounded-md bg-warning/5 border border-warning/10">
+                <div className="flex items-center gap-2 mb-1">
+                  <ShieldAlert className="h-4 w-4 text-warning" />
+                  <span className="text-lg font-bold text-foreground">{data.security.suspiciousActivities}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Suspicious Activities</p>
               </div>
             </div>
 
             {data.security.securityEvents.length > 0 && (
-              <div className="security-events">
-                <h4>Security Events</h4>
-                <div className="events-list">
-                  {data.security.securityEvents.map((event, index) => (
-                    <div key={index} className={`event-item severity-${event.severity}`}>
-                      <div className="event-type">{event.type}</div>
-                      <div className="event-count">{event.count} occurrences</div>
-                    </div>
-                  ))}
-                </div>
+              <div className="space-y-2">
+                <h4 className="text-xs font-medium text-muted-foreground uppercase">Security Events</h4>
+                {data.security.securityEvents.map((event, index) => (
+                  <div key={index} className={cn(
+                    'flex items-center justify-between p-2 rounded-md border',
+                    event.severity === 'critical' && 'bg-destructive/5 border-destructive/20',
+                    event.severity === 'warning' && 'bg-warning/5 border-warning/20',
+                    event.severity === 'info' && 'bg-info/5 border-info/20'
+                  )}>
+                    <span className="text-sm text-foreground">{event.type}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {event.count} occurrences
+                    </Badge>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        </section>
 
-        {/* System Metrics */}
-        <section className="system-section">
-          <h3>System Performance</h3>
-          <div className="system-stats">
-            <div className="system-stat">
-              <div className="stat-label">Total Projects</div>
-              <div className="stat-value">{data.system.totalProjects.toLocaleString()}</div>
+          {/* System Performance */}
+          <div className="p-4 rounded-lg border border-border">
+            <h3 className="text-sm font-semibold text-foreground mb-4">System Performance</h3>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="text-center p-3 rounded-md bg-muted/30">
+                <p className="text-lg font-bold text-foreground">{data.system.totalProjects.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Projects</p>
+              </div>
+              <div className="text-center p-3 rounded-md bg-muted/30">
+                <p className="text-lg font-bold text-foreground">{data.system.totalGroups.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Groups</p>
+              </div>
+              <div className="text-center p-3 rounded-md bg-muted/30">
+                <p className="text-lg font-bold text-foreground">{data.system.uptime}</p>
+                <p className="text-xs text-muted-foreground">Uptime</p>
+              </div>
             </div>
-            <div className="system-stat">
-              <div className="stat-label">Total Groups</div>
-              <div className="stat-value">{data.system.totalGroups.toLocaleString()}</div>
-            </div>
-            <div className="system-stat">
-              <div className="stat-label">System Uptime</div>
-              <div className="stat-value">{data.system.uptime}</div>
+
+            <h4 className="text-xs font-medium text-muted-foreground uppercase mb-3">API Performance</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                <div className="flex items-center gap-2">
+                  <Server className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Average Response</span>
+                </div>
+                <span className="text-sm font-medium text-foreground">{data.system.apiResponseTimes.avg}ms</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                <span className="text-sm text-muted-foreground">95th Percentile</span>
+                <span className="text-sm font-medium text-foreground">{data.system.apiResponseTimes.p95}ms</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-md bg-muted/30">
+                <span className="text-sm text-muted-foreground">99th Percentile</span>
+                <span className="text-sm font-medium text-foreground">{data.system.apiResponseTimes.p99}ms</span>
+              </div>
             </div>
           </div>
-
-          <div className="performance-metrics">
-            <h4>API Performance</h4>
-            <div className="perf-stats">
-              <div className="perf-item">
-                <div className="perf-label">Average Response Time</div>
-                <div className="perf-value">{data.system.apiResponseTimes.avg}ms</div>
-              </div>
-              <div className="perf-item">
-                <div className="perf-label">95th Percentile</div>
-                <div className="perf-value">{data.system.apiResponseTimes.p95}ms</div>
-              </div>
-              <div className="perf-item">
-                <div className="perf-label">99th Percentile</div>
-                <div className="perf-value">{data.system.apiResponseTimes.p99}ms</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-export default UserActivityAnalytics; 
+export default UserActivityAnalytics;

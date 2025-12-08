@@ -2,17 +2,37 @@ import type { HealthComponent } from './system.types';
 
 // Dashboard Types
 export interface DashboardStats {
+  // Core totals
   totalUsers: number;
   activeProjects: number;
   activeSessions: number;
   userGroups: number;
   projectGroups: number;
+  recentActivities: number;
+  
+  // User breakdown
+  rootUsers: number;
+  adminUsers: number;
+  consumerUsers: number;
+  
+  // Growth metrics (7-day)
+  newUsersWeek: number;
+  newProjectsWeek: number;
+  activitiesWeek: number;
+  userGrowthPercent: number;
+  projectGrowthPercent: number;
+  
+  // Group averages
+  avgUsersPerGroup: number;
+  avgProjectsPerGroup: number;
+  
+  // System info (from /system/info)
   systemVersion: string;
   environment: string;
   authType: string;
-  rootUsers?: number;
-  adminUsers?: number;
-  consumerUsers?: number;
+  
+  // Health status
+  systemHealthStatus: 'healthy' | 'warning' | 'critical';
 }
 
 export interface StatCardData {

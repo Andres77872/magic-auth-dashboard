@@ -1,5 +1,16 @@
 import React, { useState, useCallback } from 'react';
-import { Select, Input, Button } from '@/components/common';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Search, SlidersHorizontal, X, Calendar } from 'lucide-react';
 import type { ActivityFilters } from '@/types/analytics.types';
 
 interface ActivityFilterProps {
@@ -9,7 +20,7 @@ interface ActivityFilterProps {
 }
 
 const ACTIVITY_TYPES = [
-  { value: '', label: 'All Activity Types' },
+  { value: 'all', label: 'All Activity Types' },
   { value: 'user_created', label: 'User Created' },
   { value: 'user_updated', label: 'User Updated' },
   { value: 'user_deleted', label: 'User Deleted' },
@@ -25,21 +36,21 @@ const ACTIVITY_TYPES = [
 ];
 
 const USER_TYPES = [
-  { value: '', label: 'All User Types' },
+  { value: 'all', label: 'All User Types' },
   { value: 'root', label: 'ROOT Users' },
   { value: 'admin', label: 'ADMIN Users' },
   { value: 'consumer', label: 'CONSUMER Users' },
 ];
 
 const SEVERITY_LEVELS = [
-  { value: '', label: 'All Severity Levels' },
+  { value: 'all', label: 'All Severity' },
   { value: 'info', label: 'Info' },
   { value: 'warning', label: 'Warning' },
   { value: 'critical', label: 'Critical' },
 ];
 
 const DATE_RANGES = [
-  { value: '', label: 'All Time' },
+  { value: 'all', label: 'All Time' },
   { value: 'today', label: 'Today' },
   { value: 'yesterday', label: 'Yesterday' },
   { value: 'last7days', label: 'Last 7 Days' },
@@ -59,42 +70,42 @@ export function ActivityFilter({
   });
 
   const handleFilterChange = useCallback((key: keyof ActivityFilters, value: string) => {
-    const newFilters = { ...filters, [key]: value || undefined };
+    const newFilters = { ...filters };
     
-    // Handle date range logic
-    if (key === 'dateRange') {
+    if (value === 'all' || value === '') {
+      delete newFilters[key];
+    } else if (key === 'dateRange') {
       if (value === 'custom') {
-        // Don't update filters yet, wait for custom date input
         return;
-      } else if (value) {
-        const now = new Date();
-        let start: Date;
-        
-        switch (value) {
-          case 'today':
-            start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            break;
-          case 'yesterday':
-            start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
-            now.setDate(now.getDate() - 1);
-            break;
-          case 'last7days':
-            start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            break;
-          case 'last30days':
-            start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            break;
-          default:
-            start = new Date(0);
-        }
-        
-        newFilters.dateRange = {
-          start: start.toISOString(),
-          end: now.toISOString(),
-        };
-      } else {
-        delete newFilters.dateRange;
       }
+      
+      const now = new Date();
+      let start: Date;
+      
+      switch (value) {
+        case 'today':
+          start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'yesterday':
+          start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+          now.setDate(now.getDate() - 1);
+          break;
+        case 'last7days':
+          start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'last30days':
+          start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          break;
+        default:
+          start = new Date(0);
+      }
+      
+      newFilters.dateRange = {
+        start: start.toISOString(),
+        end: now.toISOString(),
+      };
+    } else {
+      newFilters[key] = value;
     }
     
     onFiltersChange(newFilters);
@@ -118,162 +129,218 @@ export function ActivityFilter({
     onFiltersChange({});
   }, [onFiltersChange]);
 
+  const removeFilter = useCallback((key: keyof ActivityFilters) => {
+    const newFilters = { ...filters };
+    delete newFilters[key];
+    onFiltersChange(newFilters);
+  }, [filters, onFiltersChange]);
+
   const hasActiveFilters = Object.values(filters).some(value => 
     value !== undefined && value !== '' && 
     (typeof value !== 'object' || Object.keys(value).length > 0)
   );
 
+  const activeFilterCount = Object.keys(filters).filter(key => filters[key as keyof ActivityFilters]).length;
+
   return (
-    <div className="activity-filter">
-      <div className="filter-header">
-        <div className="filter-controls-basic">
-          <div className="filter-search">
-            <Input
-              placeholder="Search activities..."
-              value={filters.search || ''}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              leftIcon={
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="M21 21l-4.35-4.35"/>
-                </svg>
-              }
-            />
-          </div>
-
-          <Select
-            options={ACTIVITY_TYPES}
-            value={filters.type || ''}
-            onChange={(value) => handleFilterChange('type', value)}
-            placeholder="Filter by type"
-          />
-
-          <Select
-            options={SEVERITY_LEVELS}
-            value={filters.severity || ''}
-            onChange={(value) => handleFilterChange('severity', value)}
-            placeholder="Filter by severity"
+    <div className="space-y-4 mb-6">
+      {/* Main filter row */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search input */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search activities..."
+            value={filters.search || ''}
+            onChange={(e) => handleFilterChange('search', e.target.value)}
+            className="pl-9"
           />
         </div>
 
-        <div className="filter-actions">
-          <button
-            className="toggle-advanced-button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            Advanced
-          </button>
+        {/* Activity type filter */}
+        <Select
+          value={filters.type || 'all'}
+          onValueChange={(value) => handleFilterChange('type', value)}
+        >
+          <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectValue placeholder="Filter by type" />
+          </SelectTrigger>
+          <SelectContent>
+            {ACTIVITY_TYPES.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          {hasActiveFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearFilters}
-            >
-              Clear Filters
-            </Button>
+        {/* Severity filter */}
+        <Select
+          value={filters.severity || 'all'}
+          onValueChange={(value) => handleFilterChange('severity', value)}
+        >
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Severity" />
+          </SelectTrigger>
+          <SelectContent>
+            {SEVERITY_LEVELS.map((level) => (
+              <SelectItem key={level.value} value={level.value}>
+                {level.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Advanced toggle */}
+        <Button
+          variant={showAdvanced ? 'secondary' : 'outline'}
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="gap-2"
+        >
+          <SlidersHorizontal size={16} />
+          Advanced
+          {activeFilterCount > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+              {activeFilterCount}
+            </Badge>
           )}
-        </div>
+        </Button>
+
+        {/* Clear filters */}
+        {hasActiveFilters && (
+          <Button variant="ghost" onClick={handleClearFilters} className="gap-2 text-muted-foreground">
+            <X size={16} />
+            Clear
+          </Button>
+        )}
       </div>
 
+      {/* Advanced filters */}
       {showAdvanced && (
-        <div className="filter-advanced">
-          <div className="advanced-controls">
+        <div className="p-4 rounded-lg border border-border bg-muted/30 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* User type filter */}
             {showUserTypeFilter && (
-              <div className="filter-group">
-                <label className="filter-label">User Type</label>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">User Type</label>
                 <Select
-                  options={USER_TYPES}
-                  value={filters.userType || ''}
-                  onChange={(value) => handleFilterChange('userType', value)}
-                  placeholder="Filter by user type"
-                />
+                  value={filters.userType || 'all'}
+                  onValueChange={(value) => handleFilterChange('userType', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Filter by user type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {USER_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
-            <div className="filter-group">
-              <label className="filter-label">Date Range</label>
+            {/* Date range filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Date Range</label>
               <Select
-                options={DATE_RANGES}
-                value={filters.dateRange ? 'custom' : ''}
-                onChange={(value) => handleFilterChange('dateRange', value)}
-                placeholder="Filter by date"
-              />
+                value={filters.dateRange ? 'custom' : 'all'}
+                onValueChange={(value) => handleFilterChange('dateRange', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by date" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DATE_RANGES.map((range) => (
+                    <SelectItem key={range.value} value={range.value}>
+                      {range.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {/* Custom date range inputs */}
-          <div className="custom-date-range">
-            <div className="date-inputs">
-              <div className="date-input-group">
-                <label className="date-label">From</label>
-                <input
-                  type="datetime-local"
-                  value={customDateRange.start}
-                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="date-input"
-                />
-              </div>
-              <div className="date-input-group">
-                <label className="date-label">To</label>
-                <input
-                  type="datetime-local"
-                  value={customDateRange.end}
-                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="date-input"
-                />
-              </div>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleCustomDateRange}
-                disabled={!customDateRange.start || !customDateRange.end}
-              >
-                Apply
-              </Button>
+          <div className="flex flex-wrap items-end gap-4 pt-2 border-t border-border">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Calendar size={14} />
+                From
+              </label>
+              <Input
+                type="datetime-local"
+                value={customDateRange.start}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                className="w-[200px]"
+              />
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Calendar size={14} />
+                To
+              </label>
+              <Input
+                type="datetime-local"
+                value={customDateRange.end}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                className="w-[200px]"
+              />
+            </div>
+            <Button
+              onClick={handleCustomDateRange}
+              disabled={!customDateRange.start || !customDateRange.end}
+            >
+              Apply Range
+            </Button>
           </div>
+        </div>
+      )}
 
-          {hasActiveFilters && (
-            <div className="active-filters">
-              <span className="active-filters-label">Active Filters:</span>
-              <div className="filter-tags">
-                {filters.type && (
-                  <span className="filter-tag">
-                    Type: {ACTIVITY_TYPES.find(t => t.value === filters.type)?.label}
-                    <button onClick={() => handleFilterChange('type', '')}>×</button>
-                  </span>
-                )}
-                {filters.userType && showUserTypeFilter && (
-                  <span className="filter-tag">
-                    User: {USER_TYPES.find(t => t.value === filters.userType)?.label}
-                    <button onClick={() => handleFilterChange('userType', '')}>×</button>
-                  </span>
-                )}
-                {filters.severity && (
-                  <span className="filter-tag">
-                    Severity: {SEVERITY_LEVELS.find(s => s.value === filters.severity)?.label}
-                    <button onClick={() => handleFilterChange('severity', '')}>×</button>
-                  </span>
-                )}
-                {filters.dateRange && (
-                  <span className="filter-tag">
-                    Date Range: Custom
-                    <button onClick={() => handleFilterChange('dateRange', '')}>×</button>
-                  </span>
-                )}
-                {filters.search && (
-                  <span className="filter-tag">
-                    Search: "{filters.search}"
-                    <button onClick={() => handleFilterChange('search', '')}>×</button>
-                  </span>
-                )}
-              </div>
-            </div>
+      {/* Active filters display */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">Active filters:</span>
+          {filters.type && (
+            <Badge variant="secondary" className="gap-1">
+              Type: {ACTIVITY_TYPES.find(t => t.value === filters.type)?.label}
+              <button onClick={() => removeFilter('type')} className="ml-1 hover:text-destructive">
+                <X size={12} />
+              </button>
+            </Badge>
+          )}
+          {filters.userType && showUserTypeFilter && (
+            <Badge variant="secondary" className="gap-1">
+              User: {USER_TYPES.find(t => t.value === filters.userType)?.label}
+              <button onClick={() => removeFilter('userType')} className="ml-1 hover:text-destructive">
+                <X size={12} />
+              </button>
+            </Badge>
+          )}
+          {filters.severity && (
+            <Badge variant="secondary" className="gap-1">
+              Severity: {SEVERITY_LEVELS.find(s => s.value === filters.severity)?.label}
+              <button onClick={() => removeFilter('severity')} className="ml-1 hover:text-destructive">
+                <X size={12} />
+              </button>
+            </Badge>
+          )}
+          {filters.dateRange && (
+            <Badge variant="secondary" className="gap-1">
+              Date Range: Custom
+              <button onClick={() => removeFilter('dateRange')} className="ml-1 hover:text-destructive">
+                <X size={12} />
+              </button>
+            </Badge>
+          )}
+          {filters.search && (
+            <Badge variant="secondary" className="gap-1">
+              Search: "{filters.search}"
+              <button onClick={() => removeFilter('search')} className="ml-1 hover:text-destructive">
+                <X size={12} />
+              </button>
+            </Badge>
           )}
         </div>
       )}
@@ -281,4 +348,4 @@ export function ActivityFilter({
   );
 }
 
-export default ActivityFilter; 
+export default ActivityFilter;

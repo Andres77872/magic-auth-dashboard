@@ -1,17 +1,29 @@
 import React from 'react';
 import { StatCard } from './StatCard';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useUserType } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
+import { BarChart3, AlertCircle, RefreshCw, TrendingUp, Users, Shield, Crown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { DashboardStats, StatCardData } from '@/types/dashboard.types';
 
 interface StatisticsGridProps {
   stats: DashboardStats | null;
   isLoading: boolean;
   error: string | null;
+  onRetry?: () => void;
 }
 
-export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps): React.JSX.Element {
+export function StatisticsGrid({ stats, isLoading, error, onRetry }: StatisticsGridProps): React.JSX.Element {
   const { isRoot } = useUserType();
+
+  const getGrowthType = (value: number): 'increase' | 'decrease' | 'neutral' => {
+    if (value > 0) return 'increase';
+    if (value < 0) return 'decrease';
+    return 'neutral';
+  };
 
   const generateStatCards = (): StatCardData[] => {
     if (!stats) return [];
@@ -25,8 +37,8 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
         clickable: true,
         href: ROUTES.USERS,
         change: {
-          value: 12, // This would come from API or calculation
-          type: 'increase',
+          value: stats.userGrowthPercent || stats.newUsersWeek,
+          type: getGrowthType(stats.userGrowthPercent || stats.newUsersWeek),
         },
       },
       {
@@ -37,8 +49,8 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
         clickable: true,
         href: ROUTES.PROJECTS,
         change: {
-          value: 8,
-          type: 'increase',
+          value: stats.projectGrowthPercent || stats.newProjectsWeek,
+          type: getGrowthType(stats.projectGrowthPercent || stats.newProjectsWeek),
         },
       },
       {
@@ -47,10 +59,6 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
         icon: 'sessions',
         color: 'info',
         clickable: false,
-        change: {
-          value: -3,
-          type: 'decrease',
-        },
       },
       {
         title: 'User Groups',
@@ -59,41 +67,19 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
         color: 'warning',
         clickable: true,
         href: ROUTES.GROUPS,
-        change: {
-          value: 0,
-          type: 'neutral',
-        },
-      },
-      {
-        title: 'Project Groups',
-        value: stats.projectGroups.toLocaleString(),
-        icon: 'groups',
-        color: 'info',
-        clickable: false,
-        change: {
-          value: 0,
-          type: 'neutral',
-        },
       },
     ];
 
-    // Add ROOT-only statistics
-    if (isRoot && stats.rootUsers !== undefined) {
+    // Add ROOT-only admin statistics
+    if (isRoot) {
       cards.push(
         {
           title: 'Admin Users',
-          value: (stats.adminUsers || 0).toLocaleString(),
+          value: stats.adminUsers.toLocaleString(),
           icon: 'users',
           color: 'warning',
           clickable: true,
           href: ROUTES.SYSTEM_ADMINS,
-        },
-        {
-          title: 'System Version',
-          value: stats.systemVersion,
-          icon: 'sessions',
-          color: 'info',
-          clickable: false,
         }
       );
     }
@@ -103,66 +89,208 @@ export function StatisticsGrid({ stats, isLoading, error }: StatisticsGridProps)
 
   if (error) {
     return (
-      <section className="statistics-grid-error" aria-live="polite" aria-atomic="true">
-        <div className="error-content">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="15" y1="9" x2="9" y2="15"/>
-            <line x1="9" y1="9" x2="15" y2="15"/>
-          </svg>
-          <h3>Failed to Load Statistics</h3>
-          <p>{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="retry-button"
-          >
-            Try Again
-          </button>
-        </div>
-      </section>
+      <Card className="border-destructive/30 bg-destructive/5">
+        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Failed to Load Statistics</h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-md">{error}</p>
+          {onRetry && (
+            <Button variant="outline" onClick={onRetry}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          )}
+        </CardContent>
+      </Card>
     );
   }
 
   const statCards = generateStatCards();
 
-  return (
-    <section className="statistics-grid" aria-labelledby="statistics-title">
-      <header className="statistics-header">
-        <h2 id="statistics-title">System Overview</h2>
-        <p>Real-time statistics and key metrics</p>
-      </header>
+  // Loading state with placeholder cards
+  if (isLoading && statCards.length === 0) {
+    return (
+      <section aria-labelledby="statistics-title">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 id="statistics-title" className="text-lg font-semibold text-foreground">System Overview</h2>
+            <p className="text-sm text-muted-foreground">Real-time statistics and key metrics</p>
+          </div>
+        </div>
 
-      <ul className="statistics-cards" role="list">
-        {statCards.map((cardData, index) => (
-          <li key={`stat-${index}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, index) => (
             <StatCard
-              data={cardData}
-              isLoading={isLoading}
+              key={`loading-${index}`}
+              data={{
+                title: '',
+                value: '',
+                icon: 'users',
+                color: 'primary',
+                clickable: false,
+              }}
+              isLoading={true}
             />
-          </li>
-        ))}
-      </ul>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
-      {isLoading && statCards.length === 0 && (
-        <div className="statistics-loading" role="status" aria-live="polite">
-          <div className="loading-cards">
-            {[...Array(4)].map((_, index) => (
-              <div key={`loading-${index}`} className="stat-card-skeleton">
-                <div className="skeleton-header">
-                  <div className="skeleton-icon"></div>
-                  <div className="skeleton-title"></div>
+  // Calculate user type percentages for the breakdown
+  const getUserTypePercentage = (count: number): number => {
+    if (!stats || stats.totalUsers === 0) return 0;
+    return Math.round((count / stats.totalUsers) * 100);
+  };
+
+  return (
+    <section aria-labelledby="statistics-title" className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+            <BarChart3 className="h-5 w-5 text-primary-600 dark:text-primary-400" />
+          </div>
+          <div>
+            <h2 id="statistics-title" className="text-lg font-semibold text-foreground">System Overview</h2>
+            <p className="text-sm text-muted-foreground">Real-time statistics and key metrics</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {statCards.map((cardData, index) => (
+          <StatCard
+            key={`stat-${index}`}
+            data={cardData}
+            isLoading={isLoading}
+          />
+        ))}
+      </div>
+
+      {/* User Breakdown & Growth Metrics (ROOT only) */}
+      {isRoot && stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* User Type Breakdown */}
+          <Card className="border-l-4 border-l-primary-500">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="h-5 w-5 text-primary-600" />
+                <h3 className="text-sm font-semibold text-foreground">User Type Distribution</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Root Users */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                      <Crown className="h-4 w-4 text-destructive" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Root Users</p>
+                      <p className="text-xs text-muted-foreground">Full system access</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-foreground">{stats.rootUsers}</p>
+                    <Badge variant="outline" className="text-[10px] bg-destructive/10 text-destructive border-destructive/30">
+                      {getUserTypePercentage(stats.rootUsers)}%
+                    </Badge>
+                  </div>
                 </div>
-                <div className="skeleton-content">
-                  <div className="skeleton-value"></div>
-                  <div className="skeleton-change"></div>
+
+                {/* Admin Users */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-warning/10 flex items-center justify-center">
+                      <Shield className="h-4 w-4 text-warning" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Admin Users</p>
+                      <p className="text-xs text-muted-foreground">Project managers</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-foreground">{stats.adminUsers}</p>
+                    <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/30">
+                      {getUserTypePercentage(stats.adminUsers)}%
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Consumer Users */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Consumer Users</p>
+                      <p className="text-xs text-muted-foreground">Regular users</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-foreground">{stats.consumerUsers.toLocaleString()}</p>
+                    <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/30">
+                      {getUserTypePercentage(stats.consumerUsers)}%
+                    </Badge>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </CardContent>
+          </Card>
+
+          {/* Growth & Activity Metrics */}
+          <Card className="border-l-4 border-l-success">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-5 w-5 text-success" />
+                <h3 className="text-sm font-semibold text-foreground">7-Day Activity Summary</h3>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 rounded-lg bg-success/5 border border-success/20">
+                  <p className="text-xs text-muted-foreground mb-1">New Users</p>
+                  <p className="text-2xl font-bold text-success">+{stats.newUsersWeek}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                  <p className="text-xs text-muted-foreground mb-1">New Projects</p>
+                  <p className="text-2xl font-bold text-primary">+{stats.newProjectsWeek}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-info/5 border border-info/20">
+                  <p className="text-xs text-muted-foreground mb-1">Activities</p>
+                  <p className="text-2xl font-bold text-info">{stats.activitiesWeek.toLocaleString()}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-warning/5 border border-warning/20">
+                  <p className="text-xs text-muted-foreground mb-1">Avg Users/Group</p>
+                  <p className="text-2xl font-bold text-warning">{stats.avgUsersPerGroup.toFixed(1)}</p>
+                </div>
+              </div>
+
+              {/* System Health Badge */}
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">System Health</span>
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    'capitalize',
+                    stats.systemHealthStatus === 'healthy' && 'bg-success/10 text-success border-success/30',
+                    stats.systemHealthStatus === 'warning' && 'bg-warning/10 text-warning border-warning/30',
+                    stats.systemHealthStatus === 'critical' && 'bg-destructive/10 text-destructive border-destructive/30'
+                  )}
+                >
+                  {stats.systemHealthStatus}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </section>
   );
 }
 
-export default StatisticsGrid; 
+export default StatisticsGrid;

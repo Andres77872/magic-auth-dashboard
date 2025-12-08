@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Input, Button } from '../primitives';
-import { SearchIcon, CloseIcon } from '@/components/icons';
-import { cn } from '@/utils/component-utils';
+import { Search, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -38,7 +39,7 @@ export function SearchBar({
 
   useEffect(() => {
     debouncedSearch(searchValue);
-    
+
     return () => {
       if (debounceTimeout.current) {
         clearTimeout(debounceTimeout.current);
@@ -54,26 +55,34 @@ export function SearchBar({
   const iconSize = size === 'sm' ? 14 : size === 'lg' ? 20 : 16;
 
   return (
-    <div className={cn('search-bar', `search-bar--${size}`, className)}>
+    <div className={cn('relative', className)}>
+      <Search
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+        style={{ width: iconSize, height: iconSize }}
+        aria-hidden="true"
+      />
       <Input
         type="search"
         placeholder={placeholder}
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
-        leftIcon={<SearchIcon size={iconSize} aria-hidden="true" />}
-        className="search-bar__input"
+        className={cn(
+          'pl-10',
+          searchValue && 'pr-10',
+          size === 'sm' && 'h-8 text-sm',
+          size === 'lg' && 'h-12 text-base'
+        )}
         aria-label={placeholder}
-        size={size}
       />
       {searchValue && (
         <Button
           variant="ghost"
           size="sm"
           onClick={handleClear}
-          className="search-bar__clear"
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
           aria-label="Clear search"
         >
-          <CloseIcon size={14} aria-hidden="true" />
+          <X className="h-4 w-4" aria-hidden="true" />
         </Button>
       )}
     </div>

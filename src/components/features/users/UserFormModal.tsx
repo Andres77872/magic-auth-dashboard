@@ -1,10 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Input, Select, Button } from '@/components/common';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { usePermissions, useUserType, useAuth, useGlobalRoles, useToast } from '@/hooks';
 import { authService, userService, globalRolesService } from '@/services';
 import AssignProjectModal from './AssignProjectModal';
 import AssignGroupModal from './AssignGroupModal';
-import { WarningIcon, InfoIcon, ProjectIcon, GroupIcon } from '@/components/icons';
+import { AlertTriangle, Info, FolderKanban, Users } from 'lucide-react';
 import type { UserFormData, UserFormErrors } from '@/types/user.types';
 import type { UserType, User } from '@/types/auth.types';
 
@@ -247,7 +264,8 @@ export function UserFormModal({
             response = await userService.createConsumerUser({
               username: formData.username,
               password: formData.password,
-              email: formData.email,
+              user_group_hash: formData.assignedGroup,
+              email: formData.email || undefined,
             });
             break;
         }
@@ -275,35 +293,54 @@ export function UserFormModal({
         // Update existing user
         if (!user?.user_hash) return;
 
-        const updateData: Partial<User> = {
-          username: formData.username,
-          email: formData.email,
-          user_type: formData.userType,
-        };
-
-        response = await userService.updateUser(user.user_hash, updateData);
-
-        if (response.success) {
-          // Update global role if specified
-          if (formData.globalRoleHash !== undefined) {
-            try {
-              if (formData.globalRoleHash) {
-                await globalRolesService.assignRoleToUser(
-                  user.user_hash,
-                  formData.globalRoleHash
-                );
-              }
-            } catch (roleError) {
-              console.error('Failed to update global role:', roleError);
-            }
-          }
-          
-          showToast(`User "${formData.username}" updated successfully`, 'success');
-          onSuccess();
-          onClose();
-        } else {
-          showToast(response.message || 'Failed to update user', 'error');
+        // Only update username/email - user_type changes use separate endpoint
+        const updateData: { username?: string; email?: string } = {};
+        if (formData.email !== user.email) {
+          updateData.email = formData.email;
         }
+        // Note: username changes are typically not allowed in edit mode
+
+        // Update user details if there are changes
+        if (Object.keys(updateData).length > 0) {
+          response = await userService.updateUser(user.user_hash, updateData);
+          if (!response.success) {
+            showToast(response.message || 'Failed to update user', 'error');
+            return;
+          }
+        }
+
+        // Handle user type change separately (ROOT only operation)
+        if (currentUserType === 'root' && formData.userType !== user.user_type) {
+          try {
+            const typeChangeResponse = await userService.changeUserType(user.user_hash, formData.userType);
+            if (!typeChangeResponse.success) {
+              showToast(typeChangeResponse.message || 'Failed to change user type', 'error');
+              return;
+            }
+          } catch (typeError) {
+            console.error('Failed to change user type:', typeError);
+            showToast('Failed to change user type', 'error');
+            return;
+          }
+        }
+
+        // Update global role if specified
+        if (formData.globalRoleHash !== undefined) {
+          try {
+            if (formData.globalRoleHash) {
+              await globalRolesService.assignRoleToUser(
+                user.user_hash,
+                formData.globalRoleHash
+              );
+            }
+          } catch (roleError) {
+            console.error('Failed to update global role:', roleError);
+          }
+        }
+        
+        showToast(`User "${formData.username}" updated successfully`, 'success');
+        onSuccess();
+        onClose();
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
@@ -363,276 +400,287 @@ export function UserFormModal({
 
   return (
     <>
-      <Modal
-        isOpen={isOpen && !showRootConfirmation}
-        onClose={onClose}
-        title={mode === 'create' ? 'Create New User' : 'Edit User'}
-        size="lg"
-        closeOnBackdrop={!isLoading}
-        closeOnEscape={!isLoading}
-      >
-        <form onSubmit={handleSubmit}>
-          <div className="modal-body">
-            {/* Security Warning for ROOT users */}
-            {mode === 'create' && formData.userType === 'root' && (
-              <div className="form-alert form-alert-warning">
-                <WarningIcon size={20} aria-hidden="true" />
-                <div>
-                  <strong>Creating ROOT User</strong>
-                  <p>You are about to create a ROOT user with full system access.</p>
+      <Dialog open={isOpen && !showRootConfirmation} onOpenChange={(open) => !isLoading && !open && onClose()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{mode === 'create' ? 'Create New User' : 'Edit User'}</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              {/* Security Warning for ROOT users */}
+              {mode === 'create' && formData.userType === 'root' && (
+                <div className="flex items-start gap-3 rounded-md bg-yellow-50 p-3 dark:bg-yellow-950">
+                  <AlertTriangle size={20} className="mt-0.5 text-yellow-600" aria-hidden="true" />
+                  <div>
+                    <p className="font-medium text-yellow-800 dark:text-yellow-200">Creating ROOT User</p>
+                    <p className="text-sm text-yellow-700 dark:text-yellow-300">You are about to create a ROOT user with full system access.</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Self-editing protection warning */}
-            {isEditingSelf && (
-              <div className="form-alert form-alert-info">
-                <InfoIcon size={20} aria-hidden="true" />
-                <p>You are editing your own account. Some restrictions apply for security reasons.</p>
-              </div>
-            )}
+              {/* Self-editing protection warning */}
+              {isEditingSelf && (
+                <div className="flex items-start gap-3 rounded-md bg-blue-50 p-3 dark:bg-blue-950">
+                  <Info size={20} className="mt-0.5 text-blue-600" aria-hidden="true" />
+                  <p className="text-sm text-blue-700 dark:text-blue-300">You are editing your own account. Some restrictions apply for security reasons.</p>
+                </div>
+              )}
 
-            <div className="form-grid">
-              {/* Username Field */}
-              <div className="form-field">
-                <Input
-                  label="Username"
-                  value={formData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
-                  error={errors.username}
-                  validationState={mode === 'create' ? (usernameAvailable === true ? 'success' : usernameAvailable === false ? 'error' : null) : null}
-                  required
-                  disabled={isLoading || mode === 'edit'}
-                  helperText={mode === 'create' ? 
-                    (usernameAvailable === true ? 'Username is available' : 
-                     usernameAvailable === false ? 'Username is taken' : 
-                     checkingAvailability ? 'Checking availability...' : 'Enter a unique username') : 'Username cannot be changed'
-                  }
-                />
-              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* Username Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    required
+                    disabled={isLoading || mode === 'edit'}
+                  />
+                  {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    {mode === 'create' ? 
+                      (usernameAvailable === true ? 'Username is available' : 
+                       usernameAvailable === false ? 'Username is taken' : 
+                       checkingAvailability ? 'Checking availability...' : 'Enter a unique username') : 'Username cannot be changed'
+                    }
+                  </p>
+                </div>
 
-              {/* Email Field */}
-              <div className="form-field">
-                <Input
-                  label="Email Address"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  error={errors.email}
-                  validationState={mode === 'create' && formData.email ? (emailAvailable === true ? 'success' : emailAvailable === false ? 'error' : null) : null}
-                  disabled={isLoading}
-                  helperText={mode === 'create' && formData.email ? 
-                    (emailAvailable === true ? 'Email is available' : 
-                     emailAvailable === false ? 'Email is already in use' : 
-                     checkingAvailability ? 'Checking availability...' : 'Optional but recommended') : 'Optional but recommended'
-                  }
-                />
-              </div>
+                {/* Email Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    disabled={isLoading}
+                  />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                  <p className="text-xs text-muted-foreground">
+                    {mode === 'create' && formData.email ? 
+                      (emailAvailable === true ? 'Email is available' : 
+                       emailAvailable === false ? 'Email is already in use' : 
+                       checkingAvailability ? 'Checking availability...' : 'Optional but recommended') : 'Optional but recommended'
+                    }
+                  </p>
+                </div>
 
-              {/* User Type Field */}
-              <div className="form-field">
-                <Select
-                  label="User Type"
-                  options={availableUserTypes}
-                  value={formData.userType}
-                  onChange={(value) => handleInputChange('userType', value)}
-                  error={errors.userType}
-                  disabled={isLoading || (mode === 'edit' && (currentUserType !== 'root' || isEditingSelf)) || undefined}
-                />
-                {isEditingSelf && currentUserType === 'root' && (
-                  <p className="field-helper-text text-warning">You cannot change your own user type</p>
+                {/* User Type Field */}
+                <div className="space-y-2">
+                  <Label>User Type</Label>
+                  <Select 
+                    value={formData.userType} 
+                    onValueChange={(value: string) => handleInputChange('userType', value)}
+                    disabled={isLoading || (mode === 'edit' && (currentUserType !== 'root' || isEditingSelf)) || undefined}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select user type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableUserTypes.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.userType && <p className="text-xs text-destructive">{errors.userType}</p>}
+                  {isEditingSelf && currentUserType === 'root' && (
+                    <p className="text-xs text-yellow-600">You cannot change your own user type</p>
+                  )}
+                </div>
+
+                {/* Global Role Field */}
+                <div className="space-y-2">
+                  <Label>Global Role</Label>
+                  <Select 
+                    value={formData.globalRoleHash || 'none'} 
+                    onValueChange={(value: string) => handleInputChange('globalRoleHash', value === 'none' ? '' : value)}
+                    disabled={isLoading || loadingGlobalRoles}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select global role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Global Role</SelectItem>
+                      {globalRoles.map(role => (
+                        <SelectItem key={role.role_hash} value={role.role_hash}>{role.role_display_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Password Fields */}
+                {mode === 'create' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={formData.password}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        required
+                        disabled={isLoading}
+                      />
+                      {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                      <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        required
+                        disabled={isLoading}
+                      />
+                      {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
+                    </div>
+                  </>
                 )}
               </div>
 
-              {/* Global Role Field */}
-              <div className="form-field">
-                <Select
-                  label="Global Role"
-                  options={[
-                    { value: '', label: 'No Global Role' },
-                    ...globalRoles.map(role => ({
-                      value: role.role_hash,
-                      label: role.role_display_name
-                    }))
-                  ]}
-                  value={formData.globalRoleHash || ''}
-                  onChange={(value) => handleInputChange('globalRoleHash', value)}
-                  disabled={isLoading || loadingGlobalRoles}
-                />
-              </div>
-
-              {/* Password Fields */}
-              {mode === 'create' && (
-                <>
-                  <div className="form-field">
-                    <Input
-                      label="Password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
-                      error={errors.password}
-                      required
+              {/* Project Assignment for Admin Users */}
+              {formData.userType === 'admin' && (
+                <div className="space-y-3 rounded-md border p-4">
+                  <h4 className="font-medium">Project Assignment</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Assign this admin user to specific projects they can manage.
+                  </p>
+                  
+                  <div className="flex items-center justify-between">
+                    {formData.assignedProjects && formData.assignedProjects.length > 0 ? (
+                      <p className="text-sm">
+                        {formData.assignedProjects.length} project{formData.assignedProjects.length !== 1 ? 's' : ''} assigned
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No projects assigned</p>
+                    )}
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowProjectModal(true)}
                       disabled={isLoading}
-                      helperText="Minimum 8 characters"
-                    />
+                    >
+                      <FolderKanban size={16} aria-hidden="true" />
+                      {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Group Assignment for Consumer Users */}
+              {formData.userType === 'consumer' && (
+                <div className="space-y-3 rounded-md border p-4">
+                  <h4 className="font-medium">User Group Assignment</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Assign this consumer user to a user group. This is required.
+                  </p>
+
+                  <div className="flex items-center justify-between">
+                    {formData.assignedGroup ? (
+                      <p className="text-sm">1 group assigned</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No group assigned</p>
+                    )}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowGroupModal(true)}
+                      disabled={isLoading}
+                    >
+                      <Users size={16} aria-hidden="true" />
+                      {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
+                    </Button>
                   </div>
 
-                  <div className="form-field">
-                    <Input
-                      label="Confirm Password"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                      error={errors.confirmPassword}
-                      required
-                      disabled={isLoading}
-                    />
-                  </div>
-                </>
+                  {errors.assignedGroup && (
+                    <p className="text-xs text-destructive">{errors.assignedGroup}</p>
+                  )}
+                </div>
               )}
             </div>
 
-            {/* Project Assignment for Admin Users */}
-            {formData.userType === 'admin' && (
-              <div className="form-section">
-                <h4 className="form-section-title">Project Assignment</h4>
-                <p className="form-section-description">
-                  Assign this admin user to specific projects they can manage.
-                </p>
-                
-                <div className="form-assignment-display">
-                  {formData.assignedProjects && formData.assignedProjects.length > 0 ? (
-                    <p className="text-sm text-secondary">
-                      {formData.assignedProjects.length} project{formData.assignedProjects.length !== 1 ? 's' : ''} assigned
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted">No projects assigned</p>
-                  )}
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowProjectModal(true)}
-                    disabled={isLoading}
-                    leftIcon={<ProjectIcon size={16} aria-hidden="true" />}
-                  >
-                    {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
-                  </Button>
-                </div>
+            <DialogFooter className="mt-6">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={checkingAvailability || (mode === 'create' && (usernameAvailable === false || emailAvailable === false))}
+              >
+                {isLoading && <Spinner size="sm" className="mr-2" />}
+                {mode === 'create' ? 'Create User' : 'Update User'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ROOT User Creation Confirmation Dialog */}
+      <Dialog 
+        open={showRootConfirmation} 
+        onOpenChange={(open) => {
+          if (!isLoading && !open) {
+            setShowRootConfirmation(false);
+            setRootConfirmationPassword('');
+            setRootConfirmationError('');
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm ROOT User Creation</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-md bg-yellow-50 p-3 dark:bg-yellow-950">
+              <AlertTriangle size={32} className="text-yellow-600" aria-hidden="true" />
+              <div className="space-y-2">
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Please enter your password to confirm this action:</p>
               </div>
-            )}
-
-            {/* Group Assignment for Consumer Users */}
-            {formData.userType === 'consumer' && (
-              <div className="form-section">
-                <h4 className="form-section-title">User Group Assignment</h4>
-                <p className="form-section-description">
-                  Assign this consumer user to a user group. This is required.
-                </p>
-
-                <div className="form-assignment-display">
-                  {formData.assignedGroup ? (
-                    <p className="text-sm text-secondary">1 group assigned</p>
-                  ) : (
-                    <p className="text-sm text-muted">No group assigned</p>
-                  )}
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowGroupModal(true)}
-                    disabled={isLoading}
-                    leftIcon={<GroupIcon size={16} aria-hidden="true" />}
-                  >
-                    {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
-                  </Button>
-                </div>
-
-                {errors.assignedGroup && (
-                  <p className="field-error-text">{errors.assignedGroup}</p>
-                )}
-              </div>
-            )}
+            </div>
+            
+            <div className="space-y-2">
+              <Input
+                type="password"
+                value={rootConfirmationPassword}
+                onChange={(e) => setRootConfirmationPassword(e.target.value)}
+                placeholder="Enter your password"
+                autoFocus
+              />
+              {rootConfirmationError && <p className="text-xs text-destructive">{rootConfirmationError}</p>}
+            </div>
           </div>
 
-          <div className="modal-footer">
+          <DialogFooter>
             <Button
-              type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={() => {
+                setShowRootConfirmation(false);
+                setRootConfirmationPassword('');
+                setRootConfirmationError('');
+              }}
               disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isLoading}
-              disabled={checkingAvailability || (mode === 'create' && (usernameAvailable === false || emailAvailable === false))}
-            >
-              {mode === 'create' ? 'Create User' : 'Update User'}
+            <Button onClick={handleRootConfirmation} disabled={isLoading}>
+              {isLoading && <Spinner size="sm" className="mr-2" />}
+              Create ROOT User
             </Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* ROOT User Creation Confirmation Dialog */}
-      <Modal
-        isOpen={showRootConfirmation}
-        onClose={() => {
-          setShowRootConfirmation(false);
-          setRootConfirmationPassword('');
-          setRootConfirmationError('');
-        }}
-        title="Confirm ROOT User Creation"
-        size="md"
-        closeOnBackdrop={!isLoading}
-        closeOnEscape={!isLoading}
-      >
-        <div className="modal-body">
-          <div className="form-alert form-alert-warning">
-            <WarningIcon size={32} aria-hidden="true" />
-            <div>
-              <p>You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>
-              <p><strong>Please enter your password to confirm this action:</strong></p>
-            </div>
-          </div>
-          
-          <div className="form-field">
-            <Input
-              type="password"
-              value={rootConfirmationPassword}
-              onChange={(e) => setRootConfirmationPassword(e.target.value)}
-              placeholder="Enter your password"
-              error={rootConfirmationError}
-              autoFocus
-            />
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowRootConfirmation(false);
-              setRootConfirmationPassword('');
-              setRootConfirmationError('');
-            }}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleRootConfirmation}
-            loading={isLoading}
-          >
-            Create ROOT User
-          </Button>
-        </div>
-      </Modal>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Assign Projects Modal */}
       <AssignProjectModal

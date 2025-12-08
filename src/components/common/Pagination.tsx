@@ -1,7 +1,7 @@
 import React from 'react';
-import { ChevronIcon } from '@/components/icons';
-import { Button } from '../primitives';
-import { cn } from '@/utils/component-utils';
+import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface PaginationProps {
   currentPage: number;
@@ -15,6 +15,12 @@ interface PaginationProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+const sizeClasses = {
+  sm: 'h-7 w-7 text-xs',
+  md: 'h-9 w-9 text-sm',
+  lg: 'h-10 w-10 text-base',
+};
+
 export function Pagination({
   currentPage,
   totalPages,
@@ -26,8 +32,7 @@ export function Pagination({
   itemLabelPlural = 'items',
   size = 'md',
 }: PaginationProps): React.JSX.Element {
-  
-  const startItem = ((currentPage - 1) * itemsPerPage) + 1;
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   const getVisiblePages = () => {
@@ -79,51 +84,74 @@ export function Pagination({
   };
 
   if (totalPages <= 1) {
-    return <nav className={cn('pagination', `pagination--${size}`, className)} aria-label="Pagination" />;
+    return (
+      <nav
+        className={cn('flex items-center justify-between gap-4', className)}
+        aria-label="Pagination"
+      />
+    );
   }
 
   const visiblePages = getVisiblePages();
-  const iconSize = size === 'sm' ? 12 : size === 'lg' ? 18 : 14;
+  const iconSize = size === 'sm' ? 14 : size === 'lg' ? 18 : 16;
 
   return (
-    <nav className={cn('pagination', `pagination--${size}`, className)} aria-label="Pagination">
-      <div className="pagination__info">
-        <span className="pagination__text" aria-live="polite">
-          Showing {startItem} to {endItem} of {totalItems} {totalItems === 1 ? itemLabelSingular : itemLabelPlural}
+    <nav
+      className={cn('flex flex-col sm:flex-row items-center justify-between gap-4', className)}
+      aria-label="Pagination"
+    >
+      <div className="text-sm text-muted-foreground">
+        <span aria-live="polite">
+          Showing {startItem} to {endItem} of {totalItems}{' '}
+          {totalItems === 1 ? itemLabelSingular : itemLabelPlural}
         </span>
       </div>
 
-      <div className="pagination__controls">
+      <div className="flex items-center gap-1">
         <Button
           variant="outline"
           size={size}
           onClick={handlePrevious}
           disabled={currentPage === 1}
           aria-label="Previous page"
-          className="pagination__btn pagination__btn--prev"
+          className="gap-1"
         >
-          <ChevronIcon size={iconSize} direction="left" />
-          Previous
+          <ChevronLeft className="h-4 w-4" style={{ width: iconSize, height: iconSize }} />
+          <span className="hidden sm:inline">Previous</span>
         </Button>
 
-        <div className="pagination__pages" role="group" aria-label="Page numbers">
-          {visiblePages.map((page, index) => (
-            <button
-              key={index}
-              type="button"
-              className={cn(
-                'pagination__page',
-                page === currentPage && 'pagination__page--active',
-                typeof page === 'string' && 'pagination__page--ellipsis'
-              )}
-              onClick={() => handlePageClick(page)}
-              disabled={typeof page === 'string'}
-              aria-label={typeof page === 'number' ? `Go to page ${page}` : undefined}
-              aria-current={page === currentPage ? 'page' : undefined}
-            >
-              {page}
-            </button>
-          ))}
+        <div className="flex items-center gap-1" role="group" aria-label="Page numbers">
+          {visiblePages.map((page, index) =>
+            typeof page === 'string' ? (
+              <span
+                key={`ellipsis-${index}`}
+                className={cn(
+                  'flex items-center justify-center text-muted-foreground',
+                  sizeClasses[size]
+                )}
+                aria-hidden
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </span>
+            ) : (
+              <button
+                key={page}
+                type="button"
+                className={cn(
+                  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  sizeClasses[size],
+                  page === currentPage
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-muted'
+                )}
+                onClick={() => handlePageClick(page)}
+                aria-label={`Go to page ${page}`}
+                aria-current={page === currentPage ? 'page' : undefined}
+              >
+                {page}
+              </button>
+            )
+          )}
         </div>
 
         <Button
@@ -132,10 +160,10 @@ export function Pagination({
           onClick={handleNext}
           disabled={currentPage === totalPages}
           aria-label="Next page"
-          className="pagination__btn pagination__btn--next"
+          className="gap-1"
         >
-          Next
-          <ChevronIcon size={iconSize} direction="right" />
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight className="h-4 w-4" style={{ width: iconSize, height: iconSize }} />
         </Button>
       </div>
     </nav>

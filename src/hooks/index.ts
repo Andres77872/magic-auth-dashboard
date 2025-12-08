@@ -4,11 +4,8 @@ export { useProjects } from './useProjects';
 export { useUserType } from './useUserType';
 export { usePermissions } from './usePermissions';
 export { useRoles } from './useRoles';
-export { useRBAC } from './useRBAC';
 export { useGroups } from './useGroups';
 export { useProjectGroups } from './useProjectGroups';
-export { useUserRoleAssignments } from './useUserRoleAssignments';
-export { useEffectivePermissions } from './useEffectivePermissions';
 export { useToast } from './useToast';
 
 // Dashboard hooks
@@ -25,21 +22,24 @@ export { default as useProjectMembers } from './useProjectMembers';
 export { default as useGroupMembers } from './useGroupMembers';
 export { useUsersByGroup } from './useUsersByGroup';
 
-// RBAC Management hooks
-export { default as useRBACPermissions } from './useRBACPermissions';
-export { default as useRBACRoles } from './useRBACRoles';
-export { default as useRBACPermissionChecker } from './useRBACPermissionChecker';
+// Utility hooks
 export { useOptimisticQuery, useOptimisticMutation } from './useOptimisticQuery';
 export { useUsersOptimized } from './useUsersOptimized';
+export { useDebounce, useDebouncedCallback } from './useDebounce';
 
 // Admin Operations hooks
 export { default as useAdminOperations } from './useAdminOperations';
 
-// Global Roles & Permission Assignments hooks (NEW)
+// Global Roles & Permission Assignments hooks
 export { useGlobalRoles } from './useGlobalRoles';
 export { useGlobalPermissionGroups } from './useGlobalPermissionGroups';
 export { usePermissionAssignments } from './usePermissionAssignments';
 export { usePermissionManagement } from '@/contexts/PermissionManagementContext';
 
-// Utility hooks
-export { useDebounce, useDebouncedCallback } from './useDebounce'; 
+// Audit hooks
+export {
+  useActivityLogs,
+  useActivityTypes,
+  useSecurityEvents,
+  useAuditStatistics,
+} from './audit'; 

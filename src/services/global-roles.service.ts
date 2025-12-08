@@ -21,7 +21,7 @@ class GlobalRolesService {
    * POST /roles/roles
    */
   async createRole(roleData: CreateGlobalRoleRequest): Promise<ApiResponse<GlobalRole>> {
-    return await apiClient.post<GlobalRole>('/roles/roles', roleData);
+    return await apiClient.postForm<GlobalRole>('/roles/roles', roleData);
   }
 
   /**
@@ -49,7 +49,7 @@ class GlobalRolesService {
     roleHash: string, 
     data: UpdateGlobalRoleRequest
   ): Promise<ApiResponse<GlobalRole>> {
-    return await apiClient.put<GlobalRole>(`/roles/roles/${roleHash}`, data);
+    return await apiClient.putForm<GlobalRole>(`/roles/roles/${roleHash}`, data);
   }
 
   /**
@@ -71,7 +71,7 @@ class GlobalRolesService {
   async createPermissionGroup(
     groupData: CreateGlobalPermissionGroupRequest
   ): Promise<ApiResponse<GlobalPermissionGroup>> {
-    return await apiClient.post<GlobalPermissionGroup>(
+    return await apiClient.postForm<GlobalPermissionGroup>(
       '/roles/permission-groups', 
       groupData
     );
@@ -99,6 +99,28 @@ class GlobalRolesService {
     return await apiClient.get<GlobalPermissionGroup>(
       `/roles/permission-groups/${groupHash}`
     );
+  }
+
+  /**
+   * Update permission group
+   * PUT /roles/permission-groups/{group_hash}
+   */
+  async updatePermissionGroup(
+    groupHash: string,
+    data: Partial<CreateGlobalPermissionGroupRequest>
+  ): Promise<ApiResponse<GlobalPermissionGroup>> {
+    return await apiClient.putForm<GlobalPermissionGroup>(
+      `/roles/permission-groups/${groupHash}`,
+      data
+    );
+  }
+
+  /**
+   * Delete permission group
+   * DELETE /roles/permission-groups/{group_hash}
+   */
+  async deletePermissionGroup(groupHash: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(`/roles/permission-groups/${groupHash}`);
   }
 
   // ============================================
@@ -130,6 +152,19 @@ class GlobalRolesService {
     );
   }
 
+  /**
+   * Remove permission group from role
+   * DELETE /roles/roles/{role_hash}/permission-groups/{group_hash}
+   */
+  async removePermissionGroupFromRole(
+    roleHash: string,
+    groupHash: string
+  ): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(
+      `/roles/roles/${roleHash}/permission-groups/${groupHash}`
+    );
+  }
+
   // ============================================
   // PERMISSION MANAGEMENT
   // ============================================
@@ -141,7 +176,7 @@ class GlobalRolesService {
   async createPermission(
     permissionData: CreateGlobalPermissionRequest
   ): Promise<ApiResponse<GlobalPermission>> {
-    return await apiClient.post<GlobalPermission>('/roles/permissions', permissionData);
+    return await apiClient.postForm<GlobalPermission>('/roles/permissions', permissionData);
   }
 
   /**
@@ -186,6 +221,41 @@ class GlobalRolesService {
     );
   }
 
+  /**
+   * Remove permission from permission group
+   * DELETE /roles/permission-groups/{group_hash}/permissions/{permission_hash}
+   */
+  async removePermissionFromGroup(
+    groupHash: string,
+    permissionHash: string
+  ): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(
+      `/roles/permission-groups/${groupHash}/permissions/${permissionHash}`
+    );
+  }
+
+  /**
+   * Update permission
+   * PUT /roles/permissions/{permission_hash}
+   */
+  async updatePermission(
+    permissionHash: string,
+    data: Partial<CreateGlobalPermissionRequest>
+  ): Promise<ApiResponse<GlobalPermission>> {
+    return await apiClient.putForm<GlobalPermission>(
+      `/roles/permissions/${permissionHash}`,
+      data
+    );
+  }
+
+  /**
+   * Delete permission
+   * DELETE /roles/permissions/{permission_hash}
+   */
+  async deletePermission(permissionHash: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(`/roles/permissions/${permissionHash}`);
+  }
+
   // ============================================
   // USER ROLE ASSIGNMENTS
   // ============================================
@@ -198,7 +268,7 @@ class GlobalRolesService {
     userHash: string,
     roleHash: string
   ): Promise<ApiResponse<GlobalRoleAssignment>> {
-    return await apiClient.put<GlobalRoleAssignment>(
+    return await apiClient.putForm<GlobalRoleAssignment>(
       `/roles/users/${userHash}/role`,
       { role_hash: roleHash }
     );
@@ -220,6 +290,14 @@ class GlobalRolesService {
     return await apiClient.get<GlobalRole>('/roles/users/me/role');
   }
 
+  /**
+   * Remove role from user
+   * DELETE /roles/users/{user_hash}/role
+   */
+  async removeRoleFromUser(userHash: string): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(`/roles/users/${userHash}/role`);
+  }
+
   // ============================================
   // PERMISSION CHECKING
   // ============================================
@@ -229,7 +307,7 @@ class GlobalRolesService {
    * GET /roles/users/me/permissions
    */
   async getMyPermissions(): Promise<ApiResponse<string[]>> {
-    return await apiClient.get<string[]>('/roles/users/me/permissions');
+    return await apiClient.get<string[]>('/permissions/users/me/permissions');
   }
 
   /**
@@ -243,7 +321,7 @@ class GlobalRolesService {
     return await apiClient.get<{
       has_permission: boolean;
       permission: string;
-    }>(`/roles/users/me/permissions/check/${permissionName}`);
+    }>(`/permissions/users/me/permissions/check/${permissionName}`);
   }
 
   // ============================================
@@ -259,7 +337,7 @@ class GlobalRolesService {
     roleHash: string,
     metadata?: { catalog_purpose?: string; notes?: string }
   ): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(
+    return await apiClient.postForm<void>(
       `/roles/projects/${projectHash}/catalog/roles/${roleHash}`,
       metadata || {}
     );
@@ -274,6 +352,19 @@ class GlobalRolesService {
   ): Promise<ApiResponse<GlobalRole[]>> {
     return await apiClient.get<GlobalRole[]>(
       `/roles/projects/${projectHash}/catalog/roles`
+    );
+  }
+
+  /**
+   * Remove role from project catalog
+   * DELETE /roles/projects/{project_hash}/catalog/roles/{role_hash}
+   */
+  async removeRoleFromProjectCatalog(
+    projectHash: string,
+    roleHash: string
+  ): Promise<ApiResponse<void>> {
+    return await apiClient.delete<void>(
+      `/roles/projects/${projectHash}/catalog/roles/${roleHash}`
     );
   }
 

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Card, Skeleton } from '../primitives';
-import { ArrowUpIcon, ArrowDownIcon, HorizontalLineIcon } from '@/components/icons';
-import { cn } from '@/utils/component-utils';
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export interface StatCardProps {
   title: string;
@@ -27,50 +28,63 @@ export function StatCard({
   loading = false,
   className = '',
 }: StatCardProps): React.JSX.Element {
-  const trendDirection = trend && trend.value > 0 ? 'up' : trend && trend.value < 0 ? 'down' : 'neutral';
+  const trendDirection =
+    trend && trend.value > 0 ? 'up' : trend && trend.value < 0 ? 'down' : 'neutral';
 
   const getTrendIcon = () => {
     if (trendDirection === 'up') {
-      return <ArrowUpIcon size={14} aria-hidden="true" />;
+      return <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />;
     }
     if (trendDirection === 'down') {
-      return <ArrowDownIcon size={14} aria-hidden="true" />;
+      return <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />;
     }
-    return <HorizontalLineIcon size={14} aria-hidden="true" />;
+    return <Minus className="h-3.5 w-3.5" aria-hidden="true" />;
+  };
+
+  const trendColors = {
+    up: 'text-green-600 dark:text-green-400',
+    down: 'text-red-600 dark:text-red-400',
+    neutral: 'text-muted-foreground',
   };
 
   return (
     <Card
-      className={cn('stat-card', className)}
+      className={cn(
+        onClick && 'cursor-pointer transition-colors hover:bg-muted/50',
+        className
+      )}
       onClick={onClick}
-      interactive={!!onClick}
-      padding="md"
-      elevated
       aria-label={onClick ? `View ${title}` : undefined}
     >
-      <div className="stat-card__header">
-        {icon && <div className="stat-card__icon" aria-hidden="true">{icon}</div>}
-        <h3 className="stat-card__title">{title}</h3>
-        {badge && <div className="stat-card__badge">{badge}</div>}
-      </div>
-      <div className="stat-card__body">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <div className="flex items-center gap-2">
+          {badge && <span>{badge}</span>}
+          {icon && (
+            <span className="h-4 w-4 text-muted-foreground" aria-hidden="true">
+              {icon}
+            </span>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
         {loading ? (
-          <Skeleton variant="text" width="80%" height="32px" />
+          <Skeleton className="h-8 w-4/5" />
         ) : (
-          <div className="stat-card__value">{value}</div>
+          <div className="text-2xl font-bold">{value}</div>
         )}
         {trend && !loading && (
-          <div className={cn('stat-card__trend', `stat-card__trend--${trendDirection}`)}>
-            <span className="stat-card__trend-icon">
-              {getTrendIcon()}
-            </span>
-            <span className="stat-card__trend-value">
-              {Math.abs(trend.value)}%
-            </span>
-            {trend.label && <span className="stat-card__trend-label">{trend.label}</span>}
+          <div className={cn('flex items-center gap-1 mt-1', trendColors[trendDirection])}>
+            <span>{getTrendIcon()}</span>
+            <span className="text-xs font-medium">{Math.abs(trend.value)}%</span>
+            {trend.label && (
+              <span className="text-xs text-muted-foreground">{trend.label}</span>
+            )}
           </div>
         )}
-      </div>
+      </CardContent>
     </Card>
   );
 }

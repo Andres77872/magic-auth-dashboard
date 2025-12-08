@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { DataView, Badge, TableSkeleton } from '@/components/common';
+import { DataView, TableSkeleton } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { UserActionsMenu } from './UserActionsMenu';
 import { UserAvatar } from './UserAvatar';
 import { BulkActionsBar } from './BulkActionsBar';
 import { usePermissions } from '@/hooks';
-import { GroupIcon, ProjectIcon, WarningIcon } from '@/components/icons';
+import { Users, FolderKanban, AlertTriangle } from 'lucide-react';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
 import type { User } from '@/types/auth.types';
 
@@ -132,13 +134,11 @@ export function UserTable({
       sortable: false,
       width: '50px',
       render: (_, user) => (
-        <input
-          type="checkbox"
+        <Checkbox
           checked={selectedUsers.has(user.user_hash)}
-          onChange={() => handleSelectUser(user.user_hash)}
+          onCheckedChange={() => handleSelectUser(user.user_hash)}
           disabled={isLoading || !isUserOperable(user)}
           aria-label={`Select ${user.username}`}
-          className="bulk-select-checkbox"
         />
       ),
     },
@@ -147,17 +147,17 @@ export function UserTable({
       header: 'Username',
       sortable: true,
       render: (value, user) => (
-        <div className="user-info">
+        <div className="flex items-center gap-3">
           <UserAvatar 
             username={user.username} 
             userType={user.user_type}
             size="sm"
           />
-          <div className="user-details">
-            <div className="user-name">{value as string}</div>
-            <div className="user-hash" title={user.user_hash}>
+          <div className="flex flex-col">
+            <span className="font-medium text-foreground">{value as string}</span>
+            <span className="text-xs text-muted-foreground" title={user.user_hash}>
               {truncateHash(user.user_hash)}
-            </div>
+            </span>
           </div>
         </div>
       ),
@@ -167,7 +167,7 @@ export function UserTable({
       header: 'Email',
       sortable: true,
       render: (value) => (
-        <span className="user-email">{value as string}</span>
+        <span className="text-sm text-foreground">{value as string}</span>
       ),
     },
     {
@@ -175,21 +175,18 @@ export function UserTable({
       header: 'User Type',
       sortable: true,
       render: (_, user) => (
-        <>
-          <div className="flex items-center gap-2">
-            <Badge 
-              variant={getUserTypeBadgeVariant(user.user_type)}
-              size="sm"
-            >
-              {(user.user_type).toUpperCase()}
-            </Badge>
-            {user.user_type_info?.error && (
-              <span className="user-type-error" title={user.user_type_info.error}>
-                <WarningIcon size={16} aria-hidden="true" />
-              </span>
-            )}
-          </div>
-        </>
+        <div className="flex items-center gap-2">
+          <Badge 
+            variant={getUserTypeBadgeVariant(user.user_type)}
+          >
+            {(user.user_type).toUpperCase()}
+          </Badge>
+          {user.user_type_info?.error && (
+            <span className="text-destructive" title={user.user_type_info.error}>
+              <AlertTriangle size={16} aria-hidden="true" />
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -201,19 +198,19 @@ export function UserTable({
           {user.groups && user.groups.length > 0 ? (
             <>
               {user.groups.slice(0, 2).map(group => (
-                <Badge key={group.group_hash} variant="secondary" size="sm">
-                  <GroupIcon size={12} aria-hidden="true" />
+                <Badge key={group.group_hash} variant="secondary" className="gap-1">
+                  <Users size={12} aria-hidden="true" />
                   {group.group_name}
                 </Badge>
               ))}
               {user.groups.length > 2 && (
-                <Badge variant="secondary" size="sm">
+                <Badge variant="secondary">
                   +{user.groups.length - 2} more
                 </Badge>
               )}
             </>
           ) : (
-            <span className="no-groups">No groups</span>
+            <span className="text-sm text-muted-foreground">No groups</span>
           )}
         </div>
       ),
@@ -227,19 +224,19 @@ export function UserTable({
           {user.projects && user.projects.length > 0 ? (
             <>
               {user.projects.slice(0, 2).map(project => (
-                <Badge key={project.project_hash} variant="info" size="sm">
-                  <ProjectIcon size={12} aria-hidden="true" />
+                <Badge key={project.project_hash} variant="outline" className="gap-1">
+                  <FolderKanban size={12} aria-hidden="true" />
                   {project.project_name}
                 </Badge>
               ))}
               {user.projects.length > 2 && (
-                <Badge variant="secondary" size="sm">
+                <Badge variant="secondary">
                   +{user.projects.length - 2} more
                 </Badge>
               )}
             </>
           ) : (
-            <span className="no-projects">No projects</span>
+            <span className="text-sm text-muted-foreground">No projects</span>
           )}
         </div>
       ),
@@ -249,7 +246,7 @@ export function UserTable({
       header: 'Status',
       sortable: true,
       render: (value) => (
-        <Badge variant={value ? 'success' : 'secondary'} size="sm" dot>
+        <Badge variant={value ? 'success' : 'secondary'}>
           {value ? 'Active' : 'Inactive'}
         </Badge>
       ),
@@ -259,7 +256,7 @@ export function UserTable({
       header: 'Created At',
       sortable: true,
       render: (value) => (
-        <span className="user-date">{formatDateTime(value as string)}</span>
+        <span className="text-sm text-muted-foreground">{formatDateTime(value as string)}</span>
       ),
     },
     {
@@ -309,7 +306,7 @@ export function UserTable({
         isLoading={isBulkLoading}
         onSort={handleSort}
         emptyMessage="No users found"
-        className={`user-table ${isSomeSelected ? 'has-selection' : ''}`}
+        className={isSomeSelected ? 'ring-2 ring-primary/20 rounded-lg' : ''}
       />
     </>
   );

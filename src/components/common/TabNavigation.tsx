@@ -1,6 +1,7 @@
 import React from 'react';
-import { Card, Badge } from '../primitives';
-import { cn } from '@/utils/component-utils';
+import { cn } from '@/lib/utils';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 export interface Tab {
   id: string;
@@ -20,6 +21,12 @@ export interface TabNavigationProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
+const sizeClasses = {
+  sm: 'h-8 px-3 text-xs',
+  md: 'h-9 px-4 text-sm',
+  lg: 'h-10 px-5 text-base',
+};
+
 export function TabNavigation({
   tabs,
   activeTab,
@@ -30,7 +37,13 @@ export function TabNavigation({
   size = 'md',
 }: TabNavigationProps): React.JSX.Element {
   const tabNavigation = (
-    <div className={cn('tab-navigation', `tab-navigation--${size}`, className)} role="tablist">
+    <div
+      className={cn(
+        'inline-flex items-center rounded-lg bg-muted p-1 text-muted-foreground',
+        className
+      )}
+      role="tablist"
+    >
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
 
@@ -43,18 +56,25 @@ export function TabNavigation({
             aria-controls={`tabpanel-${tab.id}`}
             id={`tab-${tab.id}`}
             className={cn(
-              'tab-navigation__item',
-              isActive && 'tab-navigation__item--active',
-              tab.disabled && 'tab-navigation__item--disabled'
+              'inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+              sizeClasses[size],
+              isActive
+                ? 'bg-background text-foreground shadow'
+                : 'hover:bg-background/50 hover:text-foreground',
+              tab.disabled && 'pointer-events-none opacity-50'
             )}
             onClick={() => !tab.disabled && onChange(tab.id)}
             disabled={tab.disabled}
             tabIndex={isActive ? 0 : -1}
           >
-            {tab.icon && <span className="tab-navigation__icon" aria-hidden="true">{tab.icon}</span>}
-            <span className="tab-navigation__label">{tab.label}</span>
+            {tab.icon && (
+              <span className="mr-2 [&>svg]:h-4 [&>svg]:w-4" aria-hidden="true">
+                {tab.icon}
+              </span>
+            )}
+            <span>{tab.label}</span>
             {tab.count !== undefined && (
-              <Badge variant="secondary" size="sm" className="tab-navigation__count">
+              <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
                 {tab.count}
               </Badge>
             )}
@@ -66,11 +86,11 @@ export function TabNavigation({
 
   if (contained) {
     return (
-      <Card className="tab-navigation__container" padding="none">
-        {tabNavigation}
+      <Card className="overflow-hidden">
+        <div className="border-b p-1">{tabNavigation}</div>
         {children && (
-          <div 
-            className="tab-navigation__panel"
+          <div
+            className="p-4"
             role="tabpanel"
             id={`tabpanel-${activeTab}`}
             aria-labelledby={`tab-${activeTab}`}

@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
-import { ErrorIcon } from '@/components/icons';
+import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   children: ReactNode;
@@ -29,27 +30,35 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public render() {
     if (this.state.hasError) {
-      return this.props.fallback || (
-        <div className="error-boundary" role="alert">
-          <div className="error-boundary__content">
-            <div className="error-boundary__icon" aria-hidden="true">
-              <ErrorIcon size={48} />
+      return (
+        this.props.fallback || (
+          <div
+            className="flex min-h-[400px] items-center justify-center p-8"
+            role="alert"
+          >
+            <div className="flex max-w-md flex-col items-center text-center">
+              <div
+                className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive"
+                aria-hidden="true"
+              >
+                <AlertCircle className="h-8 w-8" />
+              </div>
+              <h2 className="mb-2 text-xl font-semibold">
+                {this.props.title || 'Something went wrong'}
+              </h2>
+              <p className="mb-6 text-muted-foreground">
+                {this.props.message ||
+                  'An unexpected error occurred. Please try again.'}
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => this.setState({ hasError: false })}
+              >
+                Try again
+              </Button>
             </div>
-            <h2 className="error-boundary__title">
-              {this.props.title || 'Something went wrong'}
-            </h2>
-            <p className="error-boundary__message">
-              {this.props.message || 'An unexpected error occurred. Please try again.'}
-            </p>
-            <button 
-              type="button"
-              onClick={() => this.setState({ hasError: false })}
-              className="btn btn-primary error-boundary__action"
-            >
-              Try again
-            </button>
           </div>
-        </div>
+        )
       );
     }
 

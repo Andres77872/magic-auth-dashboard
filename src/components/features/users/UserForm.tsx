@@ -4,7 +4,7 @@ import { usePermissions, useUserType, useAuth, useGlobalRoles } from '@/hooks';
 import { authService } from '@/services';
 import AssignProjectModal from './AssignProjectModal';
 import AssignGroupModal from './AssignGroupModal';
-import { WarningIcon, InfoIcon, ProjectIcon, GroupIcon } from '@/components/icons';
+import { AlertTriangle, Info, FolderKanban, Users } from 'lucide-react';
 import type { UserFormData, UserFormErrors } from '@/types/user.types';
 import type { UserType, User } from '@/types/auth.types';
 
@@ -273,7 +273,7 @@ export function UserForm({
           {mode === 'create' && formData.userType === 'root' && (
             <div className="security-warning">
               <div className="warning-icon">
-                <WarningIcon size={24} aria-hidden="true" />
+                <AlertTriangle size={24} aria-hidden="true" />
               </div>
               <div className="warning-content">
                 <h4>Creating ROOT User</h4>
@@ -286,7 +286,7 @@ export function UserForm({
           {isEditingSelf && (
             <div className="info-banner">
               <div className="info-icon">
-                <InfoIcon size={24} aria-hidden="true" />
+                <Info size={24} aria-hidden="true" />
               </div>
               <div className="info-content">
                 <p>You are editing your own account. Some restrictions apply for security reasons.</p>
@@ -463,7 +463,7 @@ export function UserForm({
                       <div className="project-tags">
                         {formData.assignedProjects.slice(0, 3).map((projectHash, index) => (
                           <span key={projectHash} className="project-tag">
-                            <ProjectIcon size={12} aria-hidden="true" />
+                            <FolderKanban size={12} aria-hidden="true" />
                             Project {index + 1}
                           </span>
                         ))}
@@ -487,7 +487,7 @@ export function UserForm({
                   onClick={() => setShowProjectModal(true)}
                   disabled={isLoading}
                 >
-                  <ProjectIcon size={16} aria-hidden="true" />
+                  <FolderKanban size={16} aria-hidden="true" />
                   {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
                 </Button>
               </div>
@@ -532,7 +532,7 @@ export function UserForm({
                   onClick={() => setShowGroupModal(true)}
                   disabled={isLoading}
                 >
-                  <GroupIcon size={16} aria-hidden="true" />
+                  <Users size={16} aria-hidden="true" />
                   {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
                 </Button>
               </div>
@@ -578,7 +578,7 @@ export function UserForm({
           <div className="modal-body">
             <div className="warning-section">
               <div className="warning-icon">
-                <WarningIcon size={32} className="confirm-icon confirm-icon-warning" aria-hidden="true" />
+                <AlertTriangle size={32} className="confirm-icon confirm-icon-warning" aria-hidden="true" />
               </div>
               <div className="warning-message">
                 <p>You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>

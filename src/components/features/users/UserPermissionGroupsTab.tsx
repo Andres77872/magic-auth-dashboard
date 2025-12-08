@@ -1,11 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, LoadingSpinner, ConfirmDialog, EmptyState, Modal } from '@/components/common';
-import { LockIcon, PlusIcon, DeleteIcon, InfoIcon } from '@/components/icons';
+import { ConfirmDialog, EmptyState } from '@/components/common';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Lock, Plus, Trash2, Info } from 'lucide-react';
 import { permissionAssignmentsService, globalRolesService } from '@/services';
 import type { DirectPermissionAssignment } from '@/types/permission-assignments.types';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
 import { useToast } from '@/contexts/ToastContext';
-import '../../../styles/components/user-permission-groups-tab.css';
 
 interface UserPermissionGroupsTabProps {
   userHash: string;
@@ -25,12 +44,19 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
   const { addToast } = useToast();
 
   // Fetch direct permission group assignments
+  // GET /permissions/users/{user_hash}/permission-groups
   const fetchDirectAssignments = async () => {
     try {
       setLoading(true);
-      const response = await permissionAssignmentsService.getUserDirectPermissionGroups(userHash);
-      if (response.success && response.data) {
-        setDirectAssignments(response.data);
+      const response: any = await permissionAssignmentsService.getUserDirectPermissionGroups(userHash);
+      
+      // API returns direct_permission_groups array directly in response
+      if (response.direct_permission_groups) {
+        setDirectAssignments(response.direct_permission_groups);
+      } else if (response.success === false) {
+        throw new Error(response.message || 'Failed to fetch permission groups');
+      } else {
+        setDirectAssignments([]);
       }
     } catch (error) {
       console.error('Failed to fetch direct permission assignments:', error);
@@ -41,13 +67,17 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
   };
 
   // Fetch available permission groups
+  // GET /roles/permission-groups
   const fetchAvailableGroups = async () => {
     try {
       const response: any = await globalRolesService.getPermissionGroups();
-      const permissionGroupsData = response.permission_groups || response.data || [];
-      if (response.success && permissionGroupsData.length >= 0) {
+      
+      // API returns permission_groups array directly in response
+      const permissionGroupsData = response.permission_groups || [];
+      
+      if (response.success !== false) {
         // Filter out already assigned groups
-        const assignedHashes = new Set(directAssignments.map(a => a.permission_group_hash));
+        const assignedHashes = new Set(directAssignments.map(a => a.group_hash));
         const available = permissionGroupsData.filter((g: GlobalPermissionGroup) => !assignedHashes.has(g.group_hash));
         setAvailableGroups(available);
       }
@@ -104,7 +134,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       setIsRemoving(true);
       const response = await permissionAssignmentsService.removePermissionGroupFromUser(
         userHash,
-        confirmRemove.permission_group_hash
+        confirmRemove.group_hash
       );
 
       if (response.success) {
@@ -122,33 +152,29 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
 
   if (loading) {
     return (
-      <div className="user-permission-groups-tab">
-        <div className="loading-container">
-          <LoadingSpinner />
-          <p>Loading permission groups...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-12">
+        <Spinner size="lg" />
+        <p className="mt-4 text-sm text-muted-foreground">Loading permission groups...</p>
       </div>
     );
   }
 
   return (
-    <div className="user-permission-groups-tab">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="permissions-header">
-            <div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
               <CardTitle>Direct Permission Groups</CardTitle>
-              <p className="subtitle">
+              <p className="text-sm text-muted-foreground">
                 Direct permission assignments for <strong>{username}</strong>
               </p>
-              <p className="info-note">
-                <InfoIcon size={14} /> These are permission groups assigned directly to this user, overriding group memberships.
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Info size={14} /> These are permission groups assigned directly to this user, overriding group memberships.
               </p>
             </div>
-            <Button
-              onClick={() => setShowAddModal(true)}
-              leftIcon={<PlusIcon size={16} aria-hidden="true" />}
-            >
+            <Button onClick={() => setShowAddModal(true)}>
+              <Plus size={16} aria-hidden="true" />
               Assign Permission Group
             </Button>
           </div>
@@ -156,20 +182,20 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
         <CardContent>
           {directAssignments.length === 0 ? (
             <EmptyState
-              icon={<LockIcon size={32} aria-hidden="true" />}
+              icon={<Lock size={32} aria-hidden="true" />}
               title="No Direct Permission Groups"
               description="This user doesn't have any permission groups assigned directly. They inherit permissions from their user groups and global role."
             />
           ) : (
-            <div className="assigned-groups-grid">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {directAssignments.map(assignment => (
-                <Card key={assignment.permission_group_hash} className="permission-group-card">
-                  <CardContent>
-                    <div className="group-card-header">
-                      <div className="group-info">
-                        <LockIcon size={20} className="group-icon" aria-hidden="true" />
-                        <div>
-                          <h4>{assignment.permission_group_name}</h4>
+                <Card key={assignment.group_hash}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3">
+                        <Lock size={20} className="mt-0.5 text-muted-foreground" aria-hidden="true" />
+                        <div className="space-y-1">
+                          <h4 className="font-medium">{assignment.group_display_name || assignment.group_name}</h4>
                           <Badge variant="warning">Direct Assignment</Badge>
                         </div>
                       </div>
@@ -177,21 +203,22 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
                         variant="ghost"
                         size="sm"
                         onClick={() => setConfirmRemove(assignment)}
-                        leftIcon={<DeleteIcon size={16} aria-hidden="true" />}
                         aria-label="Remove permission group"
-                      />
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </Button>
                     </div>
                     {assignment.notes && (
-                      <div className="assignment-notes">
+                      <div className="mt-3 rounded-md bg-muted p-2 text-sm">
                         <strong>Notes:</strong> {assignment.notes}
                       </div>
                     )}
-                    <div className="group-meta">
-                      <span className="meta-item">
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      <span>
                         Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}
                       </span>
                       {assignment.assigned_by && (
-                        <span className="meta-item">
+                        <span>
                           By: {assignment.assigned_by}
                         </span>
                       )}
@@ -205,79 +232,77 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       </Card>
 
       {/* Assign Permission Group Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => !isAssigning && setShowAddModal(false)}
-        title="Assign Direct Permission Group"
-        size="md"
-        closeOnBackdrop={!isAssigning}
-        closeOnEscape={!isAssigning}
-      >
-        {availableGroups.length === 0 ? (
-          <EmptyState
-            icon={<InfoIcon size={32} aria-hidden="true" />}
-            title="No Available Permission Groups"
-            description="All permission groups have been assigned to this user."
-          />
-        ) : (
-          <>
-            <div className="form-group">
-              <label htmlFor="permission-group">Select Permission Group</label>
-              <select
-                id="permission-group"
-                className="form-select"
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-              >
-                <option value="">-- Select a permission group --</option>
-                {availableGroups.map(group => (
-                  <option key={group.group_hash} value={group.group_hash}>
-                    {group.group_display_name} ({group.group_name})
-                  </option>
-                ))}
-              </select>
-            </div>
+      <Dialog open={showAddModal} onOpenChange={(open) => !isAssigning && !open && setShowAddModal(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Direct Permission Group</DialogTitle>
+          </DialogHeader>
 
-            <div className="form-group">
-              <label htmlFor="notes">Notes (Optional)</label>
-              <textarea
-                id="notes"
-                className="form-textarea"
-                value={assignmentNotes}
-                onChange={(e) => setAssignmentNotes(e.target.value)}
-                placeholder="Reason for direct assignment (e.g., 'Temporary elevated access for migration')"
-                rows={3}
-              />
-              <p className="field-hint">
-                Document why this user needs direct permission assignment instead of group membership.
-              </p>
+          {availableGroups.length === 0 ? (
+            <EmptyState
+              icon={<Info size={32} aria-hidden="true" />}
+              title="No Available Permission Groups"
+              description="All permission groups have been assigned to this user."
+            />
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="permission-group">Select Permission Group</Label>
+                <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="-- Select a permission group --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableGroups.map(group => (
+                      <SelectItem key={group.group_hash} value={group.group_hash}>
+                        {group.group_display_name} ({group.group_name})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes (Optional)</Label>
+                <Textarea
+                  id="notes"
+                  value={assignmentNotes}
+                  onChange={(e) => setAssignmentNotes(e.target.value)}
+                  placeholder="Reason for direct assignment (e.g., 'Temporary elevated access for migration')"
+                  rows={3}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Document why this user needs direct permission assignment instead of group membership.
+                </p>
+              </div>
             </div>
-          </>
-        )}
-        <div className="modal-footer">
-          <Button
-            variant="outline"
-            onClick={() => setShowAddModal(false)}
-            disabled={isAssigning}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAssign}
-            disabled={!selectedGroup || isAssigning}
-            loading={isAssigning}
-          >
-            Assign Permission Group
-          </Button>
-        </div>
-      </Modal>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowAddModal(false)}
+              disabled={isAssigning}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssign}
+              disabled={!selectedGroup || isAssigning}
+            >
+              {isAssigning && <Spinner size="sm" className="mr-2" />}
+              Assign Permission Group
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Remove Confirmation Dialog */}
       {confirmRemove && (
         <ConfirmDialog
           isOpen={true}
           title="Remove Direct Permission Group"
-          message={`Are you sure you want to remove the direct permission group "${confirmRemove.permission_group_name}" from this user? They will still inherit permissions from their user groups and global role.`}
+          message={`Are you sure you want to remove the direct permission group "${confirmRemove.group_display_name || confirmRemove.group_name}" from this user? They will still inherit permissions from their user groups and global role.`}
           confirmText="Remove"
           cancelText="Cancel"
           onConfirm={handleRemove}

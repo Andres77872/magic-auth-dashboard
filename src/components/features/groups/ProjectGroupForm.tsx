@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Textarea, Button, Badge } from '@/components/common';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import type { CreateProjectGroupRequest, ProjectGroup } from '@/services/project-group.service';
 
 interface ProjectGroupFormProps {
@@ -12,26 +15,12 @@ interface ProjectGroupFormProps {
 interface FormData {
   group_name: string;
   description: string;
-  permissions: string[];
 }
 
 interface FormErrors {
   group_name?: string;
   description?: string;
-  permissions?: string;
 }
-
-// Common permission options for project groups
-const COMMON_PERMISSIONS = [
-  'read:project',
-  'write:project',
-  'delete:project',
-  'manage:members',
-  'read:analytics',
-  'write:analytics',
-  'manage:settings',
-  'admin:project'
-];
 
 export function ProjectGroupForm({
   group,
@@ -41,19 +30,16 @@ export function ProjectGroupForm({
 }: ProjectGroupFormProps): React.JSX.Element {
   const [formData, setFormData] = useState<FormData>({
     group_name: group?.group_name || '',
-    description: group?.description || '',
-    permissions: group?.permissions || []
+    description: group?.description || ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [newPermission, setNewPermission] = useState('');
 
   useEffect(() => {
     if (group) {
       setFormData({
         group_name: group.group_name,
-        description: group.description,
-        permissions: group.permissions
+        description: group.description || ''
       });
     }
   }, [group]);
@@ -65,10 +51,12 @@ export function ProjectGroupForm({
       newErrors.group_name = 'Group name is required';
     } else if (formData.group_name.length < 3) {
       newErrors.group_name = 'Group name must be at least 3 characters';
+    } else if (formData.group_name.length > 50) {
+      newErrors.group_name = 'Group name must be less than 50 characters';
     }
 
-    if (formData.permissions.length === 0) {
-      newErrors.permissions = 'At least one permission is required';
+    if (formData.description && formData.description.length > 255) {
+      newErrors.description = 'Description must be less than 255 characters';
     }
 
     setErrors(newErrors);
@@ -85,139 +73,52 @@ export function ProjectGroupForm({
     try {
       await onSubmit({
         group_name: formData.group_name.trim(),
-        description: formData.description.trim(),
-        permissions: formData.permissions
+        description: formData.description.trim() || undefined
       });
     } catch (error) {
       console.error('Form submission error:', error);
     }
   };
 
-  const handleAddPermission = (permission: string) => {
-    if (permission && !formData.permissions.includes(permission)) {
-      setFormData(prev => ({
-        ...prev,
-        permissions: [...prev.permissions, permission]
-      }));
-      setNewPermission('');
-    }
-  };
-
-  const handleRemovePermission = (permission: string) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: prev.permissions.filter(p => p !== permission)
-    }));
-  };
-
-  const handleAddCustomPermission = () => {
-    if (newPermission.trim() && !formData.permissions.includes(newPermission.trim())) {
-      handleAddPermission(newPermission.trim());
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className="project-group-form">
-      <div className="form-section">
-        <h3>Basic Information</h3>
-        
-        <Input
-          label="Group Name"
-          value={formData.group_name}
-          onChange={(e) => setFormData(prev => ({ ...prev, group_name: e.target.value }))}
-          error={errors.group_name}
-          placeholder="Enter group name"
-          required
-          disabled={isLoading}
-        />
-
-        <Textarea
-          label="Description"
-          value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-          error={errors.description}
-          placeholder="Describe the purpose of this project group"
-          rows={3}
-          disabled={isLoading}
-        />
-      </div>
-
-      <div className="form-section">
-        <h3>Permissions</h3>
-        
-        {errors.permissions && (
-          <div className="form-error mb-4">
-            {errors.permissions}
-          </div>
-        )}
-
-        <div className="permission-selection">
-          <h4>Common Permissions</h4>
-          <div className="permission-grid">
-            {COMMON_PERMISSIONS.map(permission => (
-              <button
-                key={permission}
-                type="button"
-                className={`permission-option ${formData.permissions.includes(permission) ? 'selected' : ''}`}
-                onClick={() => 
-                  formData.permissions.includes(permission) 
-                    ? handleRemovePermission(permission)
-                    : handleAddPermission(permission)
-                }
-                disabled={isLoading}
-              >
-                {permission}
-              </button>
-            ))}
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="group_name">
+            Group Name <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="group_name"
+            value={formData.group_name}
+            onChange={(e) => setFormData(prev => ({ ...prev, group_name: e.target.value }))}
+            error={errors.group_name}
+            placeholder="Enter group name (e.g., mobile_apps, backend_services)"
+            helperText={!errors.group_name ? "Choose a descriptive name for organizing related projects (3-50 characters)" : undefined}
+            disabled={isLoading}
+            fullWidth
+          />
         </div>
 
-        <div className="custom-permission">
-          <h4>Custom Permission</h4>
-          <div className="custom-permission-input">
-            <Input
-              value={newPermission}
-              onChange={(e) => setNewPermission(e.target.value)}
-              placeholder="Enter custom permission (e.g., read:custom_resource)"
-              disabled={isLoading}
-            />
-            <Button
-              type="button"
-              onClick={handleAddCustomPermission}
-              disabled={!newPermission.trim() || isLoading}
-              size="sm"
-            >
-              Add
-            </Button>
-          </div>
-        </div>
-
-        <div className="selected-permissions">
-          <h4>Selected Permissions ({formData.permissions.length})</h4>
-          <div className="permission-badges">
-            {formData.permissions.map(permission => (
-              <Badge key={permission} variant="secondary" size="sm">
-                {permission}
-                <button
-                  type="button"
-                  className="permission-remove-btn"
-                  onClick={() => handleRemovePermission(permission)}
-                  disabled={isLoading}
-                >
-                  ×
-                </button>
-              </Badge>
-            ))}
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            error={errors.description}
+            placeholder="Describe the purpose of this project group (optional)"
+            helperText={!errors.description ? "Optional description to help others understand which projects belong in this group" : undefined}
+            rows={3}
+            disabled={isLoading}
+          />
         </div>
       </div>
 
-      <div className="form-actions">
+      <div className="flex gap-3 pt-4">
         <Button
           type="submit"
           variant="primary"
           loading={isLoading}
-          disabled={isLoading}
         >
           {group ? 'Update Project Group' : 'Create Project Group'}
         </Button>

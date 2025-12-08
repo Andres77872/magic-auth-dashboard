@@ -51,8 +51,8 @@ export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
         limit,
         offset: (currentPage - 1) * limit,
         search: filters.search,
-        user_type: filters.userType as any,
-        is_active: filters.isActive,
+        user_type_filter: filters.userType as any,
+        include_inactive: filters.isActive === false ? true : filters.isActive === true ? false : undefined,
         ...(sortBy && { sort_by: sortBy }),
         ...(sortBy && { sort_order: sortOrder }),
       };

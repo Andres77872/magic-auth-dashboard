@@ -1,6 +1,6 @@
 import React from 'react';
 import StatCard, { type StatCardProps } from './StatCard';
-import { cn } from '@/utils/component-utils';
+import { cn } from '@/lib/utils';
 
 export interface StatsGridProps {
   stats: StatCardProps[];
@@ -9,6 +9,13 @@ export interface StatsGridProps {
   className?: string;
 }
 
+const columnClasses = {
+  2: 'grid-cols-1 sm:grid-cols-2',
+  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4',
+  5: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-5',
+};
+
 export function StatsGrid({
   stats,
   columns = 4,
@@ -16,7 +23,11 @@ export function StatsGrid({
   className = '',
 }: StatsGridProps): React.JSX.Element {
   return (
-    <div className={cn('stats-grid', `stats-grid--cols-${columns}`, className)} role="group" aria-label="Statistics">
+    <div
+      className={cn('grid gap-4', columnClasses[columns], className)}
+      role="group"
+      aria-label="Statistics"
+    >
       {stats.map((stat, index) => (
         <StatCard key={stat.title || `stat-${index}`} {...stat} loading={loading} />
       ))}

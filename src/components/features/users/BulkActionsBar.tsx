@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@/components/common';
-import { CheckIcon, ErrorIcon, GroupIcon, DeleteIcon, CloseIcon } from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import { Check, XCircle, Users, Trash2, X } from 'lucide-react';
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -23,27 +23,27 @@ export function BulkActionsBar({
 }: BulkActionsBarProps): React.JSX.Element {
   return (
     <div 
-      className="bulk-actions-bar" 
+      className="mb-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-primary/20 bg-primary/5 p-3" 
       role="toolbar" 
       aria-label="Bulk actions toolbar"
       aria-busy={isLoading}
     >
-      <div className="bulk-actions-info">
-        <span className="selected-count" aria-live="polite" aria-atomic="true">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-foreground" aria-live="polite" aria-atomic="true">
           {selectedCount} user{selectedCount !== 1 ? 's' : ''} selected
         </span>
       </div>
       
-      <div className="bulk-actions-buttons">
+      <div className="flex flex-wrap items-center gap-2">
         {onActivate && (
           <Button
             variant="outline"
             size="sm"
             onClick={onActivate}
             disabled={isLoading}
-            leftIcon={<CheckIcon size={14} aria-hidden="true" />}
             aria-label={`Activate ${selectedCount} selected users`}
           >
+            <Check size={14} aria-hidden="true" />
             Activate
           </Button>
         )}
@@ -54,9 +54,9 @@ export function BulkActionsBar({
             size="sm"
             onClick={onDeactivate}
             disabled={isLoading}
-            leftIcon={<ErrorIcon size={14} aria-hidden="true" />}
             aria-label={`Deactivate ${selectedCount} selected users`}
           >
+            <XCircle size={14} aria-hidden="true" />
             Deactivate
           </Button>
         )}
@@ -67,22 +67,22 @@ export function BulkActionsBar({
             size="sm"
             onClick={onAssignGroup}
             disabled={isLoading}
-            leftIcon={<GroupIcon size={14} aria-hidden="true" />}
             aria-label={`Assign group to ${selectedCount} selected users`}
           >
+            <Users size={14} aria-hidden="true" />
             Assign Group
           </Button>
         )}
         
         {onDelete && (
           <Button
-            variant="danger"
+            variant="destructive"
             size="sm"
             onClick={onDelete}
             disabled={isLoading}
-            leftIcon={<DeleteIcon size={14} aria-hidden="true" />}
             aria-label={`Delete ${selectedCount} selected users`}
           >
+            <Trash2 size={14} aria-hidden="true" />
             Delete
           </Button>
         )}
@@ -92,9 +92,9 @@ export function BulkActionsBar({
           size="sm"
           onClick={onClearSelection}
           disabled={isLoading}
-          leftIcon={<CloseIcon size={14} aria-hidden="true" />}
           aria-label="Clear selection"
         >
+          <X size={14} aria-hidden="true" />
           Clear
         </Button>
       </div>

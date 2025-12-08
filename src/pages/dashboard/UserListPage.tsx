@@ -11,14 +11,14 @@ import {
   StatsGrid,
   Pagination,
   Button,
-  Card,
   DataView,
   DataViewCard,
-  Badge
+  Badge,
+  ErrorState
 } from '@/components/common';
 import type { Filter, StatCardProps, DataViewColumn } from '@/components/common';
 import { useUsers, usePermissions } from '@/hooks';
-import { UserIcon, RefreshIcon, PlusIcon, CheckIcon, WarningIcon, GroupIcon, ProjectIcon } from '@/components/icons';
+import { User as UserIcon, RefreshCw, Plus, Check, AlertTriangle, Users, FolderKanban } from 'lucide-react';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash, formatCount } from '@/utils/component-utils';
 import type { User, UserType } from '@/types/auth.types';
 
@@ -217,7 +217,7 @@ export function UserListPage(): React.JSX.Element {
           </Badge>
           {user.user_type_info?.error && (
             <span className="user-type-error" title={user.user_type_info.error}>
-              <WarningIcon size={14} aria-hidden="true" />
+              <AlertTriangle size={14} aria-hidden="true" />
             </span>
           )}
         </div>
@@ -233,7 +233,7 @@ export function UserListPage(): React.JSX.Element {
             <>
               {user.groups.slice(0, 2).map(group => (
                 <Badge key={group.group_hash} variant="secondary" size="sm">
-                  <GroupIcon size={12} aria-hidden="true" />
+                  <Users size={12} aria-hidden="true" />
                   {group.group_name}
                 </Badge>
               ))}
@@ -259,7 +259,7 @@ export function UserListPage(): React.JSX.Element {
             <>
               {user.projects.slice(0, 2).map(project => (
                 <Badge key={project.project_hash} variant="info" size="sm">
-                  <ProjectIcon size={12} aria-hidden="true" />
+                  <FolderKanban size={12} aria-hidden="true" />
                   {project.project_name}
                 </Badge>
               ))}
@@ -369,17 +369,17 @@ export function UserListPage(): React.JSX.Element {
       {
         title: 'Active Users',
         value: activeUsers,
-        icon: <CheckIcon size={20} />,
+        icon: <Check size={20} />,
       },
       {
         title: 'Inactive Users',
         value: inactiveUsers,
-        icon: <WarningIcon size={20} />,
+        icon: <AlertTriangle size={20} />,
       },
       {
         title: 'Admin Users',
         value: adminUsers,
-        icon: <GroupIcon size={20} />,
+        icon: <Users size={20} />,
       },
     ];
   }, [users]);
@@ -423,7 +423,7 @@ export function UserListPage(): React.JSX.Element {
               variant="primary"
               size="md"
               onClick={handleCreateUser}
-              leftIcon={<PlusIcon size={16} />}
+              leftIcon={<Plus size={16} />}
               aria-label="Create new user"
             >
               Create User
@@ -448,25 +448,16 @@ export function UserListPage(): React.JSX.Element {
 
       {/* Error State */}
       {error && (
-        <Card className="error-card" padding="lg">
-          <div className="error-content">
-            <div className="error-icon">
-              <UserIcon size="xl" />
-            </div>
-            <div className="error-details">
-              <h3 className="error-title">Failed to load users</h3>
-              <p className="error-message">{error}</p>
-            </div>
-            <Button
-              variant="outline"
-              size="md"
-              onClick={handleRetry}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Retrying...' : 'Try Again'}
-            </Button>
-          </div>
-        </Card>
+        <ErrorState
+          icon={<UserIcon size={24} />}
+          title="Failed to load users"
+          message={error}
+          onRetry={handleRetry}
+          isRetrying={isLoading}
+          retryLabel="Try Again"
+          variant="card"
+          size="md"
+        />
       )}
 
       {/* Empty State */}
@@ -506,7 +497,7 @@ export function UserListPage(): React.JSX.Element {
               size="sm"
               onClick={handleRefresh}
               disabled={isLoading}
-              leftIcon={<RefreshIcon size={16} className={isLoading ? 'spinning' : ''} />}
+              leftIcon={<RefreshCw size={16} className={isLoading ? 'spinning' : ''} />}
               aria-label="Refresh user list"
             >
               Refresh

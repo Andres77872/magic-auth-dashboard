@@ -10,18 +10,10 @@ import {
 } from '@/components/common';
 import type { Tab } from '@/components/common';
 import { ProjectOverviewTab, ProjectMembersTab, ProjectSettingsTab, ProjectGroupsTab, ProjectPermissionsTab } from '@/components/features/projects';
-import { 
-  ProjectIcon,
-  DashboardIcon,
-  UserIcon,
-  GroupIcon,
-  SecurityIcon,
-  SettingsIcon
-} from '@/components/icons';
+import { FolderKanban, LayoutDashboard, User, Users, ShieldCheck, Settings } from 'lucide-react';
 import { projectService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import type { ProjectDetails, ProjectStatistics, UserAccess } from '@/types/project.types';
-import '@/styles/pages/ProjectDetailsPage.css';
+import type { ProjectDetails, ProjectStatistics, UserAccess, ProjectGroupInfo } from '@/types/project.types';
 
 type TabType = 'overview' | 'members' | 'groups' | 'permissions' | 'settings';
 
@@ -32,6 +24,7 @@ export const ProjectDetailsPage: React.FC = () => {
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
   const [statistics, setStatistics] = useState<ProjectStatistics | null>(null);
+  const [projectGroups, setProjectGroups] = useState<ProjectGroupInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -56,17 +49,29 @@ export const ProjectDetailsPage: React.FC = () => {
         setIsLoading(true);
         const response = await projectService.getProject(projectHash);
         if (response.success && response.project) {
+          // Helper to safely convert stat values to numbers
+          const getNumericStat = (value: number | string | undefined): number | undefined => {
+            if (typeof value === 'number') return value;
+            if (typeof value === 'string' && !isNaN(Number(value))) return Number(value);
+            return undefined;
+          };
+
           // Convert API response to ProjectDetails format
           const projectDetails: ProjectDetails = {
             ...response.project,
-            member_count: response.statistics.total_users,
-            group_count: response.statistics.total_groups,
+            member_count: getNumericStat(response.statistics?.total_users),
+            group_count: getNumericStat(response.statistics?.total_groups),
             access_level: response.user_access.access_level,
             is_active: true, // Default to active unless specified otherwise
           };
           setProject(projectDetails);
           setUserAccess(response.user_access);
           setStatistics(response.statistics);
+          
+          // Set project groups from API response
+          if (response.project_groups && Array.isArray(response.project_groups)) {
+            setProjectGroups(response.project_groups);
+          }
         } else {
           setError('Failed to load project data');
         }
@@ -89,6 +94,37 @@ export const ProjectDetailsPage: React.FC = () => {
     navigate(ROUTES.PROJECTS, {
       state: { message: 'Project deleted successfully' }
     });
+  };
+
+  // Refetch project data when project groups change
+  const handleProjectGroupsChange = async () => {
+    if (!projectHash) return;
+    try {
+      const response = await projectService.getProject(projectHash);
+      if (response.success && response.project) {
+        const getNumericStat = (value: number | string | undefined): number | undefined => {
+          if (typeof value === 'number') return value;
+          if (typeof value === 'string' && !isNaN(Number(value))) return Number(value);
+          return undefined;
+        };
+
+        const projectDetails: ProjectDetails = {
+          ...response.project,
+          member_count: getNumericStat(response.statistics?.total_users),
+          group_count: getNumericStat(response.statistics?.total_groups),
+          access_level: response.user_access.access_level,
+          is_active: true,
+        };
+        setProject(projectDetails);
+        setStatistics(response.statistics);
+        
+        if (response.project_groups && Array.isArray(response.project_groups)) {
+          setProjectGroups(response.project_groups);
+        }
+      }
+    } catch (err) {
+      console.error('Error refetching project:', err);
+    }
   };
 
   if (isLoading) {
@@ -132,29 +168,29 @@ export const ProjectDetailsPage: React.FC = () => {
     { 
       id: 'overview', 
       label: 'Overview', 
-      icon: <DashboardIcon size={16} />,
+      icon: <LayoutDashboard size={16} />,
     },
     { 
       id: 'members', 
       label: 'Members', 
-      icon: <UserIcon size={16} />,
+      icon: <User size={16} />,
       count: project.member_count,
     },
     { 
       id: 'groups', 
       label: 'Groups', 
-      icon: <GroupIcon size={16} />,
+      icon: <Users size={16} />,
       count: project.group_count,
     },
     { 
       id: 'permissions', 
       label: 'Permissions', 
-      icon: <SecurityIcon size={16} />,
+      icon: <ShieldCheck size={16} />,
     },
     { 
       id: 'settings', 
       label: 'Settings', 
-      icon: <SettingsIcon size={16} />,
+      icon: <Settings size={16} />,
     },
   ];
 
@@ -163,7 +199,7 @@ export const ProjectDetailsPage: React.FC = () => {
       <PageHeader
         title={project.project_name}
         subtitle={project.project_description || 'No description provided'}
-        icon={<ProjectIcon size={28} />}
+        icon={<FolderKanban size={28} />}
         badge={
           project.is_active !== false ? (
             <Badge variant="success" aria-label="Status: Active">Active</Badge>
@@ -194,13 +230,18 @@ export const ProjectDetailsPage: React.FC = () => {
             project={project} 
             userAccess={userAccess}
             statistics={statistics}
+            projectGroups={projectGroups}
           />
         )}
         {activeTab === 'members' && (
           <ProjectMembersTab project={project} />
         )}
         {activeTab === 'groups' && (
-          <ProjectGroupsTab project={project} />
+          <ProjectGroupsTab 
+            project={project} 
+            projectGroups={projectGroups}
+            onProjectGroupsChange={handleProjectGroupsChange}
+          />
         )}
         {activeTab === 'permissions' && (
           <ProjectPermissionsTab project={project} />

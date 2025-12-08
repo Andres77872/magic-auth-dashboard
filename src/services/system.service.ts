@@ -5,7 +5,59 @@ import type {
 } from '@/types/system.types';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
 
+export interface DashboardStatsResponse {
+  success: boolean;
+  totals: {
+    users: number;
+    projects: number;
+    user_groups: number;
+    project_groups: number;
+    active_sessions: number;
+    recent_activities: number;
+  };
+  recent_activity: {
+    new_users_7d: number;
+    new_projects_7d: number;
+    total_activities_7d: number;
+  };
+  user_breakdown: {
+    root_users: number;
+    admin_users: number;
+    consumer_users: number;
+  };
+  groups_summary: {
+    total_user_groups: number;
+    total_project_groups: number;
+    avg_users_per_group: number;
+    avg_projects_per_group: number;
+  };
+  growth: {
+    user_growth_7d: number;
+    project_growth_7d: number;
+  };
+  system_health: {
+    database: { status: string; latency_ms: number };
+    redis: { status: string; latency_ms: number };
+    overall_status: string;
+  };
+  generated_at: string;
+}
+
 class SystemService {
+  // Admin Dashboard Stats - comprehensive statistics
+  async getDashboardStats(): Promise<DashboardStatsResponse | null> {
+    try {
+      const response = await apiClient.get<any>('/admin/dashboard/stats') as any;
+      // The response may come directly or wrapped in a data property
+      if (response && (response.totals || response.data?.totals)) {
+        return (response.data || response) as DashboardStatsResponse;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   // System Information
   async getSystemInfo(): Promise<SystemInfoResponse> {
     const response = await apiClient.get<SystemInfoResponse>('/system/info');

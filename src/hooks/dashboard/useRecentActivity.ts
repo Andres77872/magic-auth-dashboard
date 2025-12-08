@@ -17,7 +17,7 @@ export function useRecentActivity(
   } = options;
 
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
@@ -25,8 +25,9 @@ export function useRecentActivity(
   const intervalRef = useRef<number | null>(null);
   const isMountedRef = useRef(true);
 
-  // Clear interval on unmount
+  // Reset mounted ref on mount, clear interval on unmount
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
       if (intervalRef.current) {
@@ -55,13 +56,13 @@ export function useRecentActivity(
 
       if (isInitialLoad || !loadMoreCursor) {
         // Replace activities for initial load or filter changes
-        setActivities(response.activities);
+        setActivities(response.activities || []);
       } else {
         // Append activities for pagination
-        setActivities(prev => [...prev, ...response.activities]);
+        setActivities(prev => [...prev, ...(response.activities || [])]);
       }
 
-      setHasMore(response.hasMore);
+      setHasMore(response.hasMore || false);
       setCursor(response.nextCursor);
     } catch (err) {
       if (!isMountedRef.current) return;
