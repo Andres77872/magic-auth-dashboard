@@ -99,7 +99,7 @@ export const NAVIGATION_ITEMS: NavItem[] = [
   },
   {
     id: 'groups',
-    label: 'User Groups',
+    label: 'Groups',
     path: ROUTES.GROUPS,
     icon: 'users-group',
     allowedUserTypes: ['root', 'admin'],

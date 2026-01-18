@@ -1,9 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
-import { Users, Plus, Search, LayoutGrid, List } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Users, Plus, Lock } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -11,10 +9,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DataView } from '@/components/common/DataView';
+import type { DataViewColumn } from '@/components/common/DataView';
 import { RoleCard } from './RoleCard';
+import { RoleActionsMenu } from './RoleActionsMenu';
+import { PriorityBadge } from '../shared/PriorityBadge';
 import type { GlobalRole } from '@/types/global-roles.types';
 
-type ViewMode = 'grid' | 'list';
 type SortOption = 'priority-desc' | 'priority-asc' | 'name-asc' | 'name-desc';
 
 interface RoleListProps {
@@ -25,6 +26,7 @@ interface RoleListProps {
   onManagePermissionGroups?: (role: GlobalRole) => void;
   onAssignUsers?: (role: GlobalRole) => void;
   onCreate?: () => void;
+  onViewDetails?: (role: GlobalRole) => void;
 }
 
 export function RoleList({
@@ -34,11 +36,12 @@ export function RoleList({
   onDelete,
   onManagePermissionGroups,
   onAssignUsers,
-  onCreate
+  onCreate,
+  onViewDetails
 }: RoleListProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('priority-desc');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   const filteredAndSortedRoles = useMemo(() => {
     const filtered = roles.filter((r) =>
@@ -62,29 +65,109 @@ export function RoleList({
     });
   }, [roles, searchTerm, sortBy]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  // Table columns for table view
+  const columns: DataViewColumn<GlobalRole>[] = [
+    {
+      key: 'role_display_name',
+      header: 'Name',
+      sortable: true,
+      render: (_, role) => (
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400">
+            <Users className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails?.(role);
+              }}
+              className="font-medium text-primary hover:underline text-left cursor-pointer"
+            >
+              {role.role_display_name}
+            </button>
+            <span className="text-xs font-mono text-muted-foreground">{role.role_name}</span>
+          </div>
+          {role.is_system_role && (
+            <Badge variant="outline" className="text-xs gap-1 ml-2">
+              <Lock className="h-3 w-3" />
+              System
+            </Badge>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'role_description',
+      header: 'Description',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-muted-foreground line-clamp-1 max-w-[300px]">
+          {value || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'role_priority',
+      header: 'Priority',
+      sortable: true,
+      width: '120px',
+      align: 'center',
+      render: (_, role) => <PriorityBadge priority={role.role_priority} />,
+    },
+    {
+      key: 'role_hash',
+      header: '',
+      width: '60px',
+      align: 'center',
+      render: (_, role) => (
+        <div data-no-row-click onClick={(e) => e.stopPropagation()}>
+          <RoleActionsMenu
+            role={role}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onManagePermissionGroups={onManagePermissionGroups}
+            onAssignUsers={onAssignUsers}
+          />
+        </div>
+      ),
+    },
+  ];
+
+  // Card renderer for grid view
+  const renderRoleCard = (role: GlobalRole) => (
+    <RoleCard
+      role={role}
+      onClick={onViewDetails}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onManagePermissionGroups={onManagePermissionGroups}
+      onAssignUsers={onAssignUsers}
+    />
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-3">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search roles..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+      <DataView<GlobalRole>
+        data={filteredAndSortedRoles}
+        columns={columns}
+        keyExtractor={(role) => role.role_hash}
+        
+        // View mode with toggle
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        showViewToggle={true}
+        
+        // Search
+        showSearch={true}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search roles..."
+        
+        // Filters in toolbar
+        toolbarFilters={
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -94,76 +177,37 @@ export function RoleList({
               <SelectItem value="name-desc">Name (Z-A)</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md border p-1">
-            <Button
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode('grid')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-          {onCreate && (
+        }
+        
+        // Actions in toolbar
+        toolbarActions={
+          onCreate && (
             <Button onClick={onCreate}>
               <Plus className="mr-2 h-4 w-4" />
               New Role
             </Button>
-          )}
-        </div>
-      </div>
-
-      {filteredAndSortedRoles.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">
-              {searchTerm ? 'No roles match your search' : 'No roles found'}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {searchTerm
-                ? 'Try adjusting your search'
-                : 'Create roles to assign permission groups to users'}
-            </p>
-            {onCreate && !searchTerm && (
-              <Button className="mt-4" onClick={onCreate}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Role
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div
-          className={
-            viewMode === 'grid'
-              ? 'grid gap-3 md:grid-cols-2 lg:grid-cols-3'
-              : 'flex flex-col gap-2'
-          }
-        >
-          {filteredAndSortedRoles.map((role) => (
-            <RoleCard
-              key={role.role_hash}
-              role={role}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onManagePermissionGroups={onManagePermissionGroups}
-              onAssignUsers={onAssignUsers}
-            />
-          ))}
-        </div>
-      )}
-
+          )
+        }
+        
+        // Grid view
+        renderCard={renderRoleCard}
+        gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+        
+        // States
+        isLoading={loading}
+        emptyMessage={searchTerm ? 'No roles match your search' : 'No roles found'}
+        emptyDescription={searchTerm ? 'Try adjusting your search' : 'Create roles to assign permission groups to users'}
+        emptyIcon={<Users className="h-12 w-12" />}
+        emptyAction={
+          onCreate && !searchTerm && (
+            <Button onClick={onCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Role
+            </Button>
+          )
+        }
+      />
+      
       {filteredAndSortedRoles.length > 0 && (
         <p className="text-sm text-muted-foreground">
           Showing {filteredAndSortedRoles.length} of {roles.length} role

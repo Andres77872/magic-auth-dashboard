@@ -37,7 +37,7 @@ export function UserAvatar({
   return (
     <div 
       className={cn(
-        'flex items-center justify-center rounded-full font-medium',
+        'flex items-center justify-center rounded-full font-semibold shadow-sm ring-1 ring-border/50',
         sizeStyles[size],
         userType ? typeColorStyles[userType] : 'bg-muted text-muted-foreground',
         className

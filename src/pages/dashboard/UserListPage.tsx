@@ -3,7 +3,7 @@ import { UserEmptyState } from '@/components/features/users/UserEmptyState';
 import { UserFormModal } from '@/components/features/users/UserFormModal';
 import { UserActionsMenu } from '@/components/features/users/UserActionsMenu';
 import { UserAvatar } from '@/components/features/users/UserAvatar';
-import { BulkActionsBar } from '@/components/features/users/BulkActionsBar';
+import { UserDetailsModal } from '@/components/features/users/UserDetailsModal';
 import { 
   PageContainer,
   PageHeader,
@@ -16,6 +16,12 @@ import {
   Badge,
   ErrorState
 } from '@/components/common';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { Filter, StatCardProps, DataViewColumn } from '@/components/common';
 import { useUsers, usePermissions } from '@/hooks';
 import { User as UserIcon, RefreshCw, Plus, Check, AlertTriangle, Users, FolderKanban } from 'lucide-react';
@@ -29,7 +35,7 @@ export interface UserFilters {
 }
 
 export function UserListPage(): React.JSX.Element {
-  const { canCreateUser, canCreateAdmin } = usePermissions();
+  const { canCreateUser } = usePermissions();
   const {
     users,
     pagination,
@@ -53,8 +59,9 @@ export function UserListPage(): React.JSX.Element {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  // Bulk selection state
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  // Details modal state
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [detailsUser, setDetailsUser] = useState<User | null>(null);
 
   // Local filter state
   const [localFilters, setLocalFilters] = useState<UserFilters>({
@@ -130,67 +137,52 @@ export function UserListPage(): React.JSX.Element {
     setSelectedUser(null);
   };
 
-  // Bulk selection handlers
-  const operableUsers = useMemo(() => {
-    return users.filter(user => {
-      if (user.user_type === 'root' && !canCreateAdmin) {
-        return false;
-      }
-      return canCreateUser;
-    });
-  }, [users, canCreateUser, canCreateAdmin]);
+  const handleViewDetails = useCallback((user: User) => {
+    setDetailsUser(user);
+    setShowDetailsModal(true);
+  }, []);
 
-  const isUserOperable = (user: User) => {
-    return operableUsers.some(opUser => opUser.user_hash === user.user_hash);
+  const handleCloseDetails = () => {
+    setShowDetailsModal(false);
+    setDetailsUser(null);
   };
 
-  const handleSelectUser = (userHash: string) => {
-    const newSelected = new Set(selectedUsers);
-    if (newSelected.has(userHash)) {
-      newSelected.delete(userHash);
-    } else {
-      newSelected.add(userHash);
-    }
-    setSelectedUsers(newSelected);
+  const handleEditFromDetails = () => {
+    if (!detailsUser) return;
+    setShowDetailsModal(false);
+    handleEditUser(detailsUser);
   };
 
-  const isSomeSelected = selectedUsers.size > 0;
+  const handleCardActionInteraction = useCallback((event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  }, []);
 
   // Define columns for DataView
   const columns: DataViewColumn<User>[] = useMemo(() => [
-    // Checkbox column
-    {
-      key: 'select' as keyof User,
-      header: 'Select',
-      sortable: false,
-      width: '50px',
-      render: (_, user) => (
-        <input
-          type="checkbox"
-          checked={selectedUsers.has(user.user_hash)}
-          onChange={() => handleSelectUser(user.user_hash)}
-          disabled={isLoading || !isUserOperable(user)}
-          aria-label={`Select ${user.username}`}
-          className="bulk-select-checkbox"
-        />
-      ),
-    },
     {
       key: 'username',
       header: 'Username',
       sortable: true,
       render: (value, user) => (
-        <div className="user-info">
+        <div className="flex items-center gap-3 min-w-0">
           <UserAvatar 
             username={user.username} 
             userType={user.user_type}
             size="sm"
           />
-          <div className="user-details">
-            <div className="user-name">{value as string}</div>
-            <div className="user-hash" title={user.user_hash}>
+          <div className="flex flex-col min-w-0">
+            <button
+              type="button"
+              onClick={() => handleViewDetails(user)}
+              className="text-sm font-medium text-primary hover:underline text-left truncate"
+              title={value as string}
+              aria-label={`View details for ${user.username}`}
+            >
+              {value as string}
+            </button>
+            <span className="text-xs text-muted-foreground" title={user.user_hash}>
               {truncateHash(user.user_hash)}
-            </div>
+            </span>
           </div>
         </div>
       ),
@@ -200,7 +192,7 @@ export function UserListPage(): React.JSX.Element {
       header: 'Email',
       sortable: true,
       render: (value) => (
-        <span className="user-email">{value as string}</span>
+        <span className="text-sm text-foreground">{value as string}</span>
       ),
     },
     {
@@ -208,7 +200,7 @@ export function UserListPage(): React.JSX.Element {
       header: 'User Type',
       sortable: true,
       render: (value, user) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+        <div className="flex items-center gap-2">
           <Badge 
             variant={getUserTypeBadgeVariant(value as UserType)}
             size="sm"
@@ -216,9 +208,18 @@ export function UserListPage(): React.JSX.Element {
             {(value as string).toUpperCase()}
           </Badge>
           {user.user_type_info?.error && (
-            <span className="user-type-error" title={user.user_type_info.error}>
-              <AlertTriangle size={14} aria-hidden="true" />
-            </span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-destructive cursor-help">
+                    <AlertTriangle size={14} aria-hidden="true" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] bg-destructive text-destructive-foreground">
+                  {user.user_type_info.error}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       ),
@@ -228,11 +229,11 @@ export function UserListPage(): React.JSX.Element {
       header: 'Groups',
       sortable: false,
       render: (_, user) => (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-1)' }}>
+        <div className="flex flex-wrap gap-1">
           {user.groups && user.groups.length > 0 ? (
             <>
               {user.groups.slice(0, 2).map(group => (
-                <Badge key={group.group_hash} variant="secondary" size="sm">
+                <Badge key={group.group_hash} variant="secondary" size="sm" className="gap-1">
                   <Users size={12} aria-hidden="true" />
                   {group.group_name}
                 </Badge>
@@ -244,7 +245,7 @@ export function UserListPage(): React.JSX.Element {
               )}
             </>
           ) : (
-            <span className="no-groups">No groups</span>
+            <span className="text-sm text-muted-foreground">No groups</span>
           )}
         </div>
       ),
@@ -254,11 +255,11 @@ export function UserListPage(): React.JSX.Element {
       header: 'Projects',
       sortable: false,
       render: (_, user) => (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-1)' }}>
+        <div className="flex flex-wrap gap-1">
           {user.projects && user.projects.length > 0 ? (
             <>
               {user.projects.slice(0, 2).map(project => (
-                <Badge key={project.project_hash} variant="info" size="sm">
+                <Badge key={project.project_hash} variant="info" size="sm" className="gap-1">
                   <FolderKanban size={12} aria-hidden="true" />
                   {project.project_name}
                 </Badge>
@@ -270,7 +271,7 @@ export function UserListPage(): React.JSX.Element {
               )}
             </>
           ) : (
-            <span className="no-projects">No projects</span>
+            <span className="text-sm text-muted-foreground">No projects</span>
           )}
         </div>
       ),
@@ -290,7 +291,7 @@ export function UserListPage(): React.JSX.Element {
       header: 'Created At',
       sortable: true,
       render: (value) => (
-        <span className="user-date">{formatDateTime(value as string)}</span>
+        <span className="text-sm text-muted-foreground">{formatDateTime(value as string)}</span>
       ),
     },
     {
@@ -307,7 +308,7 @@ export function UserListPage(): React.JSX.Element {
       align: 'center',
       width: '80px',
     },
-  ], [selectedUsers, isLoading, handleRefresh, handleEditUser, isUserOperable, handleSelectUser]);
+  ], [handleRefresh, handleEditUser, handleViewDetails]);
 
   // Render card for grid view
   const renderCard = useCallback((user: User) => (
@@ -343,15 +344,19 @@ export function UserListPage(): React.JSX.Element {
           value: formatDateTime(user.created_at)
         }
       ]}
+      onClick={() => handleViewDetails(user)}
       actions={
-        <UserActionsMenu 
-          user={user} 
-          onUserUpdated={handleRefresh}
-          onEditUser={handleEditUser}
-        />
+        <div onClick={handleCardActionInteraction} onKeyDown={handleCardActionInteraction}>
+          <UserActionsMenu 
+            user={user} 
+            onUserUpdated={handleRefresh}
+            onEditUser={handleEditUser}
+            onViewDetails={() => handleViewDetails(user)}
+          />
+        </div>
       }
     />
-  ), [handleRefresh, handleEditUser]);
+  ), [handleRefresh, handleEditUser, handleViewDetails, handleCardActionInteraction]);
 
   // Calculate statistics
   const stats: StatCardProps[] = useMemo(() => {
@@ -470,15 +475,6 @@ export function UserListPage(): React.JSX.Element {
         />
       )}
 
-      {/* Bulk Actions Bar */}
-      {isSomeSelected && (
-        <BulkActionsBar
-          selectedCount={selectedUsers.size}
-          onClearSelection={() => setSelectedUsers(new Set())}
-          isLoading={false}
-        />
-      )}
-
       {/* Data View Section with Integrated Toolbar */}
       {!showEmptyState && !error && (
         <DataView<User>
@@ -514,7 +510,6 @@ export function UserListPage(): React.JSX.Element {
           emptyMessage="No users found"
           emptyIcon={<UserIcon size={32} />}
           skeletonRows={10}
-          className={`user-data-view ${isSomeSelected ? 'has-selection' : ''}`}
         />
       )}
 
@@ -543,6 +538,13 @@ export function UserListPage(): React.JSX.Element {
         onSuccess={handleModalSuccess}
         mode={modalMode}
         user={selectedUser}
+      />
+
+      <UserDetailsModal
+        isOpen={showDetailsModal}
+        onClose={handleCloseDetails}
+        user={detailsUser}
+        onEdit={handleEditFromDetails}
       />
     </PageContainer>
   );

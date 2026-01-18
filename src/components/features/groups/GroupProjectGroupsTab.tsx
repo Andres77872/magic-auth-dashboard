@@ -3,7 +3,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +10,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ConfirmDialog, EmptyState } from '@/components/common';
-import { FolderOpen, Plus, Trash2, ExternalLink } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ConfirmDialog, EmptyState, DataView } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
+import { FolderOpen, Plus, Trash2, ExternalLink, MoreHorizontal } from 'lucide-react';
 import { groupService, projectGroupService } from '@/services';
 import type { ProjectGroup } from '@/services/project-group.service';
 import { useToast } from '@/contexts/ToastContext';
@@ -41,6 +47,8 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<ProjectGroupAccess | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
+  const [searchTerm, setSearchTerm] = useState('');
   const { addToast } = useToast();
 
   // Fetch project groups accessible by this user group
@@ -168,14 +176,126 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Spinner size="lg" />
-        <p className="text-sm text-muted-foreground mt-2">Loading project groups...</p>
-      </div>
-    );
-  }
+  // Filter project groups based on search term
+  const filteredProjectGroups = accessibleProjectGroups.filter(pg => {
+    if (!searchTerm.trim()) return true;
+    const search = searchTerm.toLowerCase();
+    return pg.group_name.toLowerCase().includes(search);
+  });
+
+  // DataView columns for table view
+  const columns: DataViewColumn<ProjectGroupAccess>[] = [
+    {
+      key: 'group_name',
+      header: 'Project Group',
+      sortable: true,
+      render: (_, pg) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            window.location.href = `${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`;
+          }}
+          className="font-medium text-primary hover:underline text-left flex items-center gap-1"
+        >
+          <FolderOpen className="h-4 w-4 text-muted-foreground" />
+          {pg.group_name}
+          <ExternalLink size={14} />
+        </button>
+      ),
+    },
+    {
+      key: 'project_count',
+      header: 'Projects',
+      width: '120px',
+      render: (value) => (
+        <Badge variant="info">
+          {value} project{value !== 1 ? 's' : ''}
+        </Badge>
+      ),
+    },
+    {
+      key: 'group_hash',
+      header: '',
+      width: '60px',
+      align: 'center',
+      render: (_, pg) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = `${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`;
+              }}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmRemove(pg);
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Revoke Access
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  // Card renderer for grid view
+  const renderProjectGroupCard = (pg: ProjectGroupAccess) => (
+    <Card>
+      <CardContent className="pt-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <FolderOpen className="h-5 w-5 text-primary mt-0.5" aria-hidden="true" />
+            <div className="space-y-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.location.href = `${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`;
+                }}
+                className="font-medium hover:underline text-left flex items-center gap-1"
+              >
+                {pg.group_name}
+                <ExternalLink size={14} />
+              </button>
+              <Badge variant="info">
+                {pg.project_count} project{pg.project_count !== 1 ? 's' : ''}
+              </Badge>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmRemove(pg);
+            }}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            aria-label="Revoke access"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -188,54 +308,39 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
               Users in this group will have access to all projects within these project groups.
             </p>
           </div>
-          <Button onClick={() => setShowAddModal(true)}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Grant Access
-          </Button>
         </CardHeader>
         <CardContent>
-          {accessibleProjectGroups.length === 0 ? (
-            <EmptyState
-              icon={<FolderOpen className="h-10 w-10" aria-hidden="true" />}
-              title="No Project Group Access"
-              description="This user group doesn't have access to any project groups. Click 'Grant Access' to add some."
-            />
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {accessibleProjectGroups.map(pg => (
-                <Card key={pg.group_hash}>
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <FolderOpen className="h-5 w-5 text-primary mt-0.5" aria-hidden="true" />
-                        <div className="space-y-1">
-                          <button
-                            onClick={() => window.location.href = `${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`}
-                            className="font-medium hover:underline text-left flex items-center gap-1"
-                          >
-                            {pg.group_name}
-                            <ExternalLink size={14} />
-                          </button>
-                          <Badge variant="info">
-                            {pg.project_count} project{pg.project_count !== 1 ? 's' : ''}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setConfirmRemove(pg)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        aria-label="Revoke access"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <DataView<ProjectGroupAccess>
+            data={filteredProjectGroups}
+            columns={columns}
+            keyExtractor={(item) => item.group_hash}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            showViewToggle={true}
+            defaultViewMode="grid"
+            renderCard={renderProjectGroupCard}
+            gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+            showSearch={true}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Search project groups..."
+            toolbarActions={
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                Grant Access
+              </Button>
+            }
+            isLoading={loading}
+            emptyMessage="No Project Group Access"
+            emptyDescription="This user group doesn't have access to any project groups. Click 'Grant Access' to add some."
+            emptyIcon={<FolderOpen className="h-10 w-10" />}
+            emptyAction={
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Grant Access
+              </Button>
+            }
+          />
         </CardContent>
       </Card>
 

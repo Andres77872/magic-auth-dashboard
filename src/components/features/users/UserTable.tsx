@@ -3,6 +3,12 @@ import { DataView, TableSkeleton } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { UserActionsMenu } from './UserActionsMenu';
 import { UserAvatar } from './UserAvatar';
 import { BulkActionsBar } from './BulkActionsBar';
@@ -182,9 +188,18 @@ export function UserTable({
             {(user.user_type).toUpperCase()}
           </Badge>
           {user.user_type_info?.error && (
-            <span className="text-destructive" title={user.user_type_info.error}>
-              <AlertTriangle size={16} aria-hidden="true" />
-            </span>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-destructive cursor-help">
+                    <AlertTriangle size={16} aria-hidden="true" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] bg-destructive text-destructive-foreground">
+                  {user.user_type_info.error}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       ),

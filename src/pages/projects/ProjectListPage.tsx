@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   PageContainer,
   PageHeader,
@@ -16,8 +17,10 @@ import { useProjects } from '@/hooks';
 import { FolderKanban, Plus } from 'lucide-react';
 import { formatDate, formatCount } from '@/utils/component-utils';
 import type { ProjectDetails } from '@/types/project.types';
+import { ROUTES } from '@/utils/routes';
 
 export const ProjectListPage: React.FC = () => {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -32,6 +35,7 @@ export const ProjectListPage: React.FC = () => {
     fetchProjects,
     setFilters,
     setPage,
+    setSort,
     filters,
   } = useProjects();
 
@@ -45,9 +49,7 @@ export const ProjectListPage: React.FC = () => {
   };
 
   const handleSortChange = (sortField: string, sortDirection: 'asc' | 'desc') => {
-    // Sort handling - triggers a refetch through the filters
-    console.log('Sort changed:', sortField, sortDirection);
-    fetchProjects();
+    setSort(sortField, sortDirection);
   };
 
   const handleCreateClick = () => {
@@ -80,6 +82,26 @@ export const ProjectListPage: React.FC = () => {
     fetchProjects();
   };
 
+  const handleViewDetails = useCallback((project: ProjectDetails) => {
+    navigate(`${ROUTES.PROJECTS_DETAILS}/${project.project_hash}`);
+  }, [navigate]);
+
+  const handleCardActionInteraction = useCallback((event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  }, []);
+
+  const formatCreatedDate = useCallback((createdAt?: string) => {
+    if (!createdAt) return '—';
+    const parsed = new Date(createdAt);
+    if (Number.isNaN(parsed.getTime())) return '—';
+    return formatDate(createdAt);
+  }, []);
+
+  const formatAccessLabel = useCallback((accessLevel?: string) => {
+    if (!accessLevel) return '';
+    return accessLevel.replace(/[_-]/g, ' ').toUpperCase();
+  }, []);
+
   // Define columns for DataView
   const columns: DataViewColumn<ProjectDetails>[] = useMemo(() => [
     {
@@ -87,10 +109,22 @@ export const ProjectListPage: React.FC = () => {
       header: 'Project Name',
       sortable: true,
       render: (_value: any, project: ProjectDetails) => (
-        <div className="project-name-cell">
-          <div className="project-name">{project.project_name}</div>
-          {project.project_description && (
-            <div className="project-description">{project.project_description}</div>
+        <div className="flex flex-col gap-1 min-w-0">
+          <button
+            type="button"
+            onClick={() => handleViewDetails(project)}
+            className="text-sm font-medium text-primary hover:underline text-left truncate"
+            title={project.project_name}
+            aria-label={`View details for ${project.project_name}`}
+          >
+            {project.project_name}
+          </button>
+          {project.project_description ? (
+            <span className="text-xs text-muted-foreground line-clamp-1">
+              {project.project_description}
+            </span>
+          ) : (
+            <span className="text-xs text-muted-foreground">No description</span>
           )}
         </div>
       ),
@@ -101,29 +135,45 @@ export const ProjectListPage: React.FC = () => {
       sortable: true,
       align: 'center',
       width: '120px',
-      render: (_value: any, project: ProjectDetails) => (
-        <Badge variant="secondary">
-          {formatCount(project.member_count || 0, 'member')}
-        </Badge>
-      ),
+      render: (_value: any, project: ProjectDetails) => {
+        const memberCount = project.member_count;
+        return (
+          <Badge variant="secondary">
+            {typeof memberCount === 'number' ? formatCount(memberCount, 'member') : '—'}
+          </Badge>
+        );
+      },
     },
     {
       key: 'is_active',
       header: 'Status',
       sortable: true,
-      width: '120px',
-      render: (_value: any, project: ProjectDetails) => (
-        <Badge variant={project.is_active ? 'success' : 'error'}>
-          {project.is_active ? 'Active' : 'Inactive'}
-        </Badge>
-      ),
+      width: '160px',
+      render: (_value: any, project: ProjectDetails) => {
+        const isActive = typeof project.is_active === 'boolean' ? project.is_active : null;
+        const statusLabel = isActive === null ? 'Unknown' : (isActive ? 'Active' : 'Inactive');
+        const statusVariant = isActive === null ? 'secondary' : (isActive ? 'success' : 'error');
+        const accessLabel = formatAccessLabel(project.access_level);
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Badge variant={statusVariant}>{statusLabel}</Badge>
+            {accessLabel && (
+              <Badge variant="info">{accessLabel}</Badge>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: 'created_at',
       header: 'Created',
       sortable: true,
       width: '180px',
-      render: (_value: any, project: ProjectDetails) => formatDate(project.created_at),
+      render: (_value: any, project: ProjectDetails) => (
+        <span className="text-sm text-muted-foreground">
+          {formatCreatedDate(project.created_at)}
+        </span>
+      ),
     },
     {
       key: 'project_hash',
@@ -140,7 +190,7 @@ export const ProjectListPage: React.FC = () => {
         />
       ),
     },
-  ], [handleEditProject, handleProjectDelete, handleProjectArchive]);
+  ], [handleEditProject, handleProjectDelete, handleProjectArchive, handleViewDetails, formatAccessLabel, formatCreatedDate]);
 
   // Render card for grid view
   const renderCard = useCallback((project: ProjectDetails) => (
@@ -149,30 +199,53 @@ export const ProjectListPage: React.FC = () => {
       description={project.project_description}
       icon={<FolderKanban size={24} />}
       badges={[
-        <Badge key="status" variant={project.is_active ? 'success' : 'error'}>
-          {project.is_active ? 'Active' : 'Inactive'}
-        </Badge>
+        <Badge
+          key="status"
+          variant={project.is_active === undefined ? 'secondary' : (project.is_active ? 'success' : 'error')}
+        >
+          {project.is_active === undefined ? 'Unknown' : (project.is_active ? 'Active' : 'Inactive')}
+        </Badge>,
+        ...(project.access_level ? [
+          <Badge key="access" variant="info">
+            {formatAccessLabel(project.access_level)}
+          </Badge>
+        ] : [])
       ]}
       stats={[
         {
           label: 'Members',
-          value: <Badge variant="secondary">{formatCount(project.member_count || 0, 'member')}</Badge>
+          value: (
+            <Badge variant="secondary">
+              {typeof project.member_count === 'number' ? formatCount(project.member_count, 'member') : '—'}
+            </Badge>
+          )
         },
         {
           label: 'Created',
-          value: formatDate(project.created_at)
+          value: formatCreatedDate(project.created_at)
         }
       ]}
+      onClick={() => handleViewDetails(project)}
       actions={
-        <ProjectActionsMenu
-          project={project}
-          onEdit={handleEditProject}
-          onDelete={handleProjectDelete}
-          onArchive={handleProjectArchive}
-        />
+        <div onClick={handleCardActionInteraction} onKeyDown={handleCardActionInteraction}>
+          <ProjectActionsMenu
+            project={project}
+            onEdit={handleEditProject}
+            onDelete={handleProjectDelete}
+            onArchive={handleProjectArchive}
+          />
+        </div>
       }
     />
-  ), [handleEditProject, handleProjectDelete, handleProjectArchive]);
+  ), [
+    formatAccessLabel,
+    formatCreatedDate,
+    handleCardActionInteraction,
+    handleEditProject,
+    handleProjectArchive,
+    handleProjectDelete,
+    handleViewDetails
+  ]);
 
   return (
     <PageContainer>
@@ -237,7 +310,6 @@ export const ProjectListPage: React.FC = () => {
             </Button>
           }
           skeletonRows={8}
-          className="projects-data-view"
         />
       )}
 

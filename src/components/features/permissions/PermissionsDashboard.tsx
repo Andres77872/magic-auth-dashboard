@@ -1,20 +1,17 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Spinner } from '@/components/ui/spinner';
-import { Shield, Layers, Users, Plus, Search, UserCircle } from 'lucide-react';
+import { Shield, Layers, Users, UserCircle } from 'lucide-react';
 import { ConfirmDialog } from '@/components/common';
 import { PermissionModal } from './PermissionModal';
 import { PermissionGroupModal } from './PermissionGroupModal';
 import { ManageGroupPermissionsModal } from './ManageGroupPermissionsModal';
 import { ManageRolePermissionGroupsModal } from './ManageRolePermissionGroupsModal';
 import { RoleModal } from './RoleModal';
-import { PermissionCard } from './permissions/PermissionCard';
+import { PermissionList } from './permissions/PermissionList';
 import { PermissionDetail } from './permissions/PermissionDetail';
-import { PermissionGroupCard } from './permission-groups/PermissionGroupCard';
-import { RoleCard } from './roles/RoleCard';
+import { PermissionGroupList } from './permission-groups/PermissionGroupList';
+import { RoleList } from './roles/RoleList';
 import { UserPermissionSources } from './user-permissions/UserPermissionSources';
 import { UserPermissionCheck } from './user-permissions/UserPermissionCheck';
 import { DetailPanel } from './shared/DetailPanel';
@@ -49,10 +46,6 @@ export function PermissionsDashboard(): React.JSX.Element {
     currentRole
   } = useGlobalRoles();
 
-  // Search state
-  const [permissionSearch, setPermissionSearch] = useState('');
-  const [groupSearch, setGroupSearch] = useState('');
-  const [roleSearch, setRoleSearch] = useState('');
 
   // Modal states
   const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
@@ -80,22 +73,6 @@ export function PermissionsDashboard(): React.JSX.Element {
   const [isRoleDetailOpen, setIsRoleDetailOpen] = useState(false);
   const [isGroupDetailOpen, setIsGroupDetailOpen] = useState(false);
   const [isPermissionDetailOpen, setIsPermissionDetailOpen] = useState(false);
-
-  // Filter data
-  const filteredPermissions = permissions.filter(p =>
-    p.permission_name.toLowerCase().includes(permissionSearch.toLowerCase()) ||
-    p.permission_display_name.toLowerCase().includes(permissionSearch.toLowerCase())
-  );
-
-  const filteredGroups = permissionGroups.filter(g =>
-    g.group_name.toLowerCase().includes(groupSearch.toLowerCase()) ||
-    g.group_display_name.toLowerCase().includes(groupSearch.toLowerCase())
-  );
-
-  const filteredRoles = roles.filter(r =>
-    r.role_name.toLowerCase().includes(roleSearch.toLowerCase()) ||
-    r.role_display_name.toLowerCase().includes(roleSearch.toLowerCase())
-  );
 
   // Handlers
   const handleCreatePermission = () => {
@@ -343,151 +320,42 @@ export function PermissionsDashboard(): React.JSX.Element {
 
         {/* Permissions Tab */}
         <TabsContent value="permissions" className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search permissions..."
-                value={permissionSearch}
-                onChange={(e) => setPermissionSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button onClick={handleCreatePermission}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Permission
-            </Button>
-          </div>
-
-          {permissionsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size="lg" />
-            </div>
-          ) : filteredPermissions.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Shield className="h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">No permissions found</h3>
-                <p className="text-sm text-muted-foreground">Create your first permission to get started</p>
-                <Button className="mt-4" onClick={handleCreatePermission}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Permission
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {filteredPermissions.map((permission) => (
-                <PermissionCard
-                  key={permission.permission_hash}
-                  permission={permission}
-                  onClick={handlePermissionClick}
-                  onEdit={handleEditPermission}
-                  onDelete={(p) => handleDeleteClick('permission', p)}
-                />
-              ))}
-            </div>
-          )}
+          <PermissionList
+            permissions={permissions}
+            loading={permissionsLoading}
+            categories={categories}
+            onEdit={handleEditPermission}
+            onDelete={(p) => handleDeleteClick('permission', p)}
+            onCreate={handleCreatePermission}
+            onViewDetails={handlePermissionClick}
+          />
         </TabsContent>
 
         {/* Permission Groups Tab */}
         <TabsContent value="groups" className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search groups..."
-                value={groupSearch}
-                onChange={(e) => setGroupSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button onClick={handleCreateGroup}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Group
-            </Button>
-          </div>
-
-          {permissionGroupsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size="lg" />
-            </div>
-          ) : filteredGroups.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Layers className="h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">No permission groups found</h3>
-                <p className="text-sm text-muted-foreground">Create groups to organize permissions</p>
-                <Button className="mt-4" onClick={handleCreateGroup}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Group
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {filteredGroups.map((group) => (
-                <PermissionGroupCard
-                  key={group.group_hash}
-                  group={group}
-                  onClick={handleGroupClick}
-                  onEdit={handleEditGroup}
-                  onDelete={(g) => handleDeleteClick('group', g)}
-                  onManagePermissions={handleManageGroupPermissions}
-                />
-              ))}
-            </div>
-          )}
+          <PermissionGroupList
+            groups={permissionGroups}
+            loading={permissionGroupsLoading}
+            categories={categories}
+            onEdit={handleEditGroup}
+            onDelete={(g) => handleDeleteClick('group', g)}
+            onManagePermissions={handleManageGroupPermissions}
+            onCreate={handleCreateGroup}
+            onViewDetails={handleGroupClick}
+          />
         </TabsContent>
 
         {/* Roles Tab */}
         <TabsContent value="roles" className="space-y-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search roles..."
-                value={roleSearch}
-                onChange={(e) => setRoleSearch(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button onClick={handleCreateRole}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Role
-            </Button>
-          </div>
-
-          {loadingRoles ? (
-            <div className="flex items-center justify-center py-12">
-              <Spinner size="lg" />
-            </div>
-          ) : filteredRoles.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Users className="h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold">No roles found</h3>
-                <p className="text-sm text-muted-foreground">Create roles to assign permission groups to users</p>
-                <Button className="mt-4" onClick={handleCreateRole}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Role
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-              {filteredRoles.map((role) => (
-                <RoleCard
-                  key={role.role_hash}
-                  role={role}
-                  onClick={handleRoleClick}
-                  onEdit={handleEditRole}
-                  onDelete={(r) => handleDeleteClick('role', r)}
-                  onManagePermissionGroups={handleManageRolePermissionGroups}
-                />
-              ))}
-            </div>
-          )}
+          <RoleList
+            roles={roles}
+            loading={loadingRoles}
+            onEdit={handleEditRole}
+            onDelete={(r) => handleDeleteClick('role', r)}
+            onManagePermissionGroups={handleManageRolePermissionGroups}
+            onCreate={handleCreateRole}
+            onViewDetails={handleRoleClick}
+          />
         </TabsContent>
 
         {/* Assignments Tab */}

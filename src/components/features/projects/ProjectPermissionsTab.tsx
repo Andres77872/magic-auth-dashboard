@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Spinner } from '@/components/ui/spinner';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,17 +19,380 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ConfirmDialog, EmptyState, TabNavigation } from '@/components/common';
-import type { Tab } from '@/components/common';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ConfirmDialog, TabNavigation, DataView } from '@/components/common';
+import type { Tab, DataViewColumn } from '@/components/common';
 import { globalRolesService, permissionAssignmentsService } from '@/services';
 import { useToast } from '@/contexts/ToastContext';
 import type { ProjectDetails } from '@/types/project.types';
 import type { GlobalRole, GlobalPermissionGroup } from '@/types/global-roles.types';
-import { Plus, Trash2, Info } from 'lucide-react';
+import { Plus, Trash2, Info, MoreHorizontal, Shield, Lock } from 'lucide-react';
 
 interface ProjectPermissionsTabProps {
   project: ProjectDetails;
 }
+
+// Sub-component for Roles DataView
+interface RolesDataViewSectionProps {
+  catalogedRoles: CatalogedRole[];
+  availableRoles: GlobalRole[];
+  isLoading: boolean;
+  viewMode: 'table' | 'grid';
+  onViewModeChange: (mode: 'table' | 'grid') => void;
+  searchTerm: string;
+  onSearchTermChange: (term: string) => void;
+  onAddRole: () => void;
+  onRemoveRole: (role: CatalogedRole) => void;
+}
+
+const RolesDataViewSection: React.FC<RolesDataViewSectionProps> = ({
+  catalogedRoles,
+  availableRoles,
+  isLoading,
+  viewMode,
+  onViewModeChange,
+  searchTerm,
+  onSearchTermChange,
+  onAddRole,
+  onRemoveRole,
+}) => {
+  // Filter roles based on search term
+  const filteredRoles = catalogedRoles.filter(role => {
+    if (!searchTerm.trim()) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      (role.role_display_name || '').toLowerCase().includes(search) ||
+      (role.role_name || '').toLowerCase().includes(search) ||
+      (role.role_description || '').toLowerCase().includes(search)
+    );
+  });
+
+  // DataView columns for table view
+  const columns: DataViewColumn<CatalogedRole>[] = [
+    {
+      key: 'role_display_name',
+      header: 'Role',
+      sortable: true,
+      render: (_, role) => (
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">
+            {role.role_display_name || role.role_name}
+          </span>
+          {role.is_system_role && <Badge variant="info" size="sm">System</Badge>}
+        </div>
+      ),
+    },
+    {
+      key: 'role_description',
+      header: 'Description',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-muted-foreground line-clamp-1">{value || '—'}</span>
+      ),
+    },
+    {
+      key: 'catalog_purpose',
+      header: 'Purpose',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-muted-foreground line-clamp-1">{value || '—'}</span>
+      ),
+    },
+    {
+      key: 'role_hash',
+      header: '',
+      width: '60px',
+      align: 'center',
+      render: (_, role) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={(e) => { e.stopPropagation(); onRemoveRole(role); }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove from Catalog
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  // Card renderer for grid view
+  const renderRoleCard = (role: CatalogedRole) => (
+    <Card>
+      <CardContent className="pt-4 space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h4 className="font-medium">{role.role_display_name || role.role_name}</h4>
+            <div className="flex gap-1 flex-wrap">
+              <Badge variant="secondary">{role.role_name}</Badge>
+              {role.is_system_role && <Badge variant="info">System Role</Badge>}
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => { e.stopPropagation(); onRemoveRole(role); }}
+            aria-label="Remove from catalog"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </div>
+        {role.role_description && (
+          <p className="text-sm text-muted-foreground">{role.role_description}</p>
+        )}
+        {role.catalog_purpose && (
+          <div className="text-sm">
+            <strong>Purpose:</strong> {role.catalog_purpose}
+          </div>
+        )}
+        {role.notes && (
+          <div className="text-sm">
+            <strong>Notes:</strong> {role.notes}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Cataloged Roles</h3>
+          <p className="text-sm text-muted-foreground">Suggested global roles for users in this project</p>
+        </div>
+      </div>
+      <DataView<CatalogedRole>
+        data={filteredRoles}
+        columns={columns}
+        keyExtractor={(item) => item.role_hash}
+        viewMode={viewMode}
+        onViewModeChange={onViewModeChange}
+        showViewToggle={true}
+        defaultViewMode="grid"
+        renderCard={renderRoleCard}
+        gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+        showSearch={true}
+        searchValue={searchTerm}
+        onSearchChange={onSearchTermChange}
+        searchPlaceholder="Search roles..."
+        toolbarActions={
+          <Button onClick={onAddRole} disabled={availableRoles.length === 0}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Add Role to Catalog
+          </Button>
+        }
+        isLoading={isLoading}
+        emptyMessage="No Roles in Catalog"
+        emptyDescription="Add roles to this project's catalog to suggest which roles are commonly used."
+        emptyIcon={<Shield className="h-10 w-10" />}
+        emptyAction={
+          availableRoles.length > 0 ? (
+            <Button onClick={onAddRole}>Add First Role</Button>
+          ) : undefined
+        }
+      />
+    </div>
+  );
+};
+
+// Sub-component for Permission Groups DataView
+interface PermissionGroupsDataViewSectionProps {
+  catalogedPermissionGroups: CatalogedPermissionGroup[];
+  availablePermissionGroups: GlobalPermissionGroup[];
+  isLoading: boolean;
+  viewMode: 'table' | 'grid';
+  onViewModeChange: (mode: 'table' | 'grid') => void;
+  searchTerm: string;
+  onSearchTermChange: (term: string) => void;
+  onAddGroup: () => void;
+  onRemoveGroup: (group: CatalogedPermissionGroup) => void;
+}
+
+const PermissionGroupsDataViewSection: React.FC<PermissionGroupsDataViewSectionProps> = ({
+  catalogedPermissionGroups,
+  availablePermissionGroups,
+  isLoading,
+  viewMode,
+  onViewModeChange,
+  searchTerm,
+  onSearchTermChange,
+  onAddGroup,
+  onRemoveGroup,
+}) => {
+  // Filter groups based on search term
+  const filteredGroups = catalogedPermissionGroups.filter(group => {
+    if (!searchTerm.trim()) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      (group.group_display_name || '').toLowerCase().includes(search) ||
+      (group.group_name || '').toLowerCase().includes(search) ||
+      (group.group_description || '').toLowerCase().includes(search) ||
+      (group.group_category || '').toLowerCase().includes(search)
+    );
+  });
+
+  // DataView columns for table view
+  const columns: DataViewColumn<CatalogedPermissionGroup>[] = [
+    {
+      key: 'group_display_name',
+      header: 'Permission Group',
+      sortable: true,
+      render: (_, group) => (
+        <div className="flex items-center gap-2">
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">
+            {group.group_display_name || group.group_name}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'group_category',
+      header: 'Category',
+      width: '120px',
+      hideOnMobile: true,
+      render: (value) => value ? <Badge variant="info">{value}</Badge> : <span className="text-muted-foreground">—</span>,
+    },
+    {
+      key: 'group_description',
+      header: 'Description',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-muted-foreground line-clamp-1">{value || '—'}</span>
+      ),
+    },
+    {
+      key: 'catalog_purpose',
+      header: 'Purpose',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-muted-foreground line-clamp-1">{value || '—'}</span>
+      ),
+    },
+    {
+      key: 'group_hash',
+      header: '',
+      width: '60px',
+      align: 'center',
+      render: (_, group) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={(e) => { e.stopPropagation(); onRemoveGroup(group); }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove from Catalog
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  // Card renderer for grid view
+  const renderGroupCard = (group: CatalogedPermissionGroup) => (
+    <Card>
+      <CardContent className="pt-4 space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <h4 className="font-medium">{group.group_display_name || group.group_name}</h4>
+            <div className="flex gap-1 flex-wrap">
+              <Badge variant="secondary">{group.group_name}</Badge>
+              {group.group_category && <Badge variant="info">{group.group_category}</Badge>}
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => { e.stopPropagation(); onRemoveGroup(group); }}
+            aria-label="Remove from catalog"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </div>
+        {group.group_description && (
+          <p className="text-sm text-muted-foreground">{group.group_description}</p>
+        )}
+        {group.catalog_purpose && (
+          <div className="text-sm">
+            <strong>Purpose:</strong> {group.catalog_purpose}
+          </div>
+        )}
+        {group.notes && (
+          <div className="text-sm">
+            <strong>Notes:</strong> {group.notes}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Cataloged Permission Groups</h3>
+          <p className="text-sm text-muted-foreground">Suggested permission groups for this project</p>
+        </div>
+      </div>
+      <DataView<CatalogedPermissionGroup>
+        data={filteredGroups}
+        columns={columns}
+        keyExtractor={(item) => item.group_hash}
+        viewMode={viewMode}
+        onViewModeChange={onViewModeChange}
+        showViewToggle={true}
+        defaultViewMode="grid"
+        renderCard={renderGroupCard}
+        gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+        showSearch={true}
+        searchValue={searchTerm}
+        onSearchChange={onSearchTermChange}
+        searchPlaceholder="Search permission groups..."
+        toolbarActions={
+          <Button onClick={onAddGroup} disabled={availablePermissionGroups.length === 0}>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Add Permission Group
+          </Button>
+        }
+        isLoading={isLoading}
+        emptyMessage="No Permission Groups in Catalog"
+        emptyDescription="Add permission groups to this project's catalog to suggest which groups are commonly used."
+        emptyIcon={<Lock className="h-10 w-10" />}
+        emptyAction={
+          availablePermissionGroups.length > 0 ? (
+            <Button onClick={onAddGroup}>Add First Group</Button>
+          ) : undefined
+        }
+      />
+    </div>
+  );
+};
 
 interface CatalogedRole extends GlobalRole {
   catalog_purpose?: string;
@@ -65,6 +427,10 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
   const [permissionGroupNotes, setPermissionGroupNotes] = useState('');
   const [confirmRemoveRole, setConfirmRemoveRole] = useState<CatalogedRole | null>(null);
   const [confirmRemovePermissionGroup, setConfirmRemovePermissionGroup] = useState<CatalogedPermissionGroup | null>(null);
+  const [rolesViewMode, setRolesViewMode] = useState<'table' | 'grid'>('grid');
+  const [groupsViewMode, setGroupsViewMode] = useState<'table' | 'grid'>('grid');
+  const [rolesSearchTerm, setRolesSearchTerm] = useState('');
+  const [groupsSearchTerm, setGroupsSearchTerm] = useState('');
   const { addToast } = useToast();
 
   const fetchCatalogData = useCallback(async () => {
@@ -265,161 +631,34 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       />
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-12">
-          <Spinner size="lg" />
-          <p className="text-sm text-muted-foreground mt-2">Loading catalog...</p>
-        </div>
-      ) : (
-        <>
-          {/* Roles Section */}
-          {activeSection === 'roles' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Cataloged Roles</h3>
-                  <p className="text-sm text-muted-foreground">Suggested global roles for users in this project</p>
-                </div>
-                <Button
-                  onClick={() => setShowAddRoleModal(true)}
-                  disabled={availableRoles.length === 0}
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                  Add Role to Catalog
-                </Button>
-              </div>
+      {/* Roles Section */}
+      {activeSection === 'roles' && (
+        <RolesDataViewSection
+          catalogedRoles={catalogedRoles}
+          availableRoles={availableRoles}
+          isLoading={isLoading}
+          viewMode={rolesViewMode}
+          onViewModeChange={setRolesViewMode}
+          searchTerm={rolesSearchTerm}
+          onSearchTermChange={setRolesSearchTerm}
+          onAddRole={() => setShowAddRoleModal(true)}
+          onRemoveRole={setConfirmRemoveRole}
+        />
+      )}
 
-              {catalogedRoles.length === 0 ? (
-                <EmptyState
-                  icon={<Info className="h-8 w-8" aria-hidden="true" />}
-                  title="No Roles in Catalog"
-                  description="Add roles to this project's catalog to suggest which roles are commonly used."
-                  action={
-                    availableRoles.length > 0 ? (
-                      <Button onClick={() => setShowAddRoleModal(true)}>
-                        Add First Role
-                      </Button>
-                    ) : undefined
-                  }
-                />
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {catalogedRoles.map(role => (
-                    <Card key={role.role_hash}>
-                      <CardContent className="pt-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <h4 className="font-medium">{role.role_display_name || role.role_name}</h4>
-                            <div className="flex gap-1 flex-wrap">
-                              <Badge variant="secondary">{role.role_name}</Badge>
-                              {role.is_system_role && <Badge variant="info">System Role</Badge>}
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setConfirmRemoveRole(role)}
-                            aria-label="Remove from catalog"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
-                          </Button>
-                        </div>
-                        {role.role_description && (
-                          <p className="text-sm text-muted-foreground">{role.role_description}</p>
-                        )}
-                        {role.catalog_purpose && (
-                          <div className="text-sm">
-                            <strong>Purpose:</strong> {role.catalog_purpose}
-                          </div>
-                        )}
-                        {role.notes && (
-                          <div className="text-sm">
-                            <strong>Notes:</strong> {role.notes}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Permission Groups Section */}
-          {activeSection === 'permission-groups' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Cataloged Permission Groups</h3>
-                  <p className="text-sm text-muted-foreground">Suggested permission groups for this project</p>
-                </div>
-                <Button
-                  onClick={() => setShowAddPermissionGroupModal(true)}
-                  disabled={availablePermissionGroups.length === 0}
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                  Add Permission Group
-                </Button>
-              </div>
-
-              {catalogedPermissionGroups.length === 0 ? (
-                <EmptyState
-                  icon={<Info className="h-8 w-8" aria-hidden="true" />}
-                  title="No Permission Groups in Catalog"
-                  description="Add permission groups to this project's catalog to suggest which groups are commonly used."
-                  action={
-                    availablePermissionGroups.length > 0 ? (
-                      <Button onClick={() => setShowAddPermissionGroupModal(true)}>
-                        Add First Group
-                      </Button>
-                    ) : undefined
-                  }
-                />
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {catalogedPermissionGroups.map(group => (
-                    <Card key={group.group_hash}>
-                      <CardContent className="pt-4 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <h4 className="font-medium">{group.group_display_name || group.group_name}</h4>
-                            <div className="flex gap-1 flex-wrap">
-                              <Badge variant="secondary">{group.group_name}</Badge>
-                              {group.group_category && <Badge variant="info">{group.group_category}</Badge>}
-                            </div>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setConfirmRemovePermissionGroup(group)}
-                            aria-label="Remove from catalog"
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            <Trash2 className="h-4 w-4" aria-hidden="true" />
-                          </Button>
-                        </div>
-                        {group.group_description && (
-                          <p className="text-sm text-muted-foreground">{group.group_description}</p>
-                        )}
-                        {group.catalog_purpose && (
-                          <div className="text-sm">
-                            <strong>Purpose:</strong> {group.catalog_purpose}
-                          </div>
-                        )}
-                        {group.notes && (
-                          <div className="text-sm">
-                            <strong>Notes:</strong> {group.notes}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </>
+      {/* Permission Groups Section */}
+      {activeSection === 'permission-groups' && (
+        <PermissionGroupsDataViewSection
+          catalogedPermissionGroups={catalogedPermissionGroups}
+          availablePermissionGroups={availablePermissionGroups}
+          isLoading={isLoading}
+          viewMode={groupsViewMode}
+          onViewModeChange={setGroupsViewMode}
+          searchTerm={groupsSearchTerm}
+          onSearchTermChange={setGroupsSearchTerm}
+          onAddGroup={() => setShowAddPermissionGroupModal(true)}
+          onRemoveGroup={setConfirmRemovePermissionGroup}
+        />
       )}
 
       {/* Add Role Modal */}

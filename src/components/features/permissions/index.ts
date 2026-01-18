@@ -12,7 +12,6 @@ export { BulkAssignModal } from './BulkAssignModal';
 // Shared components
 export { CategoryBadge } from './shared/CategoryBadge';
 export { PriorityBadge } from './shared/PriorityBadge';
-export { EntityGrid } from './shared/EntityGrid';
 export { DetailPanel } from './shared/DetailPanel';
 
 // Permission components

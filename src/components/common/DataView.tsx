@@ -1,9 +1,11 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, FileText } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, FileText, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -37,6 +39,21 @@ export interface DataViewCardProps<T> {
 }
 
 export type GridColumnsConfig = 1 | 2 | 3 | 4;
+
+export interface BulkAction<T> {
+  /** Unique key for the action */
+  key: string;
+  /** Button label */
+  label: string;
+  /** Button icon */
+  icon?: ReactNode;
+  /** Button variant */
+  variant?: 'default' | 'destructive';
+  /** Execute the action on selected items */
+  onExecute: (items: T[]) => Promise<void> | void;
+  /** Disable based on selected items */
+  isDisabled?: (items: T[]) => boolean;
+}
 
 export interface DataViewProps<T> {
   // Data
@@ -80,6 +97,26 @@ export interface DataViewProps<T> {
   // Table Behavior
   onSort?: (key: keyof T, direction: 'asc' | 'desc') => void;
   stickyHeader?: boolean;
+
+  // Row Behavior
+  /** Callback when entire row is clicked */
+  onRowClick?: (item: T) => void;
+  /** Dynamic class name per row based on item data */
+  rowClassName?: (item: T) => string;
+
+  // Selection
+  /** Enable checkbox selection in first column */
+  selectable?: boolean;
+  /** Controlled selected items */
+  selectedItems?: T[];
+  /** Callback when selection changes */
+  onSelectionChange?: (items: T[]) => void;
+  /** Key to use for identifying items (e.g., 'user_hash', 'group_hash') */
+  selectionKey?: keyof T;
+  /** Function to determine if an item can be selected */
+  isItemSelectable?: (item: T) => boolean;
+  /** Bulk action buttons shown when items are selected */
+  bulkActions?: BulkAction<T>[];
 
   // Loading & Empty States
   isLoading?: boolean;
@@ -166,6 +203,14 @@ export function DataView<T extends object>({
   toolbarFilters,
   onSort,
   stickyHeader = false,
+  onRowClick,
+  rowClassName,
+  selectable = false,
+  selectedItems: controlledSelectedItems,
+  onSelectionChange,
+  selectionKey,
+  isItemSelectable,
+  bulkActions,
   isLoading = false,
   emptyMessage = 'No data available',
   emptyDescription = '',
@@ -182,17 +227,84 @@ export function DataView<T extends object>({
   // Internal search state (used when local search is enabled)
   const [internalSearchValue, setInternalSearchValue] = useState('');
 
+  // Internal selection state (used when not controlled)
+  const [internalSelectedItems, setInternalSelectedItems] = useState<T[]>([]);
+
   // Use controlled or internal view mode
   const currentViewMode = controlledViewMode ?? internalViewMode;
 
   // Use controlled or internal search value
   const currentSearchValue = controlledSearchValue ?? internalSearchValue;
 
+  // Use controlled or internal selected items
+  const currentSelectedItems = controlledSelectedItems ?? internalSelectedItems;
+
   // Sort state for table
   const [sortState, setSortState] = useState<SortState<T>>({
     key: null,
     direction: 'asc',
   });
+
+  // Get item identifier for selection
+  const getItemId = useCallback(
+    (item: T): string | number => {
+      if (selectionKey && item[selectionKey] !== undefined) {
+        return String(item[selectionKey]);
+      }
+      if (keyExtractor) {
+        return keyExtractor(item);
+      }
+      if ('id' in item && (typeof item.id === 'string' || typeof item.id === 'number')) {
+        return item.id;
+      }
+      // Fallback to index (not ideal)
+      return data.indexOf(item);
+    },
+    [selectionKey, keyExtractor, data]
+  );
+
+  // Check if an item is selected
+  const isItemSelected = useCallback(
+    (item: T): boolean => {
+      const itemId = getItemId(item);
+      return currentSelectedItems.some((selected) => getItemId(selected) === itemId);
+    },
+    [currentSelectedItems, getItemId]
+  );
+
+  // Handle selection change
+  const handleSelectionChange = useCallback(
+    (items: T[]) => {
+      if (onSelectionChange) {
+        onSelectionChange(items);
+      } else {
+        setInternalSelectedItems(items);
+      }
+    },
+    [onSelectionChange]
+  );
+
+  // Toggle item selection
+  const toggleItemSelection = useCallback(
+    (item: T) => {
+      if (isItemSelectable && !isItemSelectable(item)) return;
+
+      const itemId = getItemId(item);
+      const isSelected = currentSelectedItems.some((selected) => getItemId(selected) === itemId);
+
+      if (isSelected) {
+        handleSelectionChange(currentSelectedItems.filter((selected) => getItemId(selected) !== itemId));
+      } else {
+        handleSelectionChange([...currentSelectedItems, item]);
+      }
+    },
+    [currentSelectedItems, getItemId, handleSelectionChange, isItemSelectable]
+  );
+
+  // Clear selection
+  const clearSelection = useCallback(() => {
+    handleSelectionChange([]);
+  }, [handleSelectionChange]);
 
   // Handle view mode change
   const handleViewModeChange = useCallback(
@@ -246,6 +358,29 @@ export function DataView<T extends object>({
   }, [data, enableLocalSearch, currentSearchValue, searchKeys]);
 
   const displayData = enableLocalSearch ? filteredData : data;
+
+  // Select all items (depends on displayData)
+  const selectAllItems = useCallback(() => {
+    const selectableItems = isItemSelectable
+      ? displayData.filter(isItemSelectable)
+      : displayData;
+    handleSelectionChange(selectableItems);
+  }, [displayData, handleSelectionChange, isItemSelectable]);
+
+  // Check if all selectable items are selected (depends on displayData)
+  const areAllSelected = useMemo(() => {
+    if (displayData.length === 0) return false;
+    const selectableItems = isItemSelectable
+      ? displayData.filter(isItemSelectable)
+      : displayData;
+    if (selectableItems.length === 0) return false;
+    return selectableItems.every((item) => isItemSelected(item));
+  }, [displayData, isItemSelectable, isItemSelected]);
+
+  // Check if some items are selected (for indeterminate state)
+  const areSomeSelected = useMemo(() => {
+    return currentSelectedItems.length > 0 && !areAllSelected;
+  }, [currentSelectedItems.length, areAllSelected]);
 
   // Handle sort
   const handleSort = useCallback(
@@ -316,122 +451,230 @@ export function DataView<T extends object>({
   };
 
   // ============================================================================
+  // RENDER BULK ACTIONS BAR
+  // ============================================================================
+  const renderBulkActionsBar = () => {
+    if (!selectable || currentSelectedItems.length === 0) return null;
+
+    return (
+      <div className="flex items-center justify-between gap-4 px-4 py-2 bg-primary/5 border border-primary/20 rounded-lg mb-4">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium">
+            {currentSelectedItems.length} selected
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearSelection}
+            className="h-7 px-2 text-xs"
+          >
+            <X className="h-3 w-3 mr-1" />
+            Clear
+          </Button>
+        </div>
+        {bulkActions && bulkActions.length > 0 && (
+          <div className="flex items-center gap-2">
+            {bulkActions.map((action) => (
+              <Button
+                key={action.key}
+                variant={action.variant === 'destructive' ? 'destructive' : 'secondary'}
+                size="sm"
+                onClick={() => action.onExecute(currentSelectedItems)}
+                disabled={action.isDisabled?.(currentSelectedItems)}
+                className="h-7"
+              >
+                {action.icon}
+                <span className="ml-1">{action.label}</span>
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ============================================================================
   // RENDER TABLE VIEW
   // ============================================================================
-  const renderTableView = () => (
-    <div className="w-full overflow-hidden rounded-lg border bg-card">
-      <div
-        className={cn('w-full overflow-auto', stickyHeader && 'max-h-[600px]')}
-        style={maxHeight ? { maxHeight } : undefined}
-      >
-        <Table aria-busy={isLoading || undefined}>
-          {caption && <TableCaption className="sr-only">{caption}</TableCaption>}
-          <TableHeader className={cn('bg-muted/40', stickyHeader && 'sticky top-0 z-10')}>
-            <TableRow className="hover:bg-transparent">
-              {columns.map((column) => {
-                const isActive = sortState.key === column.key;
-                const ariaSort = column.sortable
-                  ? isActive
-                    ? sortState.direction === 'asc'
-                      ? 'ascending'
-                      : 'descending'
-                    : 'none'
-                  : undefined;
+  const renderTableView = () => {
+    const totalColumns = selectable ? columns.length + 1 : columns.length;
 
-                return (
-                  <TableHead
-                    key={column.key as string}
-                    scope="col"
-                    aria-sort={ariaSort as React.AriaAttributes['aria-sort']}
-                    className={cn(
-                      'whitespace-nowrap font-medium text-muted-foreground',
-                      ALIGN_CLASSES[column.align ?? 'left'],
-                      column.sortable && 'cursor-pointer select-none',
-                      column.hideOnMobile && 'hidden md:table-cell'
-                    )}
-                    style={{
-                      width: column.width,
-                      minWidth: column.minWidth,
-                    }}
-                  >
-                    {column.sortable ? (
-                      <button
-                        type="button"
+    return (
+      <div className="space-y-0">
+        {renderBulkActionsBar()}
+        <div className="w-full overflow-hidden rounded-lg border bg-card">
+          <div
+            className={cn('w-full overflow-auto', stickyHeader && 'max-h-[600px]')}
+            style={maxHeight ? { maxHeight } : undefined}
+          >
+            <Table aria-busy={isLoading || undefined}>
+              {caption && <TableCaption className="sr-only">{caption}</TableCaption>}
+              <TableHeader className={cn('bg-muted/40', stickyHeader && 'sticky top-0 z-10')}>
+                <TableRow className="hover:bg-transparent">
+                  {/* Selection checkbox header */}
+                  {selectable && (
+                    <TableHead className="w-[40px] px-2">
+                      <Checkbox
+                        checked={areAllSelected}
+                        ref={(el) => {
+                          if (el) {
+                            (el as HTMLButtonElement & { indeterminate?: boolean }).indeterminate = areSomeSelected;
+                          }
+                        }}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            selectAllItems();
+                          } else {
+                            clearSelection();
+                          }
+                        }}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                  )}
+                  {columns.map((column) => {
+                    const isActive = sortState.key === column.key;
+                    const ariaSort = column.sortable
+                      ? isActive
+                        ? sortState.direction === 'asc'
+                          ? 'ascending'
+                          : 'descending'
+                        : 'none'
+                      : undefined;
+
+                    return (
+                      <TableHead
+                        key={column.key as string}
+                        scope="col"
+                        aria-sort={ariaSort as React.AriaAttributes['aria-sort']}
                         className={cn(
-                          'inline-flex items-center gap-0.5 rounded-sm px-1 -mx-1 py-0.5',
-                          'transition-colors hover:text-foreground focus-visible:outline-none',
-                          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                          isActive && 'text-foreground'
+                          'whitespace-nowrap font-medium text-muted-foreground',
+                          ALIGN_CLASSES[column.align ?? 'left'],
+                          column.sortable && 'cursor-pointer select-none',
+                          column.hideOnMobile && 'hidden md:table-cell'
                         )}
-                        onClick={() => handleSort(column)}
-                        aria-label={`Sort by ${column.header}, ${isActive ? (sortState.direction === 'asc' ? 'ascending' : 'descending') : 'not sorted'}`}
+                        style={{
+                          width: column.width,
+                          minWidth: column.minWidth,
+                        }}
                       >
-                        {column.header}
-                        {renderSortIcon(column)}
-                      </button>
-                    ) : (
-                      column.header
-                    )}
-                  </TableHead>
-                );
-              })}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              Array.from({ length: skeletonRows }).map((_, index) => (
-                <TableRow key={`skeleton-${index}`} className="hover:bg-transparent">
-                  {columns.map((column, colIndex) => (
-                    <TableCell
-                      key={column.key as string}
-                      className={cn(column.hideOnMobile && 'hidden md:table-cell')}
-                    >
-                      <Skeleton
-                        className={cn(
-                          'h-5',
-                          colIndex === 0 ? 'w-3/4' : colIndex === columns.length - 1 ? 'w-16' : 'w-full'
+                        {column.sortable ? (
+                          <button
+                            type="button"
+                            className={cn(
+                              'inline-flex items-center gap-0.5 rounded-sm px-1 -mx-1 py-0.5',
+                              'transition-colors hover:text-foreground focus-visible:outline-none',
+                              'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                              isActive && 'text-foreground'
+                            )}
+                            onClick={() => handleSort(column)}
+                            aria-label={`Sort by ${column.header}, ${isActive ? (sortState.direction === 'asc' ? 'ascending' : 'descending') : 'not sorted'}`}
+                          >
+                            {column.header}
+                            {renderSortIcon(column)}
+                          </button>
+                        ) : (
+                          column.header
                         )}
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: skeletonRows }).map((_, index) => (
+                    <TableRow key={`skeleton-${index}`} className="hover:bg-transparent">
+                      {selectable && (
+                        <TableCell className="w-[40px] px-2">
+                          <Skeleton className="h-4 w-4" />
+                        </TableCell>
+                      )}
+                      {columns.map((column, colIndex) => (
+                        <TableCell
+                          key={column.key as string}
+                          className={cn(column.hideOnMobile && 'hidden md:table-cell')}
+                        >
+                          <Skeleton
+                            className={cn(
+                              'h-5',
+                              colIndex === 0 ? 'w-3/4' : colIndex === columns.length - 1 ? 'w-16' : 'w-full'
+                            )}
+                          />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : displayData.length === 0 ? (
+                  <TableRow className="hover:bg-transparent">
+                    <TableCell colSpan={totalColumns} className="h-32">
+                      <EmptyState
+                        icon={emptyIcon ?? <FileText className="h-10 w-10" />}
+                        title={emptyMessage}
+                        description={emptyDescription}
+                        action={emptyAction}
+                        size="sm"
                       />
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : displayData.length === 0 ? (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={columns.length} className="h-32">
-                  <EmptyState
-                    icon={emptyIcon ?? <FileText className="h-10 w-10" />}
-                    title={emptyMessage}
-                    description={emptyDescription}
-                    action={emptyAction}
-                    size="sm"
-                  />
-                </TableCell>
-              </TableRow>
-            ) : (
-              displayData.map((row, index) => (
-                <TableRow key={getItemKey(row, index)} className="group">
-                  {columns.map((column) => (
-                    <TableCell
-                      key={column.key as string}
-                      className={cn(
-                        ALIGN_CLASSES[column.align ?? 'left'],
-                        column.hideOnMobile && 'hidden md:table-cell'
-                      )}
-                    >
-                      {column.render
-                        ? column.render(row[column.key], row)
-                        : String(row[column.key] ?? '')}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                  </TableRow>
+                ) : (
+                  displayData.map((row, index) => {
+                    const isSelected = selectable && isItemSelected(row);
+                    const canSelect = !isItemSelectable || isItemSelectable(row);
+                    const customRowClass = rowClassName?.(row) ?? '';
+
+                    return (
+                      <TableRow
+                        key={getItemKey(row, index)}
+                        className={cn(
+                          'group transition-colors',
+                          isSelected && 'bg-primary/5',
+                          onRowClick && 'cursor-pointer hover:bg-muted/50',
+                          customRowClass
+                        )}
+                        onClick={(e) => {
+                          // Don't trigger row click if clicking on checkbox or actions
+                          if ((e.target as HTMLElement).closest('[data-no-row-click]')) return;
+                          onRowClick?.(row);
+                        }}
+                        data-selected={isSelected || undefined}
+                      >
+                        {/* Selection checkbox cell */}
+                        {selectable && (
+                          <TableCell className="w-[40px] px-2" data-no-row-click>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleItemSelection(row)}
+                              disabled={!canSelect}
+                              aria-label={`Select row ${index + 1}`}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </TableCell>
+                        )}
+                        {columns.map((column) => (
+                          <TableCell
+                            key={column.key as string}
+                            className={cn(
+                              ALIGN_CLASSES[column.align ?? 'left'],
+                              column.hideOnMobile && 'hidden md:table-cell'
+                            )}
+                          >
+                            {column.render
+                              ? column.render(row[column.key], row)
+                              : String(row[column.key] ?? '')}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ============================================================================
   // RENDER GRID VIEW

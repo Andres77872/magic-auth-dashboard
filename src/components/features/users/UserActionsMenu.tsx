@@ -36,9 +36,10 @@ interface UserActionsMenuProps {
   user: User;
   onUserUpdated?: () => void;
   onEditUser?: (user: User) => void;
+  onViewDetails?: (user: User) => void;
 }
 
-export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActionsMenuProps): React.JSX.Element {
+export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails }: UserActionsMenuProps): React.JSX.Element {
   const [showChangeTypeModal, setShowChangeTypeModal] = useState(false);
   const [showProjectsManager, setShowProjectsManager] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -168,6 +169,10 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser }: UserActions
   };
 
   const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails(user);
+      return;
+    }
     setShowDetailsModal(true);
   };
 

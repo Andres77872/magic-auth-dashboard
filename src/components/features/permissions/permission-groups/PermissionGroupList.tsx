@@ -1,9 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
-import { Layers, Plus, Search, LayoutGrid, List } from 'lucide-react';
+import { Layers, Plus } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -11,10 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DataView } from '@/components/common/DataView';
+import type { DataViewColumn } from '@/components/common/DataView';
 import { PermissionGroupCard } from './PermissionGroupCard';
+import { PermissionGroupActionsMenu } from './PermissionGroupActionsMenu';
+import { CategoryBadge } from '../shared/CategoryBadge';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
-
-type ViewMode = 'grid' | 'list';
 
 interface PermissionGroupListProps {
   groups: GlobalPermissionGroup[];
@@ -24,6 +23,7 @@ interface PermissionGroupListProps {
   onDelete?: (group: GlobalPermissionGroup) => void;
   onManagePermissions?: (group: GlobalPermissionGroup) => void;
   onCreate?: () => void;
+  onViewDetails?: (group: GlobalPermissionGroup) => void;
 }
 
 export function PermissionGroupList({
@@ -33,11 +33,12 @@ export function PermissionGroupList({
   onEdit,
   onDelete,
   onManagePermissions,
-  onCreate
+  onCreate,
+  onViewDetails
 }: PermissionGroupListProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   const filteredGroups = useMemo(() => {
     return groups.filter((g) => {
@@ -57,30 +58,100 @@ export function PermissionGroupList({
     return Array.from(cats).sort();
   }, [groups, categories]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  // Table columns for table view
+  const columns: DataViewColumn<GlobalPermissionGroup>[] = [
+    {
+      key: 'group_display_name',
+      header: 'Name',
+      sortable: true,
+      render: (_, group) => (
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
+            <Layers className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails?.(group);
+              }}
+              className="font-medium text-primary hover:underline text-left cursor-pointer"
+            >
+              {group.group_display_name}
+            </button>
+            <span className="text-xs font-mono text-muted-foreground">{group.group_name}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'group_description',
+      header: 'Description',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-muted-foreground line-clamp-1 max-w-[300px]">
+          {value || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'group_category',
+      header: 'Category',
+      width: '120px',
+      render: (_, group) => <CategoryBadge category={group.group_category} />,
+    },
+    {
+      key: 'group_hash',
+      header: '',
+      width: '60px',
+      align: 'center',
+      render: (_, group) => (
+        <div data-no-row-click onClick={(e) => e.stopPropagation()}>
+          <PermissionGroupActionsMenu
+            group={group}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onManagePermissions={onManagePermissions}
+          />
+        </div>
+      ),
+    },
+  ];
+
+  // Card renderer for grid view
+  const renderPermissionGroupCard = (group: GlobalPermissionGroup) => (
+    <PermissionGroupCard
+      group={group}
+      onClick={onViewDetails}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onManagePermissions={onManagePermissions}
+    />
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-3">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search groups..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          {allCategories.length > 0 && (
+      <DataView<GlobalPermissionGroup>
+        data={filteredGroups}
+        columns={columns}
+        keyExtractor={(group) => group.group_hash}
+        
+        // View mode with toggle
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        showViewToggle={true}
+        
+        // Search
+        showSearch={true}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search groups..."
+        
+        // Filters in toolbar
+        toolbarFilters={
+          allCategories.length > 0 && (
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -92,76 +163,38 @@ export function PermissionGroupList({
                 ))}
               </SelectContent>
             </Select>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md border p-1">
-            <Button
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode('grid')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-          {onCreate && (
+          )
+        }
+        
+        // Actions in toolbar
+        toolbarActions={
+          onCreate && (
             <Button onClick={onCreate}>
               <Plus className="mr-2 h-4 w-4" />
               New Group
             </Button>
-          )}
-        </div>
-      </div>
-
-      {filteredGroups.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Layers className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">
-              {searchTerm || categoryFilter !== 'all' ? 'No groups match your filters' : 'No permission groups found'}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {searchTerm || categoryFilter !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Create groups to organize permissions'}
-            </p>
-            {onCreate && !searchTerm && categoryFilter === 'all' && (
-              <Button className="mt-4" onClick={onCreate}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Group
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div
-          className={
-            viewMode === 'grid'
-              ? 'grid gap-3 md:grid-cols-2 lg:grid-cols-3'
-              : 'flex flex-col gap-2'
-          }
-        >
-          {filteredGroups.map((group) => (
-            <PermissionGroupCard
-              key={group.group_hash}
-              group={group}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onManagePermissions={onManagePermissions}
-            />
-          ))}
-        </div>
-      )}
-
+          )
+        }
+        
+        // Grid view
+        renderCard={renderPermissionGroupCard}
+        gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+        
+        // States
+        isLoading={loading}
+        emptyMessage={searchTerm || categoryFilter !== 'all' ? 'No groups match your filters' : 'No permission groups found'}
+        emptyDescription={searchTerm || categoryFilter !== 'all' ? 'Try adjusting your search or filters' : 'Create groups to organize permissions'}
+        emptyIcon={<Layers className="h-12 w-12" />}
+        emptyAction={
+          onCreate && !searchTerm && categoryFilter === 'all' && (
+            <Button onClick={onCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Group
+            </Button>
+          )
+        }
+      />
+      
       {filteredGroups.length > 0 && (
         <p className="text-sm text-muted-foreground">
           Showing {filteredGroups.length} of {groups.length} group

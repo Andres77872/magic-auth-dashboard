@@ -3,7 +3,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +10,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ConfirmDialog, EmptyState } from '@/components/common';
-import { Lock, Plus, Trash2, Info } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ConfirmDialog, EmptyState, DataView } from '@/components/common';
+import type { DataViewColumn } from '@/components/common';
+import { Lock, Plus, Trash2, Info, MoreHorizontal } from 'lucide-react';
 import { permissionAssignmentsService, globalRolesService } from '@/services';
 import type { PermissionGroupAssignment } from '@/types/permission-assignments.types';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
@@ -32,6 +38,8 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
   const [isAssigning, setIsAssigning] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<PermissionGroupAssignment | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
+  const [searchTerm, setSearchTerm] = useState('');
   const { addToast } = useToast();
 
   // Fetch assigned permission groups
@@ -158,14 +166,133 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
     return acc;
   }, {} as Record<string, GlobalPermissionGroup[]>);
 
-  if (loading) {
+  // Filter assigned groups based on search term
+  const filteredAssignedGroups = assignedGroups.filter(assignment => {
+    if (!searchTerm.trim()) return true;
+    const search = searchTerm.toLowerCase();
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Spinner size="lg" />
-        <p className="text-sm text-muted-foreground mt-2">Loading permission groups...</p>
-      </div>
+      (assignment.group_display_name || '').toLowerCase().includes(search) ||
+      (assignment.group_name || '').toLowerCase().includes(search)
     );
-  }
+  });
+
+  // DataView columns for table view
+  const columns: DataViewColumn<PermissionGroupAssignment>[] = [
+    {
+      key: 'group_display_name',
+      header: 'Permission Group',
+      sortable: true,
+      render: (_, assignment) => (
+        <div className="flex items-center gap-2">
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">
+            {assignment.group_display_name || assignment.group_name}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'group_hash',
+      header: 'Hash',
+      width: '150px',
+      hideOnMobile: true,
+      render: (value) => (
+        <Badge variant="secondary" className="text-xs font-mono">
+          {String(value).slice(0, 12)}...
+        </Badge>
+      ),
+    },
+    {
+      key: 'assigned_at',
+      header: 'Assigned',
+      width: '140px',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-sm text-muted-foreground">
+          {value ? new Date(value as string).toLocaleDateString() : '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'assigned_by',
+      header: 'Assigned By',
+      width: '120px',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-sm text-muted-foreground">{value || '—'}</span>
+      ),
+    },
+    {
+      key: 'group_name',
+      header: '',
+      width: '60px',
+      align: 'center',
+      render: (_, assignment) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                setConfirmRemove(assignment);
+              }}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  // Card renderer for grid view
+  const renderAssignmentCard = (assignment: PermissionGroupAssignment) => (
+    <Card>
+      <CardContent className="pt-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <Lock className="h-5 w-5 text-primary mt-0.5" aria-hidden="true" />
+            <div className="space-y-1">
+              <h4 className="font-medium">{assignment.group_display_name || assignment.group_name}</h4>
+              <Badge variant="secondary" className="text-xs">
+                {assignment.group_hash.slice(0, 12)}...
+              </Badge>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setConfirmRemove(assignment);
+            }}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            aria-label="Remove permission group"
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        </div>
+        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+          <p>Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}</p>
+          {assignment.assigned_by && (
+            <p>By: {assignment.assigned_by}</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -177,54 +304,39 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
               Manage permission groups assigned to <strong>{groupName}</strong>
             </p>
           </div>
-          <Button onClick={() => setShowAddModal(true)}>
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Assign Permission Groups
-          </Button>
         </CardHeader>
         <CardContent>
-          {assignedGroups.length === 0 ? (
-            <EmptyState
-              icon={<Lock className="h-10 w-10" aria-hidden="true" />}
-              title="No Permission Groups Assigned"
-              description="This user group doesn't have any permission groups assigned. Click 'Assign Permission Groups' to add some."
-            />
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {assignedGroups.map(assignment => (
-                <Card key={assignment.group_hash}>
-                  <CardContent className="pt-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <Lock className="h-5 w-5 text-primary mt-0.5" aria-hidden="true" />
-                        <div className="space-y-1">
-                          <h4 className="font-medium">{assignment.group_display_name || assignment.group_name}</h4>
-                          <Badge variant="secondary" className="text-xs">
-                            {assignment.group_hash.slice(0, 12)}...
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setConfirmRemove(assignment)}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        aria-label="Remove permission group"
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </Button>
-                    </div>
-                    <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                      <p>Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}</p>
-                      {assignment.assigned_by && (
-                        <p>By: {assignment.assigned_by}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <DataView<PermissionGroupAssignment>
+            data={filteredAssignedGroups}
+            columns={columns}
+            keyExtractor={(item) => item.group_hash}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            showViewToggle={true}
+            defaultViewMode="grid"
+            renderCard={renderAssignmentCard}
+            gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+            showSearch={true}
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Search permission groups..."
+            toolbarActions={
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                Assign Permission Groups
+              </Button>
+            }
+            isLoading={loading}
+            emptyMessage="No Permission Groups Assigned"
+            emptyDescription="This user group doesn't have any permission groups assigned. Click 'Assign Permission Groups' to add some."
+            emptyIcon={<Lock className="h-10 w-10" />}
+            emptyAction={
+              <Button onClick={() => setShowAddModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Assign Permission Groups
+              </Button>
+            }
+          />
         </CardContent>
       </Card>
 

@@ -1,9 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Spinner } from '@/components/ui/spinner';
-import { Shield, Plus, Search, LayoutGrid, List } from 'lucide-react';
+import { Shield, Plus } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -11,10 +8,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DataView } from '@/components/common/DataView';
+import type { DataViewColumn } from '@/components/common/DataView';
 import { PermissionCard } from './PermissionCard';
+import { PermissionActionsMenu } from './PermissionActionsMenu';
+import { CategoryBadge } from '../shared/CategoryBadge';
 import type { GlobalPermission } from '@/types/global-roles.types';
-
-type ViewMode = 'grid' | 'list';
 
 interface PermissionListProps {
   permissions: GlobalPermission[];
@@ -23,6 +22,7 @@ interface PermissionListProps {
   onEdit?: (permission: GlobalPermission) => void;
   onDelete?: (permission: GlobalPermission) => void;
   onCreate?: () => void;
+  onViewDetails?: (permission: GlobalPermission) => void;
 }
 
 export function PermissionList({
@@ -31,11 +31,12 @@ export function PermissionList({
   categories = [],
   onEdit,
   onDelete,
-  onCreate
+  onCreate,
+  onViewDetails
 }: PermissionListProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   const filteredPermissions = useMemo(() => {
     return permissions.filter((p) => {
@@ -55,30 +56,98 @@ export function PermissionList({
     return Array.from(cats).sort();
   }, [permissions, categories]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
+  // Table columns for table view
+  const columns: DataViewColumn<GlobalPermission>[] = [
+    {
+      key: 'permission_display_name',
+      header: 'Name',
+      sortable: true,
+      render: (_, permission) => (
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
+            <Shield className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails?.(permission);
+              }}
+              className="font-medium text-primary hover:underline text-left cursor-pointer"
+            >
+              {permission.permission_display_name}
+            </button>
+            <span className="text-xs font-mono text-muted-foreground">{permission.permission_name}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'permission_description',
+      header: 'Description',
+      hideOnMobile: true,
+      render: (value) => (
+        <span className="text-muted-foreground line-clamp-1 max-w-[300px]">
+          {value || '—'}
+        </span>
+      ),
+    },
+    {
+      key: 'permission_category',
+      header: 'Category',
+      width: '120px',
+      render: (_, permission) => <CategoryBadge category={permission.permission_category} />,
+    },
+    {
+      key: 'permission_hash',
+      header: '',
+      width: '60px',
+      align: 'center',
+      render: (_, permission) => (
+        <div data-no-row-click onClick={(e) => e.stopPropagation()}>
+          <PermissionActionsMenu
+            permission={permission}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        </div>
+      ),
+    },
+  ];
+
+  // Card renderer for grid view
+  const renderPermissionCard = (permission: GlobalPermission) => (
+    <PermissionCard
+      permission={permission}
+      onClick={onViewDetails}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    />
+  );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-3">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search permissions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          {allCategories.length > 0 && (
+      <DataView<GlobalPermission>
+        data={filteredPermissions}
+        columns={columns}
+        keyExtractor={(permission) => permission.permission_hash}
+        
+        // View mode with toggle
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        showViewToggle={true}
+        
+        // Search
+        showSearch={true}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search permissions..."
+        
+        // Filters in toolbar
+        toolbarFilters={
+          allCategories.length > 0 && (
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -90,75 +159,38 @@ export function PermissionList({
                 ))}
               </SelectContent>
             </Select>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 rounded-md border p-1">
-            <Button
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode('grid')}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="h-7 w-7 p-0"
-              onClick={() => setViewMode('list')}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-          {onCreate && (
+          )
+        }
+        
+        // Actions in toolbar
+        toolbarActions={
+          onCreate && (
             <Button onClick={onCreate}>
               <Plus className="mr-2 h-4 w-4" />
               New Permission
             </Button>
-          )}
-        </div>
-      </div>
-
-      {filteredPermissions.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Shield className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold">
-              {searchTerm || categoryFilter !== 'all' ? 'No permissions match your filters' : 'No permissions found'}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {searchTerm || categoryFilter !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Create your first permission to get started'}
-            </p>
-            {onCreate && !searchTerm && categoryFilter === 'all' && (
-              <Button className="mt-4" onClick={onCreate}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Permission
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div
-          className={
-            viewMode === 'grid'
-              ? 'grid gap-3 md:grid-cols-2 lg:grid-cols-3'
-              : 'flex flex-col gap-2'
-          }
-        >
-          {filteredPermissions.map((permission) => (
-            <PermissionCard
-              key={permission.permission_hash}
-              permission={permission}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))}
-        </div>
-      )}
-
+          )
+        }
+        
+        // Grid view
+        renderCard={renderPermissionCard}
+        gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
+        
+        // States
+        isLoading={loading}
+        emptyMessage={searchTerm || categoryFilter !== 'all' ? 'No permissions match your filters' : 'No permissions found'}
+        emptyDescription={searchTerm || categoryFilter !== 'all' ? 'Try adjusting your search or filters' : 'Create your first permission to get started'}
+        emptyIcon={<Shield className="h-12 w-12" />}
+        emptyAction={
+          onCreate && !searchTerm && categoryFilter === 'all' && (
+            <Button onClick={onCreate}>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Permission
+            </Button>
+          )
+        }
+      />
+      
       {filteredPermissions.length > 0 && (
         <p className="text-sm text-muted-foreground">
           Showing {filteredPermissions.length} of {permissions.length} permission

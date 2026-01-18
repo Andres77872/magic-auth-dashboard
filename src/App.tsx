@@ -16,7 +16,6 @@ import { UserProfilePage } from '@/pages/users/UserProfilePage';
 import { 
   GroupListPage, 
   GroupDetailsPage,
-  ProjectGroupsPage,
   ProjectGroupCreatePage,
   ProjectGroupEditPage,
   ProjectGroupDetailsPage
@@ -215,15 +214,10 @@ function App(): React.JSX.Element {
               />
 
               {/* Project Group Management */}
+              {/* Redirect to unified Groups page with project-groups tab */}
               <Route
                 path={ROUTES.PROJECT_GROUPS}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProjectGroupsPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
+                element={<Navigate to={`${ROUTES.GROUPS}?tab=project-groups`} replace />}
               />
               
               <Route

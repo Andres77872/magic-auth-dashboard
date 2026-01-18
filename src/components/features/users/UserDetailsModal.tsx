@@ -9,7 +9,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from './UserAvatar';
-import { Pencil, Users, FolderKanban, Clock } from 'lucide-react';
+import { Pencil, Users, FolderKanban, Clock, Shield, AlertTriangle } from 'lucide-react';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
 import type { User } from '@/types/auth.types';
 
@@ -112,14 +112,31 @@ export function UserDetailsModal({
           {/* User Type Info */}
           {user.user_type_info && (
             <div className="space-y-3">
-              <h4 className="text-sm font-medium text-foreground">User Type Information</h4>
-              <div className="rounded-md bg-muted p-3">
-                {user.user_type_info.error ? (
+              <h4 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Shield size={16} aria-hidden="true" />
+                User Type Information
+              </h4>
+              {user.user_type_info.error ? (
+                <div className="flex items-start gap-2 rounded-md bg-destructive/10 border border-destructive/20 p-3">
+                  <AlertTriangle size={16} className="text-destructive mt-0.5 shrink-0" aria-hidden="true" />
                   <p className="text-sm text-destructive">{user.user_type_info.error}</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No additional information available</p>
-                )}
-              </div>
+                </div>
+              ) : user.user_type_info.capabilities && user.user_type_info.capabilities.length > 0 ? (
+                <div className="space-y-2">
+                  <span className="text-xs text-muted-foreground">Capabilities</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {user.user_type_info.capabilities.map(capability => (
+                      <Badge key={capability} variant="outline" size="sm">
+                        {capability.replace(/_/g, ' ')}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground rounded-md bg-muted p-3">
+                  No additional capabilities defined
+                </p>
+              )}
             </div>
           )}
         </div>

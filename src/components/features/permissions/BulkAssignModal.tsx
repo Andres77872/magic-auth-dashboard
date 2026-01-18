@@ -140,7 +140,7 @@ export function BulkAssignModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent size="lg" className="max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Bulk Assign Permission Groups</DialogTitle>
           <DialogDescription>
@@ -247,6 +247,7 @@ export function BulkAssignModal({
                       <Checkbox
                         checked={selectedGroups.has(group.group_hash)}
                         onCheckedChange={() => handleToggleGroup(group.group_hash)}
+                        onClick={(event) => event.stopPropagation()}
                       />
                       <div className="flex h-8 w-8 items-center justify-center rounded bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
                         <Layers className="h-4 w-4" />

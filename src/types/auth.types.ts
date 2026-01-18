@@ -38,9 +38,15 @@ export interface RegisterResponse {
   project: Project;
 }
 
-// User Type Info for enhanced user details - Updated to handle API errors
+// User Type Info for enhanced user details - Updated to handle full API response
 export interface UserTypeInfo {
+  user_id?: string;
+  user_hash?: string;
+  username?: string;
   user_type: UserType | null;
+  capabilities?: string[];
+  accessible_projects?: string[];
+  user_groups?: string[];
   error?: string; // Handle database errors like missing tables
 }
 

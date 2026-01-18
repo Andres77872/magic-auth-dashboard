@@ -4,7 +4,7 @@ import { Card, Badge, Skeleton, EmptyState, Button } from '@/components/common';
 import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
 import { userService, globalRolesService, permissionAssignmentsService } from '@/services';
 import { ROUTES } from '@/utils/routes';
-import { User, XCircle, RefreshCw, Pencil, ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
+import { User, XCircle, RefreshCw, Pencil, ArrowLeft, ShieldCheck, Lock, AlertTriangle } from 'lucide-react';
 import type { UserType, UserProfileResponse } from '@/types/auth.types';
 import type { GlobalRole } from '@/types/global-roles.types';
 import type { PermissionSource } from '@/types/permission-assignments.types';
@@ -350,12 +350,33 @@ export function UserProfilePage(): React.JSX.Element {
                   <span>{stats.account_age_days} days</span>
                 </div>
 
-                {/* User Type Info Error */}
-                {user.user_type_info?.error && (
-                  <div className="detail-item">
-                    <label>User Type Error</label>
-                    <span className="error-text">{user.user_type_info.error}</span>
-                  </div>
+                {/* User Type Info */}
+                {user.user_type_info && (
+                  user.user_type_info.error ? (
+                    <div className="detail-item">
+                      <label>User Type Status</label>
+                      <div className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle size={14} aria-hidden="true" />
+                        <span className="text-sm">{user.user_type_info.error}</span>
+                      </div>
+                    </div>
+                  ) : user.user_type_info.capabilities && user.user_type_info.capabilities.length > 0 ? (
+                    <div className="detail-item">
+                      <label>Capabilities</label>
+                      <div className="flex flex-wrap gap-1">
+                        {user.user_type_info.capabilities.slice(0, 3).map(cap => (
+                          <Badge key={cap} variant="outline" size="sm">
+                            {cap.replace(/_/g, ' ')}
+                          </Badge>
+                        ))}
+                        {user.user_type_info.capabilities.length > 3 && (
+                          <Badge variant="secondary" size="sm">
+                            +{user.user_type_info.capabilities.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ) : null
                 )}
               </div>
             </div>
