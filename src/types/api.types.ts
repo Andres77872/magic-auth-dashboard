@@ -36,13 +36,14 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
 // HTTP Methods
 export const HttpMethod = {
   GET: 'GET',
+  HEAD: 'HEAD',
   POST: 'POST',
   PUT: 'PUT',
   DELETE: 'DELETE',
   PATCH: 'PATCH',
 } as const;
 
-export type HttpMethod = typeof HttpMethod[keyof typeof HttpMethod];
+export type HttpMethod = (typeof HttpMethod)[keyof typeof HttpMethod];
 
 // Loading States
 export interface LoadingState {
@@ -61,4 +62,4 @@ export interface ErrorResponse {
   error_code?: string;
   required_access_level?: string;
   detail?: ValidationError[];
-} 
+}

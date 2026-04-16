@@ -1,4 +1,4 @@
-import { apiClient } from './api.client';
+import { apiClient, filterUndefinedValues } from './api.client';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
 
 class AdminService {
@@ -8,15 +8,11 @@ class AdminService {
   }
 
   // Recent Activity
-  async getRecentActivity(params: PaginationParams = {}): Promise<ApiResponse<any[]>> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
-    });
-    
+  async getRecentActivity(
+    params: PaginationParams = {}
+  ): Promise<ApiResponse<any[]>> {
+    const cleanParams = filterUndefinedValues(params);
+
     return await apiClient.get<any[]>('/admin/activity', cleanParams);
   }
 
@@ -42,33 +38,39 @@ class AdminService {
 
   // Get Activity Types
   async getActivityTypes(): Promise<ApiResponse<{ activity_types: string[] }>> {
-    return await apiClient.get<{ activity_types: string[] }>('/admin/activity/types');
+    return await apiClient.get<{ activity_types: string[] }>(
+      '/admin/activity/types'
+    );
   }
 
   // Export Data
-  async exportUsers(format: 'csv' | 'json' = 'csv'): Promise<ApiResponse<{ download_url: string }>> {
-    return await apiClient.get<{ download_url: string }>(`/admin/export/users?format=${format}`);
+  async exportUsers(
+    format: 'csv' | 'json' = 'csv'
+  ): Promise<ApiResponse<{ download_url: string }>> {
+    return await apiClient.get<{ download_url: string }>(
+      `/admin/export/users?format=${format}`
+    );
   }
 
-  async exportProjects(format: 'csv' | 'json' = 'csv'): Promise<ApiResponse<{ download_url: string }>> {
-    return await apiClient.get<{ download_url: string }>(`/admin/export/projects?format=${format}`);
+  async exportProjects(
+    format: 'csv' | 'json' = 'csv'
+  ): Promise<ApiResponse<{ download_url: string }>> {
+    return await apiClient.get<{ download_url: string }>(
+      `/admin/export/projects?format=${format}`
+    );
   }
 
   // Import Data
-  async importUsers(file: File): Promise<ApiResponse<{ imported_count: number; errors: any[] }>> {
+  async importUsers(
+    file: File
+  ): Promise<ApiResponse<{ imported_count: number; errors: any[] }>> {
     const formData = new FormData();
     formData.append('file', file);
-    
-    // Note: This would need a special method in ApiClient for FormData
-    const response = await fetch(`${apiClient['baseURL']}/admin/import/users`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('magic_auth_token')}`,
-      },
-      body: formData,
-    });
-    
-    return await response.json();
+
+    return await apiClient.upload<{ imported_count: number; errors: any[] }>(
+      '/admin/import/users',
+      formData
+    );
   }
 
   // Bulk Operations - uses form data per API spec
@@ -98,16 +100,18 @@ class AdminService {
 
   // Bulk Role Assignment - uses form data per API spec
   async bulkAssignRoles(
-    assignmentsOrProjectHash: Array<{ user_hash: string; role_id: number; project_hash: string }> | string,
+    assignmentsOrProjectHash:
+      | Array<{ user_hash: string; role_id: number; project_hash: string }>
+      | string,
     userHashes?: string[],
     roleNames?: string[]
   ): Promise<ApiResponse<{ assigned_count: number; errors: any[] }>> {
     // If first parameter is an array, use the assignments format
     if (Array.isArray(assignmentsOrProjectHash)) {
-      return await apiClient.postForm<{ assigned_count: number; errors: any[] }>(
-        '/admin/bulk-assign-roles',
-        { assignments: assignmentsOrProjectHash }
-      );
+      return await apiClient.postForm<{
+        assigned_count: number;
+        errors: any[];
+      }>('/admin/bulk-assign-roles', { assignments: assignmentsOrProjectHash });
     }
     // Otherwise, use the project-specific format
     return await apiClient.postForm<{ assigned_count: number; errors: any[] }>(
@@ -143,4 +147,4 @@ class AdminService {
 }
 
 export const adminService = new AdminService();
-export default adminService; 
+export default adminService;

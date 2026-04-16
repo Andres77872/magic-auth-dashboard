@@ -1,20 +1,19 @@
 import { apiClient } from './api.client';
 import type { ApiResponse } from '@/types/api.types';
-import { API_CONFIG, STORAGE_KEYS } from '@/utils/constants';
 import type {
   PermissionGroupAssignment,
   DirectPermissionAssignment,
   PermissionSource,
   CatalogEntry,
   UserGroupPermissionGroupsResponse,
-  UserDirectPermissionGroupsResponse
+  UserDirectPermissionGroupsResponse,
 } from '@/types/permission-assignments.types';
 
 class PermissionAssignmentsService {
   // ============================================
   // USER GROUP PERMISSION ASSIGNMENTS (PRIMARY)
   // ============================================
-  
+
   /**
    * Assign permission group to user group
    * POST /permissions/admin/user-groups/{group_hash}/permission-groups
@@ -62,39 +61,34 @@ class PermissionAssignmentsService {
   async bulkAssignPermissionGroupsToUserGroup(
     groupHash: string,
     permissionGroupHashes: string[]
-  ): Promise<ApiResponse<{
-    success_count: number;
-    total_count: number;
-    results: Array<{ permission_group_hash: string; permission_group_name?: string; success: boolean }>;
-  }>> {
-    // Build form data with repeated parameters
-    const formData = new URLSearchParams();
-    permissionGroupHashes.forEach(hash => {
-      formData.append('permission_group_hashes', hash);
+  ): Promise<
+    ApiResponse<{
+      success_count: number;
+      total_count: number;
+      results: Array<{
+        permission_group_hash: string;
+        permission_group_name?: string;
+        success: boolean;
+      }>;
+    }>
+  > {
+    return await apiClient.postForm<{
+      success_count: number;
+      total_count: number;
+      results: Array<{
+        permission_group_hash: string;
+        permission_group_name?: string;
+        success: boolean;
+      }>;
+    }>(`/permissions/admin/user-groups/${groupHash}/permission-groups/bulk`, {
+      permission_group_hashes: permissionGroupHashes,
     });
-    
-    // Use custom fetch since apiClient doesn't support repeated params
-    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-    const response = await fetch(
-      `${API_CONFIG.BASE_URL}/permissions/admin/user-groups/${groupHash}/permission-groups/bulk`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      }
-    );
-    
-    const data = await response.json();
-    return data;
   }
 
   // ============================================
   // DIRECT USER PERMISSIONS (SECONDARY)
   // ============================================
-  
+
   /**
    * Assign permission group directly to user
    * POST /permissions/users/{user_hash}/permission-groups
@@ -104,7 +98,9 @@ class PermissionAssignmentsService {
     permissionGroupHash: string,
     notes?: string
   ): Promise<ApiResponse<DirectPermissionAssignment>> {
-    const data: Record<string, string> = { permission_group_hash: permissionGroupHash };
+    const data: Record<string, string> = {
+      permission_group_hash: permissionGroupHash,
+    };
     if (notes) {
       data.notes = notes;
     }
@@ -142,7 +138,7 @@ class PermissionAssignmentsService {
   // ============================================
   // CURRENT USER PERMISSION QUERIES
   // ============================================
-  
+
   /**
    * Get current user's all permissions
    * GET /permissions/users/me/permissions
@@ -155,10 +151,12 @@ class PermissionAssignmentsService {
    * Check if current user has specific permission
    * GET /permissions/users/me/permissions/check/{permission_name}
    */
-  async checkMyPermission(permissionName: string): Promise<ApiResponse<{
-    has_permission: boolean;
-    permission: string;
-  }>> {
+  async checkMyPermission(permissionName: string): Promise<
+    ApiResponse<{
+      has_permission: boolean;
+      permission: string;
+    }>
+  > {
     return await apiClient.get<{
       has_permission: boolean;
       permission: string;
@@ -169,7 +167,9 @@ class PermissionAssignmentsService {
    * Get current user's permission groups
    * GET /permissions/users/me/permission-groups
    */
-  async getMyPermissionGroups(): Promise<ApiResponse<UserDirectPermissionGroupsResponse>> {
+  async getMyPermissionGroups(): Promise<
+    ApiResponse<UserDirectPermissionGroupsResponse>
+  > {
     return await apiClient.get<UserDirectPermissionGroupsResponse>(
       '/permissions/users/me/permission-groups'
     );
@@ -179,11 +179,13 @@ class PermissionAssignmentsService {
    * Get current user's permission sources
    * GET /permissions/users/me/permission-sources
    */
-  async getMyPermissionSources(): Promise<ApiResponse<{
-    from_role: PermissionSource[];
-    from_user_groups: PermissionSource[];
-    from_direct_assignment: PermissionSource[];
-  }>> {
+  async getMyPermissionSources(): Promise<
+    ApiResponse<{
+      from_role: PermissionSource[];
+      from_user_groups: PermissionSource[];
+      from_direct_assignment: PermissionSource[];
+    }>
+  > {
     return await apiClient.get<{
       from_role: PermissionSource[];
       from_user_groups: PermissionSource[];
@@ -194,7 +196,7 @@ class PermissionAssignmentsService {
   // ============================================
   // PROJECT CATALOG (METADATA ONLY)
   // ============================================
-  
+
   /**
    * Add permission group to project catalog
    * POST /permissions/projects/{project_hash}/permission-group-catalog/{pg_hash}
@@ -250,7 +252,7 @@ class PermissionAssignmentsService {
   // ============================================
   // USAGE ANALYTICS
   // ============================================
-  
+
   /**
    * Get user groups with permission group
    * GET /permissions/permissions/groups/{pg_hash}/user-groups

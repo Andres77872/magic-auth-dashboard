@@ -1,19 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { 
+import {
   PageContainer,
   PageHeader,
-  LoadingSpinner, 
-  Button, 
+  LoadingSpinner,
+  Button,
   Badge,
-  TabNavigation
+  TabNavigation,
 } from '@/components/common';
 import type { Tab } from '@/components/common';
-import { ProjectOverviewTab, ProjectMembersTab, ProjectSettingsTab, ProjectGroupsTab, ProjectPermissionsTab } from '@/components/features/projects';
-import { FolderKanban, LayoutDashboard, User, Users, ShieldCheck, Settings } from 'lucide-react';
-import { projectService } from '@/services';
+import {
+  ProjectOverviewTab,
+  ProjectMembersTab,
+  ProjectSettingsTab,
+  ProjectGroupsTab,
+  ProjectPermissionsTab,
+} from '@/components/features/projects';
+import {
+  FolderKanban,
+  LayoutDashboard,
+  User,
+  Users,
+  ShieldCheck,
+  Settings,
+} from 'lucide-react';
+import { useProjectDetails } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
-import type { ProjectDetails, ProjectStatistics, UserAccess, ProjectGroupInfo } from '@/types/project.types';
+import type { ProjectDetails } from '@/types/project.types';
 
 type TabType = 'overview' | 'members' | 'groups' | 'permissions' | 'settings';
 
@@ -21,19 +34,28 @@ export const ProjectDetailsPage: React.FC = () => {
   const { projectHash } = useParams<{ projectHash: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const [project, setProject] = useState<ProjectDetails | null>(null);
-  const [userAccess, setUserAccess] = useState<UserAccess | null>(null);
-  const [statistics, setStatistics] = useState<ProjectStatistics | null>(null);
-  const [projectGroups, setProjectGroups] = useState<ProjectGroupInfo[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const {
+    project,
+    userAccess,
+    statistics,
+    projectGroups,
+    isLoading,
+    error,
+    refetch,
+    updateProjectState,
+  } = useProjectDetails(projectHash);
 
   // Check for tab query parameter
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get('tab') as TabType;
-    if (tabParam && ['overview', 'members', 'groups', 'permissions', 'settings'].includes(tabParam)) {
+    if (
+      tabParam &&
+      ['overview', 'members', 'groups', 'permissions', 'settings'].includes(
+        tabParam
+      )
+    ) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -41,90 +63,22 @@ export const ProjectDetailsPage: React.FC = () => {
   useEffect(() => {
     if (!projectHash) {
       navigate(ROUTES.PROJECTS);
-      return;
     }
-
-    const fetchProject = async () => {
-      try {
-        setIsLoading(true);
-        const response = await projectService.getProject(projectHash);
-        if (response.success && response.project) {
-          // Helper to safely convert stat values to numbers
-          const getNumericStat = (value: number | string | undefined): number | undefined => {
-            if (typeof value === 'number') return value;
-            if (typeof value === 'string' && !isNaN(Number(value))) return Number(value);
-            return undefined;
-          };
-
-          // Convert API response to ProjectDetails format
-          const projectDetails: ProjectDetails = {
-            ...response.project,
-            member_count: getNumericStat(response.statistics?.total_users),
-            group_count: getNumericStat(response.statistics?.total_groups),
-            access_level: response.user_access.access_level,
-            is_active: true, // Default to active unless specified otherwise
-          };
-          setProject(projectDetails);
-          setUserAccess(response.user_access);
-          setStatistics(response.statistics);
-          
-          // Set project groups from API response
-          if (response.project_groups && Array.isArray(response.project_groups)) {
-            setProjectGroups(response.project_groups);
-          }
-        } else {
-          setError('Failed to load project data');
-        }
-      } catch (err) {
-        console.error('Error fetching project:', err);
-        setError('Failed to load project. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProject();
-  }, [projectHash, navigate]);
+  }, [navigate, projectHash]);
 
   const handleProjectUpdate = (updatedProject: ProjectDetails) => {
-    setProject(updatedProject);
+    updateProjectState(updatedProject);
   };
 
   const handleProjectDeleted = () => {
     navigate(ROUTES.PROJECTS, {
-      state: { message: 'Project deleted successfully' }
+      state: { message: 'Project deleted successfully' },
     });
   };
 
   // Refetch project data when project groups change
   const handleProjectGroupsChange = async () => {
-    if (!projectHash) return;
-    try {
-      const response = await projectService.getProject(projectHash);
-      if (response.success && response.project) {
-        const getNumericStat = (value: number | string | undefined): number | undefined => {
-          if (typeof value === 'number') return value;
-          if (typeof value === 'string' && !isNaN(Number(value))) return Number(value);
-          return undefined;
-        };
-
-        const projectDetails: ProjectDetails = {
-          ...response.project,
-          member_count: getNumericStat(response.statistics?.total_users),
-          group_count: getNumericStat(response.statistics?.total_groups),
-          access_level: response.user_access.access_level,
-          is_active: true,
-        };
-        setProject(projectDetails);
-        setStatistics(response.statistics);
-        
-        if (response.project_groups && Array.isArray(response.project_groups)) {
-          setProjectGroups(response.project_groups);
-        }
-      }
-    } catch (err) {
-      console.error('Error refetching project:', err);
-    }
+    await refetch();
   };
 
   if (isLoading) {
@@ -142,19 +96,15 @@ export const ProjectDetailsPage: React.FC = () => {
     return (
       <PageContainer>
         <div className="project-details-error" role="main">
-          <p className="text-error" role="alert">{error || 'Project not found'}</p>
+          <p className="text-error" role="alert">
+            {error || 'Project not found'}
+          </p>
           <div className="flex gap-3">
-            <Button 
-              variant="outline"
-              onClick={() => navigate(ROUTES.PROJECTS)}
-            >
+            <Button variant="outline" onClick={() => navigate(ROUTES.PROJECTS)}>
               Back to Projects
             </Button>
             {projectHash && (
-              <Button 
-                variant="primary"
-                onClick={() => window.location.reload()}
-              >
+              <Button variant="primary" onClick={() => void refetch()}>
                 Retry
               </Button>
             )}
@@ -165,31 +115,31 @@ export const ProjectDetailsPage: React.FC = () => {
   }
 
   const tabs: Tab[] = [
-    { 
-      id: 'overview', 
-      label: 'Overview', 
+    {
+      id: 'overview',
+      label: 'Overview',
       icon: <LayoutDashboard size={16} />,
     },
-    { 
-      id: 'members', 
-      label: 'Members', 
+    {
+      id: 'members',
+      label: 'Members',
       icon: <User size={16} />,
       count: project.member_count,
     },
-    { 
-      id: 'groups', 
-      label: 'Groups', 
+    {
+      id: 'groups',
+      label: 'Groups',
       icon: <Users size={16} />,
       count: project.group_count,
     },
-    { 
-      id: 'permissions', 
-      label: 'Permissions', 
+    {
+      id: 'permissions',
+      label: 'Permissions',
       icon: <ShieldCheck size={16} />,
     },
-    { 
-      id: 'settings', 
-      label: 'Settings', 
+    {
+      id: 'settings',
+      label: 'Settings',
       icon: <Settings size={16} />,
     },
   ];
@@ -202,13 +152,17 @@ export const ProjectDetailsPage: React.FC = () => {
         icon={<FolderKanban size={28} />}
         badge={
           project.is_active !== false ? (
-            <Badge variant="success" aria-label="Status: Active">Active</Badge>
+            <Badge variant="success" aria-label="Status: Active">
+              Active
+            </Badge>
           ) : (
-            <Badge variant="warning" aria-label="Status: Archived">Archived</Badge>
+            <Badge variant="warning" aria-label="Status: Archived">
+              Archived
+            </Badge>
           )
         }
         actions={
-          <Button 
+          <Button
             variant="outline"
             size="md"
             onClick={() => navigate(ROUTES.PROJECTS)}
@@ -226,19 +180,17 @@ export const ProjectDetailsPage: React.FC = () => {
         contained
       >
         {activeTab === 'overview' && (
-          <ProjectOverviewTab 
-            project={project} 
+          <ProjectOverviewTab
+            project={project}
             userAccess={userAccess}
             statistics={statistics}
             projectGroups={projectGroups}
           />
         )}
-        {activeTab === 'members' && (
-          <ProjectMembersTab project={project} />
-        )}
+        {activeTab === 'members' && <ProjectMembersTab project={project} />}
         {activeTab === 'groups' && (
-          <ProjectGroupsTab 
-            project={project} 
+          <ProjectGroupsTab
+            project={project}
             projectGroups={projectGroups}
             onProjectGroupsChange={handleProjectGroupsChange}
           />
@@ -247,8 +199,8 @@ export const ProjectDetailsPage: React.FC = () => {
           <ProjectPermissionsTab project={project} />
         )}
         {activeTab === 'settings' && (
-          <ProjectSettingsTab 
-            project={project} 
+          <ProjectSettingsTab
+            project={project}
             onProjectUpdate={handleProjectUpdate}
             onProjectDeleted={handleProjectDeleted}
           />
@@ -256,4 +208,4 @@ export const ProjectDetailsPage: React.FC = () => {
       </TabNavigation>
     </PageContainer>
   );
-}; 
+};

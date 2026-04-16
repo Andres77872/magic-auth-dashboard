@@ -10,6 +10,25 @@ interface RequestConfig {
   skipAuth?: boolean;
   retries?: number;
   isFormData?: boolean;
+  isMultipart?: boolean;
+}
+
+export function filterUndefinedValues<T extends Record<string, any>>(
+  params: T
+): Partial<T> {
+  const cleanParams: Partial<T> = {};
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (
+      value !== undefined &&
+      value !== null &&
+      (typeof value !== 'string' || value !== '')
+    ) {
+      cleanParams[key as keyof T] = value as T[keyof T];
+    }
+  });
+
+  return cleanParams;
 }
 
 class ApiClient {
@@ -20,7 +39,7 @@ class ApiClient {
     this.baseURL = baseURL;
     this.defaultHeaders = {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
     };
   }
 
@@ -28,24 +47,33 @@ class ApiClient {
     return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   }
 
-  private buildURL(endpoint: string, params?: Record<string, string | number>): string {
+  private buildURL(
+    endpoint: string,
+    params?: Record<string, string | number>
+  ): string {
     const url = new URL(endpoint, this.baseURL);
-    
+
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         // Only add parameter if value is not null, undefined, or empty string
-        if (value !== null && value !== undefined && (typeof value !== 'string' || value !== '')) {
+        if (
+          value !== null &&
+          value !== undefined &&
+          (typeof value !== 'string' || value !== '')
+        ) {
           url.searchParams.append(key, String(value));
         }
       });
     }
-    
+
     return url.toString();
   }
 
-  private cleanRequestData(data: Record<string, unknown>): Record<string, unknown> {
+  private cleanRequestData(
+    data: Record<string, unknown>
+  ): Record<string, unknown> {
     const cleaned: Record<string, unknown> = {};
-    
+
     Object.entries(data).forEach(([key, value]) => {
       // Only include properties that are not undefined
       if (value !== undefined) {
@@ -53,33 +81,52 @@ class ApiClient {
         cleaned[key] = value === null ? '' : value;
       }
     });
-    
+
     return cleaned;
   }
 
   // Public utility method to filter undefined values from params
-  static filterUndefinedValues(params: Record<string, any>): Record<string, any> {
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
-    });
-    return cleanParams;
+  static filterUndefinedValues(
+    params: Record<string, any>
+  ): Record<string, any> {
+    return filterUndefinedValues(params);
   }
 
   private async sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private buildFormBody(data: Record<string, unknown>): URLSearchParams {
+    const formData = new URLSearchParams();
+
+    Object.entries(data).forEach(([key, value]) => {
+      if (value === undefined || value === null) {
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item !== undefined && item !== null) {
+            formData.append(key, String(item));
+          }
+        });
+        return;
+      }
+
+      formData.append(key, String(value));
+    });
+
+    return formData;
   }
 
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     const contentType = response.headers.get('content-type');
-    
+
     if (!contentType?.includes('application/json')) {
       throw new Error(`Unexpected response type: ${contentType || 'unknown'}`);
     }
 
-    const data = await response.json() as ApiResponse<T>;
+    const data = (await response.json()) as ApiResponse<T>;
 
     if (!response.ok) {
       // Handle specific HTTP status codes
@@ -87,7 +134,7 @@ class ApiClient {
         case HTTP_STATUS.UNAUTHORIZED:
           // Check if this is a login endpoint - if so, just throw error instead of redirecting
           const isLoginEndpoint = response.url.includes('/auth/login');
-          
+
           if (isLoginEndpoint) {
             // For login failures, return the error response to be handled by the login form
             throw new Error(data.message || 'Invalid username or password');
@@ -113,82 +160,79 @@ class ApiClient {
     return data;
   }
 
-  private async requestWithRetry<T>(
+  private async performRequest(
     endpoint: string,
     config: RequestConfig
-  ): Promise<ApiResponse<T>> {
+  ): Promise<Response> {
+    const url = this.buildURL(endpoint, config.params);
+    const token = this.getAuthToken();
+
+    const headers: Record<string, string> = {
+      ...this.defaultHeaders,
+      ...config.headers,
+    };
+
+    if (token && !config.skipAuth) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (config.isMultipart) {
+      delete headers['Content-Type'];
+    }
+
+    const requestInit: RequestInit = {
+      method: config.method,
+      headers,
+      signal: AbortSignal.timeout(API_CONFIG.TIMEOUT),
+    };
+
+    if (
+      config.body &&
+      config.method !== HttpMethod.GET &&
+      config.method !== HttpMethod.HEAD
+    ) {
+      if (config.isMultipart) {
+        requestInit.body = config.body as FormData;
+      } else if (config.isFormData) {
+        requestInit.body = this.buildFormBody(
+          config.body as Record<string, unknown>
+        );
+        headers['Content-Type'] = 'application/x-www-form-urlencoded';
+      } else {
+        const cleanedData = this.cleanRequestData(
+          config.body as Record<string, unknown>
+        );
+        requestInit.body = JSON.stringify(cleanedData);
+      }
+    }
+
+    return fetch(url, requestInit);
+  }
+
+  private async requestRawWithRetry(
+    endpoint: string,
+    config: RequestConfig
+  ): Promise<Response> {
     const maxRetries = config.retries ?? API_CONFIG.RETRY_ATTEMPTS;
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const url = this.buildURL(endpoint, config.params);
-        const token = this.getAuthToken();
-        
-        const headers: Record<string, string> = {
-          ...this.defaultHeaders,
-          ...config.headers,
-        };
-
-        // Add auth header if token exists and auth is not skipped
-        if (token && !config.skipAuth) {
-          headers.Authorization = `Bearer ${token}`;
-        }
-
-        const requestInit: RequestInit = {
-          method: config.method,
-          headers,
-          signal: AbortSignal.timeout(API_CONFIG.TIMEOUT),
-        };
-
-        // Add body for non-GET requests
-        if (config.body && config.method !== HttpMethod.GET) {
-          if (config.isFormData) {
-            // Send as form data (application/x-www-form-urlencoded)
-            const formData = new URLSearchParams();
-            const bodyData = config.body as Record<string, unknown>;
-            Object.entries(bodyData).forEach(([key, value]) => {
-              if (value !== undefined && value !== null) {
-                // Handle arrays by appending multiple values with the same key
-                if (Array.isArray(value)) {
-                  value.forEach(item => {
-                    if (item !== undefined && item !== null) {
-                      formData.append(key, String(item));
-                    }
-                  });
-                } else {
-                  formData.append(key, String(value));
-                }
-              }
-            });
-            requestInit.body = formData;
-            headers['Content-Type'] = 'application/x-www-form-urlencoded';
-          } else {
-            // Send as JSON
-            const cleanedData = this.cleanRequestData(config.body as Record<string, unknown>);
-            requestInit.body = JSON.stringify(cleanedData);
-          }
-        }
-
-        const response = await fetch(url, requestInit);
-        return await this.handleResponse<T>(response);
-
+        return await this.performRequest(endpoint, config);
       } catch (error) {
         lastError = error as Error;
-        
-        // Don't retry on certain errors
+
         if (error instanceof Error) {
-          const isRetryableError = 
+          const isRetryableError =
             error.name === 'NetworkError' ||
             error.name === 'TimeoutError' ||
             error.message.includes('fetch');
-            
+
           if (!isRetryableError || attempt === maxRetries) {
             throw error;
           }
         }
 
-        // Wait before retrying
         if (attempt < maxRetries) {
           await this.sleep(API_CONFIG.RETRY_DELAY * Math.pow(2, attempt));
         }
@@ -198,18 +242,46 @@ class ApiClient {
     if (lastError) {
       throw lastError;
     }
+
     throw new Error('Request failed after all retries');
   }
 
+  private async requestWithRetry<T>(
+    endpoint: string,
+    config: RequestConfig
+  ): Promise<ApiResponse<T>> {
+    const response = await this.requestRawWithRetry(endpoint, config);
+    return this.handleResponse<T>(response);
+  }
+
   // Public HTTP methods
-  async get<T>(endpoint: string, params?: Record<string, string | number>): Promise<ApiResponse<T>> {
+  async get<T>(
+    endpoint: string,
+    params?: Record<string, string | number>
+  ): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.GET,
       params,
     });
   }
 
-  async post<T>(endpoint: string, data?: unknown, skipAuth = false): Promise<ApiResponse<T>> {
+  async head(
+    endpoint: string,
+    params?: Record<string, string | number>,
+    skipAuth = false
+  ): Promise<Response> {
+    return this.requestRawWithRetry(endpoint, {
+      method: HttpMethod.HEAD,
+      params,
+      skipAuth,
+    });
+  }
+
+  async post<T>(
+    endpoint: string,
+    data?: unknown,
+    skipAuth = false
+  ): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.POST,
       body: data,
@@ -217,12 +289,29 @@ class ApiClient {
     });
   }
 
-  async postForm<T>(endpoint: string, data?: unknown, skipAuth = false): Promise<ApiResponse<T>> {
+  async postForm<T>(
+    endpoint: string,
+    data?: unknown,
+    skipAuth = false
+  ): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.POST,
       body: data,
       skipAuth,
       isFormData: true,
+    });
+  }
+
+  async upload<T>(
+    endpoint: string,
+    formData: FormData,
+    skipAuth = false
+  ): Promise<ApiResponse<T>> {
+    return this.requestWithRetry<T>(endpoint, {
+      method: HttpMethod.POST,
+      body: formData,
+      skipAuth,
+      isMultipart: true,
     });
   }
 
@@ -254,7 +343,10 @@ class ApiClient {
     });
   }
 
-  async patchForm<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+  async patchForm<T>(
+    endpoint: string,
+    data?: unknown
+  ): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.PATCH,
       body: data,
@@ -279,4 +371,4 @@ class ApiClient {
 
 // Export singleton instance
 export const apiClient = new ApiClient();
-export default apiClient; 
+export default apiClient;

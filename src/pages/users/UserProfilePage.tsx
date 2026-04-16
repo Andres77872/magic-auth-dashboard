@@ -1,109 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Card, Badge, Skeleton, EmptyState, Button } from '@/components/common';
 import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
-import { userService, globalRolesService, permissionAssignmentsService } from '@/services';
+import { useUserProfileDetails } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
-import { User, XCircle, RefreshCw, Pencil, ArrowLeft, ShieldCheck, Lock, AlertTriangle } from 'lucide-react';
-import type { UserType, UserProfileResponse } from '@/types/auth.types';
-import type { GlobalRole } from '@/types/global-roles.types';
-import type { PermissionSource } from '@/types/permission-assignments.types';
+import {
+  User,
+  XCircle,
+  RefreshCw,
+  Pencil,
+  ArrowLeft,
+  ShieldCheck,
+  Lock,
+  AlertTriangle,
+} from 'lucide-react';
+import type { UserType } from '@/types/auth.types';
 
 export function UserProfilePage(): React.JSX.Element {
-  const [profileData, setProfileData] = useState<UserProfileResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [globalRole, setGlobalRole] = useState<GlobalRole | null>(null);
-  const [permissionSources, setPermissionSources] = useState<{
-    from_role: PermissionSource[];
-    from_user_groups: PermissionSource[];
-    from_direct_assignment: PermissionSource[];
-  } | null>(null);
-  const [loadingGlobalData, setLoadingGlobalData] = useState(false);
   const navigate = useNavigate();
   const { userHash } = useParams<{ userHash: string }>();
-
-  useEffect(() => {
-    if (userHash) {
-      fetchUser(userHash);
-    } else {
-      setError('User ID is required');
-      setIsLoading(false);
-    }
-  }, [userHash]);
-
-  const fetchUser = async (hash: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await userService.getUserByHash(hash);
-
-      if (response.success && response.user) {
-        // The response already matches UserProfileResponse structure
-        // Calculate statistics from user data if not provided
-        const userGroups = response.user.groups || [];
-        const userProjects = response.user.projects || [];
-        const allPermissions = userProjects.flatMap(project => project.effective_permissions || []);
-        const accountAgeMs = new Date().getTime() - new Date(response.user.created_at).getTime();
-        const accountAgeDays = Math.floor(accountAgeMs / (1000 * 60 * 60 * 24));
-
-        // Use statistics from API if available, otherwise calculate
-        const calculatedStatistics = {
-          total_groups: userGroups.length,
-          total_accessible_projects: userProjects.length,
-          total_permissions: allPermissions.length,
-          account_age_days: accountAgeDays,
-        };
-
-        const finalResponse: UserProfileResponse = {
-          ...response,
-          statistics: response.statistics || calculatedStatistics,
-          permissions: response.permissions || allPermissions,
-        };
-
-        setProfileData(finalResponse);
-        
-        // Fetch global role and permission sources
-        fetchGlobalRoleData(hash);
-      } else {
-        setError(response.message || 'Failed to fetch user data');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const fetchGlobalRoleData = async (hash: string) => {
-    setLoadingGlobalData(true);
-    try {
-      // Fetch user's global role
-      const roleResponse = await globalRolesService.getUserRole(hash);
-      if (roleResponse.success && roleResponse.data) {
-        setGlobalRole(roleResponse.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch global role:', err);
-      // Non-critical error, don't show to user
-    }
-
-    try {
-      // Fetch permission sources (only for current user endpoint available)
-      // If viewing own profile, fetch sources
-      const sourcesResponse = await permissionAssignmentsService.getMyPermissionSources();
-      if (sourcesResponse.success && sourcesResponse.data) {
-        setPermissionSources(sourcesResponse.data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch permission sources:', err);
-      // Non-critical error, don't show to user
-    } finally {
-      setLoadingGlobalData(false);
-    }
-  };
+  const {
+    profileData,
+    isLoading,
+    error,
+    globalRole,
+    permissionSources,
+    isGlobalDataLoading,
+    refetch,
+  } = useUserProfileDetails(userHash);
 
   const handleGoBack = () => {
     navigate(ROUTES.USERS);
@@ -144,8 +68,15 @@ export function UserProfilePage(): React.JSX.Element {
         <div className="page-header">
           <div className="page-title-section">
             <button onClick={handleGoBack} className="back-button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15,18 9,12 15,6"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="15,18 9,12 15,6" />
               </svg>
               Back to Users
             </button>
@@ -186,8 +117,15 @@ export function UserProfilePage(): React.JSX.Element {
         <div className="page-header">
           <div className="page-title-section">
             <button onClick={handleGoBack} className="back-button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15,18 9,12 15,6"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="15,18 9,12 15,6" />
               </svg>
               Back to Users
             </button>
@@ -200,8 +138,8 @@ export function UserProfilePage(): React.JSX.Element {
             title="Failed to Load User Profile"
             description={error}
             action={
-              <Button 
-                onClick={() => userHash && fetchUser(userHash)}
+              <Button
+                onClick={() => void refetch()}
                 variant="primary"
                 leftIcon={<RefreshCw size={16} aria-hidden="true" />}
                 aria-label="Retry loading user profile"
@@ -221,8 +159,15 @@ export function UserProfilePage(): React.JSX.Element {
         <div className="page-header">
           <div className="page-title-section">
             <button onClick={handleGoBack} className="back-button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15,18 9,12 15,6"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="15,18 9,12 15,6" />
               </svg>
               Back to Users
             </button>
@@ -235,7 +180,7 @@ export function UserProfilePage(): React.JSX.Element {
             title="User Not Found"
             description="The user you're looking for doesn't exist or has been deleted."
             action={
-              <Button 
+              <Button
                 onClick={handleGoBack}
                 variant="primary"
                 leftIcon={<ArrowLeft size={16} aria-hidden="true" />}
@@ -268,8 +213,15 @@ export function UserProfilePage(): React.JSX.Element {
       <div className="page-header">
         <div className="page-title-section">
           <button onClick={handleGoBack} className="back-button">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15,18 9,12 15,6"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="15,18 9,12 15,6" />
             </svg>
             Back to Users
           </button>
@@ -277,7 +229,7 @@ export function UserProfilePage(): React.JSX.Element {
           <p>Detailed information about {user.username}</p>
         </div>
         <div className="page-actions">
-          <Button 
+          <Button
             onClick={handleEditUser}
             variant="primary"
             leftIcon={<Pencil size={16} aria-hidden="true" />}
@@ -293,8 +245,8 @@ export function UserProfilePage(): React.JSX.Element {
           {/* User Information Card */}
           <Card title="User Information" padding="lg">
             <div className="user-profile-info">
-                          <div className="profile-user-avatar-section">
-              <div className="profile-user-avatar-large">
+              <div className="profile-user-avatar-section">
+                <div className="profile-user-avatar-large">
                   {user.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="avatar-info">
@@ -321,7 +273,11 @@ export function UserProfilePage(): React.JSX.Element {
 
                 <div className="detail-item">
                   <label>Account Status</label>
-                  <Badge variant={user.is_active ? 'success' : 'secondary'} size="sm" dot>
+                  <Badge
+                    variant={user.is_active ? 'success' : 'secondary'}
+                    size="sm"
+                    dot
+                  >
                     {user.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
@@ -351,24 +307,29 @@ export function UserProfilePage(): React.JSX.Element {
                 </div>
 
                 {/* User Type Info */}
-                {user.user_type_info && (
-                  user.user_type_info.error ? (
+                {user.user_type_info &&
+                  (user.user_type_info.error ? (
                     <div className="detail-item">
                       <label>User Type Status</label>
                       <div className="flex items-center gap-2 text-destructive">
                         <AlertTriangle size={14} aria-hidden="true" />
-                        <span className="text-sm">{user.user_type_info.error}</span>
+                        <span className="text-sm">
+                          {user.user_type_info.error}
+                        </span>
                       </div>
                     </div>
-                  ) : user.user_type_info.capabilities && user.user_type_info.capabilities.length > 0 ? (
+                  ) : user.user_type_info.capabilities &&
+                    user.user_type_info.capabilities.length > 0 ? (
                     <div className="detail-item">
                       <label>Capabilities</label>
                       <div className="flex flex-wrap gap-1">
-                        {user.user_type_info.capabilities.slice(0, 3).map(cap => (
-                          <Badge key={cap} variant="outline" size="sm">
-                            {cap.replace(/_/g, ' ')}
-                          </Badge>
-                        ))}
+                        {user.user_type_info.capabilities
+                          .slice(0, 3)
+                          .map((cap) => (
+                            <Badge key={cap} variant="outline" size="sm">
+                              {cap.replace(/_/g, ' ')}
+                            </Badge>
+                          ))}
                         {user.user_type_info.capabilities.length > 3 && (
                           <Badge variant="secondary" size="sm">
                             +{user.user_type_info.capabilities.length - 3} more
@@ -376,8 +337,7 @@ export function UserProfilePage(): React.JSX.Element {
                         )}
                       </div>
                     </div>
-                  ) : null
-                )}
+                  ) : null)}
               </div>
             </div>
           </Card>
@@ -386,7 +346,9 @@ export function UserProfilePage(): React.JSX.Element {
           <Card title="User Statistics" padding="lg">
             <div className="statistics-grid">
               <div className="statistic-item">
-                <div className="statistic-value">{stats.total_accessible_projects}</div>
+                <div className="statistic-value">
+                  {stats.total_accessible_projects}
+                </div>
                 <div className="statistic-label">Projects</div>
               </div>
               <div className="statistic-item">
@@ -445,18 +407,22 @@ export function UserProfilePage(): React.JSX.Element {
                           <span className="source-icon">🛡️</span>
                           <span className="source-label">From Role</span>
                         </div>
-                        <div className="source-count">{permissionSources.from_role.length}</div>
+                        <div className="source-count">
+                          {permissionSources.from_role.length}
+                        </div>
                         <div className="source-details">
-                          {permissionSources.from_role.slice(0, 3).map((source, idx) => (
-                            <div key={idx} className="source-item">
-                              <Badge variant="secondary" size="sm">
-                                {source.permission_group_name}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {source.permissions_count} permissions
-                              </span>
-                            </div>
-                          ))}
+                          {permissionSources.from_role
+                            .slice(0, 3)
+                            .map((source, idx) => (
+                              <div key={idx} className="source-item">
+                                <Badge variant="secondary" size="sm">
+                                  {source.permission_group_name}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {source.permissions_count} permissions
+                                </span>
+                              </div>
+                            ))}
                           {permissionSources.from_role.length > 3 && (
                             <span className="text-xs text-muted-foreground">
                               +{permissionSources.from_role.length - 3} more
@@ -470,21 +436,26 @@ export function UserProfilePage(): React.JSX.Element {
                           <span className="source-icon">👥</span>
                           <span className="source-label">From Groups</span>
                         </div>
-                        <div className="source-count">{permissionSources.from_user_groups.length}</div>
+                        <div className="source-count">
+                          {permissionSources.from_user_groups.length}
+                        </div>
                         <div className="source-details">
-                          {permissionSources.from_user_groups.slice(0, 3).map((source, idx) => (
-                            <div key={idx} className="source-item">
-                              <Badge variant="info" size="sm">
-                                {source.user_group_name}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {source.permissions_count} permissions
-                              </span>
-                            </div>
-                          ))}
+                          {permissionSources.from_user_groups
+                            .slice(0, 3)
+                            .map((source, idx) => (
+                              <div key={idx} className="source-item">
+                                <Badge variant="info" size="sm">
+                                  {source.user_group_name}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {source.permissions_count} permissions
+                                </span>
+                              </div>
+                            ))}
                           {permissionSources.from_user_groups.length > 3 && (
                             <span className="text-xs text-muted-foreground">
-                              +{permissionSources.from_user_groups.length - 3} more
+                              +{permissionSources.from_user_groups.length - 3}{' '}
+                              more
                             </span>
                           )}
                         </div>
@@ -493,23 +464,33 @@ export function UserProfilePage(): React.JSX.Element {
                       <div className="source-card">
                         <div className="source-header">
                           <span className="source-icon">⚡</span>
-                          <span className="source-label">Direct Assignment</span>
+                          <span className="source-label">
+                            Direct Assignment
+                          </span>
                         </div>
-                        <div className="source-count">{permissionSources.from_direct_assignment.length}</div>
+                        <div className="source-count">
+                          {permissionSources.from_direct_assignment.length}
+                        </div>
                         <div className="source-details">
-                          {permissionSources.from_direct_assignment.slice(0, 3).map((source, idx) => (
-                            <div key={idx} className="source-item">
-                              <Badge variant="success" size="sm">
-                                {source.permission_group_name}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {source.permissions_count} permissions
-                              </span>
-                            </div>
-                          ))}
-                          {permissionSources.from_direct_assignment.length > 3 && (
+                          {permissionSources.from_direct_assignment
+                            .slice(0, 3)
+                            .map((source, idx) => (
+                              <div key={idx} className="source-item">
+                                <Badge variant="success" size="sm">
+                                  {source.permission_group_name}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {source.permissions_count} permissions
+                                </span>
+                              </div>
+                            ))}
+                          {permissionSources.from_direct_assignment.length >
+                            3 && (
                             <span className="text-xs text-muted-foreground">
-                              +{permissionSources.from_direct_assignment.length - 3} more
+                              +
+                              {permissionSources.from_direct_assignment.length -
+                                3}{' '}
+                              more
                             </span>
                           )}
                         </div>
@@ -518,21 +499,24 @@ export function UserProfilePage(): React.JSX.Element {
                   </div>
                 )}
 
-                {loadingGlobalData && (
+                {isGlobalDataLoading && (
                   <div className="loading-global-data">
                     <Skeleton variant="text" count={3} />
                   </div>
                 )}
               </div>
             </Card>
-          ) : loadingGlobalData ? (
+          ) : isGlobalDataLoading ? (
             <Card title="Global Permissions" padding="lg">
               <Skeleton variant="text" count={5} />
             </Card>
           ) : null}
 
           {/* Projects Section */}
-          <Card title={`Assigned Projects (${userProjects.length})`} padding="lg">
+          <Card
+            title={`Assigned Projects (${userProjects.length})`}
+            padding="lg"
+          >
             {userProjects.length > 0 ? (
               <div className="projects-list">
                 {userProjects.map((project) => (
@@ -544,51 +528,76 @@ export function UserProfilePage(): React.JSX.Element {
                       </Badge>
                     </div>
                     {project.project_description && (
-                      <p className="project-description">{project.project_description}</p>
+                      <p className="project-description">
+                        {project.project_description}
+                      </p>
                     )}
                     <div className="project-meta">
-                      <span className="project-hash">ID: {project.project_hash}</span>
+                      <span className="project-hash">
+                        ID: {project.project_hash}
+                      </span>
                     </div>
-                    
+
                     {/* Access Groups */}
-                    {project.access_groups && project.access_groups.length > 0 && (
-                      <div className="project-access-groups">
-                        <h5>Access Groups:</h5>
-                        <div className="access-groups-list">
-                          {project.access_groups.map((group: any) => (
-                            <div key={group.group_hash} className="access-group">
-                              <span className="group-name">{group.group_name}</span>
-                              {group.permission_group_count !== undefined && (
-                                <span className="group-permissions">
-                                  {group.permission_group_count} permission groups
+                    {project.access_groups &&
+                      project.access_groups.length > 0 && (
+                        <div className="project-access-groups">
+                          <h5>Access Groups:</h5>
+                          <div className="access-groups-list">
+                            {project.access_groups.map((group: any) => (
+                              <div
+                                key={group.group_hash}
+                                className="access-group"
+                              >
+                                <span className="group-name">
+                                  {group.group_name}
                                 </span>
-                              )}
-                            </div>
-                          ))}
+                                {group.permission_group_count !== undefined && (
+                                  <span className="group-permissions">
+                                    {group.permission_group_count} permission
+                                    groups
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* Effective Permissions */}
-                    {project.effective_permissions && project.effective_permissions.length > 0 && (
-                      <div className="project-permissions">
-                        <h5>Effective Permissions:</h5>
-                        <div className="permissions-list">
-                          {project.effective_permissions.map((permission, permIndex) => (
-                            <Badge key={permIndex} variant="secondary" size="sm">
-                              {permission}
-                            </Badge>
-                          ))}
+                    {project.effective_permissions &&
+                      project.effective_permissions.length > 0 && (
+                        <div className="project-permissions">
+                          <h5>Effective Permissions:</h5>
+                          <div className="permissions-list">
+                            {project.effective_permissions.map(
+                              (permission, permIndex) => (
+                                <Badge
+                                  key={permIndex}
+                                  variant="secondary"
+                                  size="sm"
+                                >
+                                  {permission}
+                                </Badge>
+                              )
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 ))}
               </div>
             ) : (
               <div className="projects-placeholder">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2l5 0l2 3h9a2 2 0 0 1 2 2z"/>
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2l5 0l2 3h9a2 2 0 0 1 2 2z" />
                 </svg>
                 <h4>No Projects Assigned</h4>
                 <p>This user doesn't have any projects assigned yet.</p>
@@ -609,7 +618,9 @@ export function UserProfilePage(): React.JSX.Element {
                       </Badge>
                     </div>
                     {group.group_description && (
-                      <p className="group-description">{group.group_description}</p>
+                      <p className="group-description">
+                        {group.group_description}
+                      </p>
                     )}
                     <div className="group-meta">
                       <span className="group-hash">ID: {group.group_hash}</span>
@@ -627,11 +638,18 @@ export function UserProfilePage(): React.JSX.Element {
               </div>
             ) : (
               <div className="groups-placeholder">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
                 <h4>No Group Memberships</h4>
                 <p>This user isn't a member of any groups yet.</p>
@@ -659,11 +677,18 @@ export function UserProfilePage(): React.JSX.Element {
               </div>
             ) : (
               <div className="permissions-placeholder">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                  <line x1="12" y1="19" x2="12" y2="23"/>
-                  <line x1="8" y1="23" x2="16" y2="23"/>
+                <svg
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
                 </svg>
                 <h4>No Permissions Assigned</h4>
                 <p>This user doesn't have any specific permissions assigned.</p>

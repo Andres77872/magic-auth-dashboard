@@ -1,23 +1,23 @@
 import { apiClient } from './api.client';
-import type { 
-  LoginRequest, 
-  LoginResponse, 
+import type {
+  LoginRequest,
+  LoginResponse,
   RegisterRequest,
   RegisterResponse,
   ValidationResponse,
   AvailabilityRequest,
-  AvailabilityResponse 
+  AvailabilityResponse,
 } from '@/types/auth.types';
 
 class AuthService {
   // Login user
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await apiClient.postForm<LoginResponse>(
-      '/auth/login', 
+      '/auth/login',
       credentials,
       true // Skip auth for login
     );
-    
+
     if (response.success && response.data) {
       const loginData = response.data as LoginResponse;
       if ('session_token' in loginData) {
@@ -25,7 +25,7 @@ class AuthService {
         apiClient.setAuthToken(loginData.session_token);
       }
     }
-    
+
     return response as LoginResponse;
   }
 
@@ -46,7 +46,9 @@ class AuthService {
   }
 
   // Check username/email availability - uses form data per API spec
-  async checkAvailability(data: AvailabilityRequest): Promise<AvailabilityResponse> {
+  async checkAvailability(
+    data: AvailabilityRequest
+  ): Promise<AvailabilityResponse> {
     return await apiClient.postForm<AvailabilityResponse>(
       '/auth/check-availability',
       data,
@@ -80,7 +82,7 @@ class AuthService {
       '/auth/switch-project',
       { project_hash: projectHash }
     );
-    
+
     if (response.success && response.data) {
       const loginData = response.data as LoginResponse;
       if ('session_token' in loginData) {
@@ -88,19 +90,14 @@ class AuthService {
         apiClient.setAuthToken(loginData.session_token);
       }
     }
-    
+
     return response as LoginResponse;
   }
 
   // Middleware access check (HEAD request)
   async checkAccess(): Promise<boolean> {
     try {
-      const response = await fetch(`${apiClient['baseURL']}/access`, {
-        method: 'HEAD',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('magic_auth_token')}`
-        }
-      });
+      const response = await apiClient.head('/access');
       return response.status === 204;
     } catch (error) {
       return false;
@@ -109,4 +106,4 @@ class AuthService {
 }
 
 export const authService = new AuthService();
-export default authService; 
+export default authService;
