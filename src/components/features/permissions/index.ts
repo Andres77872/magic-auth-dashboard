@@ -1,5 +1,7 @@
 // Main Dashboard
 export { PermissionsDashboard } from './PermissionsDashboard';
+export { PermissionsDashboardStats } from './PermissionsDashboardStats';
+export { MyPermissionsTabContent } from './MyPermissionsTabContent';
 
 // Modals
 export { PermissionModal } from './PermissionModal';

@@ -1,7 +1,13 @@
 import { forwardRef, useEffect, useState, useId } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { ToastVariant, ToastAction } from '../types';
+
+export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
 
 export interface ToastProps {
   id?: string;
@@ -13,7 +19,10 @@ export interface ToastProps {
   className?: string;
 }
 
-const variantStyles: Record<ToastVariant, { container: string; icon: React.ReactNode }> = {
+const variantStyles: Record<
+  ToastVariant,
+  { container: string; icon: React.ReactNode }
+> = {
   success: {
     container: 'border-success/50 bg-success/10',
     icon: <CheckCircle className="h-5 w-5 text-success" />,
@@ -72,16 +81,16 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
     const styles = variantStyles[variant];
 
     return (
-      <div 
-        ref={ref} 
+      <div
+        ref={ref}
         className={cn(
           'flex items-start gap-3 p-4 rounded-lg border shadow-lg transition-all duration-300',
           styles.container,
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2',
           isExiting && 'opacity-0 translate-y-2',
           className
-        )} 
-        role="alert" 
+        )}
+        role="alert"
         aria-live="polite"
       >
         <div className="shrink-0" aria-hidden="true">

@@ -12,7 +12,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-import { Search, Layers, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import {
+  Search,
+  Layers,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+} from 'lucide-react';
+import { IconContainer } from '@/components/common';
 import { usePermissionManagement } from '@/contexts/PermissionManagementContext';
 import { permissionAssignmentsService } from '@/services';
 import { useToast } from '@/contexts/ToastContext';
@@ -36,11 +43,12 @@ export function BulkAssignModal({
   onClose,
   userGroup,
   existingAssignments,
-  onSuccess
+  onSuccess,
 }: BulkAssignModalProps): React.JSX.Element {
   const { addToast } = useToast();
-  const { permissionGroups, permissionGroupsLoading } = usePermissionManagement();
-  
+  const { permissionGroups, permissionGroupsLoading } =
+    usePermissionManagement();
+
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
@@ -48,12 +56,13 @@ export function BulkAssignModal({
 
   // Filter out already assigned groups
   const availableGroups = permissionGroups.filter(
-    pg => !existingAssignments.includes(pg.group_hash)
+    (pg) => !existingAssignments.includes(pg.group_hash)
   );
 
-  const filteredGroups = availableGroups.filter(pg =>
-    pg.group_display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pg.group_name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredGroups = availableGroups.filter(
+    (pg) =>
+      pg.group_display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pg.group_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Reset state when modal opens/closes
@@ -79,7 +88,7 @@ export function BulkAssignModal({
     if (selectedGroups.size === filteredGroups.length) {
       setSelectedGroups(new Set());
     } else {
-      setSelectedGroups(new Set(filteredGroups.map(g => g.group_hash)));
+      setSelectedGroups(new Set(filteredGroups.map((g) => g.group_hash)));
     }
   };
 
@@ -88,38 +97,44 @@ export function BulkAssignModal({
 
     setIsAssigning(true);
     try {
-      const response = await permissionAssignmentsService.bulkAssignPermissionGroupsToUserGroup(
-        userGroup.hash,
-        Array.from(selectedGroups)
-      );
+      const response =
+        await permissionAssignmentsService.bulkAssignPermissionGroupsToUserGroup(
+          userGroup.hash,
+          Array.from(selectedGroups)
+        );
 
       const data = response as any;
       if (data.results) {
         setResults(data.results);
-        const successCount = data.results.filter((r: AssignResult) => r.success).length;
+        const successCount = data.results.filter(
+          (r: AssignResult) => r.success
+        ).length;
         if (successCount === data.results.length) {
           addToast({
             message: `Successfully assigned ${successCount} permission group${successCount !== 1 ? 's' : ''}`,
-            variant: 'success'
+            variant: 'success',
           });
         } else {
           addToast({
             message: `Assigned ${successCount} of ${data.results.length} permission groups`,
-            variant: 'warning'
+            variant: 'warning',
           });
         }
       } else {
         addToast({
           message: 'Permission groups assigned successfully',
-          variant: 'success'
+          variant: 'success',
         });
         onSuccess();
         onClose();
       }
     } catch (error) {
       addToast({
-        message: error instanceof Error ? error.message : 'Failed to assign permission groups',
-        variant: 'error'
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Failed to assign permission groups',
+        variant: 'error',
       });
     } finally {
       setIsAssigning(false);
@@ -132,7 +147,7 @@ export function BulkAssignModal({
   };
 
   const getGroupName = (hash: string): string => {
-    const group = permissionGroups.find(g => g.group_hash === hash);
+    const group = permissionGroups.find((g) => g.group_hash === hash);
     return group?.group_display_name || hash;
   };
 
@@ -144,7 +159,8 @@ export function BulkAssignModal({
         <DialogHeader>
           <DialogTitle>Bulk Assign Permission Groups</DialogTitle>
           <DialogDescription>
-            Assign multiple permission groups to <strong>{userGroup.name}</strong> at once
+            Assign multiple permission groups to{' '}
+            <strong>{userGroup.name}</strong> at once
           </DialogDescription>
         </DialogHeader>
 
@@ -153,7 +169,8 @@ export function BulkAssignModal({
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <Badge variant="secondary" className="text-base px-3 py-1">
-                  {results.filter(r => r.success).length} / {results.length} successful
+                  {results.filter((r) => r.success).length} / {results.length}{' '}
+                  successful
                 </Badge>
               </div>
 
@@ -162,19 +179,18 @@ export function BulkAssignModal({
                   <div
                     key={result.permission_group_hash}
                     className={`flex items-center justify-between p-3 rounded-lg border ${
-                      result.success
-                        ? 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950'
-                        : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950'
+                      result.success ? 'status-success' : 'status-error'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       {result.success ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                        <CheckCircle2 className="h-5 w-5 status-success-text" />
                       ) : (
-                        <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                        <XCircle className="h-5 w-5 status-error-text" />
                       )}
                       <span className="font-medium">
-                        {result.permission_group_name || getGroupName(result.permission_group_hash)}
+                        {result.permission_group_name ||
+                          getGroupName(result.permission_group_hash)}
                       </span>
                     </div>
                     <Badge variant={result.success ? 'success' : 'destructive'}>
@@ -205,7 +221,8 @@ export function BulkAssignModal({
                   onClick={handleSelectAll}
                   disabled={filteredGroups.length === 0}
                 >
-                  {selectedGroups.size === filteredGroups.length && filteredGroups.length > 0
+                  {selectedGroups.size === filteredGroups.length &&
+                  filteredGroups.length > 0
                     ? 'Deselect All'
                     : 'Select All'}
                 </Button>
@@ -222,7 +239,8 @@ export function BulkAssignModal({
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <AlertTriangle className="h-10 w-10 text-amber-500" />
                   <p className="mt-2 text-sm text-muted-foreground">
-                    All permission groups are already assigned to this user group
+                    All permission groups are already assigned to this user
+                    group
                   </p>
                 </div>
               ) : filteredGroups.length === 0 ? (
@@ -246,15 +264,23 @@ export function BulkAssignModal({
                     >
                       <Checkbox
                         checked={selectedGroups.has(group.group_hash)}
-                        onCheckedChange={() => handleToggleGroup(group.group_hash)}
+                        onCheckedChange={() =>
+                          handleToggleGroup(group.group_hash)
+                        }
                         onClick={(event) => event.stopPropagation()}
                       />
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
-                        <Layers className="h-4 w-4" />
-                      </div>
+                      <IconContainer
+                        variant="primary"
+                        size="md"
+                        icon={<Layers className="h-4 w-4" />}
+                      />
                       <div className="flex-1">
-                        <p className="font-medium">{group.group_display_name}</p>
-                        <p className="text-xs font-mono text-muted-foreground">{group.group_name}</p>
+                        <p className="font-medium">
+                          {group.group_display_name}
+                        </p>
+                        <p className="text-xs font-mono text-muted-foreground">
+                          {group.group_name}
+                        </p>
                       </div>
                       {group.group_category && (
                         <Badge variant="outline">{group.group_category}</Badge>
@@ -272,7 +298,11 @@ export function BulkAssignModal({
             <Button onClick={handleDone}>Done</Button>
           ) : (
             <>
-              <Button variant="outline" onClick={onClose} disabled={isAssigning}>
+              <Button
+                variant="outline"
+                onClick={onClose}
+                disabled={isAssigning}
+              >
                 Cancel
               </Button>
               <Button

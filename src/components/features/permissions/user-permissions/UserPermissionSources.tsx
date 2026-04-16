@@ -11,8 +11,10 @@ import {
   RefreshCw,
   AlertTriangle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
+import { IconContainer } from '@/components/common';
+import type { IconContainerVariant } from '@/components/common';
 import { permissionAssignmentsService } from '@/services';
 import type { PermissionSource } from '@/types/permission-assignments.types';
 
@@ -31,15 +33,17 @@ interface UserPermissionSourcesProps {
 export function UserPermissionSources({
   title = 'My Permission Sources',
   showRefresh = true,
-  compact = false
+  compact = false,
 }: UserPermissionSourcesProps): React.JSX.Element {
   const [sources, setSources] = useState<PermissionSourcesData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({
     role: true,
     userGroups: true,
-    direct: true
+    direct: true,
   });
 
   useEffect(() => {
@@ -51,7 +55,8 @@ export function UserPermissionSources({
     setError(null);
 
     try {
-      const response: any = await permissionAssignmentsService.getMyPermissionSources();
+      const response: any =
+        await permissionAssignmentsService.getMyPermissionSources();
       const sourcesData = response.sources || response.data?.sources || null;
 
       if (response.success !== false && sourcesData) {
@@ -60,7 +65,9 @@ export function UserPermissionSources({
         setError('Failed to load permission sources');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load permission sources');
+      setError(
+        err instanceof Error ? err.message : 'Failed to load permission sources'
+      );
       console.error('Failed to load permission sources:', err);
     } finally {
       setLoading(false);
@@ -68,9 +75,9 @@ export function UserPermissionSources({
   };
 
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
@@ -144,13 +151,16 @@ export function UserPermissionSources({
           <SourceSection
             title="From Role"
             icon={<Users className="h-4 w-4" />}
-            iconBgClass="bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400"
+            iconVariant="success"
             items={sources.from_role}
             expanded={expandedSections.role}
             onToggle={() => toggleSection('role')}
             compact={compact}
             renderItem={(source) => (
-              <RoleSourceItem key={`${source.role_name}-${source.permission_group_name}`} source={source} />
+              <RoleSourceItem
+                key={`${source.role_name}-${source.permission_group_name}`}
+                source={source}
+              />
             )}
           />
         )}
@@ -159,13 +169,16 @@ export function UserPermissionSources({
           <SourceSection
             title="From User Groups"
             icon={<Building2 className="h-4 w-4" />}
-            iconBgClass="bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
+            iconVariant="info"
             items={sources.from_user_groups}
             expanded={expandedSections.userGroups}
             onToggle={() => toggleSection('userGroups')}
             compact={compact}
             renderItem={(source) => (
-              <UserGroupSourceItem key={`${source.user_group_name}-${source.permission_group_name}`} source={source} />
+              <UserGroupSourceItem
+                key={`${source.user_group_name}-${source.permission_group_name}`}
+                source={source}
+              />
             )}
           />
         )}
@@ -174,13 +187,16 @@ export function UserPermissionSources({
           <SourceSection
             title="Direct Assignments"
             icon={<UserCircle className="h-4 w-4" />}
-            iconBgClass="bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400"
+            iconVariant="primary"
             items={sources.from_direct_assignment}
             expanded={expandedSections.direct}
             onToggle={() => toggleSection('direct')}
             compact={compact}
             renderItem={(source) => (
-              <DirectSourceItem key={source.permission_group_name} source={source} />
+              <DirectSourceItem
+                key={source.permission_group_name}
+                source={source}
+              />
             )}
           />
         )}
@@ -192,7 +208,7 @@ export function UserPermissionSources({
 interface SourceSectionProps<T> {
   title: string;
   icon: React.ReactNode;
-  iconBgClass: string;
+  iconVariant: IconContainerVariant;
   items: T[];
   expanded: boolean;
   onToggle: () => void;
@@ -203,12 +219,12 @@ interface SourceSectionProps<T> {
 function SourceSection<T>({
   title,
   icon,
-  iconBgClass,
+  iconVariant,
   items,
   expanded,
   onToggle,
   compact,
-  renderItem
+  renderItem,
 }: SourceSectionProps<T>): React.JSX.Element {
   return (
     <Card>
@@ -218,9 +234,7 @@ function SourceSection<T>({
           onClick={onToggle}
         >
           <div className="flex items-center gap-3">
-            <div className={`flex h-8 w-8 items-center justify-center rounded ${iconBgClass}`}>
-              {icon}
-            </div>
+            <IconContainer variant={iconVariant} size="md" icon={icon} />
             <div>
               <CardTitle className="text-base">{title}</CardTitle>
               <p className="text-xs text-muted-foreground">
@@ -264,7 +278,8 @@ function RoleSourceItem({ source }: RoleSourceItemProps): React.JSX.Element {
       </div>
       {source.permissions_count > 0 && (
         <Badge variant="outline">
-          {source.permissions_count} permission{source.permissions_count !== 1 ? 's' : ''}
+          {source.permissions_count} permission
+          {source.permissions_count !== 1 ? 's' : ''}
         </Badge>
       )}
     </div>
@@ -275,7 +290,9 @@ interface UserGroupSourceItemProps {
   source: PermissionSource;
 }
 
-function UserGroupSourceItem({ source }: UserGroupSourceItemProps): React.JSX.Element {
+function UserGroupSourceItem({
+  source,
+}: UserGroupSourceItemProps): React.JSX.Element {
   return (
     <div className="flex items-center justify-between rounded-lg border p-3">
       <div className="flex items-center gap-3">
@@ -283,13 +300,15 @@ function UserGroupSourceItem({ source }: UserGroupSourceItemProps): React.JSX.El
         <div>
           <p className="font-medium">{source.permission_group_name}</p>
           <p className="text-xs text-muted-foreground">
-            via user group: <span className="font-mono">{source.user_group_name}</span>
+            via user group:{' '}
+            <span className="font-mono">{source.user_group_name}</span>
           </p>
         </div>
       </div>
       {source.permissions_count > 0 && (
         <Badge variant="outline">
-          {source.permissions_count} permission{source.permissions_count !== 1 ? 's' : ''}
+          {source.permissions_count} permission
+          {source.permissions_count !== 1 ? 's' : ''}
         </Badge>
       )}
     </div>
@@ -300,7 +319,9 @@ interface DirectSourceItemProps {
   source: PermissionSource;
 }
 
-function DirectSourceItem({ source }: DirectSourceItemProps): React.JSX.Element {
+function DirectSourceItem({
+  source,
+}: DirectSourceItemProps): React.JSX.Element {
   return (
     <div className="flex items-center justify-between rounded-lg border p-3">
       <div className="flex items-center gap-3">
@@ -314,7 +335,8 @@ function DirectSourceItem({ source }: DirectSourceItemProps): React.JSX.Element 
       </div>
       {source.permissions_count > 0 && (
         <Badge variant="outline">
-          {source.permissions_count} permission{source.permissions_count !== 1 ? 's' : ''}
+          {source.permissions_count} permission
+          {source.permissions_count !== 1 ? 's' : ''}
         </Badge>
       )}
     </div>

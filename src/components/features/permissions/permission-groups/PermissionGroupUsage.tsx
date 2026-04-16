@@ -3,8 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
 import { Users, UserCircle, Building2, AlertTriangle } from 'lucide-react';
+import { IconContainer } from '@/components/common';
 import { permissionAssignmentsService, globalRolesService } from '@/services';
-import type { GlobalPermissionGroup, GlobalRole } from '@/types/global-roles.types';
+import type {
+  GlobalPermissionGroup,
+  GlobalRole,
+} from '@/types/global-roles.types';
 
 interface UserGroupUsage {
   group_hash: string;
@@ -23,7 +27,9 @@ interface PermissionGroupUsageProps {
   group: GlobalPermissionGroup;
 }
 
-export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): React.JSX.Element {
+export function PermissionGroupUsage({
+  group,
+}: PermissionGroupUsageProps): React.JSX.Element {
   const [userGroups, setUserGroups] = useState<UserGroupUsage[]>([]);
   const [directUsers, setDirectUsers] = useState<UserUsage[]>([]);
   const [rolesWithGroup, setRolesWithGroup] = useState<GlobalRole[]>([]);
@@ -37,16 +43,19 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
   const loadUsageData = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const [userGroupsRes, usersRes, rolesRes] = await Promise.all([
-        permissionAssignmentsService.getPermissionGroupUserGroups(group.group_hash),
+        permissionAssignmentsService.getPermissionGroupUserGroups(
+          group.group_hash
+        ),
         permissionAssignmentsService.getPermissionGroupUsers(group.group_hash),
-        globalRolesService.getRoles()
+        globalRolesService.getRoles(),
       ]);
 
       if (userGroupsRes.success) {
-        const data = (userGroupsRes as any).user_groups || userGroupsRes.data || [];
+        const data =
+          (userGroupsRes as any).user_groups || userGroupsRes.data || [];
         setUserGroups(data);
       }
 
@@ -56,12 +65,18 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
       }
 
       if (rolesRes.success) {
-        const allRoles: GlobalRole[] = (rolesRes as any).roles || rolesRes.data || [];
-        const rolesUsingGroup = await findRolesWithPermissionGroup(allRoles, group.group_hash);
+        const allRoles: GlobalRole[] =
+          (rolesRes as any).roles || rolesRes.data || [];
+        const rolesUsingGroup = await findRolesWithPermissionGroup(
+          allRoles,
+          group.group_hash
+        );
         setRolesWithGroup(rolesUsingGroup);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load usage data');
+      setError(
+        err instanceof Error ? err.message : 'Failed to load usage data'
+      );
       console.error('Failed to load permission group usage:', err);
     } finally {
       setLoading(false);
@@ -73,23 +88,28 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
     groupHash: string
   ): Promise<GlobalRole[]> => {
     const rolesWithGroup: GlobalRole[] = [];
-    
+
     for (const role of roles) {
       try {
-        const response: any = await globalRolesService.getRolePermissionGroups(role.role_hash);
+        const response: any = await globalRolesService.getRolePermissionGroups(
+          role.role_hash
+        );
         const groups = response.permission_groups || response.data || [];
-        if (groups.some((g: GlobalPermissionGroup) => g.group_hash === groupHash)) {
+        if (
+          groups.some((g: GlobalPermissionGroup) => g.group_hash === groupHash)
+        ) {
           rolesWithGroup.push(role);
         }
       } catch {
         // Skip roles where we can't fetch permission groups
       }
     }
-    
+
     return rolesWithGroup;
   };
 
-  const totalUsage = userGroups.length + directUsers.length + rolesWithGroup.length;
+  const totalUsage =
+    userGroups.length + directUsers.length + rolesWithGroup.length;
 
   if (loading) {
     return (
@@ -135,12 +155,13 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
         </Badge>
       </div>
 
-      <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
+      <Card className="border status-warning">
         <CardContent className="flex items-start gap-3 py-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <p className="text-sm text-amber-700 dark:text-amber-300">
-            Deleting this permission group will affect {totalUsage} assignment{totalUsage !== 1 ? 's' : ''}.
-            Users and groups assigned to this permission group will lose the associated permissions.
+          <AlertTriangle className="mt-0.5 h-4 w-4 status-warning-text" />
+          <p className="text-sm status-warning-text">
+            Deleting this permission group will affect {totalUsage} assignment
+            {totalUsage !== 1 ? 's' : ''}. Users and groups assigned to this
+            permission group will lose the associated permissions.
           </p>
         </CardContent>
       </Card>
@@ -150,13 +171,16 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400">
-                  <Users className="h-4 w-4" />
-                </div>
+                <IconContainer
+                  variant="success"
+                  size="md"
+                  icon={<Users className="h-4 w-4" />}
+                />
                 <div>
                   <CardTitle className="text-base">Roles</CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    {rolesWithGroup.length} role{rolesWithGroup.length !== 1 ? 's' : ''} with this group
+                    {rolesWithGroup.length} role
+                    {rolesWithGroup.length !== 1 ? 's' : ''} with this group
                   </p>
                 </div>
               </div>
@@ -172,10 +196,14 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
                       <Users className="h-4 w-4 text-green-500" />
                       <div>
                         <p className="font-medium">{role.role_display_name}</p>
-                        <p className="text-xs font-mono text-muted-foreground">{role.role_name}</p>
+                        <p className="text-xs font-mono text-muted-foreground">
+                          {role.role_name}
+                        </p>
                       </div>
                     </div>
-                    <Badge variant="outline">Priority {role.role_priority}</Badge>
+                    <Badge variant="outline">
+                      Priority {role.role_priority}
+                    </Badge>
                   </div>
                 ))}
               </div>
@@ -187,13 +215,17 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-                  <Building2 className="h-4 w-4" />
-                </div>
+                <IconContainer
+                  variant="info"
+                  size="md"
+                  icon={<Building2 className="h-4 w-4" />}
+                />
                 <div>
                   <CardTitle className="text-base">User Groups</CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    {userGroups.length} user group{userGroups.length !== 1 ? 's' : ''} with this permission group
+                    {userGroups.length} user group
+                    {userGroups.length !== 1 ? 's' : ''} with this permission
+                    group
                   </p>
                 </div>
               </div>
@@ -207,8 +239,12 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
                   >
                     <Building2 className="h-4 w-4 text-blue-500" />
                     <div>
-                      <p className="font-medium">{ug.group_display_name || ug.group_name}</p>
-                      <p className="text-xs font-mono text-muted-foreground">{ug.group_name}</p>
+                      <p className="font-medium">
+                        {ug.group_display_name || ug.group_name}
+                      </p>
+                      <p className="text-xs font-mono text-muted-foreground">
+                        {ug.group_name}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -221,13 +257,16 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
-                  <UserCircle className="h-4 w-4" />
-                </div>
+                <IconContainer
+                  variant="primary"
+                  size="md"
+                  icon={<UserCircle className="h-4 w-4" />}
+                />
                 <div>
                   <CardTitle className="text-base">Direct Users</CardTitle>
                   <p className="text-xs text-muted-foreground">
-                    {directUsers.length} user{directUsers.length !== 1 ? 's' : ''} with direct assignment
+                    {directUsers.length} user
+                    {directUsers.length !== 1 ? 's' : ''} with direct assignment
                   </p>
                 </div>
               </div>
@@ -244,7 +283,9 @@ export function PermissionGroupUsage({ group }: PermissionGroupUsageProps): Reac
                       <div>
                         <p className="font-medium">{user.username}</p>
                         {user.notes && (
-                          <p className="text-xs text-muted-foreground">{user.notes}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {user.notes}
+                          </p>
                         )}
                       </div>
                     </div>

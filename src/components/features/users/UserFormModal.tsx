@@ -17,11 +17,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { usePermissions, useUserType, useAuth, useGlobalRoles, useToast } from '@/hooks';
+import {
+  usePermissions,
+  useUserType,
+  useAuth,
+  useGlobalRoles,
+  useToast,
+} from '@/hooks';
 import { authService, userService, globalRolesService } from '@/services';
 import AssignProjectModal from './AssignProjectModal';
 import AssignGroupModal from './AssignGroupModal';
-import { AlertTriangle, Info, FolderKanban, Users } from 'lucide-react';
+import RootConfirmationDialog from './RootConfirmationDialog';
+import UserFormWarnings from './UserFormWarnings';
+import UserFormSections from './UserFormSections';
 import type { UserFormData, UserFormErrors } from '@/types/user.types';
 import type { UserType, User } from '@/types/auth.types';
 
@@ -49,7 +57,11 @@ export function UserFormModal({
   const { canCreateAdmin, canCreateRoot } = usePermissions();
   const { userType: currentUserType } = useUserType();
   const { user: currentUser } = useAuth();
-  const { roles: globalRoles, loadingRoles: loadingGlobalRoles, currentRole: userGlobalRole } = useGlobalRoles();
+  const {
+    roles: globalRoles,
+    loadingRoles: loadingGlobalRoles,
+    currentRole: userGlobalRole,
+  } = useGlobalRoles();
   const { showToast } = useToast();
 
   const [formData, setFormData] = useState<UserFormData>({
@@ -64,16 +76,19 @@ export function UserFormModal({
   });
 
   const [errors, setErrors] = useState<UserFormErrors>({});
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | undefined>(undefined);
-  const [emailAvailable, setEmailAvailable] = useState<boolean | undefined>(undefined);
+  const [usernameAvailable, setUsernameAvailable] = useState<
+    boolean | undefined
+  >(undefined);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | undefined>(
+    undefined
+  );
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // ROOT user creation confirmation
   const [showRootConfirmation, setShowRootConfirmation] = useState(false);
-  const [rootConfirmationPassword, setRootConfirmationPassword] = useState('');
   const [rootConfirmationError, setRootConfirmationError] = useState('');
-  
+
   // Project/Group assignment modals
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
@@ -87,7 +102,7 @@ export function UserFormModal({
         password: '',
         confirmPassword: '',
         userType: (user.user_type as UserType) || 'consumer',
-        assignedProjects: user.projects?.map(p => p.project_hash) || [],
+        assignedProjects: user.projects?.map((p) => p.project_hash) || [],
         assignedGroup: user.groups?.[0]?.group_hash || '',
         globalRoleHash: userGlobalRole?.role_hash || '',
       });
@@ -104,7 +119,7 @@ export function UserFormModal({
         globalRoleHash: '',
       });
     }
-    
+
     // Reset validation states
     setErrors({});
     setUsernameAvailable(undefined);
@@ -112,18 +127,25 @@ export function UserFormModal({
   }, [mode, user, isOpen]);
 
   // Check if editing own account
-  const isEditingSelf = mode === 'edit' && currentUser && user?.user_hash === currentUser.user_hash;
+  const isEditingSelf =
+    mode === 'edit' &&
+    !!currentUser &&
+    user?.user_hash === currentUser.user_hash;
 
   // Filter user type options based on permissions
-  const availableUserTypes = USER_TYPE_OPTIONS.filter(option => {
+  const availableUserTypes = USER_TYPE_OPTIONS.filter((option) => {
     if (option.value === 'root' && !canCreateRoot) return false;
     if (option.value === 'admin' && !canCreateAdmin) return false;
-    
+
     // Prevent ROOT user from demoting themselves
-    if (isEditingSelf && currentUserType === 'root' && option.value !== 'root') {
+    if (
+      isEditingSelf &&
+      currentUserType === 'root' &&
+      option.value !== 'root'
+    ) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -135,7 +157,11 @@ export function UserFormModal({
       if (formData.username && formData.username !== user?.username) {
         await checkAvailability('username', formData.username);
       }
-      if (formData.email && formData.email.trim() && formData.email !== user?.email) {
+      if (
+        formData.email &&
+        formData.email.trim() &&
+        formData.email !== user?.email
+      ) {
         await checkAvailability('email', formData.email);
       }
     }, 500);
@@ -143,18 +169,29 @@ export function UserFormModal({
     return () => clearTimeout(timer);
   }, [formData.username, formData.email, mode, user]);
 
-  const checkAvailability = async (field: 'username' | 'email', value: string) => {
+  const checkAvailability = async (
+    field: 'username' | 'email',
+    value: string
+  ) => {
     setCheckingAvailability(true);
     try {
       const response = await authService.checkAvailability({
-        [field]: value
+        [field]: value,
       });
 
       if (response.success) {
         if (field === 'username') {
-          setUsernameAvailable(response.username_available === null ? undefined : Boolean(response.username_available));
+          setUsernameAvailable(
+            response.username_available === null
+              ? undefined
+              : Boolean(response.username_available)
+          );
         } else {
-          setEmailAvailable(response.email_available === null ? undefined : Boolean(response.email_available));
+          setEmailAvailable(
+            response.email_available === null
+              ? undefined
+              : Boolean(response.email_available)
+          );
         }
       }
     } catch (error) {
@@ -206,7 +243,8 @@ export function UserFormModal({
     // Group assignment validation for consumer users
     if (mode === 'create' && formData.userType === 'consumer') {
       if (!formData.assignedGroup) {
-        newErrors.assignedGroup = 'Consumer users must be assigned to a user group';
+        newErrors.assignedGroup =
+          'Consumer users must be assigned to a user group';
       }
     }
 
@@ -216,7 +254,7 @@ export function UserFormModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
     if (checkingAvailability) return;
 
@@ -256,11 +294,14 @@ export function UserFormModal({
           case 'consumer':
           default:
             if (!formData.assignedGroup) {
-              showToast('Consumer users must be assigned to a user group', 'error');
+              showToast(
+                'Consumer users must be assigned to a user group',
+                'error'
+              );
               setIsLoading(false);
               return;
             }
-            
+
             response = await userService.createConsumerUser({
               username: formData.username,
               password: formData.password,
@@ -282,8 +323,11 @@ export function UserFormModal({
               console.error('Failed to assign global role:', roleError);
             }
           }
-          
-          showToast(`User "${formData.username}" created successfully`, 'success');
+
+          showToast(
+            `User "${formData.username}" created successfully`,
+            'success'
+          );
           onSuccess();
           onClose();
         } else {
@@ -310,11 +354,20 @@ export function UserFormModal({
         }
 
         // Handle user type change separately (ROOT only operation)
-        if (currentUserType === 'root' && formData.userType !== user.user_type) {
+        if (
+          currentUserType === 'root' &&
+          formData.userType !== user.user_type
+        ) {
           try {
-            const typeChangeResponse = await userService.changeUserType(user.user_hash, formData.userType);
+            const typeChangeResponse = await userService.changeUserType(
+              user.user_hash,
+              formData.userType
+            );
             if (!typeChangeResponse.success) {
-              showToast(typeChangeResponse.message || 'Failed to change user type', 'error');
+              showToast(
+                typeChangeResponse.message || 'Failed to change user type',
+                'error'
+              );
               return;
             }
           } catch (typeError) {
@@ -337,25 +390,24 @@ export function UserFormModal({
             console.error('Failed to update global role:', roleError);
           }
         }
-        
-        showToast(`User "${formData.username}" updated successfully`, 'success');
+
+        showToast(
+          `User "${formData.username}" updated successfully`,
+          'success'
+        );
         onSuccess();
         onClose();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      const errorMessage =
+        err instanceof Error ? err.message : 'An unexpected error occurred';
       showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleRootConfirmation = async () => {
-    if (!rootConfirmationPassword) {
-      setRootConfirmationError('Please enter your password to confirm');
-      return;
-    }
-
+  const handleRootConfirmation = async (password: string) => {
     if (!currentUser) {
       setRootConfirmationError('Unable to verify current user');
       return;
@@ -364,12 +416,11 @@ export function UserFormModal({
     try {
       const loginResponse = await authService.login({
         username: currentUser.username,
-        password: rootConfirmationPassword,
+        password: password,
       });
 
       if (loginResponse.success) {
         setShowRootConfirmation(false);
-        setRootConfirmationPassword('');
         setRootConfirmationError('');
         await submitForm();
       } else {
@@ -381,51 +432,43 @@ export function UserFormModal({
   };
 
   const handleInputChange = (field: keyof UserFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleProjectAssignment = (selectedProjects: string[]) => {
-    setFormData(prev => ({ ...prev, assignedProjects: selectedProjects }));
+    setFormData((prev) => ({ ...prev, assignedProjects: selectedProjects }));
     setShowProjectModal(false);
   };
 
   const handleGroupAssignment = (selectedGroup: string) => {
-    setFormData(prev => ({ ...prev, assignedGroup: selectedGroup }));
+    setFormData((prev) => ({ ...prev, assignedGroup: selectedGroup }));
     setShowGroupModal(false);
   };
 
   return (
     <>
-      <Dialog open={isOpen && !showRootConfirmation} onOpenChange={(open) => !isLoading && !open && onClose()}>
+      <Dialog
+        open={isOpen && !showRootConfirmation}
+        onOpenChange={(open) => !isLoading && !open && onClose()}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>{mode === 'create' ? 'Create New User' : 'Edit User'}</DialogTitle>
+            <DialogTitle>
+              {mode === 'create' ? 'Create New User' : 'Edit User'}
+            </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
-              {/* Security Warning for ROOT users */}
-              {mode === 'create' && formData.userType === 'root' && (
-                <div className="flex items-start gap-3 rounded-md bg-yellow-50 p-3 dark:bg-yellow-950">
-                  <AlertTriangle size={20} className="mt-0.5 text-yellow-600" aria-hidden="true" />
-                  <div>
-                    <p className="font-medium text-yellow-800 dark:text-yellow-200">Creating ROOT User</p>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300">You are about to create a ROOT user with full system access.</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Self-editing protection warning */}
-              {isEditingSelf && (
-                <div className="flex items-start gap-3 rounded-md bg-blue-50 p-3 dark:bg-blue-950">
-                  <Info size={20} className="mt-0.5 text-blue-600" aria-hidden="true" />
-                  <p className="text-sm text-blue-700 dark:text-blue-300">You are editing your own account. Some restrictions apply for security reasons.</p>
-                </div>
-              )}
+              <UserFormWarnings
+                mode={mode}
+                userType={formData.userType}
+                isEditingSelf={isEditingSelf}
+              />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 {/* Username Field */}
@@ -434,17 +477,27 @@ export function UserFormModal({
                   <Input
                     id="username"
                     value={formData.username}
-                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('username', e.target.value)
+                    }
                     required
                     disabled={isLoading || mode === 'edit'}
                   />
-                  {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
+                  {errors.username && (
+                    <p className="text-xs text-destructive">
+                      {errors.username}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    {mode === 'create' ? 
-                      (usernameAvailable === true ? 'Username is available' : 
-                       usernameAvailable === false ? 'Username is taken' : 
-                       checkingAvailability ? 'Checking availability...' : 'Enter a unique username') : 'Username cannot be changed'
-                    }
+                    {mode === 'create'
+                      ? usernameAvailable === true
+                        ? 'Username is available'
+                        : usernameAvailable === false
+                          ? 'Username is taken'
+                          : checkingAvailability
+                            ? 'Checking availability...'
+                            : 'Enter a unique username'
+                      : 'Username cannot be changed'}
                   </p>
                 </div>
 
@@ -458,45 +511,71 @@ export function UserFormModal({
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     disabled={isLoading}
                   />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="text-xs text-destructive">{errors.email}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    {mode === 'create' && formData.email ? 
-                      (emailAvailable === true ? 'Email is available' : 
-                       emailAvailable === false ? 'Email is already in use' : 
-                       checkingAvailability ? 'Checking availability...' : 'Optional but recommended') : 'Optional but recommended'
-                    }
+                    {mode === 'create' && formData.email
+                      ? emailAvailable === true
+                        ? 'Email is available'
+                        : emailAvailable === false
+                          ? 'Email is already in use'
+                          : checkingAvailability
+                            ? 'Checking availability...'
+                            : 'Optional but recommended'
+                      : 'Optional but recommended'}
                   </p>
                 </div>
 
                 {/* User Type Field */}
                 <div className="space-y-2">
                   <Label>User Type</Label>
-                  <Select 
-                    value={formData.userType} 
-                    onValueChange={(value: string) => handleInputChange('userType', value)}
-                    disabled={isLoading || (mode === 'edit' && (currentUserType !== 'root' || isEditingSelf)) || undefined}
+                  <Select
+                    value={formData.userType}
+                    onValueChange={(value: string) =>
+                      handleInputChange('userType', value)
+                    }
+                    disabled={
+                      isLoading ||
+                      (mode === 'edit' &&
+                        (currentUserType !== 'root' || isEditingSelf)) ||
+                      undefined
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select user type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableUserTypes.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      {availableUserTypes.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.userType && <p className="text-xs text-destructive">{errors.userType}</p>}
+                  {errors.userType && (
+                    <p className="text-xs text-destructive">
+                      {errors.userType}
+                    </p>
+                  )}
                   {isEditingSelf && currentUserType === 'root' && (
-                    <p className="text-xs text-yellow-600">You cannot change your own user type</p>
+                    <p className="text-xs text-yellow-600">
+                      You cannot change your own user type
+                    </p>
                   )}
                 </div>
 
                 {/* Global Role Field */}
                 <div className="space-y-2">
                   <Label>Global Role</Label>
-                  <Select 
-                    value={formData.globalRoleHash || 'none'} 
-                    onValueChange={(value: string) => handleInputChange('globalRoleHash', value === 'none' ? '' : value)}
+                  <Select
+                    value={formData.globalRoleHash || 'none'}
+                    onValueChange={(value: string) =>
+                      handleInputChange(
+                        'globalRoleHash',
+                        value === 'none' ? '' : value
+                      )
+                    }
                     disabled={isLoading || loadingGlobalRoles}
                   >
                     <SelectTrigger>
@@ -504,8 +583,10 @@ export function UserFormModal({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No Global Role</SelectItem>
-                      {globalRoles.map(role => (
-                        <SelectItem key={role.role_hash} value={role.role_hash}>{role.role_display_name}</SelectItem>
+                      {globalRoles.map((role) => (
+                        <SelectItem key={role.role_hash} value={role.role_hash}>
+                          {role.role_display_name}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -520,12 +601,20 @@ export function UserFormModal({
                         id="password"
                         type="password"
                         value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange('password', e.target.value)
+                        }
                         required
                         disabled={isLoading}
                       />
-                      {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                      <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+                      {errors.password && (
+                        <p className="text-xs text-destructive">
+                          {errors.password}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Minimum 8 characters
+                      </p>
                     </div>
 
                     <div className="space-y-2">
@@ -534,88 +623,49 @@ export function UserFormModal({
                         id="confirmPassword"
                         type="password"
                         value={formData.confirmPassword}
-                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange('confirmPassword', e.target.value)
+                        }
                         required
                         disabled={isLoading}
                       />
-                      {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
+                      {errors.confirmPassword && (
+                        <p className="text-xs text-destructive">
+                          {errors.confirmPassword}
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
               </div>
 
-              {/* Project Assignment for Admin Users */}
-              {formData.userType === 'admin' && (
-                <div className="space-y-3 rounded-md border p-4">
-                  <h4 className="font-medium">Project Assignment</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Assign this admin user to specific projects they can manage.
-                  </p>
-                  
-                  <div className="flex items-center justify-between">
-                    {formData.assignedProjects && formData.assignedProjects.length > 0 ? (
-                      <p className="text-sm">
-                        {formData.assignedProjects.length} project{formData.assignedProjects.length !== 1 ? 's' : ''} assigned
-                      </p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No projects assigned</p>
-                    )}
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowProjectModal(true)}
-                      disabled={isLoading}
-                    >
-                      <FolderKanban size={16} aria-hidden="true" />
-                      {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Group Assignment for Consumer Users */}
-              {formData.userType === 'consumer' && (
-                <div className="space-y-3 rounded-md border p-4">
-                  <h4 className="font-medium">User Group Assignment</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Assign this consumer user to a user group. This is required.
-                  </p>
-
-                  <div className="flex items-center justify-between">
-                    {formData.assignedGroup ? (
-                      <p className="text-sm">1 group assigned</p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No group assigned</p>
-                    )}
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowGroupModal(true)}
-                      disabled={isLoading}
-                    >
-                      <Users size={16} aria-hidden="true" />
-                      {formData.assignedGroup ? 'Change Group' : 'Assign Group'}
-                    </Button>
-                  </div>
-
-                  {errors.assignedGroup && (
-                    <p className="text-xs text-destructive">{errors.assignedGroup}</p>
-                  )}
-                </div>
-              )}
+              <UserFormSections
+                userType={formData.userType}
+                assignedProjects={formData.assignedProjects}
+                assignedGroup={formData.assignedGroup}
+                assignmentError={errors.assignedGroup}
+                isLoading={isLoading}
+                onOpenProjectModal={() => setShowProjectModal(true)}
+                onOpenGroupModal={() => setShowGroupModal(true)}
+              />
             </div>
 
             <DialogFooter className="mt-6">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isLoading}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={checkingAvailability || (mode === 'create' && (usernameAvailable === false || emailAvailable === false))}
+                disabled={
+                  checkingAvailability ||
+                  (mode === 'create' &&
+                    (usernameAvailable === false || emailAvailable === false))
+                }
               >
                 {isLoading && <Spinner size="sm" className="mr-2" />}
                 {mode === 'create' ? 'Create User' : 'Update User'}
@@ -626,61 +676,17 @@ export function UserFormModal({
       </Dialog>
 
       {/* ROOT User Creation Confirmation Dialog */}
-      <Dialog 
-        open={showRootConfirmation} 
-        onOpenChange={(open) => {
-          if (!isLoading && !open) {
-            setShowRootConfirmation(false);
-            setRootConfirmationPassword('');
-            setRootConfirmationError('');
-          }
+      <RootConfirmationDialog
+        isOpen={showRootConfirmation}
+        isLoading={isLoading}
+        userName={formData.username || 'ROOT User'}
+        error={rootConfirmationError}
+        onConfirm={handleRootConfirmation}
+        onCancel={() => {
+          setShowRootConfirmation(false);
+          setRootConfirmationError('');
         }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm ROOT User Creation</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 rounded-md bg-yellow-50 p-3 dark:bg-yellow-950">
-              <AlertTriangle size={32} className="text-yellow-600" aria-hidden="true" />
-              <div className="space-y-2">
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Please enter your password to confirm this action:</p>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Input
-                type="password"
-                value={rootConfirmationPassword}
-                onChange={(e) => setRootConfirmationPassword(e.target.value)}
-                placeholder="Enter your password"
-                autoFocus
-              />
-              {rootConfirmationError && <p className="text-xs text-destructive">{rootConfirmationError}</p>}
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowRootConfirmation(false);
-                setRootConfirmationPassword('');
-                setRootConfirmationError('');
-              }}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleRootConfirmation} disabled={isLoading}>
-              {isLoading && <Spinner size="sm" className="mr-2" />}
-              Create ROOT User
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      />
 
       {/* Assign Projects Modal */}
       <AssignProjectModal
@@ -689,7 +695,10 @@ export function UserFormModal({
         onConfirm={handleProjectAssignment}
         initialSelection={formData.assignedProjects || []}
         isLoading={isLoading}
-        userName={formData.username || (formData.userType === 'admin' ? 'Admin User' : 'Consumer User')}
+        userName={
+          formData.username ||
+          (formData.userType === 'admin' ? 'Admin User' : 'Consumer User')
+        }
         allowMultiple={true}
         userType={formData.userType}
       />
@@ -699,7 +708,9 @@ export function UserFormModal({
         isOpen={showGroupModal}
         onClose={() => setShowGroupModal(false)}
         onConfirm={handleGroupAssignment}
-        initialSelection={formData.assignedGroup ? [formData.assignedGroup] : []}
+        initialSelection={
+          formData.assignedGroup ? [formData.assignedGroup] : []
+        }
         isLoading={isLoading}
         userName={formData.username || 'Consumer User'}
       />
@@ -708,4 +719,3 @@ export function UserFormModal({
 }
 
 export default UserFormModal;
-

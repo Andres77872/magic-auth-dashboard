@@ -7,8 +7,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { ArrowLeft, Layers, Pencil, Shield, Trash2, Users } from 'lucide-react';
 import { CategoryBadge } from '../shared/CategoryBadge';
 import { PermissionGroupUsage } from './PermissionGroupUsage';
+import { IconContainer } from '@/components/common';
 import { globalRolesService } from '@/services';
-import type { GlobalPermission, GlobalPermissionGroup } from '@/types/global-roles.types';
+import type {
+  GlobalPermission,
+  GlobalPermissionGroup,
+} from '@/types/global-roles.types';
 
 interface PermissionGroupDetailProps {
   group: GlobalPermissionGroup;
@@ -23,7 +27,7 @@ export function PermissionGroupDetail({
   onBack,
   onEdit,
   onManagePermissions,
-  onDelete
+  onDelete,
 }: PermissionGroupDetailProps): React.JSX.Element {
   const [permissions, setPermissions] = useState<GlobalPermission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +39,9 @@ export function PermissionGroupDetail({
   const loadGroupPermissions = async () => {
     setLoading(true);
     try {
-      const response: any = await globalRolesService.getGroupPermissions(group.group_hash);
+      const response: any = await globalRolesService.getGroupPermissions(
+        group.group_hash
+      );
       const permsData = response.permissions || response.data || [];
       if (response.success) {
         setPermissions(permsData);
@@ -58,12 +64,16 @@ export function PermissionGroupDetail({
             </Button>
           )}
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
-              <Layers className="h-6 w-6" />
-            </div>
+            <IconContainer
+              variant="primary"
+              size="xl"
+              icon={<Layers className="h-6 w-6" />}
+            />
             <div>
               <h1 className="text-2xl font-bold">{group.group_display_name}</h1>
-              <p className="text-sm font-mono text-muted-foreground">{group.group_name}</p>
+              <p className="text-sm font-mono text-muted-foreground">
+                {group.group_name}
+              </p>
             </div>
           </div>
         </div>
@@ -75,7 +85,12 @@ export function PermissionGroupDetail({
             </Button>
           )}
           {onDelete && (
-            <Button variant="outline" size="sm" className="text-destructive" onClick={() => onDelete(group)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive"
+              onClick={() => onDelete(group)}
+            >
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </Button>
@@ -124,9 +139,15 @@ export function PermissionGroupDetail({
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8">
                 <Shield className="h-10 w-10 text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">No permissions assigned</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  No permissions assigned
+                </p>
                 {onManagePermissions && (
-                  <Button className="mt-4" variant="outline" onClick={() => onManagePermissions(group)}>
+                  <Button
+                    className="mt-4"
+                    variant="outline"
+                    onClick={() => onManagePermissions(group)}
+                  >
                     Add Permissions
                   </Button>
                 )}
@@ -140,8 +161,12 @@ export function PermissionGroupDetail({
                     <div className="flex items-center gap-3">
                       <Shield className="h-4 w-4 text-blue-500" />
                       <div>
-                        <p className="font-medium">{permission.permission_display_name}</p>
-                        <p className="text-xs font-mono text-muted-foreground">{permission.permission_name}</p>
+                        <p className="font-medium">
+                          {permission.permission_display_name}
+                        </p>
+                        <p className="text-xs font-mono text-muted-foreground">
+                          {permission.permission_name}
+                        </p>
                       </div>
                     </div>
                     <CategoryBadge category={permission.permission_category} />

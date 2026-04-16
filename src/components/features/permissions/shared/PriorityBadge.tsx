@@ -1,24 +1,24 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import type { VariantProps } from 'class-variance-authority';
 
-interface PriorityConfig {
+// Map priority levels to semantic Badge variants
+type PriorityConfig = {
   level: string;
-  bg: string;
-  text: string;
-}
+  variant: VariantProps<typeof Badge>['variant'];
+};
 
 function getPriorityConfig(priority: number): PriorityConfig {
   if (priority >= 900) {
-    return { level: 'Critical', bg: 'bg-red-100 dark:bg-red-950', text: 'text-red-700 dark:text-red-300' };
+    return { level: 'Critical', variant: 'subtleDestructive' };
   }
   if (priority >= 700) {
-    return { level: 'High', bg: 'bg-orange-100 dark:bg-orange-950', text: 'text-orange-700 dark:text-orange-300' };
+    return { level: 'High', variant: 'subtleWarning' };
   }
   if (priority >= 400) {
-    return { level: 'Medium', bg: 'bg-blue-100 dark:bg-blue-950', text: 'text-blue-700 dark:text-blue-300' };
+    return { level: 'Medium', variant: 'subtleInfo' };
   }
-  return { level: 'Low', bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-700 dark:text-gray-300' };
+  return { level: 'Low', variant: 'subtle' };
 }
 
 interface PriorityBadgeProps {
@@ -27,15 +27,17 @@ interface PriorityBadgeProps {
   className?: string;
 }
 
-export function PriorityBadge({ priority, showValue = true, className }: PriorityBadgeProps): React.JSX.Element {
+export function PriorityBadge({
+  priority,
+  showValue = true,
+  className,
+}: PriorityBadgeProps): React.JSX.Element {
   const config = getPriorityConfig(priority);
 
   return (
-    <Badge
-      variant="secondary"
-      className={cn(config.bg, config.text, 'border-0', className)}
-    >
-      {config.level}{showValue && `: ${priority}`}
+    <Badge variant={config.variant} className={className}>
+      {config.level}
+      {showValue && `: ${priority}`}
     </Badge>
   );
 }

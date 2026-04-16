@@ -1,13 +1,32 @@
 import React, { useState } from 'react';
 import { analyticsService } from '@/services/analytics.service';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { Download, FileText, FileJson, FileType, CheckCircle, Loader2 } from 'lucide-react';
-import type { ExportOptions, ExportData, ActivityFilters, DateRangePreset } from '@/types/analytics.types';
+import { IconContainer } from '@/components/common';
+import {
+  Download,
+  FileText,
+  FileJson,
+  FileType,
+  CheckCircle,
+  Loader2,
+} from 'lucide-react';
+import type {
+  ExportOptions,
+  ExportData,
+  ActivityFilters,
+  DateRangePreset,
+} from '@/types/analytics.types';
 
 interface AnalyticsExportProps {
   filters?: ActivityFilters;
@@ -15,8 +34,18 @@ interface AnalyticsExportProps {
 }
 
 const FORMAT_OPTIONS = [
-  { value: 'csv', label: 'CSV', description: 'Spreadsheet data', icon: FileText },
-  { value: 'json', label: 'JSON', description: 'Structured data', icon: FileJson },
+  {
+    value: 'csv',
+    label: 'CSV',
+    description: 'Spreadsheet data',
+    icon: FileText,
+  },
+  {
+    value: 'json',
+    label: 'JSON',
+    description: 'Structured data',
+    icon: FileJson,
+  },
   { value: 'pdf', label: 'PDF', description: 'Report format', icon: FileType },
 ];
 
@@ -27,13 +56,18 @@ const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
   { value: 'last30days', label: '30 Days' },
 ];
 
-export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExportProps): React.JSX.Element {
+export function AnalyticsExport({
+  filters = {},
+  className = '',
+}: AnalyticsExportProps): React.JSX.Element {
   const [isExporting, setIsExporting] = useState(false);
   const [exportData, setExportData] = useState<ExportData | null>(null);
   const [exportOptions, setExportOptions] = useState<ExportOptions>({
     format: 'csv',
     dateRange: {
-      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0],
       end: new Date().toISOString().split('T')[0],
     },
     includeCharts: false,
@@ -86,7 +120,7 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
         return;
     }
 
-    setExportOptions(prev => ({
+    setExportOptions((prev) => ({
       ...prev,
       dateRange: {
         start: start.toISOString().split('T')[0],
@@ -107,12 +141,16 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
     <Card className={className}>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-            <Download className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-          </div>
+          <IconContainer
+            variant="primary"
+            size="lg"
+            icon={<Download className="h-5 w-5" />}
+          />
           <div>
             <CardTitle>Export Analytics Data</CardTitle>
-            <CardDescription>Download analytics data in your preferred format</CardDescription>
+            <CardDescription>
+              Download analytics data in your preferred format
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -128,17 +166,31 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
               return (
                 <button
                   key={format.value}
-                  onClick={() => setExportOptions(prev => ({ ...prev, format: format.value as 'csv' | 'json' | 'pdf' }))}
+                  onClick={() =>
+                    setExportOptions((prev) => ({
+                      ...prev,
+                      format: format.value as 'csv' | 'json' | 'pdf',
+                    }))
+                  }
                   className={cn(
                     'p-4 rounded-lg border-2 transition-all text-left',
-                    isSelected 
-                      ? 'border-primary bg-primary/5' 
+                    isSelected
+                      ? 'border-primary bg-primary/5'
                       : 'border-border hover:border-primary/50 hover:bg-muted/30'
                   )}
                 >
-                  <Icon className={cn('h-5 w-5 mb-2', isSelected ? 'text-primary' : 'text-muted-foreground')} />
-                  <p className="text-sm font-medium text-foreground">{format.label}</p>
-                  <p className="text-xs text-muted-foreground">{format.description}</p>
+                  <Icon
+                    className={cn(
+                      'h-5 w-5 mb-2',
+                      isSelected ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                  />
+                  <p className="text-sm font-medium text-foreground">
+                    {format.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {format.description}
+                  </p>
                 </button>
               );
             })}
@@ -162,29 +214,37 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="start-date" className="text-xs">From</Label>
+              <Label htmlFor="start-date" className="text-xs">
+                From
+              </Label>
               <Input
                 id="start-date"
                 type="date"
                 value={exportOptions.dateRange.start}
-                onChange={(e) => setExportOptions(prev => ({
-                  ...prev,
-                  dateRange: { ...prev.dateRange, start: e.target.value }
-                }))}
+                onChange={(e) =>
+                  setExportOptions((prev) => ({
+                    ...prev,
+                    dateRange: { ...prev.dateRange, start: e.target.value },
+                  }))
+                }
                 className="w-[160px]"
               />
             </div>
             <span className="text-muted-foreground mt-6">to</span>
             <div className="space-y-1.5">
-              <Label htmlFor="end-date" className="text-xs">To</Label>
+              <Label htmlFor="end-date" className="text-xs">
+                To
+              </Label>
               <Input
                 id="end-date"
                 type="date"
                 value={exportOptions.dateRange.end}
-                onChange={(e) => setExportOptions(prev => ({
-                  ...prev,
-                  dateRange: { ...prev.dateRange, end: e.target.value }
-                }))}
+                onChange={(e) =>
+                  setExportOptions((prev) => ({
+                    ...prev,
+                    dateRange: { ...prev.dateRange, end: e.target.value },
+                  }))
+                }
                 className="w-[160px]"
               />
             </div>
@@ -197,10 +257,12 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
             <Checkbox
               id="include-charts"
               checked={exportOptions.includeCharts}
-              onCheckedChange={(checked) => setExportOptions(prev => ({
-                ...prev,
-                includeCharts: checked === true
-              }))}
+              onCheckedChange={(checked) =>
+                setExportOptions((prev) => ({
+                  ...prev,
+                  includeCharts: checked === true,
+                }))
+              }
             />
             <Label htmlFor="include-charts" className="text-sm cursor-pointer">
               Include charts and visualizations
@@ -209,7 +271,7 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
         )}
 
         {/* Export button */}
-        <Button 
+        <Button
           onClick={handleExport}
           disabled={isExporting}
           className="w-full"
@@ -230,17 +292,36 @@ export function AnalyticsExport({ filters = {}, className = '' }: AnalyticsExpor
 
         {/* Success message */}
         {exportData && (
-          <div className="p-4 rounded-lg bg-success/10 border border-success/30">
+          <div className="status-success">
             <div className="flex items-start gap-3">
-              <div className="h-8 w-8 rounded-full bg-success/20 flex items-center justify-center shrink-0">
-                <CheckCircle className="h-4 w-4 text-success" />
-              </div>
+              <IconContainer
+                variant="success"
+                size="sm"
+                icon={<CheckCircle className="h-4 w-4" />}
+              />
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-foreground mb-1">Export Completed</h4>
+                <h4 className="text-sm font-semibold text-foreground mb-1">
+                  Export Completed
+                </h4>
                 <p className="text-xs text-muted-foreground space-y-0.5">
-                  <span className="block">File: <strong className="text-foreground">{exportData.filename}</strong></span>
-                  <span className="block">Size: <strong className="text-foreground">{formatFileSize(exportData.size)}</strong></span>
-                  <span className="block">Generated: <strong className="text-foreground">{new Date(exportData.generatedAt).toLocaleString()}</strong></span>
+                  <span className="block">
+                    File:{' '}
+                    <strong className="text-foreground">
+                      {exportData.filename}
+                    </strong>
+                  </span>
+                  <span className="block">
+                    Size:{' '}
+                    <strong className="text-foreground">
+                      {formatFileSize(exportData.size)}
+                    </strong>
+                  </span>
+                  <span className="block">
+                    Generated:{' '}
+                    <strong className="text-foreground">
+                      {new Date(exportData.generatedAt).toLocaleString()}
+                    </strong>
+                  </span>
                 </p>
                 <Button
                   variant="link"

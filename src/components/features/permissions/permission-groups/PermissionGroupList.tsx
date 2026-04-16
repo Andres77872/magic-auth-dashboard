@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DataView } from '@/components/common/DataView';
+import { IconContainer } from '@/components/common';
 import type { DataViewColumn } from '@/components/common/DataView';
 import { PermissionGroupCard } from './PermissionGroupCard';
 import { PermissionGroupActionsMenu } from './PermissionGroupActionsMenu';
@@ -34,7 +35,7 @@ export function PermissionGroupList({
   onDelete,
   onManagePermissions,
   onCreate,
-  onViewDetails
+  onViewDetails,
 }: PermissionGroupListProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -46,7 +47,8 @@ export function PermissionGroupList({
         g.group_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         g.group_display_name.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory =
-        categoryFilter === 'all' || (g.group_category || 'general') === categoryFilter;
+        categoryFilter === 'all' ||
+        (g.group_category || 'general') === categoryFilter;
       return matchesSearch && matchesCategory;
     });
   }, [groups, searchTerm, categoryFilter]);
@@ -66,9 +68,11 @@ export function PermissionGroupList({
       sortable: true,
       render: (_, group) => (
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
-            <Layers className="h-4 w-4" />
-          </div>
+          <IconContainer
+            variant="primary"
+            size="md"
+            icon={<Layers className="h-4 w-4" />}
+          />
           <div className="flex flex-col">
             <button
               onClick={(e) => {
@@ -79,7 +83,9 @@ export function PermissionGroupList({
             >
               {group.group_display_name}
             </button>
-            <span className="text-xs font-mono text-muted-foreground">{group.group_name}</span>
+            <span className="text-xs font-mono text-muted-foreground">
+              {group.group_name}
+            </span>
           </div>
         </div>
       ),
@@ -135,18 +141,15 @@ export function PermissionGroupList({
         data={filteredGroups}
         columns={columns}
         keyExtractor={(group) => group.group_hash}
-        
         // View mode with toggle
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         showViewToggle={true}
-        
         // Search
         showSearch={true}
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search groups..."
-        
         // Filters in toolbar
         toolbarFilters={
           allCategories.length > 0 && (
@@ -165,7 +168,6 @@ export function PermissionGroupList({
             </Select>
           )
         }
-        
         // Actions in toolbar
         toolbarActions={
           onCreate && (
@@ -175,18 +177,26 @@ export function PermissionGroupList({
             </Button>
           )
         }
-        
         // Grid view
         renderCard={renderPermissionGroupCard}
         gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
-        
         // States
         isLoading={loading}
-        emptyMessage={searchTerm || categoryFilter !== 'all' ? 'No groups match your filters' : 'No permission groups found'}
-        emptyDescription={searchTerm || categoryFilter !== 'all' ? 'Try adjusting your search or filters' : 'Create groups to organize permissions'}
+        emptyMessage={
+          searchTerm || categoryFilter !== 'all'
+            ? 'No groups match your filters'
+            : 'No permission groups found'
+        }
+        emptyDescription={
+          searchTerm || categoryFilter !== 'all'
+            ? 'Try adjusting your search or filters'
+            : 'Create groups to organize permissions'
+        }
         emptyIcon={<Layers className="h-12 w-12" />}
         emptyAction={
-          onCreate && !searchTerm && categoryFilter === 'all' && (
+          onCreate &&
+          !searchTerm &&
+          categoryFilter === 'all' && (
             <Button onClick={onCreate}>
               <Plus className="mr-2 h-4 w-4" />
               Create Group
@@ -194,7 +204,7 @@ export function PermissionGroupList({
           )
         }
       />
-      
+
       {filteredGroups.length > 0 && (
         <p className="text-sm text-muted-foreground">
           Showing {filteredGroups.length} of {groups.length} group

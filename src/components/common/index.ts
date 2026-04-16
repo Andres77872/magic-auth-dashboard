@@ -1,50 +1,38 @@
-// Re-export primitives for backward compatibility
+// UI components (direct imports from shadcn)
+export { Button, buttonVariants } from '@/components/ui/button';
+export type { ButtonProps } from '@/components/ui/button';
+
+export { Input } from '@/components/ui/input';
+export type { InputProps } from '@/components/ui/input';
+
+export { Badge, badgeVariants } from '@/components/ui/badge';
+export type { BadgeProps } from '@/components/ui/badge';
+
 export {
-  Button,
-  Input,
-  Textarea,
-  Select,
-  Checkbox,
-  Radio,
-  RadioGroup,
-  Toggle,
-  Slider,
-  Badge,
   Card,
   CardHeader,
   CardTitle,
   CardContent,
-  Modal,
-  Toast,
-  Tooltip,
-  LoadingSpinner,
-  ProgressBar,
-  Skeleton,
-} from '../primitives';
-
+  CardFooter,
+  CardDescription,
+} from '@/components/ui/card';
 export type {
-  ButtonProps,
-  InputProps,
-  TextareaProps,
-  SelectProps,
-  CheckboxProps,
-  RadioProps,
-  RadioGroupProps,
-  ToggleProps,
-  SliderProps,
-  BadgeProps,
   CardProps,
   CardHeaderProps,
   CardTitleProps,
   CardContentProps,
-  ModalProps,
-  ToastProps,
-  TooltipProps,
-  LoadingSpinnerProps,
-  ProgressBarProps,
-  SkeletonProps,
-  SelectOption,
-} from '../primitives';
+  CardFooterProps,
+} from '@/components/ui/card';
+
+export { Spinner as LoadingSpinner } from '@/components/ui/spinner';
+export type { SpinnerProps as LoadingSpinnerProps } from '@/components/ui/spinner';
+
+export { Skeleton } from '@/components/ui/skeleton';
+export type { SkeletonProps } from '@/components/ui/skeleton';
+
+// Toast (custom implementation)
+export { Toast } from './Toast';
+export type { ToastProps, ToastVariant, ToastAction } from './Toast';
 
 // Common components
 export { ErrorBoundary } from './ErrorBoundary';
@@ -56,10 +44,14 @@ export { OptimisticContent } from './OptimisticContent';
 export { TableSkeleton } from './TableSkeleton';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as DataView } from './DataView';
+export { DataViewTableView } from './DataViewTableView';
+export { DataViewGridView } from './DataViewGridView';
+export { DataViewBulkActionsBar } from './DataViewBulkActionsBar';
 export { default as DataViewCard } from './DataViewCard';
 export { DataViewToolbar } from './DataViewToolbar';
 export { default as Pagination } from './Pagination';
 export { ActionsMenu } from './ActionsMenu';
+export { IconContainer } from './IconContainer';
 
 // Layout components
 export { FilterBar } from './FilterBar';
@@ -73,9 +65,22 @@ export { EntityFilter } from './EntityFilter';
 
 // Types
 export type { ConfirmDialogProps } from './ConfirmDialog';
-export type { DataViewProps, DataViewColumn, GridColumnsConfig } from './DataView';
-export type { DataViewCardProps, DataViewCardStat } from './DataViewCard';
+export type {
+  DataViewProps,
+  DataViewColumn,
+  DataViewCardProps,
+  GridColumnsConfig,
+  BulkAction,
+  SortState,
+} from './DataView.types';
+export type {
+  DataViewCardProps as DataViewCardLayoutProps,
+  DataViewCardStat,
+} from './DataViewCard';
 export type { DataViewToolbarProps } from './DataViewToolbar';
+export type { DataViewTableViewProps } from './DataViewTableView';
+export type { DataViewGridViewProps } from './DataViewGridView';
+export type { DataViewBulkActionsBarProps } from './DataViewBulkActionsBar';
 export type { EmptyStateProps } from './EmptyState';
 export type { ErrorStateProps } from './ErrorState';
 export type { ActionsMenuProps, ActionMenuItem } from './ActionsMenu';
@@ -86,4 +91,9 @@ export type { SearchBarProps } from './SearchBar';
 export type { StatCardProps } from './StatCard';
 export type { StatsGridProps } from './StatsGrid';
 export type { TabNavigationProps, Tab } from './TabNavigation';
-export type { EntityFilterProps, EntityFilterConfig } from './EntityFilter'; 
+export type { EntityFilterProps, EntityFilterConfig } from './EntityFilter';
+export type {
+  IconContainerProps,
+  IconContainerVariant,
+  IconContainerSize,
+} from './IconContainer';

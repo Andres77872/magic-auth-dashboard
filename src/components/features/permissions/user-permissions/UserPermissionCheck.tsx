@@ -11,8 +11,9 @@ import {
   Copy,
   Check,
   Shield,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
+import { IconContainer } from '@/components/common';
 import { permissionAssignmentsService } from '@/services';
 import { usePermissionManagement } from '@/contexts/PermissionManagementContext';
 
@@ -31,7 +32,7 @@ interface UserPermissionCheckProps {
 export function UserPermissionCheck({
   title = 'Check Permission',
   showHistory = true,
-  maxHistory = 5
+  maxHistory = 5,
 }: UserPermissionCheckProps): React.JSX.Element {
   const { permissions, permissionsLoading } = usePermissionManagement();
   const [searchValue, setSearchValue] = useState('');
@@ -47,9 +48,10 @@ export function UserPermissionCheck({
 
     const search = searchValue.toLowerCase();
     return permissions
-      .filter(p =>
-        p.permission_name.toLowerCase().includes(search) ||
-        p.permission_display_name?.toLowerCase().includes(search)
+      .filter(
+        (p) =>
+          p.permission_name.toLowerCase().includes(search) ||
+          p.permission_display_name?.toLowerCase().includes(search)
       )
       .slice(0, 10);
   }, [searchValue, permissions, permissionsLoading]);
@@ -63,25 +65,29 @@ export function UserPermissionCheck({
     setShowSuggestions(false);
 
     try {
-      const response: any = await permissionAssignmentsService.checkMyPermission(permissionName);
-      const hasPermission = response.has_permission ?? response.data?.has_permission ?? false;
+      const response: any =
+        await permissionAssignmentsService.checkMyPermission(permissionName);
+      const hasPermission =
+        response.has_permission ?? response.data?.has_permission ?? false;
 
       const result: CheckResult = {
         permission: permissionName,
         has_permission: hasPermission,
-        checked_at: new Date()
+        checked_at: new Date(),
       };
 
       setCurrentResult(result);
 
       if (showHistory) {
-        setHistory(prev => {
-          const filtered = prev.filter(h => h.permission !== permissionName);
+        setHistory((prev) => {
+          const filtered = prev.filter((h) => h.permission !== permissionName);
           return [result, ...filtered].slice(0, maxHistory);
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to check permission');
+      setError(
+        err instanceof Error ? err.message : 'Failed to check permission'
+      );
       console.error('Failed to check permission:', err);
     } finally {
       setChecking(false);
@@ -116,9 +122,11 @@ export function UserPermissionCheck({
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Shield className="h-5 w-5" />
-            </div>
+            <IconContainer
+              variant="primary"
+              size="lg"
+              icon={<Shield className="h-5 w-5" />}
+            />
             <div>
               <CardTitle className="text-lg">{title}</CardTitle>
               <p className="text-sm text-muted-foreground">
@@ -148,7 +156,10 @@ export function UserPermissionCheck({
                   </div>
                 )}
               </div>
-              <Button onClick={handleCheck} disabled={!searchValue.trim() || checking}>
+              <Button
+                onClick={handleCheck}
+                disabled={!searchValue.trim() || checking}
+              >
                 {checking ? (
                   <Spinner size="sm" className="mr-2" />
                 ) : (
@@ -165,10 +176,14 @@ export function UserPermissionCheck({
                     <button
                       key={perm.permission_hash}
                       className="flex w-full items-center justify-between rounded px-3 py-2 text-left hover:bg-accent"
-                      onClick={() => handleSelectSuggestion(perm.permission_name)}
+                      onClick={() =>
+                        handleSelectSuggestion(perm.permission_name)
+                      }
                     >
                       <div>
-                        <p className="font-mono text-sm">{perm.permission_name}</p>
+                        <p className="font-mono text-sm">
+                          {perm.permission_name}
+                        </p>
                         {perm.permission_display_name && (
                           <p className="text-xs text-muted-foreground">
                             {perm.permission_display_name}
@@ -188,31 +203,38 @@ export function UserPermissionCheck({
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-destructive bg-destructive/10 p-3">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              <p className="text-sm text-destructive">{error}</p>
+            <div className="flex items-center gap-2 rounded-lg border status-error p-3">
+              <AlertTriangle className="h-4 w-4 status-error-text" />
+              <p className="text-sm status-error-text">{error}</p>
             </div>
           )}
 
           {currentResult && !error && (
-            <Card className={currentResult.has_permission
-              ? 'border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950'
-              : 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950'
-            }>
+            <Card
+              className={
+                currentResult.has_permission
+                  ? 'border status-success'
+                  : 'border status-error'
+              }
+            >
               <CardContent className="flex items-center justify-between py-4">
                 <div className="flex items-center gap-3">
                   {currentResult.has_permission ? (
-                    <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <CheckCircle2 className="h-6 w-6 status-success-text" />
                   ) : (
-                    <XCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                    <XCircle className="h-6 w-6 status-error-text" />
                   )}
                   <div>
-                    <p className={`font-semibold ${
-                      currentResult.has_permission
-                        ? 'text-green-700 dark:text-green-300'
-                        : 'text-red-700 dark:text-red-300'
-                    }`}>
-                      {currentResult.has_permission ? 'Permission Granted' : 'Permission Denied'}
+                    <p
+                      className={`font-semibold ${
+                        currentResult.has_permission
+                          ? 'status-success-text'
+                          : 'status-error-text'
+                      }`}
+                    >
+                      {currentResult.has_permission
+                        ? 'Permission Granted'
+                        : 'Permission Denied'}
                     </p>
                     <p className="font-mono text-sm text-muted-foreground">
                       {currentResult.permission}

@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { useGlobalRoles, usePermissionAssignments } from '@/hooks';
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@/components/common';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Button,
+  Input,
+  Badge,
+} from '@/components/common';
 import { User, Check, X, ShieldCheck, Lock } from 'lucide-react';
 
 export function GlobalRolesPage() {
@@ -14,10 +22,7 @@ export function GlobalRolesPage() {
     createRole,
   } = useGlobalRoles();
 
-  const {
-    myPermissionSources,
-    checkMyPermission,
-  } = usePermissionAssignments();
+  const { myPermissionSources, checkMyPermission } = usePermissionAssignments();
 
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDisplayName, setNewRoleDisplayName] = useState('');
@@ -57,7 +62,7 @@ export function GlobalRolesPage() {
             Manage global roles and permission assignments across all projects
           </p>
         </div>
-        
+
         {hasAdminPermission && (
           <Button onClick={() => setShowCreateForm(!showCreateForm)}>
             + Create Role
@@ -90,17 +95,23 @@ export function GlobalRolesPage() {
                 <div className="mt-4 space-y-2">
                   <div className="font-semibold">Permission Sources:</div>
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                    <div className="p-3 bg-info-subtle rounded-lg">
                       <div className="text-sm font-medium">From Role</div>
-                      <div className="text-2xl font-bold">{myPermissionSources.from_role.length}</div>
+                      <div className="text-2xl font-bold">
+                        {myPermissionSources.from_role.length}
+                      </div>
                     </div>
-                    <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                    <div className="p-3 bg-success-subtle rounded-lg">
                       <div className="text-sm font-medium">From Groups</div>
-                      <div className="text-2xl font-bold">{myPermissionSources.from_user_groups.length}</div>
+                      <div className="text-2xl font-bold">
+                        {myPermissionSources.from_user_groups.length}
+                      </div>
                     </div>
-                    <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
+                    <div className="p-3 bg-purple-subtle rounded-lg">
                       <div className="text-sm font-medium">Direct</div>
-                      <div className="text-2xl font-bold">{myPermissionSources.from_direct_assignment.length}</div>
+                      <div className="text-2xl font-bold">
+                        {myPermissionSources.from_direct_assignment.length}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -202,7 +213,8 @@ export function GlobalRolesPage() {
                         <p className="text-sm mt-2">{role.role_description}</p>
                       )}
                       <div className="mt-2 text-xs text-muted-foreground">
-                        Priority: {role.role_priority} | Created: {new Date(role.created_at).toLocaleDateString()}
+                        Priority: {role.role_priority} | Created:{' '}
+                        {new Date(role.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -239,7 +251,9 @@ export function GlobalRolesPage() {
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <Lock size={16} aria-hidden="true" />
-                    <h4 className="font-semibold">{group.group_display_name}</h4>
+                    <h4 className="font-semibold">
+                      {group.group_display_name}
+                    </h4>
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
                     {group.group_name}

@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  User, 
-  FolderKanban, 
-  Users, 
-  ShieldCheck, 
-  Settings, 
+import {
+  User,
+  FolderKanban,
+  Users,
+  ShieldCheck,
+  Settings,
   ChevronDown,
   ChevronUp,
   LogIn,
   LogOut,
   Trash2,
-  Edit
+  Edit,
 } from 'lucide-react';
 import type { Activity } from '@/types/analytics.types';
 
@@ -48,26 +48,28 @@ const userTypeConfig = {
   consumer: 'bg-primary/10 text-primary border-primary/30',
 };
 
-export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element {
+export function ActivityItem({
+  activity,
+}: ActivityItemProps): React.JSX.Element {
   const [showMetadata, setShowMetadata] = useState(false);
   const config = severityConfig[activity.severity] || severityConfig.info;
 
   const getActivityIcon = (type: Activity['type']) => {
     const iconProps = { size: 18, className: config.icon };
-    
+
     const icons: Record<Activity['type'], React.ReactElement> = {
-      'user_created': <User {...iconProps} />,
-      'user_updated': <Edit {...iconProps} />,
-      'user_deleted': <Trash2 {...iconProps} />,
-      'login': <LogIn {...iconProps} />,
-      'logout': <LogOut {...iconProps} />,
-      'project_created': <FolderKanban {...iconProps} />,
-      'project_updated': <FolderKanban {...iconProps} />,
-      'project_deleted': <Trash2 {...iconProps} />,
-      'group_created': <Users {...iconProps} />,
-      'group_updated': <Users {...iconProps} />,
-      'permission_changed': <ShieldCheck {...iconProps} />,
-      'system_event': <Settings {...iconProps} />,
+      user_created: <User {...iconProps} />,
+      user_updated: <Edit {...iconProps} />,
+      user_deleted: <Trash2 {...iconProps} />,
+      login: <LogIn {...iconProps} />,
+      logout: <LogOut {...iconProps} />,
+      project_created: <FolderKanban {...iconProps} />,
+      project_updated: <FolderKanban {...iconProps} />,
+      project_deleted: <Trash2 {...iconProps} />,
+      group_created: <Users {...iconProps} />,
+      group_updated: <Users {...iconProps} />,
+      permission_changed: <ShieldCheck {...iconProps} />,
+      system_event: <Settings {...iconProps} />,
     };
 
     return icons[type] || icons.system_event;
@@ -94,19 +96,24 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
     }
   };
 
-  const hasMetadata = activity.metadata && Object.keys(activity.metadata).length > 0;
+  const hasMetadata =
+    activity.metadata && Object.keys(activity.metadata).length > 0;
 
   return (
-    <div className={cn(
-      'relative flex gap-4 p-4 rounded-lg border transition-all',
-      'hover:bg-muted/30',
-      config.border
-    )}>
+    <div
+      className={cn(
+        'relative flex gap-4 p-4 rounded-lg border transition-all',
+        'hover:bg-muted/30',
+        config.border
+      )}
+    >
       {/* Icon */}
-      <div className={cn(
-        'shrink-0 h-10 w-10 rounded-full flex items-center justify-center',
-        config.bg
-      )}>
+      <div
+        className={cn(
+          'shrink-0 h-10 w-10 rounded-full flex items-center justify-center',
+          config.bg
+        )}
+      >
         {getActivityIcon(activity.type)}
       </div>
 
@@ -131,17 +138,22 @@ export function ActivityItem({ activity }: ActivityItemProps): React.JSX.Element
         <div className="flex flex-wrap items-center gap-3">
           {/* User info */}
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-              <span className="text-xs font-semibold text-primary-600 dark:text-primary-400">
+            <div className="h-6 w-6 rounded-full bg-primary-subtle flex items-center justify-center">
+              <span className="text-xs font-semibold text-primary-subtle-foreground">
                 {activity.user.username.charAt(0).toUpperCase()}
               </span>
             </div>
             <span className="text-sm text-foreground font-medium">
               {activity.user.username}
             </span>
-            <Badge 
-              variant="outline" 
-              className={cn('text-[10px] px-1.5 py-0', userTypeConfig[activity.user.user_type as keyof typeof userTypeConfig])}
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-[10px] px-1.5 py-0',
+                userTypeConfig[
+                  activity.user.user_type as keyof typeof userTypeConfig
+                ]
+              )}
             >
               {activity.user.user_type.toUpperCase()}
             </Badge>

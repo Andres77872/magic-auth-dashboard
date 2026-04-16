@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { IconContainer } from '@/components/common';
 import { CategoryBadge } from '../shared/CategoryBadge';
 import type { GlobalPermission } from '@/types/global-roles.types';
 
@@ -24,28 +25,38 @@ export function PermissionCard({
   onClick,
   onEdit,
   onDelete,
-  usageCount
+  usageCount,
 }: PermissionCardProps): React.JSX.Element {
   return (
-    <Card 
+    <Card
       className={`group relative transition-shadow hover:shadow-md ${onClick ? 'cursor-pointer' : ''}`}
       onClick={() => onClick?.(permission)}
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-              <Shield className="h-4 w-4" />
-            </div>
+            <IconContainer
+              variant="info"
+              size="md"
+              icon={<Shield className="h-4 w-4" />}
+            />
             <div className="flex-1 space-y-1">
-              <h4 className="font-medium leading-none">{permission.permission_display_name}</h4>
-              <p className="text-xs font-mono text-muted-foreground">{permission.permission_name}</p>
+              <h4 className="font-medium leading-none">
+                {permission.permission_display_name}
+              </h4>
+              <p className="text-xs font-mono text-muted-foreground">
+                {permission.permission_name}
+              </p>
             </div>
           </div>
           {(onEdit || onDelete) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

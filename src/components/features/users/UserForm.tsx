@@ -1,5 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Select, Button, Card, Modal } from '@/components/common';
+import { Input, Button, Card } from '@/components/common';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { usePermissions, useUserType, useAuth, useGlobalRoles } from '@/hooks';
 import { authService } from '@/services';
 import AssignProjectModal from './AssignProjectModal';
@@ -27,12 +42,16 @@ export function UserForm({
   initialData,
   onSubmit,
   isLoading = false,
-  submitButtonText
+  submitButtonText,
 }: UserFormProps): React.JSX.Element {
   const { canCreateAdmin, canCreateRoot } = usePermissions();
   const { userType: currentUserType } = useUserType();
   const { user: currentUser } = useAuth();
-  const { roles: globalRoles, loadingRoles: loadingGlobalRoles, currentRole: userGlobalRole } = useGlobalRoles();
+  const {
+    roles: globalRoles,
+    loadingRoles: loadingGlobalRoles,
+    currentRole: userGlobalRole,
+  } = useGlobalRoles();
 
   const [formData, setFormData] = useState<UserFormData>({
     username: initialData?.username || '',
@@ -40,40 +59,47 @@ export function UserForm({
     password: '',
     confirmPassword: '',
     userType: (initialData?.user_type as UserType) || 'consumer',
-    assignedProjects: initialData?.projects?.map(p => p.project_hash) || [],
+    assignedProjects: initialData?.projects?.map((p) => p.project_hash) || [],
     assignedGroup: initialData?.groups?.[0]?.group_hash || '',
     globalRoleHash: '', // Will be set from userGlobalRole
   });
 
   const [errors, setErrors] = useState<UserFormErrors>({});
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | undefined>(undefined);
-  const [emailAvailable, setEmailAvailable] = useState<boolean | undefined>(undefined);
+  const [usernameAvailable, setUsernameAvailable] = useState<
+    boolean | undefined
+  >(undefined);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | undefined>(
+    undefined
+  );
   const [checkingAvailability, setCheckingAvailability] = useState(false);
-  
+
   // ROOT user creation confirmation
   const [showRootConfirmation, setShowRootConfirmation] = useState(false);
   const [rootConfirmationPassword, setRootConfirmationPassword] = useState('');
   const [rootConfirmationError, setRootConfirmationError] = useState('');
-  
+
   // Project assignment modal
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
-  
+
   // Email input ref for auto-focus
   const emailInputRef = React.useRef<HTMLInputElement>(null);
 
   // Load user's current global role if in edit mode
   useEffect(() => {
     if (mode === 'edit' && initialData?.user_hash && userGlobalRole) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        globalRoleHash: userGlobalRole.role_hash
+        globalRoleHash: userGlobalRole.role_hash,
       }));
     }
   }, [mode, initialData?.user_hash, userGlobalRole]);
 
   // Check if editing own account
-  const isEditingSelf = mode === 'edit' && currentUser && initialData?.user_hash === currentUser.user_hash;
+  const isEditingSelf =
+    mode === 'edit' &&
+    currentUser &&
+    initialData?.user_hash === currentUser.user_hash;
 
   // Auto-focus email field on component mount for create mode
   React.useEffect(() => {
@@ -86,15 +112,19 @@ export function UserForm({
   }, [mode]);
 
   // Filter user type options based on permissions and prevent self-demotion
-  const availableUserTypes = USER_TYPE_OPTIONS.filter(option => {
+  const availableUserTypes = USER_TYPE_OPTIONS.filter((option) => {
     if (option.value === 'root' && !canCreateRoot) return false;
     if (option.value === 'admin' && !canCreateAdmin) return false;
-    
+
     // Prevent ROOT user from demoting themselves
-    if (isEditingSelf && currentUserType === 'root' && option.value !== 'root') {
+    if (
+      isEditingSelf &&
+      currentUserType === 'root' &&
+      option.value !== 'root'
+    ) {
       return false;
     }
-    
+
     return true;
   });
 
@@ -106,7 +136,11 @@ export function UserForm({
       if (formData.username && formData.username !== initialData?.username) {
         await checkAvailability('username', formData.username);
       }
-      if (formData.email && formData.email.trim() && formData.email !== initialData?.email) {
+      if (
+        formData.email &&
+        formData.email.trim() &&
+        formData.email !== initialData?.email
+      ) {
         await checkAvailability('email', formData.email);
       }
     }, 500);
@@ -114,18 +148,29 @@ export function UserForm({
     return () => clearTimeout(timer);
   }, [formData.username, formData.email, mode, initialData]);
 
-  const checkAvailability = async (field: 'username' | 'email', value: string) => {
+  const checkAvailability = async (
+    field: 'username' | 'email',
+    value: string
+  ) => {
     setCheckingAvailability(true);
     try {
       const response = await authService.checkAvailability({
-        [field]: value
+        [field]: value,
       });
 
       if (response.success) {
         if (field === 'username') {
-          setUsernameAvailable(response.username_available === null ? undefined : Boolean(response.username_available));
+          setUsernameAvailable(
+            response.username_available === null
+              ? undefined
+              : Boolean(response.username_available)
+          );
         } else {
-          setEmailAvailable(response.email_available === null ? undefined : Boolean(response.email_available));
+          setEmailAvailable(
+            response.email_available === null
+              ? undefined
+              : Boolean(response.email_available)
+          );
         }
       }
     } catch (error) {
@@ -177,7 +222,8 @@ export function UserForm({
     // Group assignment validation for consumer users
     if (mode === 'create' && formData.userType === 'consumer') {
       if (!formData.assignedGroup) {
-        newErrors.assignedGroup = 'Consumer users must be assigned to a user group';
+        newErrors.assignedGroup =
+          'Consumer users must be assigned to a user group';
       }
     }
 
@@ -187,7 +233,7 @@ export function UserForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
     if (checkingAvailability) return;
 
@@ -236,21 +282,21 @@ export function UserForm({
   };
 
   const handleInputChange = (field: keyof UserFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     // Clear related errors
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const handleProjectAssignment = (selectedProjects: string[]) => {
-    setFormData(prev => ({ ...prev, assignedProjects: selectedProjects }));
+    setFormData((prev) => ({ ...prev, assignedProjects: selectedProjects }));
     setShowProjectModal(false);
   };
 
   const handleGroupAssignment = (selectedGroup: string) => {
-    setFormData(prev => ({ ...prev, assignedGroup: selectedGroup }));
+    setFormData((prev) => ({ ...prev, assignedGroup: selectedGroup }));
     setShowGroupModal(false);
   };
 
@@ -267,7 +313,10 @@ export function UserForm({
 
   return (
     <>
-      <Card title={mode === 'create' ? 'Create New User' : 'Edit User'} padding="lg">
+      <Card
+        title={mode === 'create' ? 'Create New User' : 'Edit User'}
+        padding="lg"
+      >
         <form onSubmit={handleSubmit} className="user-form">
           {/* Security Warning for ROOT users */}
           {mode === 'create' && formData.userType === 'root' && (
@@ -277,7 +326,11 @@ export function UserForm({
               </div>
               <div className="warning-content">
                 <h4>Creating ROOT User</h4>
-                <p>You are about to create a ROOT user with full system access. This action requires additional confirmation for security purposes.</p>
+                <p>
+                  You are about to create a ROOT user with full system access.
+                  This action requires additional confirmation for security
+                  purposes.
+                </p>
               </div>
             </div>
           )}
@@ -289,7 +342,10 @@ export function UserForm({
                 <Info size={24} aria-hidden="true" />
               </div>
               <div className="info-content">
-                <p>You are editing your own account. Some restrictions apply for security reasons.</p>
+                <p>
+                  You are editing your own account. Some restrictions apply for
+                  security reasons.
+                </p>
               </div>
             </div>
           )}
@@ -303,7 +359,7 @@ export function UserForm({
                   <label>Groups:</label>
                   <div className="current-groups">
                     {getCurrentUserGroups().length > 0 ? (
-                      getCurrentUserGroups().map(group => (
+                      getCurrentUserGroups().map((group) => (
                         <span key={group.group_hash} className="group-tag">
                           {group.group_name}
                         </span>
@@ -317,8 +373,11 @@ export function UserForm({
                   <label>Projects:</label>
                   <div className="current-projects">
                     {getCurrentUserProjects().length > 0 ? (
-                      getCurrentUserProjects().map(project => (
-                        <span key={project.project_hash} className="project-tag">
+                      getCurrentUserProjects().map((project) => (
+                        <span
+                          key={project.project_hash}
+                          className="project-tag"
+                        >
                           {project.project_name}
                         </span>
                       ))
@@ -339,14 +398,28 @@ export function UserForm({
                 value={formData.username}
                 onChange={(e) => handleInputChange('username', e.target.value)}
                 error={errors.username}
-                validationState={mode === 'create' ? (usernameAvailable === true ? 'success' : usernameAvailable === false ? 'error' : null) : null}
+                validationState={
+                  mode === 'create'
+                    ? usernameAvailable === true
+                      ? 'success'
+                      : usernameAvailable === false
+                        ? 'error'
+                        : null
+                    : null
+                }
                 required
                 disabled={isLoading || mode === 'edit'}
                 loading={mode === 'create' && checkingAvailability}
-                helperText={mode === 'create' ? 
-                  (usernameAvailable === true ? 'Username is available' : 
-                   usernameAvailable === false ? 'Username is taken' : 
-                   checkingAvailability ? 'Checking availability...' : 'Enter a unique username') : 'Username cannot be changed'
+                helperText={
+                  mode === 'create'
+                    ? usernameAvailable === true
+                      ? 'Username is available'
+                      : usernameAvailable === false
+                        ? 'Username is taken'
+                        : checkingAvailability
+                          ? 'Checking availability...'
+                          : 'Enter a unique username'
+                    : 'Username cannot be changed'
                 }
               />
             </div>
@@ -359,54 +432,107 @@ export function UserForm({
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 error={errors.email}
-                validationState={mode === 'create' && formData.email ? (emailAvailable === true ? 'success' : emailAvailable === false ? 'error' : null) : null}
+                validationState={
+                  mode === 'create' && formData.email
+                    ? emailAvailable === true
+                      ? 'success'
+                      : emailAvailable === false
+                        ? 'error'
+                        : null
+                    : null
+                }
                 disabled={isLoading}
-                loading={mode === 'create' && checkingAvailability && formData.email.length > 0}
-                helperText={mode === 'create' && formData.email ? 
-                  (emailAvailable === true ? 'Email is available' : 
-                   emailAvailable === false ? 'Email is already in use' : 
-                   checkingAvailability ? 'Checking availability...' : 'Optional but recommended') : 'Optional but recommended'
+                loading={
+                  mode === 'create' &&
+                  checkingAvailability &&
+                  formData.email.length > 0
+                }
+                helperText={
+                  mode === 'create' && formData.email
+                    ? emailAvailable === true
+                      ? 'Email is available'
+                      : emailAvailable === false
+                        ? 'Email is already in use'
+                        : checkingAvailability
+                          ? 'Checking availability...'
+                          : 'Optional but recommended'
+                    : 'Optional but recommended'
                 }
                 ref={emailInputRef}
               />
             </div>
 
             {/* User Type Field */}
-            <div className="form-field">
+            <div className="form-field space-y-2">
+              <Label>User Type</Label>
               <Select
-                label="User Type"
-                options={availableUserTypes}
                 value={formData.userType}
-                onChange={(value) => handleInputChange('userType', value)}
-                error={errors.userType}
-                disabled={isLoading || (mode === 'edit' && (currentUserType !== 'root' || isEditingSelf)) || undefined}
-              />
-              <p className="field-help-text">Select the user's access level</p>
+                onValueChange={(value: string) =>
+                  handleInputChange('userType', value)
+                }
+                disabled={
+                  isLoading ||
+                  (mode === 'edit' &&
+                    (currentUserType !== 'root' || isEditingSelf)) ||
+                  undefined
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUserTypes.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.userType && (
+                <p className="text-xs text-destructive">{errors.userType}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Select the user's access level
+              </p>
               {isEditingSelf && currentUserType === 'root' && (
-                <p className="field-warning-text">You cannot change your own user type for security reasons</p>
+                <p className="text-xs text-yellow-600">
+                  You cannot change your own user type for security reasons
+                </p>
               )}
             </div>
 
             {/* Global Role Field */}
-            <div className="form-field">
+            <div className="form-field space-y-2">
+              <Label>Global Role</Label>
               <Select
-                label="Global Role"
-                options={[
-                  { value: '', label: 'No Global Role' },
-                  ...globalRoles.map(role => ({
-                    value: role.role_hash,
-                    label: role.role_display_name
-                  }))
-                ]}
-                value={formData.globalRoleHash || ''}
-                onChange={(value) => handleInputChange('globalRoleHash', value)}
+                value={formData.globalRoleHash || 'none'}
+                onValueChange={(value: string) =>
+                  handleInputChange(
+                    'globalRoleHash',
+                    value === 'none' ? '' : value
+                  )
+                }
                 disabled={isLoading || loadingGlobalRoles}
-              />
-              <p className="field-help-text">
-                {loadingGlobalRoles ? 'Loading global roles...' : 'Assign a global role for system-wide permissions'}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select global role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Global Role</SelectItem>
+                  {globalRoles.map((role) => (
+                    <SelectItem key={role.role_hash} value={role.role_hash}>
+                      {role.role_display_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {loadingGlobalRoles
+                  ? 'Loading global roles...'
+                  : 'Assign a global role for system-wide permissions'}
               </p>
               {formData.globalRoleHash && (
-                <p className="field-info-text">
+                <p className="text-xs text-muted-foreground">
                   Global roles provide permissions across all projects
                 </p>
               )}
@@ -420,7 +546,9 @@ export function UserForm({
                     label={mode === 'create' ? 'Password' : 'New Password'}
                     type="password"
                     value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('password', e.target.value)
+                    }
                     error={errors.password}
                     required={mode === 'create'}
                     disabled={isLoading}
@@ -430,10 +558,16 @@ export function UserForm({
 
                 <div className="form-field">
                   <Input
-                    label={mode === 'create' ? 'Confirm Password' : 'Confirm New Password'}
+                    label={
+                      mode === 'create'
+                        ? 'Confirm Password'
+                        : 'Confirm New Password'
+                    }
                     type="password"
                     value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange('confirmPassword', e.target.value)
+                    }
                     error={errors.confirmPassword}
                     required={mode === 'create' || !!formData.password}
                     disabled={isLoading}
@@ -448,25 +582,30 @@ export function UserForm({
             <div className="project-assignment-section">
               <h4>Project Assignment</h4>
               <p className="help-text">
-                {formData.userType === 'admin' 
+                {formData.userType === 'admin'
                   ? 'Assign this admin user to specific projects they can manage.'
                   : 'Assign this user to a project. Consumer users need to be associated with at least one project.'}
               </p>
-              
+
               <div className="project-assignment-controls">
                 <div className="assigned-projects-display">
-                  {formData.assignedProjects && formData.assignedProjects.length > 0 ? (
+                  {formData.assignedProjects &&
+                  formData.assignedProjects.length > 0 ? (
                     <div className="project-list-summary">
                       <p className="project-count">
-                        {formData.assignedProjects.length} project{formData.assignedProjects.length !== 1 ? 's' : ''} assigned
+                        {formData.assignedProjects.length} project
+                        {formData.assignedProjects.length !== 1 ? 's' : ''}{' '}
+                        assigned
                       </p>
                       <div className="project-tags">
-                        {formData.assignedProjects.slice(0, 3).map((projectHash, index) => (
-                          <span key={projectHash} className="project-tag">
-                            <FolderKanban size={12} aria-hidden="true" />
-                            Project {index + 1}
-                          </span>
-                        ))}
+                        {formData.assignedProjects
+                          .slice(0, 3)
+                          .map((projectHash, index) => (
+                            <span key={projectHash} className="project-tag">
+                              <FolderKanban size={12} aria-hidden="true" />
+                              Project {index + 1}
+                            </span>
+                          ))}
                         {formData.assignedProjects.length > 3 && (
                           <span className="project-tag project-tag-more">
                             +{formData.assignedProjects.length - 3} more
@@ -475,12 +614,10 @@ export function UserForm({
                       </div>
                     </div>
                   ) : (
-                    <p className="no-projects">
-                                        No projects assigned
-                    </p>
+                    <p className="no-projects">No projects assigned</p>
                   )}
                 </div>
-                
+
                 <Button
                   type="button"
                   variant="outline"
@@ -488,20 +625,24 @@ export function UserForm({
                   disabled={isLoading}
                 >
                   <FolderKanban size={16} aria-hidden="true" />
-                  {formData.assignedProjects && formData.assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
+                  {formData.assignedProjects &&
+                  formData.assignedProjects.length > 0
+                    ? 'Change'
+                    : 'Assign'}{' '}
+                  Projects
                 </Button>
               </div>
-              
-              {mode === 'create' && (!formData.assignedProjects || formData.assignedProjects.length === 0) && (
-                <p className="field-warning-text">
-                  Admin users should be assigned to at least one project
-                </p>
-              )}
-              
+
+              {mode === 'create' &&
+                (!formData.assignedProjects ||
+                  formData.assignedProjects.length === 0) && (
+                  <p className="field-warning-text">
+                    Admin users should be assigned to at least one project
+                  </p>
+                )}
+
               {errors.assignedProjects && (
-                <p className="field-error-text">
-                  {errors.assignedProjects}
-                </p>
+                <p className="field-error-text">{errors.assignedProjects}</p>
               )}
             </div>
           )}
@@ -510,7 +651,9 @@ export function UserForm({
           {formData.userType === 'consumer' && (
             <div className="group-assignment-section">
               <h4>User Group Assignment</h4>
-              <p className="help-text">Assign this consumer user to a user group. This is required.</p>
+              <p className="help-text">
+                Assign this consumer user to a user group. This is required.
+              </p>
 
               <div className="project-assignment-controls">
                 <div className="assigned-projects-display">
@@ -518,7 +661,9 @@ export function UserForm({
                     <div className="project-list-summary">
                       <p className="project-count">1 group assigned</p>
                       <div className="project-tags">
-                        <span className="project-tag">{formData.assignedGroup}</span>
+                        <span className="project-tag">
+                          {formData.assignedGroup}
+                        </span>
                       </div>
                     </div>
                   ) : (
@@ -538,9 +683,7 @@ export function UserForm({
               </div>
 
               {errors.assignedGroup && (
-                <p className="field-error-text">
-                  {errors.assignedGroup}
-                </p>
+                <p className="field-error-text">{errors.assignedGroup}</p>
               )}
             </div>
           )}
@@ -552,9 +695,14 @@ export function UserForm({
               variant="primary"
               size="lg"
               loading={isLoading}
-              disabled={checkingAvailability || (mode === 'create' && (usernameAvailable === false || emailAvailable === false))}
+              disabled={
+                checkingAvailability ||
+                (mode === 'create' &&
+                  (usernameAvailable === false || emailAvailable === false))
+              }
             >
-              {submitButtonText || (mode === 'create' ? 'Create User' : 'Update User')}
+              {submitButtonText ||
+                (mode === 'create' ? 'Create User' : 'Update User')}
             </Button>
           </div>
         </form>
@@ -562,31 +710,48 @@ export function UserForm({
 
       {/* ROOT User Creation Confirmation Dialog */}
       {showRootConfirmation && (
-        <Modal
-          isOpen={showRootConfirmation}
-          onClose={() => {
-            setShowRootConfirmation(false);
-            setRootConfirmationPassword('');
-            setRootConfirmationError('');
+        <Dialog
+          open={showRootConfirmation}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowRootConfirmation(false);
+              setRootConfirmationPassword('');
+              setRootConfirmationError('');
+            }
           }}
-          title="Confirm ROOT User Creation"
-          size="md"
-          className="root-confirmation-modal"
-          closeOnBackdrop={!isLoading}
-          closeOnEscape={!isLoading}
         >
-          <div className="modal-body">
-            <div className="warning-section">
-              <div className="warning-icon">
-                <AlertTriangle size={32} className="confirm-icon confirm-icon-warning" aria-hidden="true" />
+          <DialogContent
+            size="md"
+            className="root-confirmation-modal"
+            onPointerDownOutside={
+              isLoading ? (e) => e.preventDefault() : undefined
+            }
+            onEscapeKeyDown={isLoading ? (e) => e.preventDefault() : undefined}
+          >
+            <DialogHeader>
+              <DialogTitle>Confirm ROOT User Creation</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-100 text-yellow-600">
+                  <AlertTriangle
+                    size={24}
+                    className="confirm-icon confirm-icon-warning"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm">
+                    You are about to create a ROOT user with full administrative
+                    privileges. This is a security-sensitive operation.
+                  </p>
+                  <p className="text-sm font-medium">
+                    Please enter your password to confirm this action:
+                  </p>
+                </div>
               </div>
-              <div className="warning-message">
-                <p>You are about to create a ROOT user with full administrative privileges. This is a security-sensitive operation.</p>
-                <p><strong>Please enter your password to confirm this action:</strong></p>
-              </div>
-            </div>
-            
-            <div className="confirmation-input">
+
               <Input
                 type="password"
                 value={rootConfirmationPassword}
@@ -597,29 +762,29 @@ export function UserForm({
                 fullWidth
               />
             </div>
-          </div>
 
-          <div className="modal-footer">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowRootConfirmation(false);
-                setRootConfirmationPassword('');
-                setRootConfirmationError('');
-              }}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleRootConfirmation}
-              loading={isLoading}
-            >
-              Create ROOT User
-            </Button>
-          </div>
-        </Modal>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowRootConfirmation(false);
+                  setRootConfirmationPassword('');
+                  setRootConfirmationError('');
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleRootConfirmation}
+                loading={isLoading}
+              >
+                Create ROOT User
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Assign Projects Modal */}
@@ -629,7 +794,10 @@ export function UserForm({
         onConfirm={handleProjectAssignment}
         initialSelection={formData.assignedProjects || []}
         isLoading={isLoading}
-        userName={formData.username || (formData.userType === 'admin' ? 'Admin User' : 'Consumer User')}
+        userName={
+          formData.username ||
+          (formData.userType === 'admin' ? 'Admin User' : 'Consumer User')
+        }
         allowMultiple={true}
         userType={formData.userType}
       />
@@ -639,7 +807,9 @@ export function UserForm({
         isOpen={showGroupModal}
         onClose={() => setShowGroupModal(false)}
         onConfirm={handleGroupAssignment}
-        initialSelection={formData.assignedGroup ? [formData.assignedGroup] : []}
+        initialSelection={
+          formData.assignedGroup ? [formData.assignedGroup] : []
+        }
         isLoading={isLoading}
         userName={formData.username || 'Consumer User'}
       />
@@ -647,4 +817,4 @@ export function UserForm({
   );
 }
 
-export default UserForm; 
+export default UserForm;

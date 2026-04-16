@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, ConfirmDialog, DataView } from '@/components/common';
+import { Button, Input, ConfirmDialog, DataView } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { PermissionModal } from '@/components/features/permissions';
 import { useToast, usePermissionManagement } from '@/hooks';
@@ -9,19 +16,25 @@ import type { GlobalPermission } from '@/types/global-roles.types';
 
 export const PermissionsTab: React.FC = () => {
   const { showToast } = useToast();
-  const { permissions, permissionsLoading: loading, refreshPermissions, categories } = usePermissionManagement();
-  
+  const {
+    permissions,
+    permissionsLoading: loading,
+    refreshPermissions,
+    categories,
+  } = usePermissionManagement();
+
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingPermission, setEditingPermission] = useState<GlobalPermission | null>(null);
+  const [editingPermission, setEditingPermission] =
+    useState<GlobalPermission | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [permissionToDelete, setPermissionToDelete] = useState<GlobalPermission | null>(null);
+  const [permissionToDelete, setPermissionToDelete] =
+    useState<GlobalPermission | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-
 
   // Create handlers
   const handleOpenCreateModal = () => {
@@ -32,11 +45,17 @@ export const PermissionsTab: React.FC = () => {
     try {
       const response = await globalRolesService.createPermission(data);
       if (response.success) {
-        showToast(`Permission "${data.permission_display_name}" created successfully`, 'success');
+        showToast(
+          `Permission "${data.permission_display_name}" created successfully`,
+          'success'
+        );
         await refreshPermissions();
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Failed to create permission', 'error');
+      showToast(
+        error instanceof Error ? error.message : 'Failed to create permission',
+        'error'
+      );
       throw error;
     }
   };
@@ -49,21 +68,30 @@ export const PermissionsTab: React.FC = () => {
 
   const handleEditSubmit = async (data: any) => {
     if (!editingPermission) return;
-    
+
     try {
-      const response = await globalRolesService.updatePermission(editingPermission.permission_hash, {
-        permission_display_name: data.permission_display_name,
-        permission_description: data.permission_description,
-        permission_category: data.permission_category
-      });
+      const response = await globalRolesService.updatePermission(
+        editingPermission.permission_hash,
+        {
+          permission_display_name: data.permission_display_name,
+          permission_description: data.permission_description,
+          permission_category: data.permission_category,
+        }
+      );
       if (response.success) {
-        showToast(`Permission "${data.permission_display_name}" updated successfully`, 'success');
+        showToast(
+          `Permission "${data.permission_display_name}" updated successfully`,
+          'success'
+        );
         await refreshPermissions();
         setIsEditModalOpen(false);
         setEditingPermission(null);
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Failed to update permission', 'error');
+      showToast(
+        error instanceof Error ? error.message : 'Failed to update permission',
+        'error'
+      );
       throw error;
     }
   };
@@ -79,27 +107,47 @@ export const PermissionsTab: React.FC = () => {
 
     setIsDeleting(true);
     try {
-      const response = await globalRolesService.deletePermission(permissionToDelete.permission_hash);
+      const response = await globalRolesService.deletePermission(
+        permissionToDelete.permission_hash
+      );
       if (response.success) {
-        showToast(`Permission "${permissionToDelete.permission_display_name}" deleted successfully`, 'success');
+        showToast(
+          `Permission "${permissionToDelete.permission_display_name}" deleted successfully`,
+          'success'
+        );
         await refreshPermissions();
         setIsDeleteDialogOpen(false);
         setPermissionToDelete(null);
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Failed to delete permission', 'error');
+      showToast(
+        error instanceof Error ? error.message : 'Failed to delete permission',
+        'error'
+      );
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const filteredPermissions = permissions.filter((permission: GlobalPermission) => {
-    const matchesSearch = permission.permission_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      permission.permission_display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (permission.permission_description && permission.permission_description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = !selectedCategory || permission.permission_category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredPermissions = permissions.filter(
+    (permission: GlobalPermission) => {
+      const matchesSearch =
+        permission.permission_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        permission.permission_display_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (permission.permission_description &&
+          permission.permission_description
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()));
+      const matchesCategory =
+        !selectedCategory ||
+        permission.permission_category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    }
+  );
 
   const columns: DataViewColumn<GlobalPermission>[] = [
     {
@@ -112,14 +160,14 @@ export const PermissionsTab: React.FC = () => {
           <div className="permission-display-name">{value as string}</div>
           <div className="permission-name-small">{row.permission_name}</div>
         </div>
-      )
+      ),
     },
     {
       key: 'permission_description',
       header: 'Description',
       sortable: false,
       width: '40%',
-      render: (value) => value || <span className="text-muted">—</span>
+      render: (value) => value || <span className="text-muted">—</span>,
     },
     {
       key: 'permission_category',
@@ -127,8 +175,8 @@ export const PermissionsTab: React.FC = () => {
       sortable: true,
       width: '15%',
       render: (value) => (
-        <span className="category-badge">{value as string || 'general'}</span>
-      )
+        <span className="category-badge">{(value as string) || 'general'}</span>
+      ),
     },
     {
       key: 'permission_hash',
@@ -157,16 +205,8 @@ export const PermissionsTab: React.FC = () => {
             Delete
           </Button>
         </div>
-      )
-    }
-  ];
-
-  const categoryOptions = [
-    { value: '', label: 'All Categories' },
-    ...categories.map((cat: string) => ({
-      value: cat,
-      label: cat.charAt(0).toUpperCase() + cat.slice(1)
-    }))
+      ),
+    },
   ];
 
   return (
@@ -174,7 +214,10 @@ export const PermissionsTab: React.FC = () => {
       <div className="tab-header">
         <div className="tab-header-text">
           <h2>Global Permissions</h2>
-          <p>Manage individual permissions that can be grouped into permission groups</p>
+          <p>
+            Manage individual permissions that can be grouped into permission
+            groups
+          </p>
         </div>
         <Button
           variant="primary"
@@ -194,18 +237,26 @@ export const PermissionsTab: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="tab-filters">
-          <Select
-            value={selectedCategory}
-            onChange={setSelectedCategory}
-            options={categoryOptions}
-            placeholder="Filter by category"
-          />
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Categories</SelectItem>
+              {categories.map((cat: string) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="tab-count">
-          {filteredPermissions.length} permission{filteredPermissions.length !== 1 ? 's' : ''}
+          {filteredPermissions.length} permission
+          {filteredPermissions.length !== 1 ? 's' : ''}
         </div>
       </div>
 
@@ -269,4 +320,3 @@ export const PermissionsTab: React.FC = () => {
 };
 
 export default PermissionsTab;
-

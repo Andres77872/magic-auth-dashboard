@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DataView } from '@/components/common/DataView';
+import { IconContainer } from '@/components/common';
 import type { DataViewColumn } from '@/components/common/DataView';
 import { PermissionCard } from './PermissionCard';
 import { PermissionActionsMenu } from './PermissionActionsMenu';
@@ -32,7 +33,7 @@ export function PermissionList({
   onEdit,
   onDelete,
   onCreate,
-  onViewDetails
+  onViewDetails,
 }: PermissionListProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -42,9 +43,12 @@ export function PermissionList({
     return permissions.filter((p) => {
       const matchesSearch =
         p.permission_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.permission_display_name.toLowerCase().includes(searchTerm.toLowerCase());
+        p.permission_display_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
       const matchesCategory =
-        categoryFilter === 'all' || (p.permission_category || 'general') === categoryFilter;
+        categoryFilter === 'all' ||
+        (p.permission_category || 'general') === categoryFilter;
       return matchesSearch && matchesCategory;
     });
   }, [permissions, searchTerm, categoryFilter]);
@@ -64,9 +68,11 @@ export function PermissionList({
       sortable: true,
       render: (_, permission) => (
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400">
-            <Shield className="h-4 w-4" />
-          </div>
+          <IconContainer
+            variant="info"
+            size="md"
+            icon={<Shield className="h-4 w-4" />}
+          />
           <div className="flex flex-col">
             <button
               onClick={(e) => {
@@ -77,7 +83,9 @@ export function PermissionList({
             >
               {permission.permission_display_name}
             </button>
-            <span className="text-xs font-mono text-muted-foreground">{permission.permission_name}</span>
+            <span className="text-xs font-mono text-muted-foreground">
+              {permission.permission_name}
+            </span>
           </div>
         </div>
       ),
@@ -96,7 +104,9 @@ export function PermissionList({
       key: 'permission_category',
       header: 'Category',
       width: '120px',
-      render: (_, permission) => <CategoryBadge category={permission.permission_category} />,
+      render: (_, permission) => (
+        <CategoryBadge category={permission.permission_category} />
+      ),
     },
     {
       key: 'permission_hash',
@@ -131,18 +141,15 @@ export function PermissionList({
         data={filteredPermissions}
         columns={columns}
         keyExtractor={(permission) => permission.permission_hash}
-        
         // View mode with toggle
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         showViewToggle={true}
-        
         // Search
         showSearch={true}
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search permissions..."
-        
         // Filters in toolbar
         toolbarFilters={
           allCategories.length > 0 && (
@@ -161,7 +168,6 @@ export function PermissionList({
             </Select>
           )
         }
-        
         // Actions in toolbar
         toolbarActions={
           onCreate && (
@@ -171,18 +177,26 @@ export function PermissionList({
             </Button>
           )
         }
-        
         // Grid view
         renderCard={renderPermissionCard}
         gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
-        
         // States
         isLoading={loading}
-        emptyMessage={searchTerm || categoryFilter !== 'all' ? 'No permissions match your filters' : 'No permissions found'}
-        emptyDescription={searchTerm || categoryFilter !== 'all' ? 'Try adjusting your search or filters' : 'Create your first permission to get started'}
+        emptyMessage={
+          searchTerm || categoryFilter !== 'all'
+            ? 'No permissions match your filters'
+            : 'No permissions found'
+        }
+        emptyDescription={
+          searchTerm || categoryFilter !== 'all'
+            ? 'Try adjusting your search or filters'
+            : 'Create your first permission to get started'
+        }
         emptyIcon={<Shield className="h-12 w-12" />}
         emptyAction={
-          onCreate && !searchTerm && categoryFilter === 'all' && (
+          onCreate &&
+          !searchTerm &&
+          categoryFilter === 'all' && (
             <Button onClick={onCreate}>
               <Plus className="mr-2 h-4 w-4" />
               Create Permission
@@ -190,10 +204,11 @@ export function PermissionList({
           )
         }
       />
-      
+
       {filteredPermissions.length > 0 && (
         <p className="text-sm text-muted-foreground">
-          Showing {filteredPermissions.length} of {permissions.length} permission
+          Showing {filteredPermissions.length} of {permissions.length}{' '}
+          permission
           {permissions.length !== 1 ? 's' : ''}
         </p>
       )}

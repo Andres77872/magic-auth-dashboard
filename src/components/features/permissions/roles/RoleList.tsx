@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DataView } from '@/components/common/DataView';
+import { IconContainer } from '@/components/common';
 import type { DataViewColumn } from '@/components/common/DataView';
 import { RoleCard } from './RoleCard';
 import { RoleActionsMenu } from './RoleActionsMenu';
@@ -37,16 +38,17 @@ export function RoleList({
   onManagePermissionGroups,
   onAssignUsers,
   onCreate,
-  onViewDetails
+  onViewDetails,
 }: RoleListProps): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('priority-desc');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   const filteredAndSortedRoles = useMemo(() => {
-    const filtered = roles.filter((r) =>
-      r.role_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.role_display_name.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = roles.filter(
+      (r) =>
+        r.role_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.role_display_name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return [...filtered].sort((a, b) => {
@@ -73,9 +75,11 @@ export function RoleList({
       sortable: true,
       render: (_, role) => (
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400">
-            <Users className="h-4 w-4" />
-          </div>
+          <IconContainer
+            variant="success"
+            size="md"
+            icon={<Users className="h-4 w-4" />}
+          />
           <div className="flex flex-col">
             <button
               onClick={(e) => {
@@ -86,7 +90,9 @@ export function RoleList({
             >
               {role.role_display_name}
             </button>
-            <span className="text-xs font-mono text-muted-foreground">{role.role_name}</span>
+            <span className="text-xs font-mono text-muted-foreground">
+              {role.role_name}
+            </span>
           </div>
           {role.is_system_role && (
             <Badge variant="outline" className="text-xs gap-1 ml-2">
@@ -152,33 +158,36 @@ export function RoleList({
         data={filteredAndSortedRoles}
         columns={columns}
         keyExtractor={(role) => role.role_hash}
-        
         // View mode with toggle
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         showViewToggle={true}
-        
         // Search
         showSearch={true}
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search roles..."
-        
         // Filters in toolbar
         toolbarFilters={
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          <Select
+            value={sortBy}
+            onValueChange={(v) => setSortBy(v as SortOption)}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="priority-desc">Priority (High to Low)</SelectItem>
-              <SelectItem value="priority-asc">Priority (Low to High)</SelectItem>
+              <SelectItem value="priority-desc">
+                Priority (High to Low)
+              </SelectItem>
+              <SelectItem value="priority-asc">
+                Priority (Low to High)
+              </SelectItem>
               <SelectItem value="name-asc">Name (A-Z)</SelectItem>
               <SelectItem value="name-desc">Name (Z-A)</SelectItem>
             </SelectContent>
           </Select>
         }
-        
         // Actions in toolbar
         toolbarActions={
           onCreate && (
@@ -188,18 +197,23 @@ export function RoleList({
             </Button>
           )
         }
-        
         // Grid view
         renderCard={renderRoleCard}
         gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
-        
         // States
         isLoading={loading}
-        emptyMessage={searchTerm ? 'No roles match your search' : 'No roles found'}
-        emptyDescription={searchTerm ? 'Try adjusting your search' : 'Create roles to assign permission groups to users'}
+        emptyMessage={
+          searchTerm ? 'No roles match your search' : 'No roles found'
+        }
+        emptyDescription={
+          searchTerm
+            ? 'Try adjusting your search'
+            : 'Create roles to assign permission groups to users'
+        }
         emptyIcon={<Users className="h-12 w-12" />}
         emptyAction={
-          onCreate && !searchTerm && (
+          onCreate &&
+          !searchTerm && (
             <Button onClick={onCreate}>
               <Plus className="mr-2 h-4 w-4" />
               Create Role
@@ -207,7 +221,7 @@ export function RoleList({
           )
         }
       />
-      
+
       {filteredAndSortedRoles.length > 0 && (
         <p className="text-sm text-muted-foreground">
           Showing {filteredAndSortedRoles.length} of {roles.length} role

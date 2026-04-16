@@ -3,7 +3,16 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Users, FolderKanban, Activity, Settings, TrendingUp, TrendingDown, Minus, ChevronRight } from 'lucide-react';
+import {
+  Users,
+  FolderKanban,
+  Activity,
+  Settings,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ChevronRight,
+} from 'lucide-react';
 import type { StatCardData } from '@/types/dashboard.types';
 
 interface StatCardProps {
@@ -11,35 +20,41 @@ interface StatCardProps {
   isLoading?: boolean;
 }
 
-const colorConfig: Record<string, { bg: string; icon: string; border: string }> = {
-  primary: { 
-    bg: 'bg-primary-50 dark:bg-primary-950/20', 
-    icon: 'text-primary-600 dark:text-primary-400',
-    border: 'border-l-primary-500'
+const colorConfig: Record<
+  string,
+  { bg: string; icon: string; border: string }
+> = {
+  primary: {
+    bg: 'bg-primary-subtle',
+    icon: 'text-primary-subtle-foreground',
+    border: 'border-l-primary',
   },
-  success: { 
-    bg: 'bg-green-50 dark:bg-green-950/20', 
-    icon: 'text-success',
-    border: 'border-l-success'
+  success: {
+    bg: 'bg-success-subtle',
+    icon: 'text-success-subtle-foreground',
+    border: 'border-l-success',
   },
-  warning: { 
-    bg: 'bg-amber-50 dark:bg-amber-950/20', 
-    icon: 'text-warning',
-    border: 'border-l-warning'
+  warning: {
+    bg: 'bg-warning-subtle',
+    icon: 'text-warning-subtle-foreground',
+    border: 'border-l-warning',
   },
-  info: { 
-    bg: 'bg-cyan-50 dark:bg-cyan-950/20', 
-    icon: 'text-info',
-    border: 'border-l-info'
+  info: {
+    bg: 'bg-info-subtle',
+    icon: 'text-info-subtle-foreground',
+    border: 'border-l-info',
   },
 };
 
-export function StatCard({ data, isLoading = false }: StatCardProps): React.JSX.Element {
+export function DashboardStatCard({
+  data,
+  isLoading = false,
+}: StatCardProps): React.JSX.Element {
   const config = colorConfig[data.color] || colorConfig.primary;
 
   const getIcon = (iconName: string) => {
     const iconProps = { size: 24, className: cn('shrink-0', config.icon) };
-    
+
     const icons: Record<string, React.ReactElement> = {
       users: <Users {...iconProps} />,
       projects: <FolderKanban {...iconProps} />,
@@ -78,11 +93,12 @@ export function StatCard({ data, isLoading = false }: StatCardProps): React.JSX.
   }
 
   const cardContent = (
-    <Card 
+    <Card
       className={cn(
         'relative overflow-hidden border-l-4 transition-all duration-200',
         config.border,
-        data.clickable && 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 group'
+        data.clickable &&
+          'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 group'
       )}
     >
       <CardContent className="p-5">
@@ -91,21 +107,32 @@ export function StatCard({ data, isLoading = false }: StatCardProps): React.JSX.
             {getIcon(data.icon)}
           </div>
           {data.change && (
-            <div className={cn(
-              'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full',
-              data.change.type === 'increase' && 'bg-success/10 text-success',
-              data.change.type === 'decrease' && 'bg-destructive/10 text-destructive',
-              data.change.type === 'neutral' && 'bg-muted text-muted-foreground'
-            )}>
+            <div
+              className={cn(
+                'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full',
+                data.change.type === 'increase' && 'bg-success/10 text-success',
+                data.change.type === 'decrease' &&
+                  'bg-destructive/10 text-destructive',
+                data.change.type === 'neutral' &&
+                  'bg-muted text-muted-foreground'
+              )}
+            >
               {getChangeIcon(data.change.type)}
-              <span>{data.change.value > 0 ? '+' : ''}{data.change.value}%</span>
+              <span>
+                {data.change.value > 0 ? '+' : ''}
+                {data.change.value}%
+              </span>
             </div>
           )}
         </div>
 
         <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{data.title}</p>
-          <p className="text-2xl font-bold text-foreground tracking-tight">{data.value}</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {data.title}
+          </p>
+          <p className="text-2xl font-bold text-foreground tracking-tight">
+            {data.value}
+          </p>
         </div>
 
         {data.clickable && (
@@ -113,7 +140,10 @@ export function StatCard({ data, isLoading = false }: StatCardProps): React.JSX.
             <span className="text-xs font-medium text-muted-foreground group-hover:text-primary-600 transition-colors">
               View Details
             </span>
-            <ChevronRight size={14} className="text-muted-foreground group-hover:text-primary-600 group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight
+              size={14}
+              className="text-muted-foreground group-hover:text-primary-600 group-hover:translate-x-0.5 transition-all"
+            />
           </div>
         )}
       </CardContent>
@@ -131,4 +161,4 @@ export function StatCard({ data, isLoading = false }: StatCardProps): React.JSX.
   return cardContent;
 }
 
-export default StatCard;
+export default DashboardStatCard;

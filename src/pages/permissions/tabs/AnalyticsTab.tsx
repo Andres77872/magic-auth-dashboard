@@ -1,8 +1,21 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { BarChart3, Layers, User, Users } from 'lucide-react';
-import { Select, Card, CardContent, CardHeader, CardTitle, DataView, EmptyState, StatsGrid } from '@/components/common';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  DataView,
+  EmptyState,
+  StatsGrid,
+} from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
-import { usePermissionAssignments, usePermissionManagement, useToast } from '@/hooks';
+import { SearchableSelect } from '@/components/ui/searchable-select';
+import {
+  usePermissionAssignments,
+  usePermissionManagement,
+  useToast,
+} from '@/hooks';
 
 interface UserGroupUsage {
   group_hash: string;
@@ -21,13 +34,16 @@ interface UserUsage {
 
 export const AnalyticsTab: React.FC = () => {
   const { showToast } = useToast();
-  const [selectedPermissionGroup, setSelectedPermissionGroup] = useState<string>('');
+  const [selectedPermissionGroup, setSelectedPermissionGroup] =
+    useState<string>('');
   const [userGroupUsage, setUserGroupUsage] = useState<UserGroupUsage[]>([]);
   const [userUsage, setUserUsage] = useState<UserUsage[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const { getPermissionGroupUserGroups, getPermissionGroupUsers } = usePermissionAssignments();
-  const { permissionGroups, permissionGroupsLoading } = usePermissionManagement();
+  const { getPermissionGroupUserGroups, getPermissionGroupUsers } =
+    usePermissionAssignments();
+  const { permissionGroups, permissionGroupsLoading } =
+    usePermissionManagement();
 
   const loadAnalytics = useCallback(async () => {
     if (!selectedPermissionGroup) {
@@ -39,18 +55,27 @@ export const AnalyticsTab: React.FC = () => {
     setLoading(true);
     try {
       // Load user groups using this permission group
-      const userGroupsResponse = await getPermissionGroupUserGroups(selectedPermissionGroup);
+      const userGroupsResponse = await getPermissionGroupUserGroups(
+        selectedPermissionGroup
+      );
       setUserGroupUsage(userGroupsResponse);
 
       // Load users with direct assignment of this permission group
-      const usersResponse = await getPermissionGroupUsers(selectedPermissionGroup);
+      const usersResponse = await getPermissionGroupUsers(
+        selectedPermissionGroup
+      );
       setUserUsage(usersResponse);
     } catch (error) {
       showToast('Failed to load analytics', 'error');
     } finally {
       setLoading(false);
     }
-  }, [selectedPermissionGroup, getPermissionGroupUserGroups, getPermissionGroupUsers, showToast]);
+  }, [
+    selectedPermissionGroup,
+    getPermissionGroupUserGroups,
+    getPermissionGroupUsers,
+    showToast,
+  ]);
 
   useEffect(() => {
     loadAnalytics();
@@ -60,7 +85,9 @@ export const AnalyticsTab: React.FC = () => {
     if (
       selectedPermissionGroup &&
       !permissionGroupsLoading &&
-      !permissionGroups.some((group) => group.group_hash === selectedPermissionGroup)
+      !permissionGroups.some(
+        (group) => group.group_hash === selectedPermissionGroup
+      )
     ) {
       setSelectedPermissionGroup('');
     }
@@ -88,7 +115,9 @@ export const AnalyticsTab: React.FC = () => {
       hideOnMobile: true,
       render: (value) =>
         value ? (
-          <span className="text-muted-foreground line-clamp-2">{value as string}</span>
+          <span className="text-muted-foreground line-clamp-2">
+            {value as string}
+          </span>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
@@ -98,7 +127,11 @@ export const AnalyticsTab: React.FC = () => {
       header: 'Assigned',
       sortable: true,
       width: '20%',
-      render: (value) => <span className="text-sm text-muted-foreground">{formatDate(value as string)}</span>,
+      render: (value) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDate(value as string)}
+        </span>
+      ),
     },
   ];
 
@@ -123,7 +156,9 @@ export const AnalyticsTab: React.FC = () => {
       hideOnMobile: true,
       render: (value) =>
         value ? (
-          <span className="text-muted-foreground line-clamp-2">{value as string}</span>
+          <span className="text-muted-foreground line-clamp-2">
+            {value as string}
+          </span>
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
@@ -133,7 +168,11 @@ export const AnalyticsTab: React.FC = () => {
       header: 'Assigned',
       sortable: true,
       width: '30%',
-      render: (value) => <span className="text-sm text-muted-foreground">{formatDate(value as string)}</span>,
+      render: (value) => (
+        <span className="text-sm text-muted-foreground">
+          {formatDate(value as string)}
+        </span>
+      ),
     },
   ];
 
@@ -147,12 +186,15 @@ export const AnalyticsTab: React.FC = () => {
   );
 
   const selectedPermissionGroupData = useMemo(
-    () => permissionGroups.find((pg) => pg.group_hash === selectedPermissionGroup),
+    () =>
+      permissionGroups.find((pg) => pg.group_hash === selectedPermissionGroup),
     [permissionGroups, selectedPermissionGroup]
   );
 
   const hasPermissionGroups = permissionGroups.length > 0;
-  const showAnalytics = Boolean(selectedPermissionGroup && selectedPermissionGroupData);
+  const showAnalytics = Boolean(
+    selectedPermissionGroup && selectedPermissionGroupData
+  );
   const totalAssignments = userGroupUsage.length + userUsage.length;
   const stats = useMemo(
     () => [
@@ -191,12 +233,14 @@ export const AnalyticsTab: React.FC = () => {
     ? {
         icon: <BarChart3 size={32} />,
         title: 'Select a permission group',
-        description: 'Choose a permission group to view its usage across user groups and direct users.',
+        description:
+          'Choose a permission group to view its usage across user groups and direct users.',
       }
     : {
         icon: <Layers size={32} />,
         title: 'No permission groups available',
-        description: 'Create a permission group to start tracking usage analytics.',
+        description:
+          'Create a permission group to start tracking usage analytics.',
       };
 
   return (
@@ -204,7 +248,8 @@ export const AnalyticsTab: React.FC = () => {
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Permission Analytics</h2>
         <p className="text-sm text-muted-foreground">
-          View usage statistics for permission groups across user groups and individual users.
+          View usage statistics for permission groups across user groups and
+          individual users.
         </p>
       </div>
 
@@ -216,16 +261,14 @@ export const AnalyticsTab: React.FC = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-2">
-          <Select
+          <SearchableSelect
             label="Select permission group"
             value={selectedPermissionGroup}
-            onChange={setSelectedPermissionGroup}
+            onValueChange={setSelectedPermissionGroup}
             options={permissionGroupOptions}
             placeholder={selectPlaceholder}
             helperText={selectHelperText}
             disabled={permissionGroupsLoading || !hasPermissionGroups}
-            fullWidth
-            searchable={permissionGroupOptions.length > 8}
             clearable={Boolean(selectedPermissionGroup)}
           />
         </CardContent>
@@ -238,10 +281,12 @@ export const AnalyticsTab: React.FC = () => {
               <CardHeader className="space-y-2">
                 <div className="space-y-1">
                   <CardTitle className="text-base">
-                    {selectedPermissionGroupData.group_display_name || selectedPermissionGroupData.group_name}
+                    {selectedPermissionGroupData.group_display_name ||
+                      selectedPermissionGroupData.group_name}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
-                    {selectedPermissionGroupData.group_description || 'No description available.'}
+                    {selectedPermissionGroupData.group_description ||
+                      'No description available.'}
                   </p>
                 </div>
                 <p className="text-xs font-mono text-muted-foreground">
@@ -255,9 +300,12 @@ export const AnalyticsTab: React.FC = () => {
 
           <section className="space-y-3">
             <div className="space-y-1">
-              <h3 className="text-base font-semibold">User Groups Using This Permission Group</h3>
+              <h3 className="text-base font-semibold">
+                User Groups Using This Permission Group
+              </h3>
               <p className="text-sm text-muted-foreground">
-                These user groups have been assigned this permission group. All members inherit these permissions.
+                These user groups have been assigned this permission group. All
+                members inherit these permissions.
               </p>
             </div>
             <DataView
@@ -274,9 +322,12 @@ export const AnalyticsTab: React.FC = () => {
 
           <section className="space-y-3">
             <div className="space-y-1">
-              <h3 className="text-base font-semibold">Users with Direct Assignment</h3>
+              <h3 className="text-base font-semibold">
+                Users with Direct Assignment
+              </h3>
               <p className="text-sm text-muted-foreground">
-                These users have been directly assigned this permission group for individual overrides.
+                These users have been directly assigned this permission group
+                for individual overrides.
               </p>
             </div>
             <DataView
@@ -310,4 +361,3 @@ export const AnalyticsTab: React.FC = () => {
 };
 
 export default AnalyticsTab;
-

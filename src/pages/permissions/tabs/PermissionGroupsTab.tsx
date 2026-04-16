@@ -1,29 +1,47 @@
 import React, { useState } from 'react';
-import { Button, Input, Select, ConfirmDialog, DataView } from '@/components/common';
+import { Button, Input, ConfirmDialog, DataView } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, Pencil, Trash2, Settings } from 'lucide-react';
-import { PermissionGroupModal, ManageGroupPermissionsModal } from '@/components/features/permissions';
+import {
+  PermissionGroupModal,
+  ManageGroupPermissionsModal,
+} from '@/components/features/permissions';
 import { useToast, usePermissionManagement } from '@/hooks';
 import { globalRolesService } from '@/services';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
 
 export const PermissionGroupsTab: React.FC = () => {
   const { showToast } = useToast();
-  const { permissionGroups, permissionGroupsLoading: loading, refreshPermissionGroups, categories } = usePermissionManagement();
-  
+  const {
+    permissionGroups,
+    permissionGroupsLoading: loading,
+    refreshPermissionGroups,
+    categories,
+  } = usePermissionManagement();
+
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingPermissionGroup, setEditingPermissionGroup] = useState<GlobalPermissionGroup | null>(null);
+  const [editingPermissionGroup, setEditingPermissionGroup] =
+    useState<GlobalPermissionGroup | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [permissionGroupToDelete, setPermissionGroupToDelete] = useState<GlobalPermissionGroup | null>(null);
+  const [permissionGroupToDelete, setPermissionGroupToDelete] =
+    useState<GlobalPermissionGroup | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isManagePermissionsModalOpen, setIsManagePermissionsModalOpen] = useState(false);
-  const [managingPermissionGroup, setManagingPermissionGroup] = useState<GlobalPermissionGroup | null>(null);
-
+  const [isManagePermissionsModalOpen, setIsManagePermissionsModalOpen] =
+    useState(false);
+  const [managingPermissionGroup, setManagingPermissionGroup] =
+    useState<GlobalPermissionGroup | null>(null);
 
   // Create handlers
   const handleOpenCreateModal = () => {
@@ -34,11 +52,19 @@ export const PermissionGroupsTab: React.FC = () => {
     try {
       const response = await globalRolesService.createPermissionGroup(data);
       if (response.success) {
-        showToast(`Permission group "${data.group_display_name}" created successfully`, 'success');
+        showToast(
+          `Permission group "${data.group_display_name}" created successfully`,
+          'success'
+        );
         await refreshPermissionGroups();
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Failed to create permission group', 'error');
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to create permission group',
+        'error'
+      );
       throw error;
     }
   };
@@ -51,21 +77,32 @@ export const PermissionGroupsTab: React.FC = () => {
 
   const handleEditSubmit = async (data: any) => {
     if (!editingPermissionGroup) return;
-    
+
     try {
-      const response = await globalRolesService.updatePermissionGroup(editingPermissionGroup.group_hash, {
-        group_display_name: data.group_display_name,
-        group_description: data.group_description,
-        group_category: data.group_category
-      });
+      const response = await globalRolesService.updatePermissionGroup(
+        editingPermissionGroup.group_hash,
+        {
+          group_display_name: data.group_display_name,
+          group_description: data.group_description,
+          group_category: data.group_category,
+        }
+      );
       if (response.success) {
-        showToast(`Permission group "${data.group_display_name}" updated successfully`, 'success');
+        showToast(
+          `Permission group "${data.group_display_name}" updated successfully`,
+          'success'
+        );
         await refreshPermissionGroups();
         setIsEditModalOpen(false);
         setEditingPermissionGroup(null);
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Failed to update permission group', 'error');
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update permission group',
+        'error'
+      );
       throw error;
     }
   };
@@ -81,15 +118,25 @@ export const PermissionGroupsTab: React.FC = () => {
 
     setIsDeleting(true);
     try {
-      const response = await globalRolesService.deletePermissionGroup(permissionGroupToDelete.group_hash);
+      const response = await globalRolesService.deletePermissionGroup(
+        permissionGroupToDelete.group_hash
+      );
       if (response.success) {
-        showToast(`Permission group "${permissionGroupToDelete.group_display_name}" deleted successfully`, 'success');
+        showToast(
+          `Permission group "${permissionGroupToDelete.group_display_name}" deleted successfully`,
+          'success'
+        );
         await refreshPermissionGroups();
         setIsDeleteDialogOpen(false);
         setPermissionGroupToDelete(null);
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Failed to delete permission group', 'error');
+      showToast(
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete permission group',
+        'error'
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -101,13 +148,22 @@ export const PermissionGroupsTab: React.FC = () => {
     setIsManagePermissionsModalOpen(true);
   };
 
-  const filteredPermissionGroups = permissionGroups.filter((pg: GlobalPermissionGroup) => {
-    const matchesSearch = pg.group_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      pg.group_display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (pg.group_description && pg.group_description.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = !selectedCategory || pg.group_category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredPermissionGroups = permissionGroups.filter(
+    (pg: GlobalPermissionGroup) => {
+      const matchesSearch =
+        pg.group_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pg.group_display_name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (pg.group_description &&
+          pg.group_description
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()));
+      const matchesCategory =
+        !selectedCategory || pg.group_category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    }
+  );
 
   const columns: DataViewColumn<GlobalPermissionGroup>[] = [
     {
@@ -120,14 +176,14 @@ export const PermissionGroupsTab: React.FC = () => {
           <div className="permission-group-display-name">{value as string}</div>
           <div className="permission-group-name-small">{row.group_name}</div>
         </div>
-      )
+      ),
     },
     {
       key: 'group_description',
       header: 'Description',
       sortable: false,
       width: '35%',
-      render: (value) => value || <span className="text-muted">—</span>
+      render: (value) => value || <span className="text-muted">—</span>,
     },
     {
       key: 'group_category',
@@ -135,8 +191,8 @@ export const PermissionGroupsTab: React.FC = () => {
       sortable: true,
       width: '15%',
       render: (value) => (
-        <span className="category-badge">{value as string || 'general'}</span>
-      )
+        <span className="category-badge">{(value as string) || 'general'}</span>
+      ),
     },
     {
       key: 'group_hash',
@@ -174,16 +230,8 @@ export const PermissionGroupsTab: React.FC = () => {
             Delete
           </Button>
         </div>
-      )
-    }
-  ];
-
-  const categoryOptions = [
-    { value: '', label: 'All Categories' },
-    ...categories.map((cat: string) => ({
-      value: cat,
-      label: cat.charAt(0).toUpperCase() + cat.slice(1)
-    }))
+      ),
+    },
   ];
 
   return (
@@ -191,7 +239,10 @@ export const PermissionGroupsTab: React.FC = () => {
       <div className="tab-header">
         <div className="tab-header-text">
           <h2>Permission Groups</h2>
-          <p>Manage collections of permissions that can be assigned to roles, user groups, and users</p>
+          <p>
+            Manage collections of permissions that can be assigned to roles,
+            user groups, and users
+          </p>
         </div>
         <Button
           variant="primary"
@@ -211,18 +262,26 @@ export const PermissionGroupsTab: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        
+
         <div className="tab-filters">
-          <Select
-            value={selectedCategory}
-            onChange={setSelectedCategory}
-            options={categoryOptions}
-            placeholder="Filter by category"
-          />
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Categories</SelectItem>
+              {categories.map((cat: string) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="tab-count">
-          {filteredPermissionGroups.length} permission group{filteredPermissionGroups.length !== 1 ? 's' : ''}
+          {filteredPermissionGroups.length} permission group
+          {filteredPermissionGroups.length !== 1 ? 's' : ''}
         </div>
       </div>
 
@@ -297,4 +356,3 @@ export const PermissionGroupsTab: React.FC = () => {
 };
 
 export default PermissionGroupsTab;
-

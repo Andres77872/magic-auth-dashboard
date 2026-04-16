@@ -1,12 +1,12 @@
 /**
  * Sidebar Component
- * 
+ *
  * Grid-based navigation sidebar containing:
  * - Navigation menu with role-based items
  * - Collapsible on desktop
  * - Slide-in drawer on mobile
  * - Sticky footer with version and environment info
- * 
+ *
  * Follows Design System sidebar patterns
  * @see docs/DESIGN_SYSTEM/DASHBOARD_PATTERNS.md
  */
@@ -30,7 +30,7 @@ export function Sidebar({
   return (
     <>
       {/* Desktop Sidebar - CSS Grid item */}
-      <aside 
+      <aside
         id="sidebar-navigation"
         className={cn(
           '[grid-area:sidebar] hidden lg:flex flex-col',
@@ -43,14 +43,11 @@ export function Sidebar({
       >
         {/* Scrollable navigation area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
-          <NavigationMenu 
-            userType={userType}
-            collapsed={collapsed}
-          />
+          <NavigationMenu userType={userType} collapsed={collapsed} />
         </div>
 
         {/* Sidebar footer */}
-        <div 
+        <div
           className={cn(
             'shrink-0 border-t border-border bg-muted/30',
             collapsed ? 'p-2' : 'p-4'
@@ -85,9 +82,9 @@ export function Sidebar({
       </aside>
 
       {/* Mobile Sidebar - Fixed overlay */}
-      <aside 
+      <aside
         className={cn(
-          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 z-50',
+          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 z-dropdown',
           'bg-card border-r border-border shadow-2xl',
           'flex flex-col lg:hidden',
           'transition-transform duration-300 ease-in-out',
@@ -99,10 +96,7 @@ export function Sidebar({
       >
         {/* Scrollable navigation area */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
-          <NavigationMenu 
-            userType={userType}
-            collapsed={false}
-          />
+          <NavigationMenu userType={userType} collapsed={false} />
         </div>
 
         {/* Sidebar footer */}
@@ -130,4 +124,4 @@ export function Sidebar({
   );
 }
 
-export default Sidebar; 
+export default Sidebar;

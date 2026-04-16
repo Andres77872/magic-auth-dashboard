@@ -3,7 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/utils/routes';
 import { VALIDATION } from '@/utils/constants';
-import { Modal, LoadingSpinner, Input, Button } from '@/components/common';
+import { LoadingSpinner, Input, Button } from '@/components/common';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { User, Eye, EyeOff, Lock, XCircle, ShieldCheck } from 'lucide-react';
 
@@ -24,7 +31,10 @@ interface FormErrors {
   general?: string;
 }
 
-export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Element {
+export function LoginModal({
+  isOpen,
+  onClose,
+}: LoginModalProps): React.JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoading, state } = useAuth();
@@ -53,7 +63,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
     }
   }, [isOpen]);
 
-  const handleInputChange = (field: keyof LoginFormData, value: string | boolean): void => {
+  const handleInputChange = (
+    field: keyof LoginFormData,
+    value: string | boolean
+  ): void => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -70,7 +83,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
     } else if (formData.username.length > VALIDATION.USERNAME_MAX_LENGTH) {
       newErrors.username = `Username must be less than ${VALIDATION.USERNAME_MAX_LENGTH} characters`;
     } else if (!/^[a-zA-Z0-9_.-]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters, numbers, dots, hyphens, and underscores';
+      newErrors.username =
+        'Username can only contain letters, numbers, dots, hyphens, and underscores';
     }
 
     if (!formData.password) {
@@ -83,7 +97,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -98,11 +114,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
 
       if (success) {
         onClose();
-        const from = (location.state as { from?: string })?.from || ROUTES.DASHBOARD;
+        const from =
+          (location.state as { from?: string })?.from || ROUTES.DASHBOARD;
         void navigate(from, { replace: true });
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'An unexpected error occurred. Please try again.';
       setErrors({
         general: errorMessage,
       });
@@ -113,21 +133,34 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
 
   if (isLoading) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} size="md" closeOnBackdrop={false}>
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner size="lg" message="Checking authentication..." />
-        </div>
-      </Modal>
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent
+          size="md"
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" message="Checking authentication..." />
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md" closeOnBackdrop={!isSubmitting}>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="space-y-2 text-center">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome Back</h2>
-          <p className="text-sm text-muted-foreground">Sign in to access the Magic Auth Dashboard</p>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        size="md"
+        onPointerDownOutside={
+          isSubmitting ? (e) => e.preventDefault() : undefined
+        }
+      >
+        <DialogHeader className="space-y-2 text-center">
+          <DialogTitle className="text-2xl font-bold tracking-tight">
+            Welcome Back
+          </DialogTitle>
+          <DialogDescription className="text-sm">
+            Sign in to access the Magic Auth Dashboard
+          </DialogDescription>
           <div
             className="mx-auto inline-flex items-center gap-1.5 rounded-full border border-success/20 bg-success/10 px-3 py-1 text-xs text-success"
             aria-label="Secure connection"
@@ -135,10 +168,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
             <ShieldCheck size={12} />
             <span>Secure Connection</span>
           </div>
-        </div>
+        </DialogHeader>
 
         {/* Form */}
-        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4" noValidate>
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          className="space-y-4"
+          noValidate
+        >
           {/* General error message */}
           {(errors.general || state.error) && (
             <div
@@ -150,8 +187,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
                 <XCircle size={20} />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-destructive">{errors.general || state.error}</p>
-                <p className="text-xs text-muted-foreground">Please check your credentials and try again.</p>
+                <p className="text-sm font-medium text-destructive">
+                  {errors.general || state.error}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Please check your credentials and try again.
+                </p>
               </div>
             </div>
           )}
@@ -211,7 +252,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
             <Checkbox
               id="rememberMe"
               checked={formData.rememberMe}
-              onCheckedChange={(checked) => handleInputChange('rememberMe', checked === true)}
+              onCheckedChange={(checked) =>
+                handleInputChange('rememberMe', checked === true)
+              }
               disabled={isSubmitting}
             />
             <label
@@ -230,7 +273,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
               size="lg"
               fullWidth
               loading={isSubmitting}
-              disabled={isSubmitting || !formData.username || !formData.password}
+              disabled={
+                isSubmitting || !formData.username || !formData.password
+              }
             >
               {isSubmitting ? 'Signing in...' : 'Sign In'}
             </Button>
@@ -249,10 +294,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps): React.JSX.Elem
             </p>
           </div>
         </form>
-      </div>
-    </Modal>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export default LoginModal;
-

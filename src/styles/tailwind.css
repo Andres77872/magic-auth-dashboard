@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================
    THEME CONFIGURATION (Tailwind CSS v4)
@@ -20,46 +20,69 @@
   /* Semantic Colors */
   --color-background: #f9fafb;
   --color-foreground: #111827;
-  
+
   --color-card: #ffffff;
   --color-card-foreground: #111827;
-  
+
   --color-popover: #ffffff;
   --color-popover-foreground: #111827;
-  
+
   --color-primary: #3b82f6;
   --color-primary-foreground: #ffffff;
-  
+
   --color-secondary: #f3f4f6;
   --color-secondary-foreground: #111827;
-  
+
   --color-muted: #f3f4f6;
   --color-muted-foreground: #6b7280;
-  
+
   --color-accent: #f3f4f6;
   --color-accent-foreground: #111827;
-  
+
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;
-  
+
   --color-success: #22c55e;
   --color-success-foreground: #ffffff;
-  
+
   --color-warning: #f59e0b;
   --color-warning-foreground: #ffffff;
-  
+
   --color-info: #06b6d4;
   --color-info-foreground: #ffffff;
-  
+
   --color-border: #e5e7eb;
   --color-input: #e5e7eb;
   --color-ring: #3b82f6;
-  
+
+  /* Semantic Subtle Colors (for badges, icon containers, backgrounds) */
+  --color-muted-subtle: #f3f4f6;
+  --color-muted-subtle-foreground: #6b7280;
+
+  --color-destructive-subtle: #fef2f2;
+  --color-destructive-subtle-foreground: #dc2626;
+
+  --color-success-subtle: #f0fdf4;
+  --color-success-subtle-foreground: #16a34a;
+
+  --color-warning-subtle: #fffbeb;
+  --color-warning-subtle-foreground: #d97706;
+
+  --color-info-subtle: #eff6ff;
+  --color-info-subtle-foreground: #2563eb;
+
+  --color-primary-subtle: #eff6ff;
+  --color-primary-subtle-foreground: #2563eb;
+
+  /* Purple subtle (for groups/permission-groups branding) */
+  --color-purple-subtle: #f3e8ff;
+  --color-purple-subtle-foreground: #7c3aed;
+
   /* Surface Colors */
   --color-surface: #ffffff;
   --color-surface-secondary: #f9fafb;
   --color-surface-tertiary: #f3f4f6;
-  
+
   /* Border Radius */
   --radius-xs: 0.125rem;
   --radius-sm: 0.25rem;
@@ -68,18 +91,24 @@
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
   --radius-full: 9999px;
-  
+
   /* Shadows */
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
   /* Font Family */
-  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-  
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono',
+    monospace;
+
   /* Font Sizes */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
@@ -89,12 +118,12 @@
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 1.875rem;
   --font-size-4xl: 2.25rem;
-  
+
   /* Line Heights */
   --line-height-tight: 1.25;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.625;
-  
+
   /* Z-Index Scale */
   --z-index-dropdown: 50;
   --z-index-sticky: 100;
@@ -104,12 +133,12 @@
   --z-index-popover: 500;
   --z-index-tooltip: 600;
   --z-index-toast: 700;
-  
+
   /* Transitions */
   --transition-fast: 150ms;
   --transition-normal: 200ms;
   --transition-slow: 300ms;
-  
+
   /* Animation */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
@@ -123,35 +152,58 @@
   @theme {
     --color-background: #111827;
     --color-foreground: #f3f4f6;
-    
+
     --color-card: #1f2937;
     --color-card-foreground: #f3f4f6;
-    
+
     --color-popover: #1f2937;
     --color-popover-foreground: #f3f4f6;
-    
+
     --color-primary: #3b82f6;
     --color-primary-foreground: #ffffff;
-    
+
     --color-secondary: #374151;
     --color-secondary-foreground: #f3f4f6;
-    
+
     --color-muted: #374151;
     --color-muted-foreground: #9ca3af;
-    
+
     --color-accent: #374151;
     --color-accent-foreground: #f3f4f6;
-    
+
     --color-destructive: #ef4444;
     --color-destructive-foreground: #ffffff;
-    
+
     --color-border: #374151;
     --color-input: #374151;
     --color-ring: #3b82f6;
-    
+
     --color-surface: #1f2937;
     --color-surface-secondary: #111827;
     --color-surface-tertiary: #374151;
+
+    /* Semantic Subtle Colors - Dark Mode */
+    --color-muted-subtle: #374151;
+    --color-muted-subtle-foreground: #d1d5db;
+
+    --color-destructive-subtle: #450a0a;
+    --color-destructive-subtle-foreground: #f87171;
+
+    --color-success-subtle: #052e16;
+    --color-success-subtle-foreground: #4ade80;
+
+    --color-warning-subtle: #451a03;
+    --color-warning-subtle-foreground: #fbbf24;
+
+    --color-info-subtle: #1e3a5f;
+    --color-info-subtle-foreground: #60a5fa;
+
+    --color-primary-subtle: #1e3a5f;
+    --color-primary-subtle-foreground: #60a5fa;
+
+    /* Purple subtle - Dark Mode */
+    --color-purple-subtle: #2e1065;
+    --color-purple-subtle-foreground: #a78bfa;
   }
 }
 
@@ -160,42 +212,80 @@
    ============================================ */
 
 @keyframes accordion-down {
-  from { height: 0; }
-  to { height: var(--radix-accordion-content-height); }
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
 }
 
 @keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height); }
-  to { height: 0; }
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(-25%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
-  50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+  0%,
+  100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-up {
-  from { transform: translateY(10px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes scale-in {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ============================================
@@ -209,49 +299,51 @@
     @apply border-border;
     box-sizing: border-box;
   }
-  
+
   html {
     @apply font-sans antialiased;
     -webkit-text-size-adjust: 100%;
   }
-  
+
   body {
     @apply bg-background text-foreground;
     @apply min-h-screen;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
     margin: 0;
   }
-  
+
   /* Scrollbar styling */
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
   }
-  
+
   *::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  
+
   *::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   *::-webkit-scrollbar-thumb {
     @apply bg-border rounded;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-  
+
   *::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-muted-foreground);
   }
-  
+
   /* Focus visible styling */
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
-  
+
   *:focus:not(:focus-visible) {
     outline: none;
   }
@@ -272,5 +364,48 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+
+  /* Status Card Utilities — semantic border+bg combinations */
+  .status-warning {
+    background-color: var(--color-warning-subtle);
+    border-color: oklch(0.75 0.15 75);
+  }
+
+  .status-warning-text {
+    color: var(--color-warning-subtle-foreground);
+  }
+
+  .status-success {
+    background-color: var(--color-success-subtle);
+    border-color: oklch(0.7 0.15 145);
+  }
+
+  .status-success-text {
+    color: var(--color-success-subtle-foreground);
+  }
+
+  .status-error {
+    background-color: var(--color-destructive-subtle);
+    border-color: oklch(0.55 0.22 25);
+  }
+
+  .status-error-text {
+    color: var(--color-destructive-subtle-foreground);
+  }
+
+  /* Dark mode overrides for status utilities */
+  @media (prefers-color-scheme: dark) {
+    .status-warning {
+      border-color: oklch(0.4 0.08 75);
+    }
+
+    .status-success {
+      border-color: oklch(0.35 0.08 145);
+    }
+
+    .status-error {
+      border-color: oklch(0.25 0.12 25);
+    }
   }
 }

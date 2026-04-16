@@ -11,18 +11,26 @@ import {
   CardContent,
   Button,
   Badge,
-  Modal,
-  DataView
+  DataView,
 } from '@/components/common';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   RoleAssignmentModal,
   RoleCard,
   RoleForm,
-  PermissionGroupCard
+  PermissionGroupCard,
 } from '@/components/features/permissions';
 import { Plus, ShieldCheck, Lock, User } from 'lucide-react';
 import { useToast } from '@/hooks';
-import type { GlobalRole, GlobalPermissionGroup } from '@/types/global-roles.types';
+import type {
+  GlobalRole,
+  GlobalPermissionGroup,
+} from '@/types/global-roles.types';
 import type { Tab, StatCardProps } from '@/components/common';
 
 export function RoleManagementPage(): React.JSX.Element {
@@ -35,13 +43,15 @@ export function RoleManagementPage(): React.JSX.Element {
     updateRole,
     deleteRole,
     assignRoleToUser,
-    assignPermissionGroupToRole
+    assignPermissionGroupToRole,
   } = useGlobalRoles();
 
   const { users, fetchUsers } = useUsers();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<'roles' | 'groups' | 'assignments'>('roles');
+  const [activeTab, setActiveTab] = useState<
+    'roles' | 'groups' | 'assignments'
+  >('roles');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
   const [showRoleForm, setShowRoleForm] = useState(false);
@@ -53,10 +63,11 @@ export function RoleManagementPage(): React.JSX.Element {
   const filteredRoles = useMemo(() => {
     if (!searchQuery) return roles;
     const query = searchQuery.toLowerCase();
-    return roles.filter(role =>
-      role.role_name.toLowerCase().includes(query) ||
-      role.role_display_name.toLowerCase().includes(query) ||
-      role.role_description?.toLowerCase().includes(query)
+    return roles.filter(
+      (role) =>
+        role.role_name.toLowerCase().includes(query) ||
+        role.role_display_name.toLowerCase().includes(query) ||
+        role.role_description?.toLowerCase().includes(query)
     );
   }, [roles, searchQuery]);
 
@@ -64,17 +75,18 @@ export function RoleManagementPage(): React.JSX.Element {
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return permissionGroups;
     const query = searchQuery.toLowerCase();
-    return permissionGroups.filter(group =>
-      group.group_name.toLowerCase().includes(query) ||
-      group.group_display_name.toLowerCase().includes(query) ||
-      group.group_description?.toLowerCase().includes(query)
+    return permissionGroups.filter(
+      (group) =>
+        group.group_name.toLowerCase().includes(query) ||
+        group.group_display_name.toLowerCase().includes(query) ||
+        group.group_description?.toLowerCase().includes(query)
     );
   }, [permissionGroups, searchQuery]);
 
   // Group permission groups by category
   const groupedPermissionGroups = useMemo(() => {
     const grouped: Record<string, GlobalPermissionGroup[]> = {};
-    filteredGroups.forEach(group => {
+    filteredGroups.forEach((group) => {
       const category = group.group_category || 'Other';
       if (!grouped[category]) {
         grouped[category] = [];
@@ -129,7 +141,10 @@ export function RoleManagementPage(): React.JSX.Element {
     }
   };
 
-  const handleAssignPermissionGroup = async (roleHash: string, groupHash: string) => {
+  const handleAssignPermissionGroup = async (
+    roleHash: string,
+    groupHash: string
+  ) => {
     try {
       await assignPermissionGroupToRole(roleHash, groupHash);
       showToast('Permission group assigned to role', 'success');
@@ -229,30 +244,38 @@ export function RoleManagementPage(): React.JSX.Element {
       <TabNavigation
         tabs={tabs}
         activeTab={activeTab}
-        onChange={(tabId) => setActiveTab(tabId as 'roles' | 'groups' | 'assignments')}
+        onChange={(tabId) =>
+          setActiveTab(tabId as 'roles' | 'groups' | 'assignments')
+        }
       />
 
-      {/* Role Form Modal */}
-      <Modal
-        isOpen={showRoleForm}
-        onClose={() => {
-          setShowRoleForm(false);
-          setEditingRole(null);
-        }}
-        title={editingRole ? 'Edit Global Role' : 'Create New Global Role'}
-        size="lg"
-        showCloseButton={true}
-      >
-        <RoleForm
-          mode={editingRole ? 'edit' : 'create'}
-          initialData={editingRole || undefined}
-          onSubmit={editingRole ? handleUpdateRole : handleCreateRole}
-          onCancel={() => {
+      {/* Role Form Dialog */}
+      <Dialog
+        open={showRoleForm}
+        onOpenChange={(open) => {
+          if (!open) {
             setShowRoleForm(false);
             setEditingRole(null);
-          }}
-        />
-      </Modal>
+          }
+        }}
+      >
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle>
+              {editingRole ? 'Edit Global Role' : 'Create New Global Role'}
+            </DialogTitle>
+          </DialogHeader>
+          <RoleForm
+            mode={editingRole ? 'edit' : 'create'}
+            initialData={editingRole || undefined}
+            onSubmit={editingRole ? handleUpdateRole : handleCreateRole}
+            onCancel={() => {
+              setShowRoleForm(false);
+              setEditingRole(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Content Area */}
       {/* Roles Tab */}
@@ -284,7 +307,9 @@ export function RoleManagementPage(): React.JSX.Element {
                 setSelectedRole(role);
                 setShowAssignmentModal(true);
               }}
-              userCount={users.filter(u => u.user_type === role.role_name).length}
+              userCount={
+                users.filter((u) => u.user_type === role.role_name).length
+              }
               permissionGroupCount={0}
             />
           )}
@@ -329,41 +354,62 @@ export function RoleManagementPage(): React.JSX.Element {
               <p>Permission groups are managed by the system</p>
             </Card>
           ) : (
-            Object.entries(groupedPermissionGroups).map(([category, groups]) => (
-              <div key={category} className="category-section">
-                <h3 className="category-title">
-                  <Badge variant="secondary">{category}</Badge>
-                  <span className="category-count">{groups.length} groups</span>
-                </h3>
-                <DataView
-                  data={groups}
-                  columns={[
-                    { key: 'group_display_name', header: 'Group Name', sortable: true },
-                    { key: 'group_name', header: 'Internal Name', sortable: true },
-                    { key: 'group_category', header: 'Category', sortable: true },
-                    { key: 'group_description', header: 'Description' },
-                  ]}
-                  viewMode="grid"
-                  defaultViewMode="grid"
-                  renderCard={(group: GlobalPermissionGroup) => (
-                    <PermissionGroupCard
-                      key={group.group_hash}
-                      group={group}
-                      permissionCount={0}
-                      onManagePermissions={selectedRole 
-                        ? () => handleAssignPermissionGroup(selectedRole.role_hash, group.group_hash) 
-                        : undefined
-                      }
-                    />
-                  )}
-                  gridColumns={{
-                    mobile: 1,
-                    tablet: 2,
-                    desktop: 3,
-                  }}
-                />
-              </div>
-            ))
+            Object.entries(groupedPermissionGroups).map(
+              ([category, groups]) => (
+                <div key={category} className="category-section">
+                  <h3 className="category-title">
+                    <Badge variant="secondary">{category}</Badge>
+                    <span className="category-count">
+                      {groups.length} groups
+                    </span>
+                  </h3>
+                  <DataView
+                    data={groups}
+                    columns={[
+                      {
+                        key: 'group_display_name',
+                        header: 'Group Name',
+                        sortable: true,
+                      },
+                      {
+                        key: 'group_name',
+                        header: 'Internal Name',
+                        sortable: true,
+                      },
+                      {
+                        key: 'group_category',
+                        header: 'Category',
+                        sortable: true,
+                      },
+                      { key: 'group_description', header: 'Description' },
+                    ]}
+                    viewMode="grid"
+                    defaultViewMode="grid"
+                    renderCard={(group: GlobalPermissionGroup) => (
+                      <PermissionGroupCard
+                        key={group.group_hash}
+                        group={group}
+                        permissionCount={0}
+                        onManagePermissions={
+                          selectedRole
+                            ? () =>
+                                handleAssignPermissionGroup(
+                                  selectedRole.role_hash,
+                                  group.group_hash
+                                )
+                            : undefined
+                        }
+                      />
+                    )}
+                    gridColumns={{
+                      mobile: 1,
+                      tablet: 2,
+                      desktop: 3,
+                    }}
+                  />
+                </div>
+              )
+            )
           )}
         </div>
       )}
@@ -379,19 +425,23 @@ export function RoleManagementPage(): React.JSX.Element {
           </CardHeader>
           <CardContent>
             <div className="assignment-stats">
-              {roles.map(role => {
-                const userCount = users.filter(u => u.user_type === role.role_name).length;
+              {roles.map((role) => {
+                const userCount = users.filter(
+                  (u) => u.user_type === role.role_name
+                ).length;
                 return (
                   <div key={role.role_hash} className="assignment-stat-item">
                     <div className="stat-header">
-                      <span className="stat-role-name">{role.role_display_name}</span>
+                      <span className="stat-role-name">
+                        {role.role_display_name}
+                      </span>
                       <Badge variant="secondary">{userCount} users</Badge>
                     </div>
                     <div className="stat-bar">
                       <div
                         className="stat-bar-fill"
                         style={{
-                          width: `${users.length > 0 ? (userCount / users.length) * 100 : 0}%`
+                          width: `${users.length > 0 ? (userCount / users.length) * 100 : 0}%`,
                         }}
                       />
                     </div>
@@ -401,7 +451,10 @@ export function RoleManagementPage(): React.JSX.Element {
             </div>
 
             <div className="assignment-actions">
-              <Button onClick={() => setShowAssignmentModal(true)} variant="primary">
+              <Button
+                onClick={() => setShowAssignmentModal(true)}
+                variant="primary"
+              >
                 <User size={18} aria-hidden="true" />
                 Assign Roles to Users
               </Button>
@@ -417,12 +470,12 @@ export function RoleManagementPage(): React.JSX.Element {
           setShowAssignmentModal(false);
           setSelectedRole(null);
         }}
-        users={users.map(u => ({
+        users={users.map((u) => ({
           user_hash: u.user_hash,
           username: u.username,
           email: u.email,
           user_type: u.user_type,
-          current_role: u.user_type
+          current_role: u.user_type,
         }))}
         onAssignRole={handleAssignRole}
       />

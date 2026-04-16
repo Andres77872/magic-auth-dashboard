@@ -15,27 +15,28 @@ const sizeStyles = {
   lg: 'h-14 w-14 text-lg',
 };
 
-const typeColorStyles = {
-  root: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400',
-  admin: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400',
-  consumer: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+const typeColorStyles: Record<UserType, string> = {
+  root: 'bg-destructive-subtle text-destructive-subtle-foreground',
+  admin: 'bg-info-subtle text-info-subtle-foreground',
+  consumer: 'bg-muted-subtle text-muted-subtle-foreground',
 };
 
-export function UserAvatar({ 
-  username, 
-  userType, 
+export function UserAvatar({
+  username,
+  userType,
   size = 'md',
-  className = '' 
+  className = '',
 }: UserAvatarProps): React.JSX.Element {
-  const initials = username
-    .split(' ')
-    .map(name => name.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || username.charAt(0).toUpperCase();
+  const initials =
+    username
+      .split(' ')
+      .map((name) => name.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || username.charAt(0).toUpperCase();
 
   return (
-    <div 
+    <div
       className={cn(
         'flex items-center justify-center rounded-full font-semibold shadow-sm ring-1 ring-border/50',
         sizeStyles[size],
