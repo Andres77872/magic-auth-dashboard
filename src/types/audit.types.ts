@@ -20,8 +20,6 @@ export type ActivityType =
   | 'project_member_add'
   | 'project_member_remove'
   | 'project_ownership_transferred'
-  | 'project_archived'
-  | 'project_unarchived'
   // Group Management
   | 'group_creation'
   | 'group_update'
@@ -58,8 +56,6 @@ export const ACTIVITY_TYPES: ActivityType[] = [
   'project_member_add',
   'project_member_remove',
   'project_ownership_transferred',
-  'project_archived',
-  'project_unarchived',
   'group_creation',
   'group_update',
   'group_delete',
@@ -75,7 +71,6 @@ export const ACTIVITY_TYPES: ActivityType[] = [
   'admin_action',
   'system_event',
 ];
-
 
 /**
  * User reference in activity logs
@@ -186,7 +181,6 @@ export interface AuditStatistics {
   statusDistribution: StatusDistribution[];
   generatedAt: string;
 }
-
 
 /**
  * Activity log filter parameters

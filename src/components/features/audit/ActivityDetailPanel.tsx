@@ -10,7 +10,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   Copy,
   Check,
@@ -39,42 +44,120 @@ import {
 import { formatDateTime } from '@/utils/component-utils';
 import type { ActivityLog, ActivityType } from '@/types/audit.types';
 
-type ActivityConfig = { icon: React.ElementType; variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'; label: string };
+type ActivityConfig = {
+  icon: React.ElementType;
+  variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+  label: string;
+};
 
 /**
  * Activity type configuration for icons and colors
  */
 const ACTIVITY_TYPE_CONFIG: Record<
   ActivityType,
-  { icon: React.ElementType; variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'; label: string }
+  {
+    icon: React.ElementType;
+    variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+    label: string;
+  }
 > = {
   user_login: { icon: LogIn, variant: 'success', label: 'User Login' },
   user_logout: { icon: LogOut, variant: 'secondary', label: 'User Logout' },
-  user_registration: { icon: UserPlus, variant: 'info', label: 'User Registration' },
+  user_registration: {
+    icon: UserPlus,
+    variant: 'info',
+    label: 'User Registration',
+  },
   user_update: { icon: UserCog, variant: 'primary', label: 'User Update' },
-  user_status_change: { icon: UserCog, variant: 'warning', label: 'User Status Change' },
-  user_password_reset: { icon: Shield, variant: 'warning', label: 'Password Reset' },
-  user_type_changed: { icon: UserCog, variant: 'warning', label: 'User Type Changed' },
-  project_creation: { icon: FolderPlus, variant: 'success', label: 'Project Created' },
-  project_update: { icon: FolderCog, variant: 'primary', label: 'Project Updated' },
-  project_delete: { icon: FolderMinus, variant: 'error', label: 'Project Deleted' },
-  project_member_add: { icon: UserPlus, variant: 'info', label: 'Project Member Added' },
-  project_member_remove: { icon: UserMinus, variant: 'warning', label: 'Project Member Removed' },
-  project_ownership_transferred: { icon: FolderCog, variant: 'warning', label: 'Ownership Transferred' },
-  project_archived: { icon: FolderMinus, variant: 'secondary', label: 'Project Archived' },
-  project_unarchived: { icon: FolderPlus, variant: 'info', label: 'Project Unarchived' },
+  user_status_change: {
+    icon: UserCog,
+    variant: 'warning',
+    label: 'User Status Change',
+  },
+  user_password_reset: {
+    icon: Shield,
+    variant: 'warning',
+    label: 'Password Reset',
+  },
+  user_type_changed: {
+    icon: UserCog,
+    variant: 'warning',
+    label: 'User Type Changed',
+  },
+  project_creation: {
+    icon: FolderPlus,
+    variant: 'success',
+    label: 'Project Created',
+  },
+  project_update: {
+    icon: FolderCog,
+    variant: 'primary',
+    label: 'Project Updated',
+  },
+  project_delete: {
+    icon: FolderMinus,
+    variant: 'error',
+    label: 'Project Deleted',
+  },
+  project_member_add: {
+    icon: UserPlus,
+    variant: 'info',
+    label: 'Project Member Added',
+  },
+  project_member_remove: {
+    icon: UserMinus,
+    variant: 'warning',
+    label: 'Project Member Removed',
+  },
+  project_ownership_transferred: {
+    icon: FolderCog,
+    variant: 'warning',
+    label: 'Ownership Transferred',
+  },
   group_creation: { icon: Users, variant: 'success', label: 'Group Created' },
   group_update: { icon: Users, variant: 'primary', label: 'Group Updated' },
   group_delete: { icon: Users, variant: 'error', label: 'Group Deleted' },
-  user_group_assign: { icon: UserPlus, variant: 'info', label: 'User Added to Group' },
-  user_group_remove: { icon: UserMinus, variant: 'warning', label: 'User Removed from Group' },
-  permission_grant: { icon: Shield, variant: 'warning', label: 'Permission Granted' },
-  permission_revoke: { icon: ShieldOff, variant: 'warning', label: 'Permission Revoked' },
+  user_group_assign: {
+    icon: UserPlus,
+    variant: 'info',
+    label: 'User Added to Group',
+  },
+  user_group_remove: {
+    icon: UserMinus,
+    variant: 'warning',
+    label: 'User Removed from Group',
+  },
+  permission_grant: {
+    icon: Shield,
+    variant: 'warning',
+    label: 'Permission Granted',
+  },
+  permission_revoke: {
+    icon: ShieldOff,
+    variant: 'warning',
+    label: 'Permission Revoked',
+  },
   role_removed: { icon: ShieldOff, variant: 'warning', label: 'Role Removed' },
-  bulk_role_assignment: { icon: Layers, variant: 'warning', label: 'Bulk Role Assignment' },
-  bulk_group_assignment: { icon: Layers, variant: 'warning', label: 'Bulk Group Assignment' },
-  bulk_user_update: { icon: Layers, variant: 'warning', label: 'Bulk User Update' },
-  bulk_user_delete: { icon: Layers, variant: 'error', label: 'Bulk User Delete' },
+  bulk_role_assignment: {
+    icon: Layers,
+    variant: 'warning',
+    label: 'Bulk Role Assignment',
+  },
+  bulk_group_assignment: {
+    icon: Layers,
+    variant: 'warning',
+    label: 'Bulk Group Assignment',
+  },
+  bulk_user_update: {
+    icon: Layers,
+    variant: 'warning',
+    label: 'Bulk User Update',
+  },
+  bulk_user_delete: {
+    icon: Layers,
+    variant: 'error',
+    label: 'Bulk User Delete',
+  },
   admin_action: { icon: Settings, variant: 'warning', label: 'Admin Action' },
   system_event: { icon: AlertTriangle, variant: 'info', label: 'System Event' },
 };
@@ -109,13 +192,23 @@ const DetailRow = memo(function DetailRow({
       <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
         {label}
       </span>
-      <div className={cn('flex items-center gap-2', monospace && 'font-mono text-sm')}>
-        {Icon && <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" aria-hidden="true" />}
+      <div
+        className={cn(
+          'flex items-center gap-2',
+          monospace && 'font-mono text-sm'
+        )}
+      >
+        {Icon && (
+          <Icon
+            className="h-4 w-4 text-muted-foreground flex-shrink-0"
+            aria-hidden="true"
+          />
+        )}
         <span className="break-all">{value}</span>
       </div>
     </div>
   );
-})
+});
 
 /**
  * CopyButton - A button that copies text to clipboard
@@ -155,14 +248,20 @@ const CopyButton = memo(function CopyButton({ text }: { text: string }) {
       </TooltipContent>
     </Tooltip>
   );
-})
+});
 
 // Default config for unknown activity types
-const DEFAULT_DETAIL_CONFIG: ActivityConfig = { icon: FileText, variant: 'secondary', label: 'Unknown' };
+const DEFAULT_DETAIL_CONFIG: ActivityConfig = {
+  icon: FileText,
+  variant: 'secondary',
+  label: 'Unknown',
+};
 
 // Helper to get activity config (pure function)
 const getActivityConfig = (type: ActivityType): ActivityConfig => {
-  return ACTIVITY_TYPE_CONFIG[type] || { ...DEFAULT_DETAIL_CONFIG, label: type };
+  return (
+    ACTIVITY_TYPE_CONFIG[type] || { ...DEFAULT_DETAIL_CONFIG, label: type }
+  );
 };
 
 /**
@@ -177,9 +276,12 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
   onProjectClick,
 }: ActivityDetailPanelProps): React.JSX.Element {
   // Memoize the close handler
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open) onClose();
-  }, [onClose]);
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) onClose();
+    },
+    [onClose]
+  );
 
   // Memoize the config based on activity type
   const config = useMemo(() => {
@@ -322,7 +424,10 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
                         className="gap-1"
                       >
                         View Profile
-                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                        <ExternalLink
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
                       </Button>
                     )}
                   </div>
@@ -355,7 +460,10 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
                           className="gap-1"
                         >
                           View Profile
-                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                          <ExternalLink
+                            className="h-3.5 w-3.5"
+                            aria-hidden="true"
+                          />
                         </Button>
                       )}
                     </div>
@@ -391,7 +499,10 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
                         className="gap-1"
                       >
                         View Project
-                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                        <ExternalLink
+                          className="h-3.5 w-3.5"
+                          aria-hidden="true"
+                        />
                       </Button>
                     )}
                   </div>
@@ -402,7 +513,9 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
                   />
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No project context</p>
+                <p className="text-sm text-muted-foreground">
+                  No project context
+                </p>
               )}
             </div>
 
@@ -421,7 +534,10 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
             {/* Activity Details (JSON) */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <FileJson className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+                <FileJson
+                  className="h-4 w-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Additional Details
                 </span>
@@ -431,7 +547,9 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
                   {detailsJson}
                 </pre>
               ) : (
-                <p className="text-sm text-muted-foreground">No additional details</p>
+                <p className="text-sm text-muted-foreground">
+                  No additional details
+                </p>
               )}
             </div>
           </div>

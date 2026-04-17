@@ -18,7 +18,6 @@ interface ProjectTableProps {
   isLoading?: boolean;
   onEdit?: (project: ProjectDetails) => void;
   onDelete?: () => void;
-  onArchive?: () => void;
 }
 
 export const ProjectTable: React.FC<ProjectTableProps> = ({
@@ -31,9 +30,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
   isLoading = false,
   onEdit,
   onDelete,
-  onArchive,
 }) => {
-
   const columns: DataViewColumn<ProjectDetails>[] = [
     {
       key: 'project_name' as keyof ProjectDetails,
@@ -43,7 +40,9 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
         <div>
           <div className="font-medium">{project.project_name}</div>
           {project.project_description && (
-            <div className="text-sm text-muted-foreground truncate max-w-xs">{project.project_description}</div>
+            <div className="text-sm text-muted-foreground truncate max-w-xs">
+              {project.project_description}
+            </div>
           )}
         </div>
       ),
@@ -53,9 +52,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       header: 'Members',
       sortable: true,
       render: (_value: any, project: ProjectDetails) => (
-        <span className="font-medium">
-          {project.member_count || 0}
-        </span>
+        <span className="font-medium">{project.member_count || 0}</span>
       ),
     },
     {
@@ -83,9 +80,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       header: 'Access Level',
       sortable: false,
       render: (_value: any, project: ProjectDetails) => (
-        <Badge variant="info">
-          {project.access_level || 'Standard'}
-        </Badge>
+        <Badge variant="info">{project.access_level || 'Standard'}</Badge>
       ),
     },
     {
@@ -99,7 +94,6 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
           project={project}
           onEdit={onEdit}
           onDelete={onDelete}
-          onArchive={onArchive}
         />
       ),
     },
@@ -119,7 +113,7 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
         skeletonRows={8}
         className="project-table"
       />
-      
+
       {pagination && pagination.total > 0 && (
         <div className="mt-4">
           <Pagination
@@ -133,4 +127,4 @@ export const ProjectTable: React.FC<ProjectTableProps> = ({
       )}
     </>
   );
-}; 
+};

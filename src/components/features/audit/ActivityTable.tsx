@@ -10,7 +10,12 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -39,14 +44,22 @@ import {
 import { formatRelativeTime, formatDateTime } from '@/utils/component-utils';
 import type { ActivityLog, ActivityType } from '@/types/audit.types';
 
-type ActivityConfig = { icon: React.ElementType; variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'; label: string };
+type ActivityConfig = {
+  icon: React.ElementType;
+  variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+  label: string;
+};
 
 /**
  * Activity type configuration for icons and colors
  */
 const ACTIVITY_TYPE_CONFIG: Record<
   ActivityType,
-  { icon: React.ElementType; variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info'; label: string }
+  {
+    icon: React.ElementType;
+    variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
+    label: string;
+  }
 > = {
   // Authentication
   user_login: { icon: LogIn, variant: 'success', label: 'Login' },
@@ -54,33 +67,99 @@ const ACTIVITY_TYPE_CONFIG: Record<
   user_registration: { icon: UserPlus, variant: 'info', label: 'Registration' },
   // User Management
   user_update: { icon: UserCog, variant: 'primary', label: 'User Update' },
-  user_status_change: { icon: UserCog, variant: 'warning', label: 'Status Change' },
-  user_password_reset: { icon: Shield, variant: 'warning', label: 'Password Reset' },
-  user_type_changed: { icon: UserCog, variant: 'warning', label: 'Type Changed' },
+  user_status_change: {
+    icon: UserCog,
+    variant: 'warning',
+    label: 'Status Change',
+  },
+  user_password_reset: {
+    icon: Shield,
+    variant: 'warning',
+    label: 'Password Reset',
+  },
+  user_type_changed: {
+    icon: UserCog,
+    variant: 'warning',
+    label: 'Type Changed',
+  },
   // Project Management
-  project_creation: { icon: FolderPlus, variant: 'success', label: 'Project Created' },
-  project_update: { icon: FolderCog, variant: 'primary', label: 'Project Update' },
-  project_delete: { icon: FolderMinus, variant: 'error', label: 'Project Deleted' },
-  project_member_add: { icon: UserPlus, variant: 'info', label: 'Member Added' },
-  project_member_remove: { icon: UserMinus, variant: 'warning', label: 'Member Removed' },
-  project_ownership_transferred: { icon: FolderCog, variant: 'warning', label: 'Ownership Transferred' },
-  project_archived: { icon: FolderMinus, variant: 'secondary', label: 'Project Archived' },
-  project_unarchived: { icon: FolderPlus, variant: 'info', label: 'Project Unarchived' },
+  project_creation: {
+    icon: FolderPlus,
+    variant: 'success',
+    label: 'Project Created',
+  },
+  project_update: {
+    icon: FolderCog,
+    variant: 'primary',
+    label: 'Project Update',
+  },
+  project_delete: {
+    icon: FolderMinus,
+    variant: 'error',
+    label: 'Project Deleted',
+  },
+  project_member_add: {
+    icon: UserPlus,
+    variant: 'info',
+    label: 'Member Added',
+  },
+  project_member_remove: {
+    icon: UserMinus,
+    variant: 'warning',
+    label: 'Member Removed',
+  },
+  project_ownership_transferred: {
+    icon: FolderCog,
+    variant: 'warning',
+    label: 'Ownership Transferred',
+  },
   // Group Management
   group_creation: { icon: Users, variant: 'success', label: 'Group Created' },
   group_update: { icon: Users, variant: 'primary', label: 'Group Update' },
   group_delete: { icon: Users, variant: 'error', label: 'Group Deleted' },
-  user_group_assign: { icon: UserPlus, variant: 'info', label: 'Group Assigned' },
-  user_group_remove: { icon: UserMinus, variant: 'warning', label: 'Group Removed' },
+  user_group_assign: {
+    icon: UserPlus,
+    variant: 'info',
+    label: 'Group Assigned',
+  },
+  user_group_remove: {
+    icon: UserMinus,
+    variant: 'warning',
+    label: 'Group Removed',
+  },
   // Permission Management
-  permission_grant: { icon: Shield, variant: 'warning', label: 'Permission Granted' },
-  permission_revoke: { icon: ShieldOff, variant: 'warning', label: 'Permission Revoked' },
+  permission_grant: {
+    icon: Shield,
+    variant: 'warning',
+    label: 'Permission Granted',
+  },
+  permission_revoke: {
+    icon: ShieldOff,
+    variant: 'warning',
+    label: 'Permission Revoked',
+  },
   role_removed: { icon: ShieldOff, variant: 'warning', label: 'Role Removed' },
   // Bulk Operations
-  bulk_role_assignment: { icon: Layers, variant: 'warning', label: 'Bulk Role Assignment' },
-  bulk_group_assignment: { icon: Layers, variant: 'warning', label: 'Bulk Group Assignment' },
-  bulk_user_update: { icon: Layers, variant: 'warning', label: 'Bulk User Update' },
-  bulk_user_delete: { icon: Layers, variant: 'error', label: 'Bulk User Delete' },
+  bulk_role_assignment: {
+    icon: Layers,
+    variant: 'warning',
+    label: 'Bulk Role Assignment',
+  },
+  bulk_group_assignment: {
+    icon: Layers,
+    variant: 'warning',
+    label: 'Bulk Group Assignment',
+  },
+  bulk_user_update: {
+    icon: Layers,
+    variant: 'warning',
+    label: 'Bulk User Update',
+  },
+  bulk_user_delete: {
+    icon: Layers,
+    variant: 'error',
+    label: 'Bulk User Delete',
+  },
   // System
   admin_action: { icon: Settings, variant: 'warning', label: 'Admin Action' },
   system_event: { icon: AlertTriangle, variant: 'info', label: 'System Event' },
@@ -124,16 +203,19 @@ const ActivityCard = memo(function ActivityCard({
     onRowClick?.(activity);
   }, [onRowClick, activity]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault();
-      onRowClick(activity);
-    }
-  }, [onRowClick, activity]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        onRowClick(activity);
+      }
+    },
+    [onRowClick, activity]
+  );
 
   const handleToggleExpand = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(prev => !prev);
+    setIsExpanded((prev) => !prev);
   }, []);
 
   return (
@@ -164,7 +246,10 @@ const ActivityCard = memo(function ActivityCard({
         {/* User Info */}
         {showUserColumn && (
           <div className="flex items-center gap-2 mb-2">
-            <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+            <User
+              className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+              aria-hidden="true"
+            />
             <span className="text-sm font-medium truncate">
               {activity.user?.username || 'System'}
             </span>
@@ -202,7 +287,10 @@ const ActivityCard = memo(function ActivityCard({
             {/* Project */}
             {showProjectColumn && (
               <div className="flex items-center gap-2">
-                <FolderKanban className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+                <FolderKanban
+                  className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                  aria-hidden="true"
+                />
                 <span className="text-muted-foreground">Project:</span>
                 <span className="truncate">
                   {activity.project?.name || '—'}
@@ -211,7 +299,10 @@ const ActivityCard = memo(function ActivityCard({
             )}
             {/* IP Address */}
             <div className="flex items-center gap-2">
-              <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden="true" />
+              <Globe
+                className="h-3.5 w-3.5 text-muted-foreground shrink-0"
+                aria-hidden="true"
+              />
               <span className="text-muted-foreground">IP:</span>
               <span className="font-mono text-xs">
                 {activity.ipAddress || '—'}
@@ -226,7 +317,7 @@ const ActivityCard = memo(function ActivityCard({
       </CardContent>
     </Card>
   );
-})
+});
 
 interface ActivityTableRowProps {
   activity: ActivityLog;
@@ -257,16 +348,19 @@ const ActivityTableRow = memo(function ActivityTableRow({
     onRowClick?.(activity);
   }, [onRowClick, activity]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault();
-      onRowClick(activity);
-    }
-  }, [onRowClick, activity]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        onRowClick(activity);
+      }
+    },
+    [onRowClick, activity]
+  );
 
   const handleToggleExpand = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsExpanded(prev => !prev);
+    setIsExpanded((prev) => !prev);
   }, []);
 
   return (
@@ -300,7 +394,10 @@ const ActivityTableRow = memo(function ActivityTableRow({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 text-sm">
-                    <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                    <User
+                      className="h-3.5 w-3.5 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                     <span className="font-medium truncate max-w-[100px]">
                       {activity.user.username}
                     </span>
@@ -334,7 +431,10 @@ const ActivityTableRow = memo(function ActivityTableRow({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex items-center gap-1.5 text-sm">
-                    <FolderKanban className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                    <FolderKanban
+                      className="h-3.5 w-3.5 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                     <span className="truncate max-w-[100px]">
                       {activity.project.name}
                     </span>
@@ -399,7 +499,9 @@ const ActivityTableRow = memo(function ActivityTableRow({
               className="h-8 w-8 p-0"
               onClick={handleToggleExpand}
               aria-expanded={isExpanded}
-              aria-label={isExpanded ? 'Collapse row details' : 'Expand row details'}
+              aria-label={
+                isExpanded ? 'Collapse row details' : 'Expand row details'
+              }
             >
               {isExpanded ? (
                 <ChevronUp className="h-4 w-4" />
@@ -419,21 +521,31 @@ const ActivityTableRow = memo(function ActivityTableRow({
               {/* Project */}
               {showProjectColumn && (
                 <div className="flex items-center gap-2">
-                  <FolderKanban className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                  <FolderKanban
+                    className="h-3.5 w-3.5 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                   <span className="text-muted-foreground">Project:</span>
                   <span>{activity.project?.name || '—'}</span>
                 </div>
               )}
               {/* IP Address */}
               <div className="flex items-center gap-2">
-                <Globe className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                <Globe
+                  className="h-3.5 w-3.5 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <span className="text-muted-foreground">IP:</span>
-                <span className="font-mono text-xs">{activity.ipAddress || '—'}</span>
+                <span className="font-mono text-xs">
+                  {activity.ipAddress || '—'}
+                </span>
               </div>
               {/* Full Timestamp */}
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground">Time:</span>
-                <span className="text-xs">{formatDateTime(activity.createdAt)}</span>
+                <span className="text-xs">
+                  {formatDateTime(activity.createdAt)}
+                </span>
               </div>
             </div>
           </TableCell>
@@ -441,13 +553,17 @@ const ActivityTableRow = memo(function ActivityTableRow({
       )}
     </>
   );
-})
+});
 
 // Pre-computed skeleton arrays to avoid recreation on each render
 const SKELETON_ITEMS = Array.from({ length: 5 }, (_, i) => i);
 
 // Default config for unknown activity types
-const DEFAULT_CONFIG: ActivityConfig = { icon: FileText, variant: 'secondary', label: 'Unknown' };
+const DEFAULT_CONFIG: ActivityConfig = {
+  icon: FileText,
+  variant: 'secondary',
+  label: 'Unknown',
+};
 
 // Helper to get activity config (pure function, no memoization needed)
 const getActivityConfig = (type: ActivityType): ActivityConfig => {
@@ -477,14 +593,20 @@ const MobileLoadingSkeleton = memo(function MobileLoadingSkeleton() {
   );
 });
 
-const TabletLoadingSkeleton = memo(function TabletLoadingSkeleton({ showUserColumn }: { showUserColumn: boolean }) {
+const TabletLoadingSkeleton = memo(function TabletLoadingSkeleton({
+  showUserColumn,
+}: {
+  showUserColumn: boolean;
+}) {
   return (
     <div className="hidden md:block lg:hidden rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-[180px]">Activity</TableHead>
-            {showUserColumn && <TableHead className="w-[150px]">User</TableHead>}
+            {showUserColumn && (
+              <TableHead className="w-[150px]">User</TableHead>
+            )}
             <TableHead className="w-[120px]">Time</TableHead>
             <TableHead className="w-10"></TableHead>
           </TableRow>
@@ -517,11 +639,11 @@ const TabletLoadingSkeleton = memo(function TabletLoadingSkeleton({ showUserColu
   );
 });
 
-const DesktopLoadingSkeleton = memo(function DesktopLoadingSkeleton({ 
-  showUserColumn, 
-  showProjectColumn 
-}: { 
-  showUserColumn: boolean; 
+const DesktopLoadingSkeleton = memo(function DesktopLoadingSkeleton({
+  showUserColumn,
+  showProjectColumn,
+}: {
+  showUserColumn: boolean;
   showProjectColumn: boolean;
 }) {
   return (
@@ -530,8 +652,12 @@ const DesktopLoadingSkeleton = memo(function DesktopLoadingSkeleton({
         <TableHeader>
           <TableRow>
             <TableHead className="w-[180px]">Activity</TableHead>
-            {showUserColumn && <TableHead className="w-[150px]">User</TableHead>}
-            {showProjectColumn && <TableHead className="w-[150px]">Project</TableHead>}
+            {showUserColumn && (
+              <TableHead className="w-[150px]">User</TableHead>
+            )}
+            {showProjectColumn && (
+              <TableHead className="w-[150px]">Project</TableHead>
+            )}
             <TableHead className="w-[120px]">Time</TableHead>
             <TableHead className="w-[120px]">IP Address</TableHead>
           </TableRow>
@@ -588,7 +714,7 @@ export const ActivityTable = memo(function ActivityTable({
 }: ActivityTableProps): React.JSX.Element {
   // Memoize the activity configs to avoid recalculating on each render
   const activityConfigs = useMemo(() => {
-    return activities.map(activity => ({
+    return activities.map((activity) => ({
       activity,
       config: getActivityConfig(activity.activityType),
       isSelected: selectedId === activity.id,
@@ -601,7 +727,10 @@ export const ActivityTable = memo(function ActivityTable({
       <div className={className}>
         <MobileLoadingSkeleton />
         <TabletLoadingSkeleton showUserColumn={showUserColumn} />
-        <DesktopLoadingSkeleton showUserColumn={showUserColumn} showProjectColumn={showProjectColumn} />
+        <DesktopLoadingSkeleton
+          showUserColumn={showUserColumn}
+          showProjectColumn={showProjectColumn}
+        />
       </div>
     );
   }
@@ -643,7 +772,9 @@ export const ActivityTable = memo(function ActivityTable({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[180px]">Activity</TableHead>
-                {showUserColumn && <TableHead className="w-[150px]">User</TableHead>}
+                {showUserColumn && (
+                  <TableHead className="w-[150px]">User</TableHead>
+                )}
                 <TableHead className="w-[120px]">Time</TableHead>
                 <TableHead className="w-10">
                   <span className="sr-only">Actions</span>
@@ -673,8 +804,12 @@ export const ActivityTable = memo(function ActivityTable({
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[180px]">Activity</TableHead>
-                {showUserColumn && <TableHead className="w-[150px]">User</TableHead>}
-                {showProjectColumn && <TableHead className="w-[150px]">Project</TableHead>}
+                {showUserColumn && (
+                  <TableHead className="w-[150px]">User</TableHead>
+                )}
+                {showProjectColumn && (
+                  <TableHead className="w-[150px]">Project</TableHead>
+                )}
                 <TableHead className="w-[120px]">Time</TableHead>
                 <TableHead className="w-[120px]">IP Address</TableHead>
               </TableRow>
@@ -698,6 +833,6 @@ export const ActivityTable = memo(function ActivityTable({
       </div>
     </TooltipProvider>
   );
-})
+});
 
 export default ActivityTable;

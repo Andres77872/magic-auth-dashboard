@@ -2,11 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { projectService } from '@/services';
 import { useToast } from '@/hooks';
-import type { ProjectDetails, UserAccess, ProjectStatistics, ProjectGroupInfo } from '@/types/project.types';
-import { Activity, Clock, Copy, Check, Users, Layers, Zap, FolderTree } from 'lucide-react';
+import type {
+  ProjectDetails,
+  UserAccess,
+  ProjectStatistics,
+  ProjectGroupInfo,
+} from '@/types/project.types';
+import {
+  Activity,
+  Clock,
+  Copy,
+  Check,
+  Users,
+  Layers,
+  Zap,
+  FolderTree,
+} from 'lucide-react';
 
 interface ProjectOverviewTabProps {
   project: ProjectDetails;
@@ -15,11 +34,11 @@ interface ProjectOverviewTabProps {
   projectGroups?: ProjectGroupInfo[];
 }
 
-export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({ 
-  project, 
-  userAccess, 
+export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
+  project,
+  userAccess,
   statistics,
-  projectGroups = []
+  projectGroups = [],
 }) => {
   const [activity, setActivity] = useState<any[]>([]);
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
@@ -30,9 +49,12 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
     const fetchRecentActivity = async () => {
       try {
         setIsLoadingActivity(true);
-        const response = await projectService.getProjectActivity(project.project_hash, { 
-          limit: 5 
-        });
+        const response = await projectService.getProjectActivity(
+          project.project_hash,
+          {
+            limit: 5,
+          }
+        );
         if (response.success && response.data) {
           setActivity(response.data);
         }
@@ -74,15 +96,16 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
 
   const getStatValue = (value: number | string | undefined): number => {
     if (typeof value === 'number') return value;
-    if (typeof value === 'string' && !isNaN(Number(value))) return Number(value);
+    if (typeof value === 'string' && !isNaN(Number(value)))
+      return Number(value);
     return 0;
   };
 
-  const CopyableId: React.FC<{ id: string; label?: string; fullWidth?: boolean }> = ({ 
-    id, 
-    label,
-    fullWidth = false 
-  }) => (
+  const CopyableId: React.FC<{
+    id: string;
+    label?: string;
+    fullWidth?: boolean;
+  }> = ({ id, label, fullWidth = false }) => (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -102,7 +125,9 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
           <p className="text-xs font-mono break-all">{id}</p>
-          <p className="text-xs text-muted-foreground mt-1">{label || 'Click to copy'}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {label || 'Click to copy'}
+          </p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -150,7 +175,9 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
                 <Zap className="h-5 w-5 text-info" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{statistics?.active_sessions ?? 0}</p>
+                <p className="text-2xl font-bold">
+                  {statistics?.active_sessions ?? 0}
+                </p>
                 <p className="text-xs text-muted-foreground">Active Sessions</p>
               </div>
             </div>
@@ -180,33 +207,51 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Project ID</p>
-              <CopyableId id={project.project_hash} label="Click to copy project hash" fullWidth />
+              <p className="text-sm font-medium text-muted-foreground">
+                Project ID
+              </p>
+              <CopyableId
+                id={project.project_hash}
+                label="Click to copy project hash"
+                fullWidth
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Created</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Created
+                </p>
                 <p className="text-sm">{formatDate(project.created_at)}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Last Updated</p>
-                <p className="text-sm">{project.updated_at ? formatDate(project.updated_at) : 'Never'}</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Last Updated
+                </p>
+                <p className="text-sm">
+                  {project.updated_at
+                    ? formatDate(project.updated_at)
+                    : 'Never'}
+                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Status</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Status
+                </p>
                 {project.is_active !== false ? (
                   <Badge variant="success">Active</Badge>
                 ) : (
-                  <Badge variant="warning">Archived</Badge>
+                  <Badge variant="warning">Inactive</Badge>
                 )}
               </div>
               {userAccess?.access_level && (
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Your Access</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Your Access
+                  </p>
                   <Badge variant="info">{userAccess.access_level}</Badge>
                 </div>
               )}
@@ -214,7 +259,9 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
 
             {userAccess?.permissions && userAccess.permissions.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Your Permissions</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Your Permissions
+                </p>
                 <div className="flex flex-wrap gap-1">
                   {userAccess.permissions.map((permission, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
@@ -239,7 +286,9 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
             {projectGroups.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-6 text-center">
                 <FolderTree className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">No project groups assigned</p>
+                <p className="text-sm text-muted-foreground">
+                  No project groups assigned
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   This project is not part of any project groups
                 </p>
@@ -247,13 +296,15 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
             ) : (
               <div className="space-y-3">
                 {projectGroups.map((group) => (
-                  <div 
-                    key={group.group_hash} 
+                  <div
+                    key={group.group_hash}
                     className="p-3 rounded-lg border bg-muted/30 space-y-2"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm truncate">{group.group_name}</p>
+                        <p className="font-medium text-sm truncate">
+                          {group.group_name}
+                        </p>
                         {group.description && (
                           <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                             {group.description}
@@ -261,7 +312,10 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
                         )}
                       </div>
                     </div>
-                    <CopyableId id={group.group_hash} label="Click to copy group hash" />
+                    <CopyableId
+                      id={group.group_hash}
+                      label="Click to copy group hash"
+                    />
                   </div>
                 ))}
               </div>
@@ -286,13 +340,18 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           ) : activity.length > 0 ? (
             <div className="space-y-3">
               {activity.map((item, index) => (
-                <div key={index} className="flex items-start justify-between gap-4 p-3 rounded-lg border">
+                <div
+                  key={index}
+                  className="flex items-start justify-between gap-4 p-3 rounded-lg border"
+                >
                   <div className="space-y-1 min-w-0 flex-1">
                     <p className="font-medium text-sm">
                       {item.action || item.activity_type || 'Activity'}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {item.description || item.details || 'No details available'}
+                      {item.description ||
+                        item.details ||
+                        'No details available'}
                     </p>
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
@@ -305,11 +364,13 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <Activity className="h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No recent activity found</p>
+              <p className="text-sm text-muted-foreground">
+                No recent activity found
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
   );
-}; 
+};

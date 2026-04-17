@@ -156,8 +156,8 @@ export const ProjectDetailsPage: React.FC = () => {
               Active
             </Badge>
           ) : (
-            <Badge variant="warning" aria-label="Status: Archived">
-              Archived
+            <Badge variant="warning" aria-label="Status: Inactive">
+              Inactive
             </Badge>
           )
         }

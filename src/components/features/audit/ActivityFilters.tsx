@@ -28,7 +28,10 @@ import {
   Activity,
   SlidersHorizontal,
 } from 'lucide-react';
-import type { ActivityFilters as ActivityFiltersType, ActivityType } from '@/types/audit.types';
+import type {
+  ActivityFilters as ActivityFiltersType,
+  ActivityType,
+} from '@/types/audit.types';
 
 /**
  * Date range presets
@@ -58,8 +61,6 @@ const ACTIVITY_TYPE_LABELS: Record<string, string> = {
   project_member_add: 'Member Added',
   project_member_remove: 'Member Removed',
   project_ownership_transferred: 'Ownership Transferred',
-  project_archived: 'Project Archived',
-  project_unarchived: 'Project Unarchived',
   group_creation: 'Group Created',
   group_update: 'Group Update',
   group_delete: 'Group Deleted',
@@ -108,40 +109,55 @@ const FilterControlsContent = memo(function FilterControlsContent({
   showProjectFilter,
   isMobile = false,
 }: FilterControlsContentProps): React.JSX.Element {
-  const handleActivityTypeChange = useCallback((value: string) => {
-    onFiltersChange({
-      ...filters,
-      activityType: value === 'all' ? undefined : (value as ActivityType),
-    });
-  }, [filters, onFiltersChange]);
+  const handleActivityTypeChange = useCallback(
+    (value: string) => {
+      onFiltersChange({
+        ...filters,
+        activityType: value === 'all' ? undefined : (value as ActivityType),
+      });
+    },
+    [filters, onFiltersChange]
+  );
 
-  const handleDaysChange = useCallback((value: string) => {
-    onFiltersChange({
-      ...filters,
-      days: value === 'all' ? undefined : parseInt(value, 10),
-    });
-  }, [filters, onFiltersChange]);
+  const handleDaysChange = useCallback(
+    (value: string) => {
+      onFiltersChange({
+        ...filters,
+        days: value === 'all' ? undefined : parseInt(value, 10),
+      });
+    },
+    [filters, onFiltersChange]
+  );
 
-  const handleUserIdChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onFiltersChange({
-      ...filters,
-      userId: e.target.value || undefined,
-    });
-  }, [filters, onFiltersChange]);
+  const handleUserIdChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onFiltersChange({
+        ...filters,
+        userId: e.target.value || undefined,
+      });
+    },
+    [filters, onFiltersChange]
+  );
 
-  const handleProjectIdChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onFiltersChange({
-      ...filters,
-      projectId: e.target.value || undefined,
-    });
-  }, [filters, onFiltersChange]);
+  const handleProjectIdChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onFiltersChange({
+        ...filters,
+        projectId: e.target.value || undefined,
+      });
+    },
+    [filters, onFiltersChange]
+  );
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onFiltersChange({
-      ...filters,
-      search: e.target.value || undefined,
-    });
-  }, [filters, onFiltersChange]);
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onFiltersChange({
+        ...filters,
+        search: e.target.value || undefined,
+      });
+    },
+    [filters, onFiltersChange]
+  );
 
   const containerClasses = isMobile
     ? 'flex flex-col gap-4'
@@ -150,22 +166,32 @@ const FilterControlsContent = memo(function FilterControlsContent({
   const selectTriggerClasses = isMobile ? 'w-full' : 'w-[180px]';
   const dateSelectTriggerClasses = isMobile ? 'w-full' : 'w-[150px]';
   const inputClasses = isMobile ? 'w-full' : 'w-[150px]';
-  const searchClasses = isMobile ? 'w-full' : 'flex-1 min-w-[200px] max-w-[300px]';
+  const searchClasses = isMobile
+    ? 'w-full'
+    : 'flex-1 min-w-[200px] max-w-[300px]';
 
   return (
     <div className={containerClasses}>
       {/* Activity Type Filter */}
       <div className={isMobile ? 'space-y-1.5' : undefined}>
         {isMobile && (
-          <label className="text-sm font-medium text-foreground">Activity Type</label>
+          <label className="text-sm font-medium text-foreground">
+            Activity Type
+          </label>
         )}
         <Select
           value={filters.activityType || 'all'}
           onValueChange={handleActivityTypeChange}
           disabled={isLoading}
         >
-          <SelectTrigger className={selectTriggerClasses} aria-label="Filter by activity type">
-            <Activity className="h-4 w-4 mr-2 text-muted-foreground" aria-hidden="true" />
+          <SelectTrigger
+            className={selectTriggerClasses}
+            aria-label="Filter by activity type"
+          >
+            <Activity
+              className="h-4 w-4 mr-2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <SelectValue placeholder="Activity Type" />
           </SelectTrigger>
           <SelectContent>
@@ -182,15 +208,23 @@ const FilterControlsContent = memo(function FilterControlsContent({
       {/* Date Range Filter */}
       <div className={isMobile ? 'space-y-1.5' : undefined}>
         {isMobile && (
-          <label className="text-sm font-medium text-foreground">Date Range</label>
+          <label className="text-sm font-medium text-foreground">
+            Date Range
+          </label>
         )}
         <Select
           value={filters.days?.toString() || 'all'}
           onValueChange={handleDaysChange}
           disabled={isLoading}
         >
-          <SelectTrigger className={dateSelectTriggerClasses} aria-label="Filter by date range">
-            <Calendar className="h-4 w-4 mr-2 text-muted-foreground" aria-hidden="true" />
+          <SelectTrigger
+            className={dateSelectTriggerClasses}
+            aria-label="Filter by date range"
+          >
+            <Calendar
+              className="h-4 w-4 mr-2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <SelectValue placeholder="Date Range" />
           </SelectTrigger>
           <SelectContent>
@@ -208,7 +242,9 @@ const FilterControlsContent = memo(function FilterControlsContent({
       {showUserFilter && (
         <div className={isMobile ? 'space-y-1.5' : 'relative'}>
           {isMobile && (
-            <label className="text-sm font-medium text-foreground">User ID</label>
+            <label className="text-sm font-medium text-foreground">
+              User ID
+            </label>
           )}
           <div className="relative">
             <User
@@ -232,7 +268,9 @@ const FilterControlsContent = memo(function FilterControlsContent({
       {showProjectFilter && (
         <div className={isMobile ? 'space-y-1.5' : 'relative'}>
           {isMobile && (
-            <label className="text-sm font-medium text-foreground">Project ID</label>
+            <label className="text-sm font-medium text-foreground">
+              Project ID
+            </label>
           )}
           <div className="relative">
             <FolderKanban
@@ -275,7 +313,7 @@ const FilterControlsContent = memo(function FilterControlsContent({
       </div>
     </div>
   );
-})
+});
 
 interface ActiveFilterBadgeProps {
   label: string;
@@ -305,7 +343,7 @@ const ActiveFilterBadge = memo(function ActiveFilterBadge({
       </button>
     </Badge>
   );
-})
+});
 
 /**
  * ActivityFilters - Filter controls for activity logs
@@ -326,13 +364,18 @@ export const ActivityFilters = memo(function ActivityFilters({
 
   // Build active filters for display
   const activeFilters = useMemo(() => {
-    const active: { key: keyof ActivityFiltersType; label: string; value: string }[] = [];
+    const active: {
+      key: keyof ActivityFiltersType;
+      label: string;
+      value: string;
+    }[] = [];
 
     if (filters.activityType) {
       active.push({
         key: 'activityType',
         label: 'Type',
-        value: ACTIVITY_TYPE_LABELS[filters.activityType] || filters.activityType,
+        value:
+          ACTIVITY_TYPE_LABELS[filters.activityType] || filters.activityType,
       });
     }
     if (filters.userId) {
@@ -350,7 +393,9 @@ export const ActivityFilters = memo(function ActivityFilters({
       });
     }
     if (filters.days) {
-      const option = DATE_RANGE_OPTIONS.find((opt) => opt.value === String(filters.days));
+      const option = DATE_RANGE_OPTIONS.find(
+        (opt) => opt.value === String(filters.days)
+      );
       active.push({
         key: 'days',
         label: 'Period',
@@ -361,7 +406,10 @@ export const ActivityFilters = memo(function ActivityFilters({
       active.push({
         key: 'search',
         label: 'Search',
-        value: filters.search.length > 15 ? filters.search.substring(0, 15) + '...' : filters.search,
+        value:
+          filters.search.length > 15
+            ? filters.search.substring(0, 15) + '...'
+            : filters.search,
       });
     }
 
@@ -370,12 +418,15 @@ export const ActivityFilters = memo(function ActivityFilters({
 
   const hasActiveFilters = activeFilters.length > 0;
 
-  const handleRemoveFilter = useCallback((key: keyof ActivityFiltersType) => {
-    onFiltersChange({
-      ...filters,
-      [key]: undefined,
-    });
-  }, [filters, onFiltersChange]);
+  const handleRemoveFilter = useCallback(
+    (key: keyof ActivityFiltersType) => {
+      onFiltersChange({
+        ...filters,
+        [key]: undefined,
+      });
+    },
+    [filters, onFiltersChange]
+  );
 
   const handleClearAll = useCallback(() => {
     onFiltersChange({});
@@ -389,12 +440,15 @@ export const ActivityFilters = memo(function ActivityFilters({
     setIsMobileFilterOpen(false);
   }, []);
 
-  const handleMobileSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onFiltersChange({
-      ...filters,
-      search: e.target.value || undefined,
-    });
-  }, [filters, onFiltersChange]);
+  const handleMobileSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onFiltersChange({
+        ...filters,
+        search: e.target.value || undefined,
+      });
+    },
+    [filters, onFiltersChange]
+  );
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -467,10 +521,7 @@ export const ActivityFilters = memo(function ActivityFilters({
                   Clear All
                 </Button>
               )}
-              <Button
-                onClick={handleCloseMobileFilter}
-                className="flex-1"
-              >
+              <Button onClick={handleCloseMobileFilter} className="flex-1">
                 Apply Filters
               </Button>
             </SheetFooter>
@@ -503,7 +554,11 @@ export const ActivityFilters = memo(function ActivityFilters({
 
       {/* Active Filter Badges (shown on both mobile and desktop) */}
       {hasActiveFilters && (
-        <div className="flex flex-wrap items-center gap-2" role="list" aria-label="Active filters">
+        <div
+          className="flex flex-wrap items-center gap-2"
+          role="list"
+          aria-label="Active filters"
+        >
           {activeFilters.map((filter) => (
             <ActiveFilterBadge
               key={filter.key}

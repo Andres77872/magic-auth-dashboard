@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ConfirmDialog } from '@/components/common';
 import { ProjectForm } from './ProjectForm';
 import { projectService, userService } from '@/services';
 import { useNavigate } from 'react-router-dom';
@@ -42,12 +41,10 @@ interface User {
 export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
   project,
   onProjectUpdate,
-  onProjectDeleted
+  onProjectDeleted,
 }) => {
   const navigate = useNavigate();
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isArchiving, setIsArchiving] = useState(false);
-  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -62,8 +59,11 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
     try {
       setIsUpdating(true);
       setError(null);
-      const response = await projectService.updateProject(project.project_hash, formData);
-      
+      const response = await projectService.updateProject(
+        project.project_hash,
+        formData
+      );
+
       if (response.success && response.project) {
         // Map the response to our expected format
         const updatedProject: ProjectDetails = {
@@ -84,33 +84,11 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
     }
   };
 
-  const handleArchive = async () => {
-    try {
-      setIsArchiving(true);
-      const response = await projectService.toggleProjectArchive(
-        project.project_hash,
-        project.is_active !== false
-      );
-      
-      if (response.success && response.data) {
-        onProjectUpdate(response.data);
-        setShowArchiveConfirm(false);
-      } else {
-        setError('Failed to archive project. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error archiving project:', err);
-      setError('Failed to archive project. Please try again.');
-    } finally {
-      setIsArchiving(false);
-    }
-  };
-
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
       const response = await projectService.deleteProject(project.project_hash);
-      
+
       if (response.success) {
         onProjectDeleted();
         setShowDeleteConfirm(false);
@@ -132,11 +110,11 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
         limit: 100,
         user_type_filter: 'admin', // Only allow admins to own projects
       });
-      
+
       if (response.success && response.data) {
         // Filter out current project admin
-        const availableUsers = (response.data as User[]).filter((user: User) => 
-          user.user_hash !== project.admin_user
+        const availableUsers = (response.data as User[]).filter(
+          (user: User) => user.user_hash !== project.admin_user
         );
         setUsers(availableUsers);
       }
@@ -157,7 +135,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
         project.project_hash,
         selectedNewOwner
       );
-      
+
       if (response.success) {
         const updatedProject = {
           ...project,
@@ -190,8 +168,8 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
             <AlertTriangle className="h-4 w-4" />
             <span>{error}</span>
           </div>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             onClick={() => setError(null)}
             className="h-6 w-6"
@@ -233,19 +211,8 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
         </CardHeader>
         <CardContent>
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={openTransferModal}
-            >
+            <Button variant="outline" onClick={openTransferModal}>
               Transfer Ownership
-            </Button>
-            
-            <Button
-              variant={project.is_active !== false ? "secondary" : "primary"}
-              onClick={() => setShowArchiveConfirm(true)}
-              loading={isArchiving}
-            >
-              {project.is_active !== false ? "Archive Project" : "Unarchive Project"}
             </Button>
           </div>
         </CardContent>
@@ -272,28 +239,16 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Archive Confirmation */}
-      {showArchiveConfirm && (
-        <ConfirmDialog
-          isOpen={true}
-          title={`${project.is_active !== false ? 'Archive' : 'Unarchive'} Project`}
-          message={`Are you sure you want to ${project.is_active !== false ? 'archive' : 'unarchive'} "${project.project_name}"? ${project.is_active !== false ? 'This will make the project read-only.' : 'This will make the project active again.'}`}
-          confirmText={project.is_active !== false ? 'Archive' : 'Unarchive'}
-          cancelText="Cancel"
-          variant={project.is_active !== false ? 'warning' : 'info'}
-          onConfirm={handleArchive}
-          onClose={() => setShowArchiveConfirm(false)}
-          isLoading={isArchiving}
-        />
-      )}
-
       {/* Delete Confirmation */}
-      <Dialog open={showDeleteConfirm} onOpenChange={(open) => {
-        if (!open) {
-          setShowDeleteConfirm(false);
-          setDeleteConfirmation('');
-        }
-      }}>
+      <Dialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowDeleteConfirm(false);
+            setDeleteConfirmation('');
+          }
+        }}
+      >
         <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>Delete Project</DialogTitle>
@@ -305,10 +260,11 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
                 This action cannot be undone!
               </p>
               <p className="text-sm text-muted-foreground">
-                This will permanently delete the project "{project.project_name}" and all associated data.
+                This will permanently delete the project "{project.project_name}
+                " and all associated data.
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <Label>
                 Please type <strong>{project.project_name}</strong> to confirm:
@@ -335,7 +291,9 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
             <Button
               variant="destructive"
               onClick={handleDelete}
-              disabled={deleteConfirmation !== project.project_name || isDeleting}
+              disabled={
+                deleteConfirmation !== project.project_name || isDeleting
+              }
               loading={isDeleting}
             >
               Delete Project
@@ -345,21 +303,25 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
       </Dialog>
 
       {/* Transfer Ownership Modal */}
-      <Dialog open={showTransferModal} onOpenChange={(open) => {
-        if (!open) {
-          setShowTransferModal(false);
-          setSelectedNewOwner('');
-        }
-      }}>
+      <Dialog
+        open={showTransferModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowTransferModal(false);
+            setSelectedNewOwner('');
+          }
+        }}
+      >
         <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>Transfer Project Ownership</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Select a new owner for the project "{project.project_name}". Only admin users can own projects.
+              Select a new owner for the project "{project.project_name}". Only
+              admin users can own projects.
             </p>
-            
+
             {isLoadingUsers ? (
               <div className="flex items-center justify-center py-8">
                 <Spinner size="lg" />
@@ -375,7 +337,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
                     <SelectValue placeholder="Select new owner..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {users.map(user => (
+                    {users.map((user) => (
                       <SelectItem key={user.user_hash} value={user.user_hash}>
                         {user.username} ({user.email})
                       </SelectItem>
@@ -409,4 +371,4 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
       </Dialog>
     </div>
   );
-}; 
+};

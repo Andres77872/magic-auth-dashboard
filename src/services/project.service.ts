@@ -1,28 +1,36 @@
 import { apiClient } from './api.client';
 import type {
-  ProjectDetails,
   CreateProjectRequest,
   CreateProjectResponse,
   ProjectListParams,
   ProjectListResponse,
   ProjectDetailsResponse,
   ProjectMembersResponse,
-  ProjectGroupsResponse
+  ProjectGroupsResponse,
 } from '@/types/project.types';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
 
 class ProjectService {
   // List projects
-  async getProjects(params: ProjectListParams = {}): Promise<ProjectListResponse> {
+  async getProjects(
+    params: ProjectListParams = {}
+  ): Promise<ProjectListResponse> {
     // Filter out undefined values from params
     const cleanParams: Record<string, any> = {};
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+      if (
+        value !== undefined &&
+        value !== null &&
+        (typeof value !== 'string' || value !== '')
+      ) {
         cleanParams[key] = value;
       }
     });
-    
-    const response = await apiClient.get<ProjectListResponse>('/projects', cleanParams);
+
+    const response = await apiClient.get<ProjectListResponse>(
+      '/projects',
+      cleanParams
+    );
     return response as ProjectListResponse;
   }
 
@@ -33,14 +41,25 @@ class ProjectService {
   }
 
   // Create new project - uses form data per API spec
-  async createProject(projectData: CreateProjectRequest): Promise<CreateProjectResponse> {
-    const response = await apiClient.postForm<CreateProjectResponse>('/projects', projectData);
+  async createProject(
+    projectData: CreateProjectRequest
+  ): Promise<CreateProjectResponse> {
+    const response = await apiClient.postForm<CreateProjectResponse>(
+      '/projects',
+      projectData
+    );
     return response as CreateProjectResponse;
   }
 
   // Update project - uses form data per API spec
-  async updateProject(projectHash: string, data: Partial<CreateProjectRequest>): Promise<CreateProjectResponse> {
-    const response = await apiClient.putForm<CreateProjectResponse>(`/projects/${projectHash}`, data);
+  async updateProject(
+    projectHash: string,
+    data: Partial<CreateProjectRequest>
+  ): Promise<CreateProjectResponse> {
+    const response = await apiClient.putForm<CreateProjectResponse>(
+      `/projects/${projectHash}`,
+      data
+    );
     return response as CreateProjectResponse;
   }
 
@@ -51,18 +70,25 @@ class ProjectService {
 
   // Get project members
   async getProjectMembers(
-    projectHash: string, 
+    projectHash: string,
     params: PaginationParams = {}
   ): Promise<ProjectMembersResponse> {
     // Filter out undefined values from params
     const cleanParams: Record<string, any> = {};
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+      if (
+        value !== undefined &&
+        value !== null &&
+        (typeof value !== 'string' || value !== '')
+      ) {
         cleanParams[key] = value;
       }
     });
-    
-    const response = await apiClient.get<ProjectMembersResponse>(`/projects/${projectHash}/members`, cleanParams);
+
+    const response = await apiClient.get<ProjectMembersResponse>(
+      `/projects/${projectHash}/members`,
+      cleanParams
+    );
     return response as ProjectMembersResponse;
   }
 
@@ -81,12 +107,19 @@ class ProjectService {
     // Filter out undefined values from params
     const cleanParams: Record<string, any> = {};
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+      if (
+        value !== undefined &&
+        value !== null &&
+        (typeof value !== 'string' || value !== '')
+      ) {
         cleanParams[key] = value;
       }
     });
-    
-    return await apiClient.get<any[]>(`/projects/${projectHash}/activity`, cleanParams);
+
+    return await apiClient.get<any[]>(
+      `/projects/${projectHash}/activity`,
+      cleanParams
+    );
   }
 
   // Get project statistics
@@ -96,40 +129,39 @@ class ProjectService {
 
   // Transfer project ownership - uses PUT per API spec
   async transferOwnership(
-    projectHash: string, 
+    projectHash: string,
     newOwnerHash: string
   ): Promise<ApiResponse<void>> {
-    return await apiClient.putForm<void>(`/projects/${projectHash}/owner`, { 
-      new_owner_hash: newOwnerHash 
+    return await apiClient.putForm<void>(`/projects/${projectHash}/owner`, {
+      new_owner_hash: newOwnerHash,
     });
-  }
-
-  // Archive/Unarchive project - uses POST per API spec
-  async toggleProjectArchive(
-    projectHash: string, 
-    archived: boolean
-  ): Promise<ApiResponse<ProjectDetails>> {
-    return await apiClient.postForm<ProjectDetails>(`/projects/${projectHash}/archive`, { archived });
   }
 
   // Get user groups with access to project (via project groups)
   // GET /projects/{hash}/groups
   async getProjectGroups(
-    projectHash: string, 
+    projectHash: string,
     params: PaginationParams = {}
   ): Promise<ProjectGroupsResponse> {
     // Filter out undefined values from params
     const cleanParams: Record<string, any> = {};
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
+      if (
+        value !== undefined &&
+        value !== null &&
+        (typeof value !== 'string' || value !== '')
+      ) {
         cleanParams[key] = value;
       }
     });
-    
-    const response = await apiClient.get<ProjectGroupsResponse>(`/projects/${projectHash}/groups`, cleanParams);
+
+    const response = await apiClient.get<ProjectGroupsResponse>(
+      `/projects/${projectHash}/groups`,
+      cleanParams
+    );
     return response as ProjectGroupsResponse;
   }
 }
 
 export const projectService = new ProjectService();
-export default projectService; 
+export default projectService;
