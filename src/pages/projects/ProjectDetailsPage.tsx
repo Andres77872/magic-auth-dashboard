@@ -84,9 +84,9 @@ export const ProjectDetailsPage: React.FC = () => {
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="project-details-loading" role="main" aria-busy="true">
+        <div className="flex flex-col items-center justify-center py-16 gap-4" role="main" aria-busy="true">
           <LoadingSpinner aria-label="Loading project details" />
-          <p aria-live="polite">Loading project details...</p>
+          <p className="text-sm text-muted-foreground" aria-live="polite">Loading project details...</p>
         </div>
       </PageContainer>
     );
@@ -95,8 +95,8 @@ export const ProjectDetailsPage: React.FC = () => {
   if (error || !project) {
     return (
       <PageContainer>
-        <div className="project-details-error" role="main">
-          <p className="text-error" role="alert">
+        <div className="flex flex-col gap-4 py-8" role="main">
+          <p className="text-sm text-destructive" role="alert">
             {error || 'Project not found'}
           </p>
           <div className="flex gap-3">

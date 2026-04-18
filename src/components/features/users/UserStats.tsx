@@ -20,9 +20,9 @@ interface StatCardProps {
 
 const variantStyles = {
   default: 'bg-card text-foreground [&_.stat-icon]:bg-muted [&_.stat-icon]:text-muted-foreground',
-  success: 'bg-card text-foreground [&_.stat-icon]:bg-green-100 [&_.stat-icon]:text-green-600 dark:[&_.stat-icon]:bg-green-950 dark:[&_.stat-icon]:text-green-400',
-  warning: 'bg-card text-foreground [&_.stat-icon]:bg-yellow-100 [&_.stat-icon]:text-yellow-600 dark:[&_.stat-icon]:bg-yellow-950 dark:[&_.stat-icon]:text-yellow-400',
-  info: 'bg-card text-foreground [&_.stat-icon]:bg-blue-100 [&_.stat-icon]:text-blue-600 dark:[&_.stat-icon]:bg-blue-950 dark:[&_.stat-icon]:text-blue-400',
+  success: 'bg-card text-foreground [&_.stat-icon]:bg-success-subtle [&_.stat-icon]:text-success-subtle-foreground',
+  warning: 'bg-card text-foreground [&_.stat-icon]:bg-warning-subtle [&_.stat-icon]:text-warning-subtle-foreground',
+  info: 'bg-card text-foreground [&_.stat-icon]:bg-info-subtle [&_.stat-icon]:text-info-subtle-foreground',
 };
 
 function StatCard({ icon, label, value, variant = 'default', isLoading }: StatCardProps) {

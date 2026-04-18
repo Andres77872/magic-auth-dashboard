@@ -193,7 +193,7 @@ export function PermissionGroupUsage({
                     className="flex items-center justify-between rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <Users className="h-4 w-4 text-green-500" />
+                      <Users className="h-4 w-4 text-success" />
                       <div>
                         <p className="font-medium">{role.role_display_name}</p>
                         <p className="text-xs font-mono text-muted-foreground">
@@ -237,7 +237,7 @@ export function PermissionGroupUsage({
                     key={ug.group_hash}
                     className="flex items-center gap-3 rounded-lg border p-3"
                   >
-                    <Building2 className="h-4 w-4 text-blue-500" />
+                    <Building2 className="h-4 w-4 text-info" />
                     <div>
                       <p className="font-medium">
                         {ug.group_display_name || ug.group_name}
@@ -279,7 +279,7 @@ export function PermissionGroupUsage({
                     className="flex items-center justify-between rounded-lg border p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <UserCircle className="h-4 w-4 text-purple-500" />
+                      <UserCircle className="h-4 w-4 text-purple-subtle-foreground" />
                       <div>
                         <p className="font-medium">{user.username}</p>
                         {user.notes && (

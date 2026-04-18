@@ -268,7 +268,7 @@ function RoleSourceItem({ source }: RoleSourceItemProps): React.JSX.Element {
   return (
     <div className="flex items-center justify-between rounded-lg border p-3">
       <div className="flex items-center gap-3">
-        <Layers className="h-4 w-4 text-purple-500" />
+        <Layers className="h-4 w-4 text-purple-subtle-foreground" />
         <div>
           <p className="font-medium">{source.permission_group_name}</p>
           <p className="text-xs text-muted-foreground">
@@ -296,7 +296,7 @@ function UserGroupSourceItem({
   return (
     <div className="flex items-center justify-between rounded-lg border p-3">
       <div className="flex items-center gap-3">
-        <Layers className="h-4 w-4 text-purple-500" />
+        <Layers className="h-4 w-4 text-purple-subtle-foreground" />
         <div>
           <p className="font-medium">{source.permission_group_name}</p>
           <p className="text-xs text-muted-foreground">
@@ -325,7 +325,7 @@ function DirectSourceItem({
   return (
     <div className="flex items-center justify-between rounded-lg border p-3">
       <div className="flex items-center gap-3">
-        <Layers className="h-4 w-4 text-purple-500" />
+        <Layers className="h-4 w-4 text-purple-subtle-foreground" />
         <div>
           <p className="font-medium">{source.permission_group_name}</p>
           {source.notes && (

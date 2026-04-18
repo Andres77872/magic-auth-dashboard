@@ -559,7 +559,7 @@ export function UserFormModal({
                     </p>
                   )}
                   {isEditingSelf && currentUserType === 'root' && (
-                    <p className="text-xs text-yellow-600">
+                    <p className="text-xs text-warning">
                       You cannot change your own user type
                     </p>
                   )}

@@ -21,7 +21,7 @@ export function PageHeader({
   className = '',
 }: PageHeaderProps): React.JSX.Element {
   return (
-    <header className={cn('space-y-4 pb-6', className)}>
+    <header className={cn('space-y-4 pb-4', className)}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">

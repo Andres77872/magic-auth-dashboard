@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, ToastProvider } from '@/contexts';
+import { AuthProvider, ToastProvider, ThemeProvider } from '@/contexts';
 import { ErrorBoundary, ToastContainer } from '@/components/common';
 import {
   RootOnlyRoute,
@@ -85,13 +85,14 @@ const SystemPage = () => (
 
 function App(): React.JSX.Element {
   return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <ToastProvider>
-            <ToastContainer />
-            <div className="min-h-screen bg-background text-foreground">
-              <Routes>
+    <ThemeProvider>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <AuthProvider>
+            <ToastProvider>
+              <ToastContainer />
+              <div className="min-h-screen bg-background text-foreground">
+                <Routes>
               {/* Public routes */}
               <Route
                 path={ROUTES.LOGIN}
@@ -329,11 +330,12 @@ function App(): React.JSX.Element {
                 }
               />
               </Routes>
-            </div>
-          </ToastProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </ErrorBoundary>
+              </div>
+            </ToastProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </ErrorBoundary>
+    </ThemeProvider>
   );
 }
 

@@ -311,7 +311,7 @@ export function DirectAssignmentModal({
                   <SelectValue placeholder="Select a permission group">
                     {selectedGroup && (
                       <div className="flex items-center gap-2">
-                        <Layers className="h-4 w-4 text-purple-500" />
+                        <Layers className="h-4 w-4 text-purple-subtle-foreground" />
                         <span>{selectedGroup.group_display_name || selectedGroup.group_name}</span>
                       </div>
                     )}
@@ -326,7 +326,7 @@ export function DirectAssignmentModal({
                       {groups.map((group) => (
                         <SelectItem key={group.group_hash} value={group.group_hash}>
                           <div className="flex items-center gap-2">
-                            <Layers className="h-4 w-4 text-purple-500" />
+                            <Layers className="h-4 w-4 text-purple-subtle-foreground" />
                             <span>{group.group_display_name || group.group_name}</span>
                           </div>
                         </SelectItem>

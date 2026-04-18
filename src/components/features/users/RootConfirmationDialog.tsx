@@ -70,19 +70,19 @@ export function RootConfirmationDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-md bg-yellow-50 p-3 dark:bg-yellow-950">
+          <div className="flex items-start gap-3 rounded-md bg-warning-subtle p-3 border border-warning/20">
             <AlertTriangle
               size={32}
-              className="text-yellow-600"
+              className="text-warning-subtle-foreground shrink-0"
               aria-hidden="true"
             />
             <div className="space-y-2">
-              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+              <p className="text-sm text-warning-subtle-foreground">
                 You are about to create <strong>{userName}</strong> as a ROOT
                 user with full administrative privileges. This is a
                 security-sensitive operation.
               </p>
-              <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+              <p className="text-sm font-medium text-warning-subtle-foreground">
                 Please enter your password to confirm this action:
               </p>
             </div>

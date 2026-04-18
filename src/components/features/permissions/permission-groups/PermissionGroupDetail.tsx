@@ -159,7 +159,7 @@ export function PermissionGroupDetail({
                 <Card key={permission.permission_hash} className="p-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Shield className="h-4 w-4 text-blue-500" />
+                      <Shield className="h-4 w-4 text-info" />
                       <div>
                         <p className="font-medium">
                           {permission.permission_display_name}

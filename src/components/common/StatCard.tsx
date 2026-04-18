@@ -42,8 +42,8 @@ export function StatCard({
   };
 
   const trendColors = {
-    up: 'text-green-600 dark:text-green-400',
-    down: 'text-red-600 dark:text-red-400',
+    up: 'text-success',
+    down: 'text-destructive',
     neutral: 'text-muted-foreground',
   };
 

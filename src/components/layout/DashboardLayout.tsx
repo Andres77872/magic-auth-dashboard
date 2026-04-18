@@ -81,7 +81,7 @@ export function DashboardLayout({
     <div
       className={cn(
         'grid min-h-screen transition-[grid-template-columns] duration-200',
-        'grid-rows-[4rem_1fr_3rem]',
+        'grid-rows-[4rem_1fr_auto]',
         'grid-cols-1 lg:grid-cols-[16rem_1fr]',
         sidebarCollapsed && 'lg:grid-cols-[4rem_1fr]',
         '[grid-template-areas:"header""main""footer"] lg:[grid-template-areas:"header_header""sidebar_main""footer_footer"]'
@@ -90,7 +90,7 @@ export function DashboardLayout({
       {/* Skip to content link - WCAG 2.2 keyboard navigation */}
       <a
         href="#main-content"
-        className="fixed top-2 left-4 z-tooltip bg-primary-600 text-white px-4 py-2 rounded-md font-medium opacity-0 -translate-y-[200%] transition-all pointer-events-none focus:opacity-100 focus:translate-y-0 focus:pointer-events-auto"
+        className="fixed top-2 left-4 z-tooltip bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium opacity-0 -translate-y-[200%] transition-all pointer-events-none focus:opacity-100 focus:translate-y-0 focus:pointer-events-auto"
         aria-label="Skip to main content"
       >
         Skip to main content
@@ -134,7 +134,7 @@ export function DashboardLayout({
         </div>
 
         {/* Page content container */}
-        <div className="flex-1 p-4 lg:p-6 flex flex-col min-w-0 max-w-[1400px] mx-auto w-full">
+        <div className="flex-1 flex flex-col min-w-0 max-w-[1400px] mx-auto w-full">
           {children || <Outlet />}
         </div>
       </main>

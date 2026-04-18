@@ -27,17 +27,17 @@ export function UserFormWarnings({
   return (
     <div className="space-y-3">
       {showRootWarning && (
-        <div className="flex items-start gap-3 rounded-md bg-yellow-50 p-3 dark:bg-yellow-950">
+        <div className="flex items-start gap-3 rounded-md bg-warning-subtle p-3 border border-warning/20">
           <AlertTriangle
             size={20}
-            className="mt-0.5 text-yellow-600"
+            className="mt-0.5 text-warning-subtle-foreground shrink-0"
             aria-hidden="true"
           />
           <div>
-            <p className="font-medium text-yellow-800 dark:text-yellow-200">
+            <p className="font-medium text-warning-subtle-foreground">
               Creating ROOT User
             </p>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+            <p className="text-sm text-warning-subtle-foreground/80">
               You are about to create a ROOT user with full system access.
             </p>
           </div>
@@ -45,9 +45,9 @@ export function UserFormWarnings({
       )}
 
       {showSelfEditWarning && (
-        <div className="flex items-start gap-3 rounded-md bg-blue-50 p-3 dark:bg-blue-950">
-          <Info size={20} className="mt-0.5 text-blue-600" aria-hidden="true" />
-          <p className="text-sm text-blue-700 dark:text-blue-300">
+        <div className="flex items-start gap-3 rounded-md bg-info-subtle p-3 border border-info/20">
+          <Info size={20} className="mt-0.5 text-info-subtle-foreground shrink-0" aria-hidden="true" />
+          <p className="text-sm text-info-subtle-foreground">
             You are editing your own account. Some restrictions apply for
             security reasons.
           </p>

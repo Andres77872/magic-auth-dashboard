@@ -55,14 +55,14 @@ export function Sidebar({
         >
           {collapsed ? (
             <div className="flex items-center justify-center">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 flex items-center justify-center">
-                <Sparkles size={14} className="text-emerald-600" />
+              <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                <Sparkles size={14} className="text-success" />
               </div>
             </div>
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/10">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                 <span className="text-xs font-medium text-foreground">
                   {userType?.toUpperCase() || 'USER'} Access
                 </span>
@@ -71,7 +71,7 @@ export function Sidebar({
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono">v1.0.0</span>
                   <span className="text-border">•</span>
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-medium uppercase tracking-wider">
+                  <span className="px-1.5 py-0.5 rounded bg-success/10 text-success font-medium uppercase tracking-wider">
                     Prod
                   </span>
                 </div>
@@ -103,7 +103,7 @@ export function Sidebar({
         <div className="shrink-0 border-t border-border bg-muted/30 p-4">
           <div className="space-y-3">
             <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/10">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
               <span className="text-xs font-medium text-foreground">
                 {userType?.toUpperCase() || 'USER'} Access
               </span>
@@ -112,7 +112,7 @@ export function Sidebar({
               <div className="flex items-center gap-1.5">
                 <span className="font-mono">v1.0.0</span>
                 <span className="text-border">•</span>
-                <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-medium uppercase tracking-wider">
+                <span className="px-1.5 py-0.5 rounded bg-success/10 text-success font-medium uppercase tracking-wider">
                   Prod
                 </span>
               </div>

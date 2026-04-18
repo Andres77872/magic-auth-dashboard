@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Card, Badge, Skeleton, EmptyState, Button } from '@/components/common';
+import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, Skeleton, EmptyState, Button } from '@/components/common';
 import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
+import { UserAvatar } from '@/components/features/users/UserAvatar';
 import { useUserProfileDetails } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
+import { getUserTypeBadgeVariant, formatDateTime, truncateHash } from '@/utils/component-utils';
 import {
   User,
   XCircle,
@@ -13,9 +15,22 @@ import {
   ShieldCheck,
   Lock,
   AlertTriangle,
+  FolderKanban,
+  Users,
+  Zap,
+  Calendar,
+  Activity,
+  Hash,
+  Mail,
+  Clock,
+  Key,
 } from 'lucide-react';
 import type { UserType } from '@/types/auth.types';
 
+/**
+ * UserProfilePage - Admin-facing detailed user profile view
+ * Displays comprehensive user information including permissions, groups, projects, and statistics.
+ */
 export function UserProfilePage(): React.JSX.Element {
   const navigate = useNavigate();
   const { userHash } = useParams<{ userHash: string }>();
@@ -39,19 +54,6 @@ export function UserProfilePage(): React.JSX.Element {
     }
   };
 
-  const getUserTypeBadgeVariant = (userType: UserType) => {
-    switch (userType) {
-      case 'root':
-        return 'error';
-      case 'admin':
-        return 'warning';
-      case 'consumer':
-        return 'info';
-      default:
-        return 'secondary';
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       year: 'numeric',
@@ -62,136 +64,124 @@ export function UserProfilePage(): React.JSX.Element {
     });
   };
 
+  // Loading state with proper skeleton
   if (isLoading) {
     return (
-      <div className="user-profile-page">
-        <div className="page-header">
-          <div className="page-title-section">
-            <button onClick={handleGoBack} className="back-button">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="15,18 9,12 15,6" />
-              </svg>
-              Back to Users
-            </button>
-            <h1>User Profile</h1>
-          </div>
+      <PageContainer maxWidth="xl" as="main">
+        <div className="flex items-center gap-4 pb-6">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleGoBack}
+            leftIcon={<ArrowLeft size={16} aria-hidden="true" />}
+          >
+            Back to Users
+          </Button>
         </div>
-        <div className="page-content">
-          <div className="profile-grid">
-            <Card padding="lg">
-              <div className="flex items-center gap-4 mb-4">
-                <Skeleton variant="avatar-lg" />
-                <div className="flex-1">
-                  <Skeleton variant="title" width="40%" />
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* User info skeleton */}
+          <Card padding="lg" className="lg:col-span-1">
+            <div className="flex flex-col items-center gap-4 py-4">
+              <Skeleton variant="avatar-lg" className="h-20 w-20" />
+              <div className="space-y-2 text-center">
+                <Skeleton variant="title" width="60%" className="mx-auto" />
+                <Skeleton variant="text" width="40%" className="mx-auto" />
+                <Skeleton variant="text" width="30%" className="mx-auto" />
+              </div>
+            </div>
+          </Card>
+          {/* Details skeleton */}
+          <Card padding="lg" className="lg:col-span-2">
+            <Skeleton variant="title" className="mb-4" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="space-y-1">
                   <Skeleton variant="text" width="30%" />
+                  <Skeleton variant="text" width="50%" />
                 </div>
-              </div>
-              <div className="user-details-grid">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="detail-item">
-                    <Skeleton variant="text" width="50%" />
-                  </div>
-                ))}
-              </div>
-            </Card>
-            <Card padding="lg">
-              <Skeleton variant="title" />
-              <Skeleton variant="line" count={4} />
-            </Card>
-          </div>
+              ))}
+            </div>
+          </Card>
+          {/* Stats skeleton */}
+          <Card padding="lg" className="lg:col-span-3">
+            <Skeleton variant="title" className="mb-4" />
+            <div className="grid gap-4 sm:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton variant="text" width="40%" />
+                  <Skeleton variant="title" width="30%" />
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
+  // Error state
   if (error && !profileData) {
     return (
-      <div className="user-profile-page">
-        <div className="page-header">
-          <div className="page-title-section">
-            <button onClick={handleGoBack} className="back-button">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="15,18 9,12 15,6" />
-              </svg>
-              Back to Users
-            </button>
-            <h1>User Profile</h1>
-          </div>
+      <PageContainer maxWidth="xl" as="main">
+        <div className="flex items-center gap-4 pb-6">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleGoBack}
+            leftIcon={<ArrowLeft size={16} aria-hidden="true" />}
+          >
+            Back to Users
+          </Button>
         </div>
-        <div className="page-content">
-          <EmptyState
-            icon={<XCircle size={32} />}
-            title="Failed to Load User Profile"
-            description={error}
-            action={
-              <Button
-                onClick={() => void refetch()}
-                variant="primary"
-                leftIcon={<RefreshCw size={16} aria-hidden="true" />}
-                aria-label="Retry loading user profile"
-              >
-                Try Again
-              </Button>
-            }
-          />
-        </div>
-      </div>
+        <EmptyState
+          icon={<XCircle size={32} />}
+          title="Failed to Load User Profile"
+          description={error}
+          action={
+            <Button
+              onClick={() => void refetch()}
+              variant="primary"
+              leftIcon={<RefreshCw size={16} aria-hidden="true" />}
+              aria-label="Retry loading user profile"
+            >
+              Try Again
+            </Button>
+          }
+        />
+      </PageContainer>
     );
   }
 
+  // User not found state
   if (!profileData || !profileData.user) {
     return (
-      <div className="user-profile-page">
-        <div className="page-header">
-          <div className="page-title-section">
-            <button onClick={handleGoBack} className="back-button">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="15,18 9,12 15,6" />
-              </svg>
+      <PageContainer maxWidth="xl" as="main">
+        <div className="flex items-center gap-4 pb-6">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleGoBack}
+            leftIcon={<ArrowLeft size={16} aria-hidden="true" />}
+          >
+            Back to Users
+          </Button>
+        </div>
+        <EmptyState
+          icon={<User size={32} />}
+          title="User Not Found"
+          description="The user you're looking for doesn't exist or has been deleted."
+          action={
+            <Button
+              onClick={handleGoBack}
+              variant="primary"
+              leftIcon={<ArrowLeft size={16} aria-hidden="true" />}
+              aria-label="Go back to users list"
+            >
               Back to Users
-            </button>
-            <h1>User Profile</h1>
-          </div>
-        </div>
-        <div className="page-content">
-          <EmptyState
-            icon={<User size={32} />}
-            title="User Not Found"
-            description="The user you're looking for doesn't exist or has been deleted."
-            action={
-              <Button
-                onClick={handleGoBack}
-                variant="primary"
-                leftIcon={<ArrowLeft size={16} aria-hidden="true" />}
-                aria-label="Go back to users list"
-              >
-                Back to Users
-              </Button>
-            }
-          />
-        </div>
-      </div>
+            </Button>
+          }
+        />
+      </PageContainer>
     );
   }
 
@@ -199,7 +189,7 @@ export function UserProfilePage(): React.JSX.Element {
   const userGroups = user.groups || [];
   const userProjects = user.projects || [];
 
-  // Provide default statistics when API returns null to avoid runtime errors
+  // Default statistics fallback
   const defaultStatistics = {
     total_groups: 0,
     total_accessible_projects: 0,
@@ -209,495 +199,510 @@ export function UserProfilePage(): React.JSX.Element {
   const stats = statistics ?? defaultStatistics;
 
   return (
-    <div className="user-profile-page">
-      <div className="page-header">
-        <div className="page-title-section">
-          <button onClick={handleGoBack} className="back-button">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="15,18 9,12 15,6" />
-            </svg>
-            Back to Users
-          </button>
-          <h1>User Profile</h1>
-          <p>Detailed information about {user.username}</p>
-        </div>
-        <div className="page-actions">
-          <Button
-            onClick={handleEditUser}
-            variant="primary"
-            leftIcon={<Pencil size={16} aria-hidden="true" />}
-            aria-label="Edit user profile"
+    <PageContainer maxWidth="xl" as="main">
+      {/* Page Header with back button */}
+      <header className="space-y-4 pb-6">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleGoBack}
+            leftIcon={<ArrowLeft size={16} aria-hidden="true" />}
           >
-            Edit User
+            Back to Users
           </Button>
         </div>
-      </div>
+        <PageHeader 
+          title="User Profile"
+          subtitle={`Detailed information about ${user.username}`}
+          icon={<User size={24} aria-hidden="true" />}
+          actions={
+            <Button
+              onClick={handleEditUser}
+              variant="primary"
+              leftIcon={<Pencil size={16} aria-hidden="true" />}
+              aria-label="Edit user profile"
+            >
+              Edit User
+            </Button>
+          }
+        />
+      </header>
 
-      <div className="page-content">
-        <div className="profile-grid">
-          {/* User Information Card */}
-          <Card title="User Information" padding="lg">
-            <div className="user-profile-info">
-              <div className="profile-user-avatar-section">
-                <div className="profile-user-avatar-large">
-                  {user.username.charAt(0).toUpperCase()}
-                </div>
-                <div className="avatar-info">
-                  <h2>{user.username}</h2>
-                  <Badge
-                    variant={getUserTypeBadgeVariant(user.user_type)}
-                    size="md"
-                  >
-                    {user.user_type.toUpperCase()}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="user-details-grid">
-                <div className="detail-item">
-                  <label>Email Address</label>
-                  <span>{user.email || 'Not provided'}</span>
-                </div>
-
-                <div className="detail-item">
-                  <label>User Hash</label>
-                  <span className="user-hash">{user.user_hash}</span>
-                </div>
-
-                <div className="detail-item">
-                  <label>Account Status</label>
-                  <Badge
-                    variant={user.is_active ? 'success' : 'secondary'}
-                    size="sm"
-                    dot
-                  >
-                    {user.is_active ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
-
-                <div className="detail-item">
-                  <label>Created At</label>
-                  <span>{formatDate(user.created_at)}</span>
-                </div>
-
-                {user.updated_at && (
-                  <div className="detail-item">
-                    <label>Last Updated</label>
-                    <span>{formatDate(user.updated_at)}</span>
-                  </div>
-                )}
-
-                {user.last_login && (
-                  <div className="detail-item">
-                    <label>Last Login</label>
-                    <span>{formatDate(user.last_login)}</span>
-                  </div>
-                )}
-
-                <div className="detail-item">
-                  <label>Account Age</label>
-                  <span>{stats.account_age_days} days</span>
-                </div>
-
-                {/* User Type Info */}
-                {user.user_type_info &&
-                  (user.user_type_info.error ? (
-                    <div className="detail-item">
-                      <label>User Type Status</label>
-                      <div className="flex items-center gap-2 text-destructive">
-                        <AlertTriangle size={14} aria-hidden="true" />
-                        <span className="text-sm">
-                          {user.user_type_info.error}
-                        </span>
-                      </div>
-                    </div>
-                  ) : user.user_type_info.capabilities &&
-                    user.user_type_info.capabilities.length > 0 ? (
-                    <div className="detail-item">
-                      <label>Capabilities</label>
-                      <div className="flex flex-wrap gap-1">
-                        {user.user_type_info.capabilities
-                          .slice(0, 3)
-                          .map((cap) => (
-                            <Badge key={cap} variant="outline" size="sm">
-                              {cap.replace(/_/g, ' ')}
-                            </Badge>
-                          ))}
-                        {user.user_type_info.capabilities.length > 3 && (
-                          <Badge variant="secondary" size="sm">
-                            +{user.user_type_info.capabilities.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ) : null)}
+      {/* Main grid layout */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* User Identity Card */}
+        <Card padding="lg" elevated className="lg:col-span-1">
+          <CardContent className="flex flex-col items-center gap-4 text-center">
+            <UserAvatar 
+              username={user.username} 
+              userType={user.user_type}
+              size="lg"
+              className="h-20 w-20 text-2xl"
+            />
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold tracking-tight">{user.username}</h2>
+              <p className="text-xs font-mono text-muted-foreground">{truncateHash(user.user_hash)}</p>
+              <div className="flex items-center justify-center gap-2">
+                <Badge 
+                  variant={getUserTypeBadgeVariant(user.user_type)}
+                  size="md"
+                >
+                  {user.user_type.toUpperCase()}
+                </Badge>
+                <Badge 
+                  variant={user.is_active ? 'success' : 'secondary'}
+                  size="sm"
+                  dot
+                >
+                  {user.is_active ? 'Active' : 'Inactive'}
+                </Badge>
               </div>
             </div>
-          </Card>
-
-          {/* Statistics Card */}
-          <Card title="User Statistics" padding="lg">
-            <div className="statistics-grid">
-              <div className="statistic-item">
-                <div className="statistic-value">
-                  {stats.total_accessible_projects}
-                </div>
-                <div className="statistic-label">Projects</div>
-              </div>
-              <div className="statistic-item">
-                <div className="statistic-value">{stats.total_groups}</div>
-                <div className="statistic-label">Groups</div>
-              </div>
-              <div className="statistic-item">
-                <div className="statistic-value">{stats.total_permissions}</div>
-                <div className="statistic-label">Permissions</div>
-              </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+              <Calendar size={14} aria-hidden="true" />
+              <span>Account age: {stats.account_age_days} days</span>
             </div>
-          </Card>
+          </CardContent>
+        </Card>
 
-          {/* Global Role Card */}
-          {globalRole || permissionSources ? (
-            <Card title="Global Permissions" padding="lg">
-              <div className="global-permissions-section">
-                {/* Global Role */}
-                {globalRole && (
-                  <div className="global-role-info">
-                    <div className="flex items-center gap-2 mb-3">
-                      <ShieldCheck size={20} />
-                      <h3 className="font-semibold">Global Role</h3>
+        {/* User Details Card */}
+        <Card padding="lg" className="lg:col-span-2">
+          <CardHeader>
+            <h3 className="flex items-center gap-2 text-base font-semibold">
+              <User size={18} aria-hidden="true" />
+              Account Information
+            </h3>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Email */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Mail size={12} aria-hidden="true" />
+                  Email Address
+                </label>
+                <p className="text-sm font-medium">{user.email || 'Not provided'}</p>
+              </div>
+
+              {/* User Hash */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Hash size={12} aria-hidden="true" />
+                  User Hash
+                </label>
+                <p className="text-xs font-mono text-muted-foreground">{user.user_hash}</p>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Activity size={12} aria-hidden="true" />
+                  Account Status
+                </label>
+                <Badge 
+                  variant={user.is_active ? 'success' : 'secondary'}
+                  size="sm"
+                  dot
+                >
+                  {user.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+
+              {/* Created */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <Clock size={12} aria-hidden="true" />
+                  Created At
+                </label>
+                <p className="text-sm">{formatDateTime(user.created_at)}</p>
+              </div>
+
+              {/* Last Updated */}
+              {user.updated_at && (
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <RefreshCw size={12} aria-hidden="true" />
+                    Last Updated
+                  </label>
+                  <p className="text-sm">{formatDateTime(user.updated_at)}</p>
+                </div>
+              )}
+
+              {/* Last Login */}
+              {user.last_login && (
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    <Key size={12} aria-hidden="true" />
+                    Last Login
+                  </label>
+                  <p className="text-sm">{formatDateTime(user.last_login)}</p>
+                </div>
+              )}
+
+              {/* User Type Info / Capabilities */}
+              {user.user_type_info &&
+                (user.user_type_info.error ? (
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <AlertTriangle size={12} aria-hidden="true" />
+                      User Type Status
+                    </label>
+                    <div className="flex items-center gap-2 text-destructive bg-destructive-subtle rounded-md px-3 py-2">
+                      <AlertTriangle size={14} aria-hidden="true" />
+                      <span className="text-sm">{user.user_type_info.error}</span>
                     </div>
-                    <div className="role-display">
-                      <Badge variant="primary" size="lg">
-                        {globalRole.role_display_name}
-                      </Badge>
-                      {globalRole.role_description && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {globalRole.role_description}
-                        </p>
+                  </div>
+                ) : user.user_type_info.capabilities && user.user_type_info.capabilities.length > 0 ? (
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      <ShieldCheck size={12} aria-hidden="true" />
+                      Capabilities
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {user.user_type_info.capabilities.slice(0, 5).map((cap) => (
+                        <Badge key={cap} variant="outline" size="sm">
+                          {cap.replace(/_/g, ' ')}
+                        </Badge>
+                      ))}
+                      {user.user_type_info.capabilities.length > 5 && (
+                        <Badge variant="secondary" size="sm">
+                          +{user.user_type_info.capabilities.length - 5} more
+                        </Badge>
                       )}
-                      <div className="role-meta mt-2 text-xs text-muted-foreground">
-                        <span>Priority: {globalRole.role_priority}</span>
-                        {globalRole.is_system_role && (
-                          <Badge variant="secondary" size="sm" className="ml-2">
-                            System Role
-                          </Badge>
-                        )}
-                      </div>
                     </div>
                   </div>
-                )}
+                ) : null)}
+            </div>
+          </CardContent>
+        </Card>
 
-                {/* Permission Sources */}
-                {permissionSources && (
-                  <div className="permission-sources mt-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Lock size={20} />
-                      <h3 className="font-semibold">Permission Sources</h3>
-                    </div>
-                    <div className="sources-grid">
-                      <div className="source-card">
-                        <div className="source-header">
-                          <span className="source-icon">🛡️</span>
-                          <span className="source-label">From Role</span>
-                        </div>
-                        <div className="source-count">
-                          {permissionSources.from_role.length}
-                        </div>
-                        <div className="source-details">
-                          {permissionSources.from_role
-                            .slice(0, 3)
-                            .map((source, idx) => (
-                              <div key={idx} className="source-item">
-                                <Badge variant="secondary" size="sm">
-                                  {source.permission_group_name}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {source.permissions_count} permissions
-                                </span>
-                              </div>
-                            ))}
-                          {permissionSources.from_role.length > 3 && (
-                            <span className="text-xs text-muted-foreground">
-                              +{permissionSources.from_role.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="source-card">
-                        <div className="source-header">
-                          <span className="source-icon">👥</span>
-                          <span className="source-label">From Groups</span>
-                        </div>
-                        <div className="source-count">
-                          {permissionSources.from_user_groups.length}
-                        </div>
-                        <div className="source-details">
-                          {permissionSources.from_user_groups
-                            .slice(0, 3)
-                            .map((source, idx) => (
-                              <div key={idx} className="source-item">
-                                <Badge variant="info" size="sm">
-                                  {source.user_group_name}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {source.permissions_count} permissions
-                                </span>
-                              </div>
-                            ))}
-                          {permissionSources.from_user_groups.length > 3 && (
-                            <span className="text-xs text-muted-foreground">
-                              +{permissionSources.from_user_groups.length - 3}{' '}
-                              more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="source-card">
-                        <div className="source-header">
-                          <span className="source-icon">⚡</span>
-                          <span className="source-label">
-                            Direct Assignment
-                          </span>
-                        </div>
-                        <div className="source-count">
-                          {permissionSources.from_direct_assignment.length}
-                        </div>
-                        <div className="source-details">
-                          {permissionSources.from_direct_assignment
-                            .slice(0, 3)
-                            .map((source, idx) => (
-                              <div key={idx} className="source-item">
-                                <Badge variant="success" size="sm">
-                                  {source.permission_group_name}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {source.permissions_count} permissions
-                                </span>
-                              </div>
-                            ))}
-                          {permissionSources.from_direct_assignment.length >
-                            3 && (
-                            <span className="text-xs text-muted-foreground">
-                              +
-                              {permissionSources.from_direct_assignment.length -
-                                3}{' '}
-                              more
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {isGlobalDataLoading && (
-                  <div className="loading-global-data">
-                    <Skeleton variant="text" count={3} />
-                  </div>
-                )}
+        {/* Statistics Card */}
+        <Card padding="lg" className="lg:col-span-3">
+          <CardHeader>
+            <h3 className="flex items-center gap-2 text-base font-semibold">
+              <Activity size={18} aria-hidden="true" />
+              User Statistics
+            </h3>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 sm:grid-cols-3">
+              {/* Projects */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted-subtle">
+                <div className="h-10 w-10 rounded-lg bg-info-subtle flex items-center justify-center">
+                  <FolderKanban size={20} className="text-info-subtle-foreground" aria-hidden="true" />
+                </div>
+                <span className="text-2xl font-semibold tabular-nums">{stats.total_accessible_projects}</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Projects</span>
               </div>
-            </Card>
-          ) : isGlobalDataLoading ? (
-            <Card title="Global Permissions" padding="lg">
-              <Skeleton variant="text" count={5} />
-            </Card>
-          ) : null}
+              {/* Groups */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted-subtle">
+                <div className="h-10 w-10 rounded-lg bg-purple-subtle flex items-center justify-center">
+                  <Users size={20} className="text-purple-subtle-foreground" aria-hidden="true" />
+                </div>
+                <span className="text-2xl font-semibold tabular-nums">{stats.total_groups}</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Groups</span>
+              </div>
+              {/* Permissions */}
+              <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted-subtle">
+                <div className="h-10 w-10 rounded-lg bg-success-subtle flex items-center justify-center">
+                  <Lock size={20} className="text-success-subtle-foreground" aria-hidden="true" />
+                </div>
+                <span className="text-2xl font-semibold tabular-nums">{stats.total_permissions}</span>
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Permissions</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Projects Section */}
-          <Card
-            title={`Assigned Projects (${userProjects.length})`}
-            padding="lg"
-          >
+        {/* Global Permissions Card */}
+        {(globalRole || permissionSources || isGlobalDataLoading) && (
+          <Card padding="lg" className="lg:col-span-3">
+            <CardHeader>
+              <h3 className="flex items-center gap-2 text-base font-semibold">
+                <ShieldCheck size={18} aria-hidden="true" />
+                Global Permissions
+              </h3>
+            </CardHeader>
+            <CardContent>
+              {isGlobalDataLoading ? (
+                <div className="space-y-4">
+                  <Skeleton variant="text" count={3} />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Global Role */}
+                  {globalRole && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-muted-foreground">Global Role</h4>
+                      <div className="flex items-start gap-4">
+                        <Badge variant="primary" size="lg">
+                          {globalRole.role_display_name}
+                        </Badge>
+                        <div className="flex-1 space-y-1">
+                          {globalRole.role_description && (
+                            <p className="text-sm text-muted-foreground">{globalRole.role_description}</p>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>Priority: {globalRole.role_priority}</span>
+                            {globalRole.is_system_role && (
+                              <Badge variant="secondary" size="sm">System Role</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Permission Sources */}
+                  {permissionSources && (
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium text-muted-foreground">Permission Sources</h4>
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        {/* From Role */}
+                        <div className="space-y-2 p-4 rounded-lg bg-muted-subtle border border-border">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-md bg-primary-subtle flex items-center justify-center">
+                              <ShieldCheck size={16} className="text-primary-subtle-foreground" aria-hidden="true" />
+                            </div>
+                            <span className="text-sm font-medium">From Role</span>
+                          </div>
+                          <p className="text-2xl font-semibold tabular-nums">{permissionSources.from_role.length}</p>
+                          {permissionSources.from_role.length > 0 && (
+                            <div className="space-y-1">
+                              {permissionSources.from_role.slice(0, 3).map((source, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <Badge variant="secondary" size="sm">{source.permission_group_name}</Badge>
+                                  <span className="text-xs text-muted-foreground">{source.permissions_count} perms</span>
+                                </div>
+                              ))}
+                              {permissionSources.from_role.length > 3 && (
+                                <span className="text-xs text-muted-foreground">+{permissionSources.from_role.length - 3} more</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* From Groups */}
+                        <div className="space-y-2 p-4 rounded-lg bg-muted-subtle border border-border">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-md bg-purple-subtle flex items-center justify-center">
+                              <Users size={16} className="text-purple-subtle-foreground" aria-hidden="true" />
+                            </div>
+                            <span className="text-sm font-medium">From Groups</span>
+                          </div>
+                          <p className="text-2xl font-semibold tabular-nums">{permissionSources.from_user_groups.length}</p>
+                          {permissionSources.from_user_groups.length > 0 && (
+                            <div className="space-y-1">
+                              {permissionSources.from_user_groups.slice(0, 3).map((source, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <Badge variant="info" size="sm">{source.user_group_name}</Badge>
+                                  <span className="text-xs text-muted-foreground">{source.permissions_count} perms</span>
+                                </div>
+                              ))}
+                              {permissionSources.from_user_groups.length > 3 && (
+                                <span className="text-xs text-muted-foreground">+{permissionSources.from_user_groups.length - 3} more</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Direct Assignment */}
+                        <div className="space-y-2 p-4 rounded-lg bg-muted-subtle border border-border">
+                          <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-md bg-success-subtle flex items-center justify-center">
+                              <Zap size={16} className="text-success-subtle-foreground" aria-hidden="true" />
+                            </div>
+                            <span className="text-sm font-medium">Direct Assignment</span>
+                          </div>
+                          <p className="text-2xl font-semibold tabular-nums">{permissionSources.from_direct_assignment.length}</p>
+                          {permissionSources.from_direct_assignment.length > 0 && (
+                            <div className="space-y-1">
+                              {permissionSources.from_direct_assignment.slice(0, 3).map((source, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                  <Badge variant="success" size="sm">{source.permission_group_name}</Badge>
+                                  <span className="text-xs text-muted-foreground">{source.permissions_count} perms</span>
+                                </div>
+                              ))}
+                              {permissionSources.from_direct_assignment.length > 3 && (
+                                <span className="text-xs text-muted-foreground">+{permissionSources.from_direct_assignment.length - 3} more</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Assigned Projects Card */}
+        <Card padding="lg" className="lg:col-span-3">
+          <CardHeader>
+            <h3 className="flex items-center gap-2 text-base font-semibold">
+              <FolderKanban size={18} aria-hidden="true" />
+              Assigned Projects ({userProjects.length})
+            </h3>
+          </CardHeader>
+          <CardContent>
             {userProjects.length > 0 ? (
-              <div className="projects-list">
+              <div className="space-y-4">
                 {userProjects.map((project) => (
-                  <div key={project.project_hash} className="project-item">
-                    <div className="project-header">
-                      <h4>{project.project_name}</h4>
+                  <div 
+                    key={project.project_hash} 
+                    className="p-4 rounded-lg bg-muted-subtle border border-border space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-semibold">{project.project_name}</h4>
+                        {project.project_description && (
+                          <p className="text-sm text-muted-foreground">{project.project_description}</p>
+                        )}
+                        <p className="text-xs font-mono text-muted-foreground">ID: {project.project_hash}</p>
+                      </div>
                       <Badge variant="info" size="sm">
                         {project.effective_permissions.length} permissions
                       </Badge>
                     </div>
-                    {project.project_description && (
-                      <p className="project-description">
-                        {project.project_description}
-                      </p>
-                    )}
-                    <div className="project-meta">
-                      <span className="project-hash">
-                        ID: {project.project_hash}
-                      </span>
-                    </div>
 
                     {/* Access Groups */}
-                    {project.access_groups &&
-                      project.access_groups.length > 0 && (
-                        <div className="project-access-groups">
-                          <h5>Access Groups:</h5>
-                          <div className="access-groups-list">
-                            {project.access_groups.map((group: any) => (
-                              <div
-                                key={group.group_hash}
-                                className="access-group"
-                              >
-                                <span className="group-name">
-                                  {group.group_name}
-                                </span>
-                                {group.permission_group_count !== undefined && (
-                                  <span className="group-permissions">
-                                    {group.permission_group_count} permission
-                                    groups
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                    {project.access_groups && project.access_groups.length > 0 && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Access Groups</label>
+                        <div className="flex flex-wrap gap-2">
+                          {project.access_groups.map((group: any) => (
+                            <div 
+                              key={group.group_hash} 
+                              className="flex items-center gap-2 px-2 py-1 rounded-md bg-purple-subtle"
+                            >
+                              <span className="text-sm font-medium text-purple-subtle-foreground">{group.group_name}</span>
+                              {group.permission_group_count !== undefined && (
+                                <span className="text-xs text-muted-foreground">{group.permission_group_count} groups</span>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
 
                     {/* Effective Permissions */}
-                    {project.effective_permissions &&
-                      project.effective_permissions.length > 0 && (
-                        <div className="project-permissions">
-                          <h5>Effective Permissions:</h5>
-                          <div className="permissions-list">
-                            {project.effective_permissions.map(
-                              (permission, permIndex) => (
-                                <Badge
-                                  key={permIndex}
-                                  variant="secondary"
-                                  size="sm"
-                                >
-                                  {permission}
-                                </Badge>
-                              )
-                            )}
-                          </div>
+                    {project.effective_permissions && project.effective_permissions.length > 0 && (
+                      <div className="space-y-2">
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Effective Permissions</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {project.effective_permissions.slice(0, 8).map((permission, permIndex) => (
+                            <Badge key={permIndex} variant="secondary" size="sm">
+                              {permission}
+                            </Badge>
+                          ))}
+                          {project.effective_permissions.length > 8 && (
+                            <Badge variant="outline" size="sm">
+                              +{project.effective_permissions.length - 8} more
+                            </Badge>
+                          )}
                         </div>
-                      )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="projects-placeholder">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2l5 0l2 3h9a2 2 0 0 1 2 2z" />
-                </svg>
-                <h4>No Projects Assigned</h4>
-                <p>This user doesn't have any projects assigned yet.</p>
-              </div>
+              <EmptyState
+                icon={<FolderKanban size={32} />}
+                title="No Projects Assigned"
+                description="This user doesn't have any projects assigned yet."
+                size="sm"
+              />
             )}
-          </Card>
+          </CardContent>
+        </Card>
 
-          {/* Groups Section */}
-          <Card title={`User Groups (${userGroups.length})`} padding="lg">
+        {/* User Groups Card */}
+        <Card padding="lg" className="lg:col-span-3">
+          <CardHeader>
+            <h3 className="flex items-center gap-2 text-base font-semibold">
+              <Users size={18} aria-hidden="true" />
+              User Groups ({userGroups.length})
+            </h3>
+          </CardHeader>
+          <CardContent>
             {userGroups.length > 0 ? (
-              <div className="groups-list">
+              <div className="space-y-4">
                 {userGroups.map((group) => (
-                  <div key={group.group_hash} className="group-item">
-                    <div className="group-header">
-                      <h4>{group.group_name}</h4>
+                  <div 
+                    key={group.group_hash} 
+                    className="p-4 rounded-lg bg-muted-subtle border border-border space-y-2"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-semibold">{group.group_name}</h4>
+                        {group.group_description && (
+                          <p className="text-sm text-muted-foreground">{group.group_description}</p>
+                        )}
+                      </div>
                       <Badge variant="info" size="sm">
                         {group.projects_count} projects
                       </Badge>
                     </div>
-                    {group.group_description && (
-                      <p className="group-description">
-                        {group.group_description}
-                      </p>
-                    )}
-                    <div className="group-meta">
-                      <span className="group-hash">ID: {group.group_hash}</span>
-                      <span className="group-assigned">
-                        Assigned: {formatDate(group.assigned_at)}
-                      </span>
-                      {group.assigned_by && (
-                        <span className="group-assigned-by">
-                          By: {group.assigned_by}
-                        </span>
-                      )}
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                      <span className="font-mono">ID: {group.group_hash}</span>
+                      <span>Assigned: {formatDateTime(group.assigned_at)}</span>
+                      {group.assigned_by && <span>By: {group.assigned_by}</span>}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="groups-placeholder">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                <h4>No Group Memberships</h4>
-                <p>This user isn't a member of any groups yet.</p>
-              </div>
+              <EmptyState
+                icon={<Users size={32} />}
+                title="No Group Memberships"
+                description="This user isn't a member of any groups yet."
+                size="sm"
+              />
             )}
-          </Card>
+          </CardContent>
+        </Card>
 
-          {/* Direct Permission Groups Management */}
+        {/* Direct Permission Groups Management */}
+        <div className="lg:col-span-3">
           <UserPermissionGroupsTab
             userHash={user.user_hash}
             username={user.username}
           />
+        </div>
 
-          {/* Permissions Section */}
-          <Card title={`All Permissions (${permissions.length})`} padding="lg">
+        {/* All Permissions Card */}
+        <Card padding="lg" className="lg:col-span-3">
+          <CardHeader>
+            <h3 className="flex items-center gap-2 text-base font-semibold">
+              <Lock size={18} aria-hidden="true" />
+              All Permissions ({permissions.length})
+            </h3>
+          </CardHeader>
+          <CardContent>
             {permissions.length > 0 ? (
-              <div className="permissions-list">
+              <div className="flex flex-wrap gap-1.5">
                 {permissions.map((permission, index) => (
-                  <div key={index} className="permission-item">
-                    <Badge variant="info" size="sm">
-                      {permission}
-                    </Badge>
-                  </div>
+                  <Badge key={index} variant="info" size="sm">
+                    {permission}
+                  </Badge>
                 ))}
               </div>
             ) : (
-              <div className="permissions-placeholder">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                  <line x1="12" y1="19" x2="12" y2="23" />
-                  <line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-                <h4>No Permissions Assigned</h4>
-                <p>This user doesn't have any specific permissions assigned.</p>
-              </div>
+              <EmptyState
+                icon={<Lock size={32} />}
+                title="No Permissions Assigned"
+                description="This user doesn't have any specific permissions assigned."
+                size="sm"
+              />
             )}
-          </Card>
-        </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </PageContainer>
   );
 }
 

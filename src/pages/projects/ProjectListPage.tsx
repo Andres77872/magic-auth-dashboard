@@ -359,12 +359,10 @@ export const ProjectListPage: React.FC = () => {
 
       {/* Pagination */}
       {pagination && pagination.total > pagination.limit && !error && (
-        <div className="pagination-section">
-          <div className="pagination-info">
-            <span>
-              Showing {projects.length} of {pagination.total} projects
-            </span>
-          </div>
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-sm text-muted-foreground">
+            Showing {projects.length} of {pagination.total} projects
+          </span>
           <Pagination
             currentPage={Math.floor(pagination.offset / pagination.limit) + 1}
             totalPages={Math.ceil(pagination.total / pagination.limit)}

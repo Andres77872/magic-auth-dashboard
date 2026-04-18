@@ -204,10 +204,10 @@ export function StatisticsGrid({
       {isRoot && stats && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* User Type Breakdown */}
-          <Card className="border-l-4 border-l-primary-500">
+          <Card className="border-l-4 border-l-primary">
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
-                <Users className="h-5 w-5 text-primary-600" />
+                <Users className="h-5 w-5 text-primary" />
                 <h3 className="text-sm font-semibold text-foreground">
                   User Type Distribution
                 </h3>

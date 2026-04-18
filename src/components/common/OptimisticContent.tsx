@@ -54,7 +54,7 @@ export function OptimisticContent({
 
       {isStale && !isRefetching && (
         <div
-          className="mb-3 flex items-center gap-1.5 rounded-md bg-yellow-500/10 px-3 py-2 text-sm text-yellow-700 dark:text-yellow-400"
+          className="mb-3 flex items-center gap-1.5 rounded-md bg-warning-subtle px-3 py-2 text-sm text-warning-subtle-foreground"
           role="status"
         >
           <AlertTriangle className="h-4 w-4" aria-hidden="true" />

@@ -12,8 +12,9 @@
  */
 import React from 'react';
 import { useAuth, useUserType } from '@/hooks';
+import { useTheme } from '@/contexts';
 import { UserMenu, NotificationBell } from '@/components/navigation';
-import { PanelLeftClose, PanelLeft, Shield } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, Shield, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -32,6 +33,7 @@ export function Header({
   // User data
   const { user } = useAuth();
   const { getUserTypeLabel } = useUserType();
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   return (
     <header
@@ -160,6 +162,28 @@ export function Header({
             className="h-8 w-px bg-border hidden lg:block"
             aria-hidden="true"
           />
+
+          {/* Dark mode toggle */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={cn(
+              'flex items-center justify-center w-9 h-9 rounded-lg',
+              'bg-transparent border border-transparent cursor-pointer',
+              'transition-all duration-200',
+              'hover:bg-muted hover:border-border',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
+            )}
+            aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {resolvedTheme === 'dark' ? (
+              <Sun size={18} className="text-muted-foreground" aria-hidden="true" />
+            ) : (
+              <Moon size={18} className="text-muted-foreground" aria-hidden="true" />
+            )}
+          </button>
+
           <NotificationBell />
           <UserMenu />
         </div>

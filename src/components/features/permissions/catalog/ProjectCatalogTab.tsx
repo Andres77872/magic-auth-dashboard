@@ -266,7 +266,7 @@ export function ProjectCatalogTab(): React.JSX.Element {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-subtle text-purple-subtle-foreground">
                     <Layers className="h-5 w-5" />
                   </div>
                   <div>
@@ -346,7 +346,7 @@ export function ProjectCatalogTab(): React.JSX.Element {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 dark:bg-green-950 dark:text-green-400">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success-subtle text-success-subtle-foreground">
                     <Users className="h-5 w-5" />
                   </div>
                   <div>

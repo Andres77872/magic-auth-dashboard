@@ -19,7 +19,7 @@ export function Footer({ className }: FooterProps): React.JSX.Element {
   return (
     <footer 
       className={cn(
-        '[grid-area:footer] border-t border-border bg-card px-4 lg:px-6 flex items-center',
+        '[grid-area:footer] border-t border-border bg-card px-4 py-3 lg:px-6 flex items-center',
         className
       )} 
       role="contentinfo"

@@ -9,14 +9,14 @@ interface QuickActionCardProps {
 }
 
 const colorStyles: Record<string, string> = {
-  primary: 'border-l-primary hover:bg-blue-50 dark:hover:bg-blue-950/20',
-  success: 'border-l-success hover:bg-green-50 dark:hover:bg-green-950/20',
-  warning: 'border-l-warning hover:bg-amber-50 dark:hover:bg-amber-950/20',
-  info: 'border-l-info hover:bg-cyan-50 dark:hover:bg-cyan-950/20',
+  primary: 'border-l-primary hover:bg-primary-subtle',
+  success: 'border-l-success hover:bg-success-subtle',
+  warning: 'border-l-warning hover:bg-warning-subtle',
+  info: 'border-l-info hover:bg-info-subtle',
 };
 
 const iconColorStyles: Record<string, string> = {
-  primary: 'text-primary-600',
+  primary: 'text-primary',
   success: 'text-success',
   warning: 'text-warning',
   info: 'text-info',

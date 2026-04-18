@@ -232,7 +232,7 @@ export function PermissionDetail({
                       className="flex items-center justify-between rounded-lg border p-3"
                     >
                       <div className="flex items-center gap-3">
-                        <Layers className="h-4 w-4 text-purple-500" />
+                        <Layers className="h-4 w-4 text-purple-subtle-foreground" />
                         <div>
                           <p className="font-medium">
                             {group.group_display_name}

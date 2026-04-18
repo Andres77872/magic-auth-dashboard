@@ -443,7 +443,7 @@ export function UserListPage(): React.JSX.Element {
       </PageHeader>
 
       {/* Filter Section */}
-      <div className="filter-section">
+      <div className="mb-4">
         <FilterBar
           filters={filterBarFilters}
           onClearAll={handleClearFilters}
@@ -493,7 +493,7 @@ export function UserListPage(): React.JSX.Element {
               size="sm"
               onClick={handleRefresh}
               disabled={isLoading}
-              leftIcon={<RefreshCw size={16} className={isLoading ? 'spinning' : ''} />}
+              leftIcon={<RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />}
               aria-label="Refresh user list"
             >
               Refresh
@@ -515,12 +515,10 @@ export function UserListPage(): React.JSX.Element {
 
       {/* Pagination Section */}
       {pagination && pagination.total > 0 && (
-        <div className="pagination-section">
-          <div className="pagination-info">
-            <span className="pagination-text">
-              Showing {users.length} of {pagination.total} users
-            </span>
-          </div>
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="text-sm text-muted-foreground">
+            Showing {users.length} of {pagination.total} users
+          </span>
           <Pagination
             currentPage={currentPage}
             totalPages={Math.ceil(pagination.total / pagination.limit)}

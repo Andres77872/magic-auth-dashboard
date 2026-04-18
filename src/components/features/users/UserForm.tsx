@@ -495,7 +495,7 @@ export function UserForm({
                 Select the user's access level
               </p>
               {isEditingSelf && currentUserType === 'root' && (
-                <p className="text-xs text-yellow-600">
+                <p className="text-xs text-warning">
                   You cannot change your own user type for security reasons
                 </p>
               )}
@@ -734,7 +734,7 @@ export function UserForm({
 
             <div className="space-y-4">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-100 text-yellow-600">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-warning-subtle text-warning-subtle-foreground">
                   <AlertTriangle
                     size={24}
                     className="confirm-icon confirm-icon-warning"

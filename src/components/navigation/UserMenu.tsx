@@ -50,11 +50,11 @@ export function UserMenu(): React.JSX.Element {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2 p-2 bg-transparent border-none rounded-md cursor-pointer transition-colors hover:bg-muted focus-visible:outline-[3px] focus-visible:outline-primary-500 focus-visible:outline-offset-2"
+            className="flex items-center gap-2 p-2 bg-transparent border-none rounded-md cursor-pointer transition-colors hover:bg-muted focus-visible:outline-[3px] focus-visible:outline-primary focus-visible:outline-offset-2"
             aria-label="User menu"
           >
-            <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground text-sm font-bold">
                 {user.username.charAt(0).toUpperCase()}
               </span>
             </div>
@@ -66,8 +66,8 @@ export function UserMenu(): React.JSX.Element {
           {/* User info header */}
           <div className="p-4 border-b border-border bg-muted/50">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary-500 flex items-center justify-center">
-                <span className="text-white text-lg font-bold">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground text-lg font-bold">
                   {user.username.charAt(0).toUpperCase()}
                 </span>
               </div>

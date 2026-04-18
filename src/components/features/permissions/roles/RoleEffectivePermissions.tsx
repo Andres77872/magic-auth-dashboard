@@ -157,7 +157,7 @@ export function RoleEffectivePermissions({ role }: RoleEffectivePermissionsProps
           <Card key={permission.permission_hash} className="p-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <Shield className="mt-0.5 h-4 w-4 text-blue-500" />
+                <Shield className="mt-0.5 h-4 w-4 text-info" />
                 <div>
                   <p className="font-medium">{permission.permission_display_name}</p>
                   <p className="text-xs font-mono text-muted-foreground">

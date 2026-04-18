@@ -137,12 +137,12 @@ export function DashboardStatCard({
 
         {data.clickable && (
           <div className="flex items-center gap-1 mt-4 pt-3 border-t border-border">
-            <span className="text-xs font-medium text-muted-foreground group-hover:text-primary-600 transition-colors">
+            <span className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">
               View Details
             </span>
             <ChevronRight
               size={14}
-              className="text-muted-foreground group-hover:text-primary-600 group-hover:translate-x-0.5 transition-all"
+              className="text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all"
             />
           </div>
         )}

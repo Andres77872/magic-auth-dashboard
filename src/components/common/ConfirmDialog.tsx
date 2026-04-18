@@ -31,12 +31,12 @@ const variantConfig = {
   },
   warning: {
     icon: AlertTriangle,
-    iconClass: 'text-yellow-600 dark:text-yellow-500',
+    iconClass: 'text-warning',
     buttonVariant: 'primary' as const,
   },
   info: {
     icon: Info,
-    iconClass: 'text-blue-600 dark:text-blue-500',
+    iconClass: 'text-info',
     buttonVariant: 'primary' as const,
   },
 };

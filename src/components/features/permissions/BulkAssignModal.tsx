@@ -237,7 +237,7 @@ export function BulkAssignModal({
                 </div>
               ) : availableGroups.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <AlertTriangle className="h-10 w-10 text-amber-500" />
+                  <AlertTriangle className="h-10 w-10 text-warning" />
                   <p className="mt-2 text-sm text-muted-foreground">
                     All permission groups are already assigned to this user
                     group

@@ -247,7 +247,7 @@ export function UserPermissionCheck({
                   onClick={() => handleCopy(currentResult.permission)}
                 >
                   {copiedPermission === currentResult.permission ? (
-                    <Check className="h-4 w-4 text-green-500" />
+                    <Check className="h-4 w-4 text-success" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
@@ -271,9 +271,9 @@ export function UserPermissionCheck({
               >
                 <div className="flex items-center gap-2">
                   {item.has_permission ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <CheckCircle2 className="h-4 w-4 text-success" />
                   ) : (
-                    <XCircle className="h-4 w-4 text-red-500" />
+                    <XCircle className="h-4 w-4 text-destructive" />
                   )}
                   <span className="font-mono text-sm">{item.permission}</span>
                 </div>
@@ -288,7 +288,7 @@ export function UserPermissionCheck({
                     onClick={() => handleCopy(item.permission)}
                   >
                     {copiedPermission === item.permission ? (
-                      <Check className="h-3 w-3 text-green-500" />
+                      <Check className="h-3 w-3 text-success" />
                     ) : (
                       <Copy className="h-3 w-3" />
                     )}

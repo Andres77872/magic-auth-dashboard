@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Enable class-based dark mode (.dark on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    THEME CONFIGURATION (Tailwind CSS v4)
    ============================================ */
@@ -147,64 +150,62 @@
   --animate-bounce: bounce 1s infinite;
 }
 
-/* Dark Mode Theme */
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-background: #111827;
-    --color-foreground: #f3f4f6;
+/* Dark Mode Theme — activated via .dark class on <html> */
+.dark {
+  --color-background: #111827;
+  --color-foreground: #f3f4f6;
 
-    --color-card: #1f2937;
-    --color-card-foreground: #f3f4f6;
+  --color-card: #1f2937;
+  --color-card-foreground: #f3f4f6;
 
-    --color-popover: #1f2937;
-    --color-popover-foreground: #f3f4f6;
+  --color-popover: #1f2937;
+  --color-popover-foreground: #f3f4f6;
 
-    --color-primary: #3b82f6;
-    --color-primary-foreground: #ffffff;
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #ffffff;
 
-    --color-secondary: #374151;
-    --color-secondary-foreground: #f3f4f6;
+  --color-secondary: #374151;
+  --color-secondary-foreground: #f3f4f6;
 
-    --color-muted: #374151;
-    --color-muted-foreground: #9ca3af;
+  --color-muted: #374151;
+  --color-muted-foreground: #9ca3af;
 
-    --color-accent: #374151;
-    --color-accent-foreground: #f3f4f6;
+  --color-accent: #374151;
+  --color-accent-foreground: #f3f4f6;
 
-    --color-destructive: #ef4444;
-    --color-destructive-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
 
-    --color-border: #374151;
-    --color-input: #374151;
-    --color-ring: #3b82f6;
+  --color-border: #374151;
+  --color-input: #374151;
+  --color-ring: #3b82f6;
 
-    --color-surface: #1f2937;
-    --color-surface-secondary: #111827;
-    --color-surface-tertiary: #374151;
+  --color-surface: #1f2937;
+  --color-surface-secondary: #111827;
+  --color-surface-tertiary: #374151;
 
-    /* Semantic Subtle Colors - Dark Mode */
-    --color-muted-subtle: #374151;
-    --color-muted-subtle-foreground: #d1d5db;
+  /* Semantic Subtle Colors - Dark Mode */
+  --color-muted-subtle: #374151;
+  --color-muted-subtle-foreground: #d1d5db;
 
-    --color-destructive-subtle: #450a0a;
-    --color-destructive-subtle-foreground: #f87171;
+  --color-destructive-subtle: #450a0a;
+  --color-destructive-subtle-foreground: #f87171;
 
-    --color-success-subtle: #052e16;
-    --color-success-subtle-foreground: #4ade80;
+  --color-success-subtle: #052e16;
+  --color-success-subtle-foreground: #4ade80;
 
-    --color-warning-subtle: #451a03;
-    --color-warning-subtle-foreground: #fbbf24;
+  --color-warning-subtle: #451a03;
+  --color-warning-subtle-foreground: #fbbf24;
 
-    --color-info-subtle: #1e3a5f;
-    --color-info-subtle-foreground: #60a5fa;
+  --color-info-subtle: #1e3a5f;
+  --color-info-subtle-foreground: #60a5fa;
 
-    --color-primary-subtle: #1e3a5f;
-    --color-primary-subtle-foreground: #60a5fa;
+  --color-primary-subtle: #1e3a5f;
+  --color-primary-subtle-foreground: #60a5fa;
 
-    /* Purple subtle - Dark Mode */
-    --color-purple-subtle: #2e1065;
-    --color-purple-subtle-foreground: #a78bfa;
-  }
+  /* Purple subtle - Dark Mode */
+  --color-purple-subtle: #2e1065;
+  --color-purple-subtle-foreground: #a78bfa;
 }
 
 /* ============================================
@@ -395,17 +396,15 @@
   }
 
   /* Dark mode overrides for status utilities */
-  @media (prefers-color-scheme: dark) {
-    .status-warning {
-      border-color: oklch(0.4 0.08 75);
-    }
+  .dark .status-warning {
+    border-color: oklch(0.4 0.08 75);
+  }
 
-    .status-success {
-      border-color: oklch(0.35 0.08 145);
-    }
+  .dark .status-success {
+    border-color: oklch(0.35 0.08 145);
+  }
 
-    .status-error {
-      border-color: oklch(0.25 0.12 25);
-    }
+  .dark .status-error {
+    border-color: oklch(0.25 0.12 25);
   }
 }

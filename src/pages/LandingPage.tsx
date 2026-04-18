@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LoginModal } from '@/components/auth/LoginModal';
+import { useTheme } from '@/contexts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,8 @@ import {
   FileKey,
   ClipboardList,
   RefreshCw,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import {
   FeatureCard,
@@ -29,6 +32,7 @@ import {
 
 export function LandingPage(): React.JSX.Element {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">
@@ -63,7 +67,7 @@ export function LandingPage(): React.JSX.Element {
               Magic Auth
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <a
               href="https://auth-v2.arz.ai/docs"
               target="_blank"
@@ -82,6 +86,14 @@ export function LandingPage(): React.JSX.Element {
               <Github size={14} />
               GitHub
             </a>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {resolvedTheme === 'dark' ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+            </button>
             <Button onClick={() => setIsLoginModalOpen(true)} size="md">
               <Lock size={16} />
               Sign In
