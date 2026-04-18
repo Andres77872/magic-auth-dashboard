@@ -2,6 +2,8 @@ import { apiClient } from './api.client';
 import type {
   LoginRequest,
   LoginResponse,
+  PlatformLoginRequest,
+  PlatformLoginResponse,
   RegisterRequest,
   RegisterResponse,
   ValidationResponse,
@@ -10,7 +12,10 @@ import type {
 } from '@/types/auth.types';
 
 class AuthService {
-  // Login user
+  /**
+   * Project-scoped login (for consumer users).
+   * POST /auth/login — requires project_hash.
+   */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await apiClient.postForm<LoginResponse>(
       '/auth/login',
@@ -27,6 +32,29 @@ class AuthService {
     }
 
     return response as LoginResponse;
+  }
+
+  /**
+   * Platform login (for root/admin dashboard users).
+   * POST /auth/platform/login — no project_hash required.
+   * Only accepts user_type: root | admin.
+   */
+  async platformLogin(credentials: PlatformLoginRequest): Promise<PlatformLoginResponse> {
+    const response = await apiClient.postForm<PlatformLoginResponse>(
+      '/auth/platform/login',
+      credentials,
+      true // Skip auth for login
+    );
+
+    if (response.success && response.data) {
+      const loginData = response.data as PlatformLoginResponse;
+      if ('session_token' in loginData) {
+        // Store token on successful login
+        apiClient.setAuthToken(loginData.session_token);
+      }
+    }
+
+    return response as PlatformLoginResponse;
   }
 
   // Register new user - uses form data per API spec

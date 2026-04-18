@@ -22,7 +22,7 @@ interface FormErrors {
 export function LoginForm(): React.JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading, state } = useAuth();
+  const { platformLogin, isLoading, state } = useAuth();
 
   const [formData, setFormData] = useState<LoginFormData>({
     username: '',
@@ -81,7 +81,7 @@ export function LoginForm(): React.JSX.Element {
     setErrors({});
 
     try {
-      const success = await login(formData.username, formData.password);
+      const success = await platformLogin(formData.username, formData.password);
 
       if (success) {
         const from = (location.state as { from?: string })?.from || ROUTES.DASHBOARD;

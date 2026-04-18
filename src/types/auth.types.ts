@@ -8,12 +8,31 @@ export const UserType = {
 export type UserType = typeof UserType[keyof typeof UserType];
 
 // Authentication Interfaces
+
+/**
+ * Project-scoped login request (for consumer users in project apps).
+ * Used by the public auth API: POST /auth/login
+ */
 export interface LoginRequest {
   username: string;
   password: string;
-  project_hash?: string; // Optional for dashboard admin login
+  project_hash: string; // Required for project-scoped sessions
 }
 
+/**
+ * Platform login request (for root/admin users in admin dashboard).
+ * Used by the platform auth API: POST /auth/platform/login
+ * No project_hash required — creates a platform-scoped session.
+ */
+export interface PlatformLoginRequest {
+  username: string;
+  password: string;
+}
+
+/**
+ * Project-scoped login response (from POST /auth/login).
+ * Includes the user's bound project context.
+ */
 export interface LoginResponse {
   success: boolean;
   message: string;
@@ -21,6 +40,19 @@ export interface LoginResponse {
   user: User;
   project?: Project;
   accessible_projects: Project[];
+  expires_at: string;
+}
+
+/**
+ * Platform login response (from POST /auth/platform/login).
+ * For root/admin dashboard sessions — no project binding.
+ */
+export interface PlatformLoginResponse {
+  success: boolean;
+  message: string;
+  session_token: string;
+  user: User;
+  accessible_projects: Project[]; // Admin may have multiple projects to manage
   expires_at: string;
 }
 

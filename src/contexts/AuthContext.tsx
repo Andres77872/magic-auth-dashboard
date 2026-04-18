@@ -150,6 +150,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 interface AuthContextType {
   state: AuthState;
   login: (username: string, password: string, projectHash?: string) => Promise<boolean>;
+  platformLogin: (username: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   validateToken: () => Promise<void>;
   clearError: () => void;
@@ -178,7 +179,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const tokenValidationRef = useRef(false);
   const permissionsLoadedRef = useRef(false);
 
-  // Login function
+  // Login function (project-scoped)
   const login = async (
     username: string, 
     password: string, 
@@ -210,6 +211,53 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
         return true;
       } else {
         throw new Error(response.message || 'Login failed');
+      }
+    } catch (error) {
+      const errorMessage = handleApiError(error);
+      dispatch({
+        type: AuthActionType.LOGIN_FAILURE,
+        payload: { error: errorMessage },
+      });
+      return false;
+    }
+  };
+
+  /**
+   * Platform login (for admin dashboard — root/admin only).
+   * POST /auth/platform/login — no project binding.
+   */
+  const platformLogin = async (
+    username: string, 
+    password: string
+  ): Promise<boolean> => {
+    try {
+      dispatch({ type: AuthActionType.LOGIN_START });
+
+      const response = await authService.platformLogin({
+        username,
+        password,
+      });
+
+      if (response.success) {
+        // Store token and user data
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.session_token);
+        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.user));
+        
+        // Platform sessions have no bound project — clear any stale project data
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+
+        // Dispatch with null project (platform session)
+        dispatch({
+          type: AuthActionType.LOGIN_SUCCESS,
+          payload: {
+            ...response,
+            project: null, // Explicitly no project for platform sessions
+          },
+        });
+
+        return true;
+      } else {
+        throw new Error(response.message || 'Platform login failed');
       }
     } catch (error) {
       const errorMessage = handleApiError(error);
@@ -426,6 +474,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const contextValue: AuthContextType = {
     state,
     login,
+    platformLogin,
     logout,
     validateToken,
     clearError,
