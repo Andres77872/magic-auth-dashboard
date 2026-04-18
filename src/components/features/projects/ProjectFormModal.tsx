@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -115,7 +116,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           onSuccess();
           onClose();
         } else {
-          showToast(response.message || 'Failed to create project', 'error');
+          setErrors(prev => ({ ...prev, general: response.message || 'Failed to create project' }));
         }
       } else if (mode === 'edit' && project) {
         const response = await projectService.updateProject(project.project_hash, projectData);
@@ -124,12 +125,12 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
           onSuccess();
           onClose();
         } else {
-          showToast(response.message || 'Failed to update project', 'error');
+          setErrors(prev => ({ ...prev, general: response.message || 'Failed to update project' }));
         }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      showToast(errorMessage, 'error');
+      setErrors(prev => ({ ...prev, general: errorMessage }));
     } finally {
       setIsSubmitting(false);
     }
@@ -146,8 +147,18 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Create New Project' : 'Edit Project'}</DialogTitle>
+          <DialogDescription>
+            {mode === 'create'
+              ? 'Add a new project with a name and optional description.'
+              : 'Update the name or description of this project.'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {errors.general && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+              {errors.general}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="project_name">
               Project Name <span className="text-destructive">*</span>

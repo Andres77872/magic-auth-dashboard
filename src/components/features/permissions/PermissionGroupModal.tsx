@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -48,6 +49,7 @@ export const PermissionGroupModal: React.FC<PermissionGroupModalProps> = ({
     group_category: 'general'
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -68,6 +70,7 @@ export const PermissionGroupModal: React.FC<PermissionGroupModalProps> = ({
         });
       }
       setErrors({});
+      setSubmitError('');
     }
   }, [isOpen, mode, permissionGroup]);
 
@@ -96,6 +99,7 @@ export const PermissionGroupModal: React.FC<PermissionGroupModalProps> = ({
     }
 
     setIsSubmitting(true);
+    setSubmitError('');
     try {
       await onSubmit({
         group_name: formData.group_name,
@@ -105,7 +109,7 @@ export const PermissionGroupModal: React.FC<PermissionGroupModalProps> = ({
       });
       onClose();
     } catch (error) {
-      // Error handled by parent
+      setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setIsSubmitting(false);
     }
@@ -122,12 +126,22 @@ export const PermissionGroupModal: React.FC<PermissionGroupModalProps> = ({
   ];
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Create Permission Group' : 'Edit Permission Group'}</DialogTitle>
+          <DialogDescription>
+            {mode === 'create'
+              ? 'Group related permissions together under a shared category.'
+              : 'Update the display name, description, or category for this permission group.'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {submitError && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+              {submitError}
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="group_name">
               Group Name <span className="text-destructive">*</span>

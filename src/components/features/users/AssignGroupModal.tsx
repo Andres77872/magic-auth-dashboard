@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -133,6 +134,9 @@ export function AssignGroupModal({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Assign Group to {userName}</DialogTitle>
+            <DialogDescription>
+              Select a group for this user. Consumer users must belong to exactly one group.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">

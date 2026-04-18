@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-import { Search, User, Check, X, Shield, ArrowRight, Info } from 'lucide-react';
+import { Search, User, Check, X, Shield, ArrowRight, Info, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGlobalRoles } from '@/hooks';
 import type { GlobalRole } from '@/types/global-roles.types';
@@ -115,6 +116,9 @@ export function RoleAssignmentModal({
       <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>Assign Global Role to User</DialogTitle>
+          <DialogDescription>
+            Follow the 3 steps to select a user, choose a role, and confirm the assignment.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-6">
           {/* Progress Indicator */}
@@ -166,6 +170,18 @@ export function RoleAssignmentModal({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   leftIcon={<Search className="h-4 w-4" />}
+                  rightIcon={
+                    searchQuery ? (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label="Clear search"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
+                    ) : undefined
+                  }
                   fullWidth
                 />
 
@@ -226,6 +242,18 @@ export function RoleAssignmentModal({
                   value={roleSearchQuery}
                   onChange={(e) => setRoleSearchQuery(e.target.value)}
                   leftIcon={<Search className="h-4 w-4" />}
+                  rightIcon={
+                    roleSearchQuery ? (
+                      <button
+                        type="button"
+                        onClick={() => setRoleSearchQuery('')}
+                        className="text-muted-foreground hover:text-foreground"
+                        aria-label="Clear search"
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </button>
+                    ) : undefined
+                  }
                   fullWidth
                 />
                 

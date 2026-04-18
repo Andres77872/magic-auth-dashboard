@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -134,6 +135,11 @@ export function AssignProjectModal({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Assign {allowMultiple ? 'Projects' : 'Project'} to {userName}</DialogTitle>
+          <DialogDescription>
+            {allowMultiple
+              ? 'Select one or more projects to grant this user access to.'
+              : 'Select the project this user will have access to.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -159,8 +165,18 @@ export function AssignProjectModal({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 disabled={fetchingProjects}
-                className="pl-9"
+                className="pl-9 pr-9"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
+                >
+                  <XCircle size={16} />
+                </button>
+              )}
             </div>
             
             {allowMultiple && filteredProjects.length > 0 && (

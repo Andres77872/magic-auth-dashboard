@@ -13,27 +13,13 @@ import {
   DataView
 } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { projectGroupService, projectService } from '@/services';
+import { projectGroupService } from '@/services';
 import type { ProjectGroupDetailsResponse, AssignedProject } from '@/services/project-group.service';
 import { ROUTES } from '@/utils/routes';
 import { useToast } from '@/hooks';
 import { formatDate } from '@/utils/component-utils';
-import { FolderOpen, Plus, Trash2, Search, ExternalLink } from 'lucide-react';
-
-interface AvailableProject {
-  project_hash: string;
-  project_name: string;
-  project_description?: string;
-}
+import { FolderOpen, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { AddProjectsToGroupModal } from '@/components/features/groups/AddProjectsToGroupModal';
 
 export function ProjectGroupDetailsPage(): React.JSX.Element {
   const { groupHash } = useParams<{ groupHash: string }>();
@@ -46,11 +32,6 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
 
   // Add projects modal state
   const [isAddProjectsModalOpen, setIsAddProjectsModalOpen] = useState(false);
-  const [availableProjects, setAvailableProjects] = useState<AvailableProject[]>([]);
-  const [selectedProjectHashes, setSelectedProjectHashes] = useState<string[]>([]);
-  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [projectSearchTerm, setProjectSearchTerm] = useState('');
 
   // Remove project confirmation
   const [confirmRemove, setConfirmRemove] = useState<AssignedProject | null>(null);
@@ -82,65 +63,8 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
     fetchGroupDetails();
   }, [fetchGroupDetails]);
 
-  const fetchAvailableProjects = async () => {
-    setIsLoadingProjects(true);
-    try {
-      const response = await projectService.getProjects({ limit: 500 });
-      if (response.success && response.projects) {
-        // Filter out projects already assigned to this group
-        const assignedHashes = new Set(
-          groupDetails?.assigned_projects?.map(p => p.project_hash) || []
-        );
-        const available = response.projects.filter(
-          (p: any) => !assignedHashes.has(p.project_hash)
-        );
-        setAvailableProjects(available);
-      }
-    } catch (err) {
-      showToast('Failed to load available projects', 'error');
-    } finally {
-      setIsLoadingProjects(false);
-    }
-  };
-
   const handleOpenAddModal = () => {
     setIsAddProjectsModalOpen(true);
-    setSelectedProjectHashes([]);
-    setProjectSearchTerm('');
-    fetchAvailableProjects();
-  };
-
-  const handleAssignProjects = async () => {
-    if (!groupHash || selectedProjectHashes.length === 0) return;
-
-    setIsAssigning(true);
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (const projectHash of selectedProjectHashes) {
-      try {
-        const response = await projectGroupService.assignProjectToGroup(groupHash, projectHash);
-        if (response.success) {
-          successCount++;
-        } else {
-          errorCount++;
-        }
-      } catch {
-        errorCount++;
-      }
-    }
-
-    if (successCount > 0) {
-      showToast(`Successfully assigned ${successCount} project(s) to the group`, 'success');
-      await fetchGroupDetails();
-    }
-    if (errorCount > 0) {
-      showToast(`Failed to assign ${errorCount} project(s)`, 'error');
-    }
-
-    setIsAddProjectsModalOpen(false);
-    setIsAssigning(false);
-    setSelectedProjectHashes([]);
   };
 
   const handleRemoveProject = async () => {
@@ -165,23 +89,6 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
       setIsRemoving(false);
     }
   };
-
-  const toggleProjectSelection = (projectHash: string) => {
-    setSelectedProjectHashes(prev =>
-      prev.includes(projectHash)
-        ? prev.filter(h => h !== projectHash)
-        : [...prev, projectHash]
-    );
-  };
-
-  const filteredAvailableProjects = availableProjects.filter(project => {
-    if (!projectSearchTerm) return true;
-    const term = projectSearchTerm.toLowerCase();
-    return (
-      project.project_name.toLowerCase().includes(term) ||
-      (project.project_description?.toLowerCase().includes(term) ?? false)
-    );
-  });
 
   const projectColumns: DataViewColumn<AssignedProject>[] = [
     {
@@ -344,105 +251,14 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
       </Card>
 
       {/* Add Projects Modal */}
-      <Dialog
-        open={isAddProjectsModalOpen}
-        onOpenChange={(open) => !isAssigning && !open && setIsAddProjectsModalOpen(false)}
-      >
-        <DialogContent size="lg">
-          <DialogHeader>
-            <DialogTitle>Add Projects to {project_group.group_name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              type="text"
-              placeholder="Search projects..."
-              value={projectSearchTerm}
-              onChange={(e) => setProjectSearchTerm(e.target.value)}
-              leftIcon={<Search size={16} />}
-              disabled={isLoadingProjects}
-              fullWidth
-            />
-
-            {selectedProjectHashes.length > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {selectedProjectHashes.length} project
-                  {selectedProjectHashes.length !== 1 ? 's' : ''} selected
-                </span>
-                <button
-                  type="button"
-                  className="text-primary hover:underline"
-                  onClick={() => setSelectedProjectHashes([])}
-                >
-                  Clear selection
-                </button>
-              </div>
-            )}
-
-            <div className="max-h-[400px] overflow-y-auto border rounded-md">
-              {isLoadingProjects ? (
-                <div className="flex items-center justify-center py-8">
-                  <LoadingSpinner size="md" message="Loading projects..." />
-                </div>
-              ) : filteredAvailableProjects.length === 0 ? (
-                <EmptyState
-                  icon={<FolderOpen size={32} />}
-                  title={projectSearchTerm ? 'No projects found' : 'No available projects'}
-                  description={
-                    projectSearchTerm
-                      ? 'Try adjusting your search criteria'
-                      : 'All projects are already assigned to this group'
-                  }
-                />
-              ) : (
-                <div className="divide-y">
-                  {filteredAvailableProjects.map(project => (
-                    <div
-                      key={project.project_hash}
-                      className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
-                        selectedProjectHashes.includes(project.project_hash)
-                          ? 'bg-primary/5'
-                          : 'hover:bg-accent/50'
-                      }`}
-                      onClick={() => toggleProjectSelection(project.project_hash)}
-                    >
-                      <Checkbox
-                        checked={selectedProjectHashes.includes(project.project_hash)}
-                        onCheckedChange={() => toggleProjectSelection(project.project_hash)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium">{project.project_name}</div>
-                        {project.project_description && (
-                          <div className="text-sm text-muted-foreground truncate">
-                            {project.project_description}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsAddProjectsModalOpen(false)}
-              disabled={isAssigning}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleAssignProjects}
-              disabled={selectedProjectHashes.length === 0 || isAssigning}
-              loading={isAssigning}
-            >
-              Add {selectedProjectHashes.length > 0 ? `(${selectedProjectHashes.length})` : ''}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddProjectsToGroupModal
+        isOpen={isAddProjectsModalOpen}
+        onClose={() => setIsAddProjectsModalOpen(false)}
+        onSuccess={fetchGroupDetails}
+        groupHash={groupHash || ''}
+        groupName={project_group.group_name}
+        assignedProjectHashes={assigned_projects?.map(p => p.project_hash) || []}
+      />
 
       {/* Remove Project Confirmation */}
       {confirmRemove && (
@@ -463,3 +279,4 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
 }
 
 export default ProjectGroupDetailsPage;
+

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -460,6 +461,11 @@ export function UserFormModal({
             <DialogTitle>
               {mode === 'create' ? 'Create New User' : 'Edit User'}
             </DialogTitle>
+            <DialogDescription>
+              {mode === 'create'
+                ? 'Fill in the details below to create a new user account.'
+                : 'Update the user\'s information and role assignment.'}
+            </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit}>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -121,6 +122,11 @@ export const GroupFormModal: React.FC<GroupFormModalProps> = ({
       <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>{mode === 'create' ? 'Create New Group' : 'Edit Group'}</DialogTitle>
+          <DialogDescription>
+            {mode === 'create'
+              ? 'Create a group to organize users and apply shared permissions.'
+              : 'Update the name or description of this group.'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           {errors.general && (

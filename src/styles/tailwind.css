@@ -56,7 +56,7 @@
 
   --color-border: #e5e7eb;
   --color-input: #e5e7eb;
-  --color-ring: #3b82f6;
+  --color-ring: #3b82f680;
 
   /* Semantic Subtle Colors (for badges, icon containers, backgrounds) */
   --color-muted-subtle: #f3f4f6;
@@ -178,7 +178,7 @@
 
   --color-border: #374151;
   --color-input: #374151;
-  --color-ring: #3b82f6;
+  --color-ring: #3b82f680;
 
   --color-surface: #1f2937;
   --color-surface-secondary: #111827;
@@ -342,7 +342,7 @@
 
   /* Focus visible styling */
   *:focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    @apply outline-none ring-1 ring-ring;
   }
 
   *:focus:not(:focus-visible) {

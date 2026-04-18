@@ -16,6 +16,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -264,6 +265,11 @@ export function RoleManagementPage(): React.JSX.Element {
             <DialogTitle>
               {editingRole ? 'Edit Global Role' : 'Create New Global Role'}
             </DialogTitle>
+            <DialogDescription>
+              {editingRole
+                ? 'Update the display name, description, or priority for this role.'
+                : 'Define a new global role with a name, display name, and priority level.'}
+            </DialogDescription>
           </DialogHeader>
           <RoleForm
             mode={editingRole ? 'edit' : 'create'}
