@@ -28,6 +28,7 @@ export const ProjectListPage: React.FC = () => {
     null
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [createdProjectHash, setCreatedProjectHash] = useState<string | null>(null);
 
   const {
     projects,
@@ -77,6 +78,16 @@ export const ProjectListPage: React.FC = () => {
 
   const handleProjectSuccess = () => {
     fetchProjects();
+    
+    // Navigate to the newly created project's Groups tab if we have the hash
+    if (createdProjectHash) {
+      navigate(`${ROUTES.PROJECTS_DETAILS}/${createdProjectHash}?tab=groups`);
+      setCreatedProjectHash(null);
+    }
+  };
+
+  const handleProjectCreated = (projectHash: string) => {
+    setCreatedProjectHash(projectHash);
   };
 
   const handleProjectDelete = () => {
@@ -379,6 +390,7 @@ export const ProjectListPage: React.FC = () => {
         onClose={handleCloseCreateModal}
         onSuccess={handleProjectSuccess}
         mode="create"
+        onProjectCreated={handleProjectCreated}
       />
 
       {/* Edit Project Modal */}

@@ -17,9 +17,17 @@ import { projectGroupService } from '@/services';
 import type { ProjectGroupDetailsResponse, AssignedProject } from '@/services/project-group.service';
 import { ROUTES } from '@/utils/routes';
 import { useToast } from '@/hooks';
+import { useUserGroupsWithAccess } from '@/hooks/useUserGroupsWithAccess';
+import { isDefaultUserGroup } from '@/utils/default-groups';
 import { formatDate } from '@/utils/component-utils';
-import { FolderOpen, Plus, Trash2, ExternalLink } from 'lucide-react';
+import { FolderOpen, Plus, Trash2, ExternalLink, Users, ArrowRight } from 'lucide-react';
 import { AddProjectsToGroupModal } from '@/components/features/groups/AddProjectsToGroupModal';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export function ProjectGroupDetailsPage(): React.JSX.Element {
   const { groupHash } = useParams<{ groupHash: string }>();
@@ -36,6 +44,14 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
   // Remove project confirmation
   const [confirmRemove, setConfirmRemove] = useState<AssignedProject | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+
+  // User groups with access (bidirectional visibility)
+  const {
+    userGroups: userGroupsWithAccess,
+    isLoading: isLoadingUserGroups,
+    error: userGroupsError,
+    refetch: refetchUserGroupsAccess,
+  } = useUserGroupsWithAccess(groupHash);
 
   const fetchGroupDetails = useCallback(async () => {
     if (!groupHash) {
@@ -126,6 +142,63 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
         >
           <Trash2 size={16} />
         </Button>
+      ),
+    },
+  ];
+
+  const userGroupColumns: DataViewColumn<(typeof userGroupsWithAccess)[number]>[] = [
+    {
+      key: 'group_name',
+      header: 'User Group',
+      sortable: true,
+      render: (_value, group) => {
+        const isDefault = isDefaultUserGroup(group.group_name);
+        return (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate(`${ROUTES.GROUPS}/${group.group_hash}`)}
+              className="font-medium text-primary hover:underline text-left flex items-center gap-1"
+            >
+              {group.group_name}
+              <ExternalLink size={14} />
+            </button>
+            {isDefault && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="subtleInfo" size="sm" className="cursor-help">
+                      Default
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Auto-created when the project was created. Can be deleted like any other group.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'description',
+      header: 'Description',
+      sortable: false,
+      render: (_value, group) => (
+        <span className="text-muted-foreground">
+          {group.description || 'No description'}
+        </span>
+      ),
+    },
+    {
+      key: 'member_count',
+      header: 'Members',
+      sortable: true,
+      align: 'center',
+      render: (_value, group) => (
+        <Badge variant="secondary">
+          {group.member_count ?? 0} member{(group.member_count ?? 0) !== 1 ? 's' : ''}
+        </Badge>
       ),
     },
   ];
@@ -245,6 +318,60 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
               viewMode="table"
               showViewToggle={false}
               emptyMessage="No projects assigned"
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {/* User Groups with Access Section */}
+      <Card className="mt-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="space-y-1">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Users size={20} />
+                User Groups with Access
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                User groups that have been granted access to this project group.
+              </p>
+            </div>
+          </div>
+
+          {userGroupsError ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <p className="text-muted-foreground mb-3">{userGroupsError}</p>
+              <Button variant="outline" size="sm" onClick={() => refetchUserGroupsAccess()}>
+                Retry
+              </Button>
+            </div>
+          ) : isLoadingUserGroups ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <LoadingSpinner size="md" />
+              <p className="text-sm text-muted-foreground mt-2">Loading user groups...</p>
+            </div>
+          ) : userGroupsWithAccess.length === 0 ? (
+            <EmptyState
+              icon={<Users size={40} />}
+              title="No User Groups Have Access"
+              description="Grant user groups access to this project group so they can access its projects."
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(ROUTES.GROUPS)}
+                >
+                  Manage User Groups
+                </Button>
+              }
+            />
+          ) : (
+            <DataView
+              data={userGroupsWithAccess}
+              columns={userGroupColumns}
+              viewMode="table"
+              showViewToggle={false}
+              emptyMessage="No user groups found"
             />
           )}
         </CardContent>

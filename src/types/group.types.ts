@@ -133,4 +133,21 @@ export interface ProjectGroupDetailsResponse extends ApiResponse {
   statistics: {
     total_projects: number;
   };
+}
+
+/** User group enriched with its project-group linkages */
+export interface UserGroupWithProjectGroups extends UserGroup {
+  projectGroups: Array<{
+    group_hash: string;
+    group_name: string;
+    granted_at: string;
+  }>;
+}
+
+/** Validation result for a user group's project linkage */
+export interface UserGroupProjectValidation {
+  groupHash: string;
+  hasLinkedProjects: boolean;
+  projectGroupCount: number;
+  projectGroupNames: string[];
 } 

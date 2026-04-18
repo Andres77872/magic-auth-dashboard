@@ -1,5 +1,7 @@
 import { apiClient } from './api.client';
 import type { ApiResponse, PaginationParams } from '@/types/api.types';
+import type { UserGroupWithProjectGroups } from '@/types/group.types';
+import { groupService } from './group.service';
 
 export interface ProjectGroup {
   group_hash: string;
@@ -116,6 +118,62 @@ class ProjectGroupService {
     return await apiClient.get<any[]>(
       `/admin/project-groups/${groupHash}/projects`, 
       cleanParams
+    );
+  }
+
+  /**
+   * Compute which user groups have access to a specific project group.
+   * Client-side aggregation: fetches all user groups + their project-group linkages,
+   * then filters for those linked to the target project group.
+   *
+   * NOTE: This is a Phase 1 workaround. Phase 2 should add a dedicated
+   * backend endpoint GET /admin/project-groups/{hash}/user-groups.
+   *
+   * Uses concurrency limit of 5 for parallel fetches.
+   */
+  async getUserGroupsForProjectGroup(
+    projectGroupHash: string
+  ): Promise<UserGroupWithProjectGroups[]> {
+    // Step 1: Fetch all user groups
+    const allGroupsResponse = await groupService.getGroups({ limit: 500 });
+    if (!allGroupsResponse.success || !allGroupsResponse.user_groups) {
+      return [];
+    }
+
+    const allUserGroups = allGroupsResponse.user_groups;
+
+    // Step 2: Fetch project-group linkages for each user group with concurrency limit of 5
+    const CONCURRENCY_LIMIT = 5;
+    const results: UserGroupWithProjectGroups[] = [];
+
+    for (let i = 0; i < allUserGroups.length; i += CONCURRENCY_LIMIT) {
+      const batch = allUserGroups.slice(i, i + CONCURRENCY_LIMIT);
+      const batchResults = await Promise.all(
+        batch.map(async (userGroup) => {
+          try {
+            const pgResponse = await groupService.getGroupProjectGroups(
+              userGroup.group_hash
+            );
+            const projectGroups = pgResponse?.project_groups ?? [];
+            return {
+              ...userGroup,
+              projectGroups,
+            };
+          } catch {
+            // If fetch fails for one group, include it with empty projectGroups
+            return {
+              ...userGroup,
+              projectGroups: [],
+            };
+          }
+        })
+      );
+      results.push(...batchResults);
+    }
+
+    // Step 3: Filter for groups linked to the target project group
+    return results.filter((ug) =>
+      ug.projectGroups.some((pg) => pg.group_hash === projectGroupHash)
     );
   }
 }

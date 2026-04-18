@@ -51,3 +51,7 @@ export {
   useSecurityEvents,
   useAuditStatistics,
 } from './audit';
+
+// Workflow hooks
+export { useProjectWorkflow } from './useProjectWorkflow';
+export { useUserGroupsWithAccess } from './useUserGroupsWithAccess';

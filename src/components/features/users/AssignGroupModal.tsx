@@ -15,8 +15,16 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
 import { groupService } from '@/services';
 import { useToast } from '@/hooks';
-import type { UserGroup, GroupFormData } from '@/types/group.types';
-import { Search, XCircle, Plus, Users } from 'lucide-react';
+import type { UserGroup, GroupFormData, UserGroupProjectValidation } from '@/types/group.types';
+import { isDefaultUserGroup } from '@/utils/default-groups';
+import { Search, XCircle, Plus, Users, CheckCircle, AlertTriangle, Loader2, Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 
 interface AssignGroupModalProps {
   isOpen: boolean;
@@ -44,6 +52,12 @@ export function AssignGroupModal({
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [creatingGroup, setCreatingGroup] = useState(false);
 
+  // Pre-validation state
+  const [validationCache, setValidationCache] = useState<
+    Record<string, UserGroupProjectValidation>
+  >({});
+  const [validatingHash, setValidatingHash] = useState<string | null>(null);
+
   const fetchGroups = useCallback(async () => {
     setFetchingGroups(true);
     setError('');
@@ -62,6 +76,57 @@ export function AssignGroupModal({
       setFetchingGroups(false);
     }
   }, []);
+
+  const fetchGroupProjectGroups = useCallback(async (groupHash: string) => {
+    // Skip if already cached
+    if (validationCache[groupHash]) {
+      return validationCache[groupHash];
+    }
+
+    setValidatingHash(groupHash);
+    try {
+      const response = await groupService.getGroupProjectGroups(groupHash);
+      const projectGroups = response?.project_groups ?? [];
+      const totalDerivedProjects = response?.total_derived_projects ?? 0;
+      
+      const validation: UserGroupProjectValidation = {
+        groupHash,
+        hasLinkedProjects: projectGroups.length > 0,
+        projectGroupCount: projectGroups.length,
+        projectGroupNames: projectGroups.map(
+          (pg: any) => pg.group_name ?? pg.name ?? 'Unknown'
+        ),
+      };
+
+      // Store derived project count for the "empty project groups" warning
+      if (totalDerivedProjects === 0 && projectGroups.length > 0) {
+        // Linked to project groups, but those groups contain zero projects
+        setValidationCache((prev) => ({
+          ...prev,
+          [groupHash]: { ...validation, projectGroupNames: [...validation.projectGroupNames, '__empty_projects__'] },
+        }));
+      } else {
+        setValidationCache((prev) => ({ ...prev, [groupHash]: validation }));
+      }
+      return validation;
+    } catch (err) {
+      console.error('Error fetching group project groups:', err);
+      const validation: UserGroupProjectValidation = {
+        groupHash,
+        hasLinkedProjects: false,
+        projectGroupCount: 0,
+        projectGroupNames: [],
+      };
+      // Store error state in cache
+      setValidationCache((prev) => ({
+        ...prev,
+        [groupHash]: { ...validation, projectGroupNames: ['__error__'] },
+      }));
+      return validation;
+    } finally {
+      setValidatingHash(null);
+    }
+  }, [validationCache]);
 
   useEffect(() => {
     if (isOpen) {
@@ -101,8 +166,14 @@ export function AssignGroupModal({
     (group.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleGroupSelect = (groupHash: string) => {
+  const handleGroupSelect = async (groupHash: string) => {
+    const wasSelected = selectedGroup === groupHash;
     setSelectedGroup(prev => (prev === groupHash ? '' : groupHash));
+    
+    // Trigger validation on selection (not deselection)
+    if (!wasSelected && groupHash) {
+      await fetchGroupProjectGroups(groupHash);
+    }
   };
 
   const handleConfirm = () => {
@@ -135,7 +206,7 @@ export function AssignGroupModal({
           <DialogHeader>
             <DialogTitle>Assign Group to {userName}</DialogTitle>
             <DialogDescription>
-              Select a group for this user. Consumer users must belong to exactly one group.
+              Consumer users must belong to a user group. The group determines which projects the user can access.
             </DialogDescription>
           </DialogHeader>
 
@@ -227,6 +298,10 @@ export function AssignGroupModal({
                 <div className="divide-y">
                   {filteredGroups.map(group => {
                     const isSelected = selectedGroup === group.group_hash;
+                    const validation = validationCache[group.group_hash];
+                    const isValidating = validatingHash === group.group_hash;
+                    const isDefault = isDefaultUserGroup(group.group_name);
+
                     return (
                       <div
                         key={group.group_hash}
@@ -245,7 +320,54 @@ export function AssignGroupModal({
                           className="mt-1"
                         />
                         <div className="flex-1 space-y-1">
-                          <h4 className="text-sm font-medium">{group.group_name}</h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-medium">{group.group_name}</h4>
+                            {isDefault && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="subtleInfo" size="sm" className="cursor-help">
+                                      Default
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Auto-created when the project was created. Can be deleted like any other group.
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            {isSelected && validation && !isValidating && (
+                              validation.projectGroupNames.includes('__error__') ? (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3 text-warning" />
+                                  Unable to verify
+                                </span>
+                              ) : validation.projectGroupNames.includes('__empty_projects__') ? (
+                                <span className="text-xs text-warning-foreground flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Linked to empty project groups
+                                </span>
+                              ) : validation.hasLinkedProjects ? (
+                                <span className="text-xs text-success-foreground flex items-center gap-1">
+                                  <CheckCircle className="h-3 w-3" />
+                                  Has linked projects
+                                </span>
+                              ) : validation.projectGroupCount > 0 ? (
+                                <span className="text-xs text-warning-foreground flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  Linked to empty project groups
+                                </span>
+                              ) : (
+                                <span className="text-xs text-warning-foreground flex items-center gap-1">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  No linked projects
+                                </span>
+                              )
+                            )}
+                            {isSelected && isValidating && (
+                              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                            )}
+                          </div>
                           {group.description && (
                             <p className="text-xs text-muted-foreground line-clamp-2">{group.description}</p>
                           )}
@@ -259,6 +381,47 @@ export function AssignGroupModal({
                 </div>
               )}
             </div>
+
+            {/* Validation warning banner for selected group */}
+            {selectedGroup && validationCache[selectedGroup] && validatingHash !== selectedGroup && (
+              (() => {
+                const v = validationCache[selectedGroup];
+                const hasError = v.projectGroupNames.includes('__error__');
+                const hasEmptyProjects = v.projectGroupNames.includes('__empty_projects__');
+
+                if (hasError) {
+                  return (
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-warning/10 border border-warning/20 text-sm">
+                      <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+                      <span className="text-warning-foreground">
+                        Unable to verify project access for this group.
+                      </span>
+                    </div>
+                  );
+                }
+                if (!v.hasLinkedProjects && v.projectGroupCount === 0) {
+                  return (
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-warning/10 border border-warning/20 text-sm">
+                      <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+                      <span className="text-warning-foreground">
+                        This group has no linked projects. Users assigned to this group will not be able to access any projects.
+                      </span>
+                    </div>
+                  );
+                }
+                if (hasEmptyProjects) {
+                  return (
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-warning/10 border border-warning/20 text-sm">
+                      <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+                      <span className="text-warning-foreground">
+                        This group is linked to project groups, but those groups contain no projects. Users will not be able to access any projects.
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()
+            )}
           </div>
 
           <DialogFooter>
@@ -267,7 +430,7 @@ export function AssignGroupModal({
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={fetchingGroups || !selectedGroup || isLoading}
+              disabled={fetchingGroups || validatingHash === selectedGroup || !selectedGroup || isLoading}
             >
               {isLoading && <Spinner size="sm" className="mr-2" />}
               {selectedGroup ? 'Assign Group' : 'Select a Group'}

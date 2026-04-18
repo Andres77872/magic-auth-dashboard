@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
+import { Progress } from '@/components/ui/progress';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { DataView, Pagination, ErrorState, EmptyState, ConfirmDialog } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { projectService, projectGroupService } from '@/services';
@@ -19,6 +26,8 @@ import type { ProjectGroup } from '@/services/project-group.service';
 import type { ProjectDetails, ProjectGroupInfo } from '@/types/project.types';
 import type { UserGroup } from '@/types/group.types';
 import { useToast } from '@/contexts/ToastContext';
+import { useProjectWorkflow } from '@/hooks/useProjectWorkflow';
+import { isDefaultUserGroup } from '@/utils/default-groups';
 import { 
   Users, 
   FolderTree, 
@@ -26,7 +35,13 @@ import {
   Trash2, 
   ExternalLink, 
   ArrowRight,
-  FolderOpen
+  FolderOpen,
+  CheckCircle2,
+  Circle,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Info
 } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
 
@@ -60,6 +75,31 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
   const [isLoadingProjectGroups, setIsLoadingProjectGroups] = useState(false);
 
   const { addToast } = useToast();
+
+  // Workflow progress state
+  const [workflowCollapsed, setWorkflowCollapsed] = useState(false);
+
+  // Compute workflow state
+  const workflow = useProjectWorkflow({
+    projectHash: project.project_hash,
+    projectGroups: assignedProjectGroups,
+    userGroups,
+    userGroupsFetchError: !!userGroupsError,
+    firstUserGroupHash: userGroups.length > 0 ? userGroups[0].group_hash : undefined,
+    onOpenAddToGroupModal: () => setShowAddModal(true),
+  });
+
+  // Handle workflow CTA actions
+  const handleWorkflowCta = useCallback(
+    (action: string, target?: string) => {
+      if (action === 'open-modal') {
+        setShowAddModal(true);
+      } else if (action === 'navigate' && target) {
+        window.location.href = target;
+      }
+    },
+    []
+  );
 
   // Update assigned project groups when prop changes
   useEffect(() => {
@@ -220,15 +260,34 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
       key: 'group_name', 
       header: 'User Group', 
       sortable: true,
-      render: (value, group) => (
-        <Link 
-          to={`${ROUTES.GROUPS}/${group.group_hash}`}
-          className="font-medium text-primary hover:underline inline-flex items-center gap-1"
-        >
-          {String(value)}
-          <ExternalLink className="h-3 w-3" />
-        </Link>
-      )
+      render: (value, group) => {
+        const isDefault = isDefaultUserGroup(group.group_name);
+        return (
+          <div className="flex items-center gap-2">
+            <Link 
+              to={`${ROUTES.GROUPS}/${group.group_hash}`}
+              className="font-medium text-primary hover:underline inline-flex items-center gap-1"
+            >
+              {String(value)}
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+            {isDefault && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="subtleInfo" size="sm" className="cursor-help">
+                      Default
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Auto-created when the project was created. Can be deleted like any other group.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        );
+      }
     },
     { 
       key: 'description', 
@@ -270,16 +329,119 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
           <span>User Group</span>
         </div>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        <div className="flex items-center gap-2 text-primary font-medium">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <FolderTree className="h-4 w-4" />
           <span>Project Group</span>
         </div>
         <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-primary font-semibold">
           <FolderOpen className="h-4 w-4" />
-          <span>Project</span>
+          <span>{project.project_name}</span>
         </div>
       </div>
+
+      {/* Workflow Progress Indicator */}
+      {!workflow.isComplete || !workflowCollapsed ? (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CheckCircle2 className="h-4 w-4" />
+                Access Chain Progress
+              </CardTitle>
+              {workflow.isComplete && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setWorkflowCollapsed(!workflowCollapsed)}
+                  className="h-7 px-2"
+                >
+                  {workflowCollapsed ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+            </div>
+            {!workflowCollapsed && (
+              <Progress
+                value={workflow.completionPercentage}
+                variant={workflow.isComplete ? 'success' : workflow.completionPercentage > 50 ? 'primary' : 'warning'}
+                size="sm"
+                showLabel
+                className="mt-2"
+              />
+            )}
+          </CardHeader>
+          {!workflowCollapsed && (
+            <CardContent className="pt-0">
+              <div className="space-y-3">
+                {workflow.steps.map((step) => (
+                  <div
+                    key={step.id}
+                    className={`flex items-start gap-3 rounded-lg p-3 transition-colors ${
+                      step.isComplete ? 'bg-success/5' : 'bg-muted/20'
+                    }`}
+                  >
+                    <div className="mt-0.5 flex-shrink-0">
+                      {step.isComplete ? (
+                        <CheckCircle2 className="h-5 w-5 text-success" />
+                      ) : step.isUnknown ? (
+                        <AlertCircle className="h-5 w-5 text-destructive" />
+                      ) : step.cta ? (
+                        <Circle className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-warning" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-sm font-medium ${
+                            step.isComplete ? 'text-success-foreground' : ''
+                          }`}
+                        >
+                          {step.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {step.description}
+                      </p>
+                      {step.cta && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 h-7 text-xs"
+                          onClick={() =>
+                            handleWorkflowCta(step.cta!.action, step.cta!.target)
+                          }
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          {step.cta.label}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="pt-4">
+            <button
+              onClick={() => setWorkflowCollapsed(false)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+            >
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <span>Access chain complete — all steps done</span>
+              <ChevronDown className="h-3 w-3 ml-auto" />
+            </button>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Project Groups Section - Manageable */}
       <Card>

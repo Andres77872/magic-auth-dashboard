@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { projectService } from '@/services';
 import { useToast } from '@/hooks';
 import type { ProjectFormData, ProjectFormErrors, ProjectDetails } from '@/types/project.types';
+import { DEFAULT_GROUP_ROLES } from '@/utils/default-groups';
 
 interface ProjectFormModalProps {
   isOpen: boolean;
@@ -21,6 +22,11 @@ interface ProjectFormModalProps {
   onSuccess: () => void;
   mode: 'create' | 'edit';
   project?: ProjectDetails | null;
+  /**
+   * Called after successful project creation with the created project's hash.
+   * Only invoked in "create" mode.
+   */
+  onProjectCreated?: (projectHash: string) => void;
 }
 
 export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
@@ -29,6 +35,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   onSuccess,
   mode,
   project,
+  onProjectCreated,
 }) => {
   const { showToast } = useToast();
   const [formData, setFormData] = useState<ProjectFormData>({
@@ -112,7 +119,22 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
       if (mode === 'create') {
         const response = await projectService.createProject(projectData);
         if (response.success) {
-          showToast('Project created successfully', 'success');
+          const projectHash = (response as any)?.project?.project_hash;
+          
+          // Build default group names for the toast message
+          const defaultGroupNames = DEFAULT_GROUP_ROLES.map(
+            (role) => `${role}_${projectHash ?? 'project'}`
+          );
+          
+          showToast(
+            `Project created successfully. Default groups created: ${defaultGroupNames.join(', ')}`,
+            'success'
+          );
+          
+          if (projectHash && onProjectCreated) {
+            onProjectCreated(projectHash);
+          }
+          
           onSuccess();
           onClose();
         } else {
