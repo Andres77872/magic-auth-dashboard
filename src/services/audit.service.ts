@@ -255,30 +255,46 @@ class AuditService {
     );
     const data = response as BackendAuditStatisticsResponse;
 
-    // Map backend response to frontend AuditStatistics format
+    const totalRequests = data.overview.total_requests;
+    const overallSuccessRate = Number(data.overview.success_rate);
+
+    // Calculate per-status percentage since the API doesn't return it
+    const totalStatusCount = data.status_distribution.reduce(
+      (sum, item) => sum + item.count,
+      0
+    );
+
     return {
       overview: {
-        totalRequests: data.overview.total_requests,
-        successCount: data.overview.success_count,
-        failureCount: data.overview.failure_count,
-        successRate: data.overview.success_rate,
+        totalRequests,
+        successCount: Number(data.overview.successful_requests),
+        failureCount: Number(data.overview.failed_requests),
+        successRate: overallSuccessRate,
         avgDurationMs: data.overview.avg_duration_ms,
       },
+      // API only returns request_count per method — no per-method success breakdown.
+      // successRate falls back to the overall rate to avoid undefined/NaN.
       byMethod: data.by_method.map((item) => ({
-        method: item.method,
-        count: item.count,
-        successRate: item.success_rate,
+        method: item.http_method,
+        count: item.request_count,
+        successRate: overallSuccessRate,
       })),
-      topEndpoints: data.top_endpoints.map((item) => ({
-        endpoint: item.endpoint,
-        count: item.count,
-        successRate: item.success_rate,
-        avgDurationMs: item.avg_duration_ms,
-      })),
+      topEndpoints: data.top_endpoints.map((item) => {
+        const successCount = Number(item.success_count);
+        const failureCount = Number(item.failure_count);
+        const total = successCount + failureCount;
+        const successRate = total > 0 ? (successCount / total) * 100 : 100;
+        return {
+          endpoint: item.endpoint_path,
+          count: item.request_count,
+          successRate,
+          avgDurationMs: item.avg_duration_ms,
+        };
+      }),
       statusDistribution: data.status_distribution.map((item) => ({
-        statusCode: item.statusCode,
+        statusCode: item.response_status,
         count: item.count,
-        percentage: item.percentage,
+        percentage: totalStatusCount > 0 ? (item.count / totalStatusCount) * 100 : 0,
       })),
       generatedAt: data.generated_at,
     };

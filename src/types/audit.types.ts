@@ -315,30 +315,35 @@ export interface BackendSecurityEvent {
 
 /**
  * Backend audit statistics response from /admin/audit/statistics
+ * Note: the API returns some numeric fields as strings (success_rate, successful_requests, etc.)
+ * and uses snake_case field names that differ from the frontend domain model.
  */
 export interface BackendAuditStatisticsResponse {
   overview: {
     total_requests: number;
-    success_count: number;
-    failure_count: number;
-    success_rate: number;
+    successful_requests: string | number;
+    failed_requests: string | number;
+    success_rate: string | number;
     avg_duration_ms: number;
+    max_duration_ms?: number;
+    avg_request_size?: number;
+    avg_response_size?: number;
   };
   by_method: {
-    method: string;
-    count: number;
-    success_rate: number;
-  }[];
-  top_endpoints: {
-    endpoint: string;
-    count: number;
-    success_rate: number;
+    http_method: string;
+    request_count: number;
     avg_duration_ms: number;
   }[];
+  top_endpoints: {
+    endpoint_path: string;
+    request_count: number;
+    avg_duration_ms: number;
+    success_count: string | number;
+    failure_count: string | number;
+  }[];
   status_distribution: {
-    statusCode: number;
+    response_status: number;
     count: number;
-    percentage: number;
   }[];
   generated_at: string;
 }
