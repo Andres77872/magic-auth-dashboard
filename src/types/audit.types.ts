@@ -102,6 +102,12 @@ export interface ActivityLog {
   project: ActivityProject | null;
   targetUser: ActivityUser | null;
   ipAddress: string | null;
+  // Enriched fields from backend (optional, may not exist on all responses)
+  severityLevel?: number;
+  userAgent?: string;
+  activityName?: string;
+  activityCategory?: string;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -220,6 +226,7 @@ export interface ActivityLogParams {
   user_id?: string;
   project_id?: string;
   days?: number;
+  search?: string;
 }
 
 /**
@@ -266,6 +273,77 @@ export interface SecurityEventResponse extends ApiResponse {
 }
 
 /**
+ * Backend security events response from /admin/audit/security-events
+ */
+export interface BackendSecurityEventsResponse {
+  events: BackendSecurityEvent[];
+  summary: {
+    total: number;
+    by_source: {
+      api_audit: number;
+      activity_log: number;
+    };
+    by_severity: Record<SecuritySeverity, number>;
+    period_hours: number;
+  };
+  generated_at: string;
+}
+
+/**
+ * Backend security event entry (from /admin/audit/security-events)
+ */
+export interface BackendSecurityEvent {
+  id: string;
+  source: 'api_audit' | 'activity_log';
+  timestamp: string;
+  severity: SecuritySeverity;
+  event_type: string;
+  user_id?: string;
+  username?: string;
+  client_ip?: string;
+  // Fields from api_audit source
+  endpoint_path?: string;
+  http_method?: string;
+  response_status?: number;
+  error_code?: string;
+  error_message?: string;
+  duration_ms?: number;
+  // Fields from activity_log source
+  details?: Record<string, unknown>;
+  activity_name?: string;
+}
+
+/**
+ * Backend audit statistics response from /admin/audit/statistics
+ */
+export interface BackendAuditStatisticsResponse {
+  overview: {
+    total_requests: number;
+    success_count: number;
+    failure_count: number;
+    success_rate: number;
+    avg_duration_ms: number;
+  };
+  by_method: {
+    method: string;
+    count: number;
+    success_rate: number;
+  }[];
+  top_endpoints: {
+    endpoint: string;
+    count: number;
+    success_rate: number;
+    avg_duration_ms: number;
+  }[];
+  status_distribution: {
+    statusCode: number;
+    count: number;
+    percentage: number;
+  }[];
+  generated_at: string;
+}
+
+/**
  * Export format options
  */
 export type ExportFormat = 'csv' | 'json';
@@ -302,4 +380,10 @@ export interface RawActivityLog {
     user_hash: string;
   } | null;
   ip_address: string | null;
+  // Enriched fields from backend (optional, may not exist on all responses)
+  severity_level?: number;
+  user_agent?: string;
+  activity_name?: string;
+  activity_category?: string;
+  metadata?: Record<string, unknown>;
 }

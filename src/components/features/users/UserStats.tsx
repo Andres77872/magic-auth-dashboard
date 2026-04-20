@@ -1,8 +1,6 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { User as UserIcon, Check, AlertTriangle, Users } from 'lucide-react';
+import { StatCard } from '@/components/common';
 import type { User } from '@/types/auth.types';
 
 interface UserStatsProps {
@@ -10,46 +8,11 @@ interface UserStatsProps {
   isLoading?: boolean;
 }
 
-interface StatCardProps {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-  variant?: 'default' | 'success' | 'warning' | 'info';
-  isLoading?: boolean;
-}
-
-const variantStyles = {
-  default: 'bg-card text-foreground [&_.stat-icon]:bg-muted [&_.stat-icon]:text-muted-foreground',
-  success: 'bg-card text-foreground [&_.stat-icon]:bg-success-subtle [&_.stat-icon]:text-success-subtle-foreground',
-  warning: 'bg-card text-foreground [&_.stat-icon]:bg-warning-subtle [&_.stat-icon]:text-warning-subtle-foreground',
-  info: 'bg-card text-foreground [&_.stat-icon]:bg-info-subtle [&_.stat-icon]:text-info-subtle-foreground',
-};
-
-function StatCard({ icon, label, value, variant = 'default', isLoading }: StatCardProps) {
-  return (
-    <Card className={cn('overflow-hidden', variantStyles[variant])}>
-      <CardContent className="flex items-center gap-4 p-4">
-        <div className="stat-icon flex h-12 w-12 items-center justify-center rounded-lg">
-          {icon}
-        </div>
-        <div className="flex flex-col">
-          <span className="text-sm font-medium text-muted-foreground">{label}</span>
-          {isLoading ? (
-            <Skeleton className="h-7 w-16" />
-          ) : (
-            <span className="text-2xl font-bold">{value}</span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export function UserStats({ users, isLoading }: UserStatsProps): React.JSX.Element {
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.is_active).length;
   const inactiveUsers = totalUsers - activeUsers;
-  
+
   const usersByType = {
     root: users.filter(u => u.user_type === 'root').length,
     admin: users.filter(u => u.user_type === 'admin').length,
@@ -59,32 +22,34 @@ export function UserStats({ users, isLoading }: UserStatsProps): React.JSX.Eleme
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        icon={<UserIcon size={20} aria-hidden="true" />}
-        label="Total Users"
+        title="Total Users"
         value={totalUsers}
-        variant="default"
-        isLoading={isLoading}
+        icon={<UserIcon className="h-5 w-5" aria-hidden="true" />}
+        loading={isLoading}
       />
       <StatCard
-        icon={<Check size={20} aria-hidden="true" />}
-        label="Active Users"
+        title="Active Users"
         value={activeUsers}
+        icon={<Check className="h-5 w-5" aria-hidden="true" />}
         variant="success"
-        isLoading={isLoading}
+        gradient
+        loading={isLoading}
       />
       <StatCard
-        icon={<AlertTriangle size={20} aria-hidden="true" />}
-        label="Inactive Users"
+        title="Inactive Users"
         value={inactiveUsers}
+        icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />}
         variant="warning"
-        isLoading={isLoading}
+        gradient
+        loading={isLoading}
       />
       <StatCard
-        icon={<Users size={20} aria-hidden="true" />}
-        label="Admin Users"
+        title="Admin Users"
         value={usersByType.admin}
+        icon={<Users className="h-5 w-5" aria-hidden="true" />}
         variant="info"
-        isLoading={isLoading}
+        gradient
+        loading={isLoading}
       />
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,7 @@ import type { DataViewColumn } from '@/components/common';
 import { FolderOpen, Plus, Trash2, ExternalLink, MoreHorizontal } from 'lucide-react';
 import { groupService, projectGroupService } from '@/services';
 import type { ProjectGroup } from '@/services/project-group.service';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
 
 interface ProjectGroupAccess {
@@ -49,7 +50,8 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
   const [isRemoving, setIsRemoving] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const { addToast } = useToast();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
 
   // Fetch project groups accessible by this user group
   // GET /admin/user-groups/{group_hash}/project-groups
@@ -68,11 +70,11 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
       }
     } catch (error) {
       console.error('Failed to fetch accessible project groups:', error);
-      addToast({ message: 'Failed to load project groups', variant: 'error' });
+      showToast('Failed to load project groups', 'error');
     } finally {
       setLoading(false);
     }
-  }, [groupHash, addToast]);
+  }, [groupHash, showToast]);
 
   const fetchAvailableProjectGroups = async () => {
     try {
@@ -103,7 +105,7 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
 
   const handleGrantAccess = async () => {
     if (selectedGroups.length === 0) {
-      addToast({ message: 'Please select at least one project group', variant: 'warning' });
+      showToast('Please select at least one project group', 'warning');
       return;
     }
 
@@ -125,17 +127,11 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
     }
 
     if (successCount > 0) {
-      addToast({
-        message: `Successfully granted access to ${successCount} project group(s)`,
-        variant: 'success'
-      });
+      showToast(`Successfully granted access to ${successCount} project group(s)`, 'success');
       await fetchAccessibleProjectGroups();
     }
     if (errorCount > 0) {
-      addToast({
-        message: `Failed to grant access to ${errorCount} project group(s)`,
-        variant: 'error'
-      });
+      showToast(`Failed to grant access to ${errorCount} project group(s)`, 'error');
     }
 
     setShowAddModal(false);
@@ -154,7 +150,7 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
       );
 
       if (response.success) {
-        addToast({ message: 'Project group access revoked successfully', variant: 'success' });
+        showToast('Project group access revoked successfully', 'success');
         setConfirmRemove(null);
         await fetchAccessibleProjectGroups();
       } else {
@@ -162,7 +158,7 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
       }
     } catch (error) {
       console.error('Failed to revoke project group access:', error);
-      addToast({ message: 'Failed to revoke project group access', variant: 'error' });
+      showToast('Failed to revoke project group access', 'error');
     } finally {
       setIsRemoving(false);
     }
@@ -193,7 +189,7 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            window.location.href = `${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`;
+            navigate(`${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`);
           }}
           className="font-medium text-primary hover:underline text-left flex items-center gap-1"
         >
@@ -235,7 +231,7 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
-                window.location.href = `${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`;
+                navigate(`${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`);
               }}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
@@ -268,7 +264,7 @@ export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  window.location.href = `${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`;
+                  navigate(`${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`);
                 }}
                 className="font-medium hover:underline text-left flex items-center gap-1"
               >

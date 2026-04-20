@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 
 export interface StatCardProps {
   title: string;
@@ -16,6 +17,18 @@ export interface StatCardProps {
   onClick?: () => void;
   loading?: boolean;
   className?: string;
+  /** Enable gradient background (from-{variant}/5 to-{variant}/10) */
+  gradient?: boolean;
+  /** Progress bar configuration */
+  progress?: {
+    value: number;
+    max?: number;
+    color?: string;
+  };
+  /** Background variant for colored cards */
+  variant?: 'default' | 'success' | 'warning' | 'info' | 'primary';
+  /** Secondary metric text below the main value */
+  subValue?: string;
 }
 
 export function StatCard({
@@ -27,6 +40,10 @@ export function StatCard({
   onClick,
   loading = false,
   className = '',
+  gradient = false,
+  progress,
+  variant = 'default',
+  subValue,
 }: StatCardProps): React.JSX.Element {
   const trendDirection =
     trend && trend.value > 0 ? 'up' : trend && trend.value < 0 ? 'down' : 'neutral';
@@ -47,10 +64,36 @@ export function StatCard({
     neutral: 'text-muted-foreground',
   };
 
+  // Map variant to Tailwind color class
+  const variantColors: Record<string, string> = {
+    default: 'primary',
+    success: 'success',
+    warning: 'warning',
+    info: 'info',
+    primary: 'primary',
+  };
+
+  const variantColor = variantColors[variant] || 'primary';
+
+  // Build gradient classes if enabled
+  const gradientClasses = gradient
+    ? `bg-gradient-to-br from-${variantColor}/5 to-${variantColor}/10`
+    : '';
+
+  // Map progress color to Progress component variant
+  const progressVariantMap: Record<string, 'primary' | 'success' | 'warning' | 'destructive'> = {
+    primary: 'primary',
+    success: 'success',
+    warning: 'warning',
+    destructive: 'destructive',
+    default: 'primary',
+  };
+
   return (
     <Card
       className={cn(
         onClick && 'cursor-pointer transition-colors hover:bg-muted/50',
+        gradientClasses,
         className
       )}
       onClick={onClick}
@@ -74,6 +117,18 @@ export function StatCard({
           <Skeleton className="h-8 w-4/5" />
         ) : (
           <div className="text-2xl font-bold">{value}</div>
+        )}
+        {subValue && !loading && (
+          <div className="text-sm text-muted-foreground mt-1">{subValue}</div>
+        )}
+        {progress && !loading && (
+          <div className="mt-2">
+            <Progress
+              value={(progress.value / (progress.max ?? 100)) * 100}
+              variant={progressVariantMap[progress.color ?? 'default']}
+              size="sm"
+            />
+          </div>
         )}
         {trend && !loading && (
           <div className={cn('flex items-center gap-1 mt-1', trendColors[trendDirection])}>

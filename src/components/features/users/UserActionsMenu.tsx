@@ -31,6 +31,7 @@ import type { User, UserType } from '@/types/auth.types';
 import { AdminProjectsManager } from './AdminProjectsManager';
 import { UserDetailsModal } from './UserDetailsModal';
 import { AssignGroupModal } from './AssignGroupModal';
+import { ConfirmDialog } from '@/components/common';
 
 interface UserActionsMenuProps {
   user: User;
@@ -44,6 +45,10 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails
   const [showProjectsManager, setShowProjectsManager] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAssignGroupModal, setShowAssignGroupModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [showResetPasswordConfirm, setShowResetPasswordConfirm] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [selectedUserType, setSelectedUserType] = useState<UserType>(user.user_type);
   const [isChangingType, setIsChangingType] = useState(false);
   const [changeTypeError, setChangeTypeError] = useState('');
@@ -103,15 +108,17 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails
     }
   };
 
-  const handleDeleteUser = async () => {
-    if (!window.confirm(`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`)) {
-      return;
-    }
-    
+  const handleDeleteUser = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    setIsActionLoading(true);
     try {
       const response = await userService.deleteUser(user.user_hash);
       if (response.success) {
         showToast(`User "${user.username}" has been deleted`, 'success');
+        setShowDeleteConfirm(false);
         onUserUpdated?.();
       } else {
         showToast(response.message || 'Failed to delete user', 'error');
@@ -119,21 +126,25 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails
     } catch (error) {
       console.error('Error deleting user:', error);
       showToast('Failed to delete user', 'error');
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
-  const handleChangeStatus = async () => {
+  const handleChangeStatus = () => {
+    setShowStatusConfirm(true);
+  };
+
+  const confirmChangeStatus = async () => {
     const newStatus = !user.is_active;
     const action = newStatus ? 'activate' : 'deactivate';
-    
-    if (!window.confirm(`Are you sure you want to ${action} user "${user.username}"?`)) {
-      return;
-    }
-    
+
+    setIsActionLoading(true);
     try {
       const response = await userService.toggleUserStatus(user.user_hash, newStatus);
       if (response.success) {
         showToast(`User "${user.username}" has been ${newStatus ? 'activated' : 'deactivated'}`, 'success');
+        setShowStatusConfirm(false);
         onUserUpdated?.();
       } else {
         showToast(response.message || `Failed to ${action} user`, 'error');
@@ -141,23 +152,24 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails
     } catch (error) {
       console.error(`Error ${action} user:`, error);
       showToast(`Failed to ${action} user`, 'error');
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!window.confirm(`Are you sure you want to reset the password for "${user.username}"? A temporary password will be generated.`)) {
-      return;
-    }
-    
+  const handleResetPassword = () => {
+    setShowResetPasswordConfirm(true);
+  };
+
+  const confirmResetPassword = async () => {
+    setIsActionLoading(true);
     try {
       const response = await userService.resetUserPassword(user.user_hash);
       if (response.success) {
-        const tempPassword = response.reset_data?.temporary_password;
-        if (tempPassword) {
-          showToast(`Password reset. Temporary password: ${tempPassword}`, 'success');
-        } else {
-          showToast('Password has been reset successfully', 'success');
-        }
+        // Backend does NOT return the temporary password - it's delivered out-of-band
+        // Just show a success message
+        showToast('Password has been reset successfully. The user will be prompted to change it on next login.', 'success');
+        setShowResetPasswordConfirm(false);
         onUserUpdated?.();
       } else {
         showToast(response.message || 'Failed to reset password', 'error');
@@ -165,6 +177,8 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails
     } catch (error) {
       console.error('Error resetting password:', error);
       showToast('Failed to reset password', 'error');
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -397,8 +411,44 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails
               Change User Type
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
+</DialogContent>
+        </Dialog>
+
+      {/* Delete User Confirmation */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        message={`Are you sure you want to delete user "${user.username}"? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        isLoading={isActionLoading}
+      />
+
+      {/* Status Change Confirmation */}
+      <ConfirmDialog
+        isOpen={showStatusConfirm}
+        onClose={() => setShowStatusConfirm(false)}
+        onConfirm={confirmChangeStatus}
+        title={user.is_active ? 'Deactivate User' : 'Activate User'}
+        message={`Are you sure you want to ${user.is_active ? 'deactivate' : 'activate'} user "${user.username}"?`}
+        confirmText={user.is_active ? 'Deactivate' : 'Activate'}
+        variant={user.is_active ? 'danger' : 'info'}
+        isLoading={isActionLoading}
+      />
+
+      {/* Reset Password Confirmation */}
+      <ConfirmDialog
+        isOpen={showResetPasswordConfirm}
+        onClose={() => setShowResetPasswordConfirm(false)}
+        onConfirm={confirmResetPassword}
+        title="Reset Password"
+        message={`Are you sure you want to reset the password for "${user.username}"? The user will be required to change their password on next login.`}
+        confirmText="Reset Password"
+        variant="warning"
+        isLoading={isActionLoading}
+      />
     </>
   );
 }

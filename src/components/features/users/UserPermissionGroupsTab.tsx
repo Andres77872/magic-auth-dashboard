@@ -31,7 +31,7 @@ import {
 import { permissionAssignmentsService, globalRolesService } from '@/services';
 import type { DirectPermissionAssignment } from '@/types/permission-assignments.types';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 
 interface UserPermissionGroupsTabProps {
   userHash: string;
@@ -50,7 +50,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
   const [isRemoving, setIsRemoving] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const { addToast } = useToast();
+  const { showToast } = useToast();
 
   // Fetch direct permission group assignments
   // GET /permissions/users/{user_hash}/permission-groups
@@ -69,7 +69,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       }
     } catch (error) {
       console.error('Failed to fetch direct permission assignments:', error);
-      addToast({ message: 'Failed to load permission groups', variant: 'error' });
+      showToast('Failed to load permission groups', 'error');
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
   // Handle assign permission group
   const handleAssign = async () => {
     if (!selectedGroup) {
-      addToast({ message: 'Please select a permission group', variant: 'warning' });
+      showToast('Please select a permission group', 'warning');
       return;
     }
 
@@ -121,7 +121,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       );
 
       if (response.success) {
-        addToast({ message: 'Permission group assigned successfully', variant: 'success' });
+        showToast('Permission group assigned successfully', 'success');
         setShowAddModal(false);
         setSelectedGroup('');
         setAssignmentNotes('');
@@ -129,7 +129,7 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       }
     } catch (error) {
       console.error('Failed to assign permission group:', error);
-      addToast({ message: 'Failed to assign permission group', variant: 'error' });
+      showToast('Failed to assign permission group', 'error');
     } finally {
       setIsAssigning(false);
     }
@@ -147,13 +147,13 @@ export const UserPermissionGroupsTab: React.FC<UserPermissionGroupsTabProps> = (
       );
 
       if (response.success) {
-        addToast({ message: 'Permission group removed successfully', variant: 'success' });
+        showToast('Permission group removed successfully', 'success');
         setConfirmRemove(null);
         await fetchDirectAssignments();
       }
     } catch (error) {
       console.error('Failed to remove permission group:', error);
-      addToast({ message: 'Failed to remove permission group', variant: 'error' });
+      showToast('Failed to remove permission group', 'error');
     } finally {
       setIsRemoving(false);
     }

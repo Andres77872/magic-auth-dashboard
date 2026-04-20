@@ -1,11 +1,11 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, Skeleton, EmptyState, Button } from '@/components/common';
+import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, Skeleton, EmptyState, Button, CopyableId } from '@/components/common';
 import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
 import { UserAvatar } from '@/components/features/users/UserAvatar';
 import { useUserProfileDetails } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
-import { getUserTypeBadgeVariant, formatDateTime, truncateHash } from '@/utils/component-utils';
+import { getUserTypeBadgeVariant, formatDateTime } from '@/utils/component-utils';
 import {
   User,
   XCircle,
@@ -52,16 +52,6 @@ export function UserProfilePage(): React.JSX.Element {
     if (userHash) {
       navigate(`${ROUTES.USERS_EDIT}/${userHash}`);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   // Loading state with proper skeleton
@@ -242,7 +232,7 @@ export function UserProfilePage(): React.JSX.Element {
             />
             <div className="space-y-2">
               <h2 className="text-xl font-semibold tracking-tight">{user.username}</h2>
-              <p className="text-xs font-mono text-muted-foreground">{truncateHash(user.user_hash)}</p>
+              <CopyableId id={user.user_hash} className="mt-1" />
               <div className="flex items-center justify-center gap-2">
                 <Badge 
                   variant={getUserTypeBadgeVariant(user.user_type)}
@@ -291,7 +281,7 @@ export function UserProfilePage(): React.JSX.Element {
                   <Hash size={12} aria-hidden="true" />
                   User Hash
                 </label>
-                <p className="text-xs font-mono text-muted-foreground">{user.user_hash}</p>
+                <CopyableId id={user.user_hash} showFull />
               </div>
 
               {/* Status */}

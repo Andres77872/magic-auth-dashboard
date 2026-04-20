@@ -650,6 +650,11 @@ export function UserFormModal({
                 assignedProjects={formData.assignedProjects}
                 assignedGroup={formData.assignedGroup}
                 assignmentError={errors.assignedGroup}
+                projectAssignmentError={
+                  mode === 'create' && formData.userType === 'admin' && formData.assignedProjects.length === 0
+                    ? 'At least one project must be assigned for admin users.'
+                    : undefined
+                }
                 isLoading={isLoading}
                 onOpenProjectModal={() => setShowProjectModal(true)}
                 onOpenGroupModal={() => setShowGroupModal(true)}
@@ -669,8 +674,12 @@ export function UserFormModal({
                 type="submit"
                 disabled={
                   checkingAvailability ||
+                  isLoading ||
                   (mode === 'create' &&
-                    (usernameAvailable === false || emailAvailable === false))
+                    (usernameAvailable === false || emailAvailable === false)) ||
+                  (mode === 'create' &&
+                    formData.userType === 'admin' &&
+                    formData.assignedProjects.length === 0)
                 }
               >
                 {isLoading && <Spinner size="sm" className="mr-2" />}

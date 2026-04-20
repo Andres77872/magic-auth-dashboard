@@ -12,6 +12,8 @@ import {
   Badge,
   ErrorState,
   TabNavigation,
+  CopyButton,
+  StatsGrid,
   type Tab
 } from '@/components/common';
 import type { Filter, DataViewColumn } from '@/components/common';
@@ -21,7 +23,7 @@ import { ProjectGroupActionsMenu } from '@/components/features/groups/ProjectGro
 import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
 import { Users, Plus, FolderTree, ArrowRight, FolderOpen, Info } from 'lucide-react';
 import { useToast } from '@/hooks';
-import { formatDate, formatCount } from '@/utils/component-utils';
+import { formatDate, formatCount, truncateHash } from '@/utils/component-utils';
 import type { GroupListParams, UserGroup, GroupFormData } from '@/types/group.types';
 import type { ProjectGroup } from '@/services/project-group.service';
 import { Card, CardContent } from '@/components/ui/card';
@@ -256,6 +258,12 @@ export const GroupListPage: React.FC = () => {
           >
             {group.group_name}
           </button>
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground truncate max-w-xs" title={group.group_hash}>
+              {truncateHash(group.group_hash)}
+            </span>
+            <CopyButton value={group.group_hash} size="sm" />
+          </div>
           {group.description && (
             <p className="text-sm text-muted-foreground truncate max-w-xs">
               {group.description}
@@ -505,6 +513,30 @@ export const GroupListPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Statistics Grid */}
+      <div className="mb-6">
+        <StatsGrid
+          stats={[
+            {
+              title: 'User Groups',
+              value: pagination?.total ?? 0,
+              icon: <Users size={16} />,
+              variant: 'primary',
+              gradient: true,
+            },
+            {
+              title: 'Project Groups',
+              value: projectGroupsPagination?.total ?? 0,
+              icon: <FolderTree size={16} />,
+              variant: 'info',
+              gradient: true,
+            },
+          ]}
+          columns={2}
+          loading={isLoading && isLoadingProjectGroups}
+        />
+      </div>
 
       {/* Tab Navigation */}
       <div className="mb-6">

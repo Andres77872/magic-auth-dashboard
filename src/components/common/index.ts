@@ -42,6 +42,7 @@ export { EmptyState } from './EmptyState';
 export { ToastContainer } from './ToastContainer';
 export { OptimisticContent } from './OptimisticContent';
 export { TableSkeleton } from './TableSkeleton';
+export { CopyableId } from './CopyableId';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as DataView } from './DataView';
 export { DataViewTableView } from './DataViewTableView';
@@ -51,6 +52,7 @@ export { default as DataViewCard } from './DataViewCard';
 export { DataViewToolbar } from './DataViewToolbar';
 export { default as Pagination } from './Pagination';
 export { ActionsMenu } from './ActionsMenu';
+export { CopyButton } from './CopyButton';
 export { IconContainer } from './IconContainer';
 
 // Layout components
@@ -65,6 +67,7 @@ export { EntityFilter } from './EntityFilter';
 
 // Types
 export type { ConfirmDialogProps } from './ConfirmDialog';
+export type { CopyableIdProps } from './CopyableId';
 export type {
   DataViewProps,
   DataViewColumn,
@@ -84,6 +87,7 @@ export type { DataViewBulkActionsBarProps } from './DataViewBulkActionsBar';
 export type { EmptyStateProps } from './EmptyState';
 export type { ErrorStateProps } from './ErrorState';
 export type { ActionsMenuProps, ActionMenuItem } from './ActionsMenu';
+export type { CopyButtonProps } from './CopyButton';
 export type { FilterBarProps, Filter, FilterOption } from './FilterBar';
 export type { PageContainerProps } from './PageContainer';
 export type { PageHeaderProps } from './PageHeader';

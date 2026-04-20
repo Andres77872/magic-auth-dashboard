@@ -1,17 +1,20 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, ToastProvider, ThemeProvider } from '@/contexts';
+import { useAuth } from '@/hooks';
 import { ErrorBoundary, ToastContainer } from '@/components/common';
 import {
   RootOnlyRoute,
   AdminRoute,
   PublicRoute,
+  ProtectedRoute,
 } from '@/components/guards';
 import { ROUTES } from '@/utils/routes';
+import { SessionExpiryWarningModal } from '@/components/features/settings/SessionExpiryWarningModal';
 import './styles/globals.css';
 
 // Import pages
-import { LandingPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage } from '@/pages';
+import { LandingPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage, SettingsPage } from '@/pages';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
 import { 
   GroupListPage, 
@@ -25,6 +28,7 @@ import {
   GlobalRolesPage,
   RoleManagementPage
 } from '@/pages/permissions';
+import { TokenManagementPage } from '@/pages/tokens';
 import { AuditLogMonitorPage } from '@/components/features/audit';
 import { DashboardLayout } from '@/components/layout';
 
@@ -83,6 +87,297 @@ const SystemPage = () => (
   </div>
 );
 
+function AppRoutes(): React.JSX.Element {
+  return (
+    <>
+      <Routes>
+        {/* Public routes */}
+        <Route
+          path={ROUTES.LOGIN}
+          element={
+            <PublicRoute>
+              <LandingPage />
+            </PublicRoute>
+          }
+        />
+
+        {/* Unauthorized access page */}
+        <Route
+          path={ROUTES.UNAUTHORIZED}
+          element={<UnauthorizedPage />}
+        />
+
+        {/* Protected dashboard routes */}
+        <Route
+          path={ROUTES.DASHBOARD}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <DashboardOverview />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* Dashboard overview (same component, different route) */}
+        <Route
+          path={ROUTES.OVERVIEW}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <DashboardOverview />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* Profile route */}
+        <Route
+          path={ROUTES.PROFILE}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <ProfilePage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* Settings route — admin-managed API token management */}
+        <Route
+          path={ROUTES.SETTINGS}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <SettingsPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* User Management */}
+        <Route
+          path={ROUTES.USERS}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <UserListPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+        
+        {/* User Profile - Keep for detailed view */}
+        <Route
+          path={`${ROUTES.USERS_PROFILE}/:userHash`}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <UserProfilePage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        <Route
+          path={ROUTES.PROJECTS}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <ProjectListPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path={`${ROUTES.PROJECTS_DETAILS}/:projectHash`}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <ProjectDetailsPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* Group Management */}
+        <Route
+          path={ROUTES.GROUPS}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <GroupListPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path={`${ROUTES.GROUPS}/:groupHash`}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <GroupDetailsPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* Project Group Management */}
+        {/* Redirect to unified Groups page with project-groups tab */}
+        <Route
+          path={ROUTES.PROJECT_GROUPS}
+          element={<Navigate to={`${ROUTES.GROUPS}?tab=project-groups`} replace />}
+        />
+        
+        <Route
+          path={ROUTES.PROJECT_GROUPS_CREATE}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <ProjectGroupCreatePage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path={`${ROUTES.PROJECT_GROUPS_EDIT}/:groupHash`}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <ProjectGroupEditPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path={`${ROUTES.PROJECT_GROUPS}/:groupHash`}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <ProjectGroupDetailsPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* Permission Management (UNIFIED) */}
+        <Route
+          path={ROUTES.PERMISSION_MANAGEMENT}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <PermissionManagementPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* Global Roles Management (NEW) */}
+        <Route
+          path={ROUTES.GLOBAL_ROLES}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <GlobalRolesPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+        
+        <Route
+          path={ROUTES.ROLE_MANAGEMENT}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <RoleManagementPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* API Token Management */}
+        <Route
+          path={ROUTES.TOKENS}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <TokenManagementPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* Audit Log Monitor */}
+        <Route
+          path={ROUTES.AUDIT}
+          element={
+            <AdminRoute>
+              <DashboardLayout>
+                <AuditLogMonitorPage />
+              </DashboardLayout>
+            </AdminRoute>
+          }
+        />
+
+        {/* ROOT-only system routes */}
+        <Route
+          path={ROUTES.SYSTEM}
+          element={
+            <RootOnlyRoute>
+              <DashboardLayout>
+                <SystemPage />
+              </DashboardLayout>
+            </RootOnlyRoute>
+          }
+        />
+
+        {/* Default redirects */}
+        <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
+        
+        {/* Legacy login route redirect */}
+        <Route path="/login" element={<Navigate to={ROUTES.LOGIN} replace />} />
+        
+        {/* Catch-all route */}
+        <Route
+          path="*"
+          element={
+            <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
+              <h1 className="mb-4 text-4xl font-bold text-foreground">Page Not Found</h1>
+              <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
+            </div>
+          }
+        />
+      </Routes>
+    </>
+  );
+}
+
+function AppContent(): React.JSX.Element {
+  const { showSessionExpiryWarning, dismissSessionExpiryWarning, logout } = useAuth();
+
+  const handleReLogin = (): void => {
+    void logout();
+    window.location.href = ROUTES.LOGIN;
+  };
+
+  return (
+    <>
+      <div className="min-h-screen bg-background text-foreground">
+        <AppRoutes />
+      </div>
+      <SessionExpiryWarningModal
+        isOpen={showSessionExpiryWarning}
+        onClose={dismissSessionExpiryWarning}
+        onReLogin={handleReLogin}
+      />
+    </>
+  );
+}
+
 function App(): React.JSX.Element {
   return (
     <ThemeProvider>
@@ -91,246 +386,7 @@ function App(): React.JSX.Element {
           <AuthProvider>
             <ToastProvider>
               <ToastContainer />
-              <div className="min-h-screen bg-background text-foreground">
-                <Routes>
-              {/* Public routes */}
-              <Route
-                path={ROUTES.LOGIN}
-                element={
-                  <PublicRoute>
-                    <LandingPage />
-                  </PublicRoute>
-                }
-              />
-
-              {/* Unauthorized access page */}
-              <Route
-                path={ROUTES.UNAUTHORIZED}
-                element={<UnauthorizedPage />}
-              />
-
-              {/* Protected dashboard routes */}
-              <Route
-                path={ROUTES.DASHBOARD}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <DashboardOverview />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* Dashboard overview (same component, different route) */}
-              <Route
-                path={ROUTES.OVERVIEW}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <DashboardOverview />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* Profile route */}
-              <Route
-                path={ROUTES.PROFILE}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProfilePage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* User Management */}
-              <Route
-                path={ROUTES.USERS}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <UserListPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              {/* User Profile - Keep for detailed view */}
-              <Route
-                path={`${ROUTES.USERS_PROFILE}/:userHash`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <UserProfilePage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              <Route
-                path={ROUTES.PROJECTS}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProjectListPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={`${ROUTES.PROJECTS_DETAILS}/:projectHash`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProjectDetailsPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* Group Management */}
-              <Route
-                path={ROUTES.GROUPS}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <GroupListPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={`${ROUTES.GROUPS}/:groupHash`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <GroupDetailsPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* Project Group Management */}
-              {/* Redirect to unified Groups page with project-groups tab */}
-              <Route
-                path={ROUTES.PROJECT_GROUPS}
-                element={<Navigate to={`${ROUTES.GROUPS}?tab=project-groups`} replace />}
-              />
-              
-              <Route
-                path={ROUTES.PROJECT_GROUPS_CREATE}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProjectGroupCreatePage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={`${ROUTES.PROJECT_GROUPS_EDIT}/:groupHash`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProjectGroupEditPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={`${ROUTES.PROJECT_GROUPS}/:groupHash`}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <ProjectGroupDetailsPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* Permission Management (UNIFIED) */}
-              <Route
-                path={ROUTES.PERMISSION_MANAGEMENT}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <PermissionManagementPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* Global Roles Management (NEW) */}
-              <Route
-                path={ROUTES.GLOBAL_ROLES}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <GlobalRolesPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-              
-              <Route
-                path={ROUTES.ROLE_MANAGEMENT}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <RoleManagementPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* Audit Log Monitor */}
-              <Route
-                path={ROUTES.AUDIT}
-                element={
-                  <AdminRoute>
-                    <DashboardLayout>
-                      <AuditLogMonitorPage />
-                    </DashboardLayout>
-                  </AdminRoute>
-                }
-              />
-
-              {/* ROOT-only system routes */}
-              <Route
-                path={ROUTES.SYSTEM}
-                element={
-                  <RootOnlyRoute>
-                    <DashboardLayout>
-                      <SystemPage />
-                    </DashboardLayout>
-                  </RootOnlyRoute>
-                }
-              />
-
-              {/* Default redirects */}
-              <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
-              
-              {/* Legacy login route redirect */}
-              <Route path="/login" element={<Navigate to={ROUTES.LOGIN} replace />} />
-              
-              {/* Catch-all route */}
-              <Route
-                path="*"
-                element={
-                  <div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
-                    <h1 className="mb-4 text-4xl font-bold text-foreground">Page Not Found</h1>
-                    <p className="text-muted-foreground">The page you're looking for doesn't exist.</p>
-                  </div>
-                }
-              />
-              </Routes>
-              </div>
+              <AppContent />
             </ToastProvider>
           </AuthProvider>
         </BrowserRouter>

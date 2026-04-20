@@ -214,17 +214,6 @@ class UserService {
       cleanParams
     );
   }
-
-  // Update admin user's single project (legacy endpoint) - uses form data
-  async updateAdminProject(
-    userHash: string,
-    assignedProjectId: number
-  ): Promise<ApiResponse<any>> {
-    return await apiClient.putForm<any>(
-      `/user-types/admin/${userHash}/project`,
-      { assigned_project_id: assignedProjectId }
-    );
-  }
 }
 
 export const userService = new UserService();

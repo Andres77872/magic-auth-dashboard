@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth, useUserType } from '@/hooks';
-import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge } from '@/components/common';
+import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, CopyableId } from '@/components/common';
 import { UserAvatar } from '@/components/features/users/UserAvatar';
 import { User, Settings2, Shield, Clock } from 'lucide-react';
 import { getUserTypeBadgeVariant } from '@/utils/component-utils';
@@ -88,7 +88,7 @@ export function ProfilePage(): React.JSX.Element {
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   User ID
                 </label>
-                <p className="text-xs font-mono text-muted-foreground">{user.user_hash}</p>
+                <CopyableId id={user.user_hash} />
               </div>
 
               {/* Account Status */}

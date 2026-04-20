@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/utils/routes';
 import {
@@ -24,11 +25,13 @@ export function ProjectGroupActionsMenu({
   onDelete,
   onView
 }: ProjectGroupActionsMenuProps): React.JSX.Element {
+  const navigate = useNavigate();
+
   const handleViewDetails = () => {
     if (onView) {
       onView(group);
     } else {
-      window.location.href = `${ROUTES.PROJECT_GROUPS}/${group.group_hash}`;
+      navigate(`${ROUTES.PROJECT_GROUPS}/${group.group_hash}`);
     }
   };
 
@@ -36,17 +39,13 @@ export function ProjectGroupActionsMenu({
     if (onEdit) {
       onEdit(group);
     } else {
-      window.location.href = `${ROUTES.PROJECT_GROUPS_EDIT}/${group.group_hash}`;
+      navigate(`${ROUTES.PROJECT_GROUPS_EDIT}/${group.group_hash}`);
     }
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete the project group "${group.group_name}"?`)) {
-      if (onDelete) {
-        onDelete(group);
-      } else {
-        console.log('Delete project group:', group.group_hash);
-      }
+    if (onDelete) {
+      onDelete(group);
     }
   };
 

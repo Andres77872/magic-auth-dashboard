@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,13 +24,13 @@ export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({
   onDelete,
   onView 
 }) => {
+  const navigate = useNavigate();
 
   const handleViewDetails = () => {
     if (onView) {
       onView(group);
     } else {
-      // Fallback to navigation if callback not provided
-      window.location.href = `/dashboard/groups/${group.group_hash}`;
+      navigate(`/dashboard/groups/${group.group_hash}`);
     }
   };
 
@@ -37,8 +38,7 @@ export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({
     if (onEdit) {
       onEdit(group);
     } else {
-      // Fallback to navigation if callback not provided
-      window.location.href = `/dashboard/groups/${group.group_hash}/edit`;
+      navigate(`/dashboard/groups/${group.group_hash}/edit`);
     }
   };
 

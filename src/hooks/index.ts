@@ -3,10 +3,11 @@ export { useUsers } from './useUsers';
 export { useProjects } from './useProjects';
 export { useUserType } from './useUserType';
 export { usePermissions } from './usePermissions';
-export { useRoles } from './useRoles';
+
 export { useGroups } from './useGroups';
 export { useProjectGroups } from './useProjectGroups';
 export { useToast } from './useToast';
+export { useApiKeys } from './useApiKeys';
 
 // Dashboard hooks
 export { default as useSystemStats } from './dashboard/useSystemStats';

@@ -1,28 +1,17 @@
 import { useCallback } from 'react';
+import { useToast as useToastContext } from '@/contexts/ToastContext';
 
-/**
- * useToast Hook
- *
- * Simple wrapper for toast notifications.
- *
- * @example
- * ```tsx
- * const { showToast } = useToast();
- * showToast('Success!', 'success');
- * ```
- */
 export function useToast() {
+  const { addToast } = useToastContext();
+
   const showToast = useCallback(
     (message: string, variant: 'success' | 'error' | 'warning' | 'info' = 'info') => {
-      // This is a simplified version - in production, use ToastContext
-      console.log(`[${variant.toUpperCase()}]: ${message}`);
+      addToast({ message, variant });
     },
-    []
+    [addToast]
   );
 
-  return {
-    showToast,
-  };
+  return { showToast };
 }
 
 export default useToast;

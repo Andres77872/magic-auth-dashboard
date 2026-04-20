@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ConfirmDialog, DataView, ActionsMenu, EmptyState } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import type { ActionMenuItem } from '@/components/common/ActionsMenu';
@@ -17,7 +17,8 @@ import {
 } from '@/components/ui/select';
 import { ClipboardList, Info, Layers, Plus, Trash2, User, Users } from 'lucide-react';
 import { usePermissionAssignments, useGroups, useUsers, usePermissionManagement } from '@/hooks';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
+import { formatDate } from '@/utils/component-utils';
 import { BulkAssignModal } from '@/components/features/permissions';
 
 interface AssignmentRecord {
@@ -35,7 +36,7 @@ interface AssignmentRecord {
 type AssignmentViewType = 'user_group' | 'direct_user';
 
 export const AssignmentsTab: React.FC = () => {
-  const { addToast } = useToast();
+  const { showToast } = useToast();
   const [viewType, setViewType] = useState<AssignmentViewType>('user_group');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTarget, setSelectedTarget] = useState<string>('');
@@ -116,11 +117,7 @@ export const AssignmentsTab: React.FC = () => {
     });
   }, [assignments, searchTerm]);
 
-  const formatDate = useCallback((value?: string) => {
-    if (!value) return '—';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
-  }, []);
+  
 
   // Load assignments when target changes
   const loadAssignments = useCallback(async () => {
@@ -168,17 +165,17 @@ export const AssignmentsTab: React.FC = () => {
       }
     } catch (error) {
       if (loadId !== loadIdRef.current) return;
-      addToast({
-        message: error instanceof Error ? error.message : 'Failed to load assignments',
-        variant: 'error',
-      });
+      showToast(
+        error instanceof Error ? error.message : 'Failed to load assignments',
+        'error'
+      );
     } finally {
       if (loadId === loadIdRef.current) {
         setLoading(false);
       }
     }
   }, [
-    addToast,
+    showToast,
     getUserDirectPermissionGroups,
     getUserGroupPermissionGroups,
     isUserGroupView,
@@ -223,7 +220,7 @@ export const AssignmentsTab: React.FC = () => {
   // Assign handler
   const handleAssign = async () => {
     if (!selectedTarget || !selectedPermissionGroup) {
-      addToast({ message: 'Select a target and permission group first', variant: 'warning' });
+      showToast('Select a target and permission group first', 'warning');
       return;
     }
 
@@ -234,15 +231,15 @@ export const AssignmentsTab: React.FC = () => {
       } else {
         await assignPermissionGroupToUser(selectedTarget, selectedPermissionGroup, notes.trim() || undefined);
       }
-      addToast({ message: 'Permission group assigned successfully', variant: 'success' });
+      showToast('Permission group assigned successfully', 'success');
       setSelectedPermissionGroup('');
       setNotes('');
       await loadAssignments();
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Failed to assign permission group',
-        variant: 'error',
-      });
+      showToast(
+        error instanceof Error ? error.message : 'Failed to assign permission group',
+        'error'
+      );
     } finally {
       setIsAssigning(false);
     }
@@ -270,15 +267,15 @@ export const AssignmentsTab: React.FC = () => {
           assignmentToDelete.permissionGroupHash
         );
       }
-      addToast({ message: 'Permission group removed successfully', variant: 'success' });
+      showToast('Permission group removed successfully', 'success');
       await loadAssignments();
       setIsDeleteDialogOpen(false);
       setAssignmentToDelete(null);
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Failed to remove permission group',
-        variant: 'error',
-      });
+      showToast(
+        error instanceof Error ? error.message : 'Failed to remove permission group',
+        'error'
+      );
     } finally {
       setIsDeleting(false);
     }

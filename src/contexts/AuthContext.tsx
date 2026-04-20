@@ -1,6 +1,6 @@
-import { createContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import { createContext, useReducer, useEffect, useCallback, useRef, useState } from 'react';
 import type { ReactNode, JSX } from 'react';
-import type { AuthState, AuthAction, User, UserType } from '@/types/auth.types';
+import type { AuthState, AuthAction, User, UserType, LoginResponse, PlatformLoginResponse } from '@/types/auth.types';
 import { AuthActionType } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
 import { permissionAssignmentsService } from '@/services/permission-assignments.service';
@@ -9,11 +9,22 @@ import { handleApiError } from '@/utils/error-handler';
 import { hasPermission as checkPermission, canAccessRoute as checkRoute } from '@/utils/permissions';
 import { cache } from '@/utils/cache';
 
+// Session expiry storage key
+const SESSION_EXPIRES_AT_KEY = 'session_expires_at';
+
+// Refresh threshold: 5 minutes before expiry
+const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
+// Retry delay on refresh failure
+const REFRESH_RETRY_DELAY_MS = 30 * 1000;
+// Max refresh retries before warning
+const MAX_REFRESH_RETRIES = 3;
+
 // Try to restore auth state from localStorage immediately
 const getInitialAuthState = (): AuthState => {
   const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
   const projectStr = localStorage.getItem(STORAGE_KEYS.CURRENT_PROJECT);
+  const expiresAtStr = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
 
   // If we have stored data, start with it to eliminate blink
   if (token && userDataStr) {
@@ -31,12 +42,14 @@ const getInitialAuthState = (): AuthState => {
         error: null,
         effectivePermissions: [],
         permissionsLoading: false,
+        sessionExpiresAt: expiresAtStr || null,
       };
-    } catch (e) {
+    } catch {
       // If parsing fails, clear storage
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_DATA);
       localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+      localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
     }
   }
 
@@ -51,6 +64,7 @@ const getInitialAuthState = (): AuthState => {
     error: null,
     effectivePermissions: [],
     permissionsLoading: false,
+    sessionExpiresAt: null,
   };
 };
 
@@ -76,6 +90,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         accessibleProjects: action.payload.accessible_projects || [],
         isLoading: false,
         error: null,
+        sessionExpiresAt: action.payload.expires_at || null,
       };
 
     case AuthActionType.LOGIN_FAILURE:
@@ -96,6 +111,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         isLoading: false,
         effectivePermissions: [],
         permissionsLoading: false,
+        sessionExpiresAt: null,
       };
 
     case AuthActionType.VALIDATE_TOKEN:
@@ -141,6 +157,12 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         error: action.payload.error,
       };
 
+    case AuthActionType.SESSION_EXPIRY_UPDATE:
+      return {
+        ...state,
+        sessionExpiresAt: action.payload.expires_at,
+      };
+
     default:
       return state;
   }
@@ -164,6 +186,11 @@ interface AuthContextType {
   loadUserPermissions: () => Promise<void>;
   effectivePermissions: string[];
   permissionsLoading: boolean;
+  sessionExpiresAt: string | null;
+  refreshSession: () => Promise<boolean>;
+  refreshRetryCount: number;
+  showSessionExpiryWarning: boolean;
+  dismissSessionExpiryWarning: () => void;
 }
 
 // Create context
@@ -178,6 +205,179 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
   const tokenValidationRef = useRef(false);
   const permissionsLoadedRef = useRef(false);
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshRetryCountRef = useRef(0);
+  const isRefreshingRef = useRef(false);
+  const [showSessionExpiryWarning, setShowSessionExpiryWarning] = useState(false);
+
+  // Dismiss session expiry warning
+  const dismissSessionExpiryWarning = useCallback(() => {
+    setShowSessionExpiryWarning(false);
+  }, []);
+
+  // ==========================================
+  // SESSION AUTO-REFRESH TIMER MANAGEMENT
+  // ==========================================
+
+  // Stop refresh timer
+  const stopRefreshTimer = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+    refreshRetryCountRef.current = 0;
+  }, []);
+
+  // Refresh session function
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    if (isRefreshingRef.current) {
+      return false;
+    }
+
+    isRefreshingRef.current = true;
+
+    try {
+      const response = await authService.refreshToken();
+      
+      if (response.success && response.data) {
+        // Handle both LoginResponse and PlatformLoginResponse
+        const loginData = response.data as LoginResponse | PlatformLoginResponse;
+        
+        if ('session_token' in loginData && 'expires_at' in loginData) {
+          // Update token in storage
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, loginData.session_token);
+          
+          // Update expiry
+          localStorage.setItem(SESSION_EXPIRES_AT_KEY, loginData.expires_at);
+          
+          // Dispatch expiry update
+          dispatch({
+            type: AuthActionType.SESSION_EXPIRY_UPDATE,
+            payload: { expires_at: loginData.expires_at },
+          });
+
+          // Reset retry count
+          refreshRetryCountRef.current = 0;
+          
+          // Restart timer with new expiry
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.warn('Session refresh failed:', error);
+      return false;
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, []);
+
+  // Start refresh timer - triggers 5 minutes before expiry
+  const startRefreshTimer = useCallback((expiresAt: string) => {
+    // Stop any existing timer
+    stopRefreshTimer();
+
+    const expiryDate = new Date(expiresAt);
+    const now = new Date();
+    const diffMs = expiryDate.getTime() - now.getTime();
+
+    // Calculate when to refresh (5 minutes before expiry)
+    const refreshDelay = diffMs - REFRESH_THRESHOLD_MS;
+
+    if (refreshDelay <= 0) {
+      // Already within refresh threshold - refresh immediately
+      void refreshSession().then((success) => {
+        if (success) {
+          // Read fresh expiry from localStorage (dispatch may have updated it)
+          const newExpiresAt = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
+          if (newExpiresAt) {
+            startRefreshTimer(newExpiresAt);
+          }
+        } else {
+          setShowSessionExpiryWarning(true);
+        }
+      });
+      return;
+    }
+
+    // Set timer
+    refreshTimerRef.current = setTimeout(async () => {
+      const success = await refreshSession();
+      
+      if (success) {
+        // Get new expiry from state (updated by dispatch)
+        const newExpiresAt = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
+        if (newExpiresAt) {
+          startRefreshTimer(newExpiresAt);
+        }
+      } else {
+        // Refresh failed - retry with delay
+        refreshRetryCountRef.current++;
+        
+        if (refreshRetryCountRef.current <= MAX_REFRESH_RETRIES) {
+          // Retry after 30 seconds
+          refreshTimerRef.current = setTimeout(async () => {
+            const retrySuccess = await refreshSession();
+            if (retrySuccess) {
+              const newExpiresAt = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
+              if (newExpiresAt) {
+                startRefreshTimer(newExpiresAt);
+              }
+            } else {
+              refreshRetryCountRef.current++;
+              if (refreshRetryCountRef.current > MAX_REFRESH_RETRIES) {
+                setShowSessionExpiryWarning(true);
+              }
+            }
+          }, REFRESH_RETRY_DELAY_MS);
+        } else {
+          // Max retries exceeded - show warning modal
+          setShowSessionExpiryWarning(true);
+        }
+      }
+    }, refreshDelay);
+  }, [stopRefreshTimer, refreshSession]);
+
+  // Visibility change listener - refresh on window focus if near expiry
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && state.sessionExpiresAt) {
+        const expiryDate = new Date(state.sessionExpiresAt);
+        const now = new Date();
+        const diffMs = expiryDate.getTime() - now.getTime();
+
+        // If within 10 minutes of expiry, try refresh
+        if (diffMs < 10 * 60 * 1000 && diffMs > 0) {
+          const success = await refreshSession();
+          if (success) {
+            const newExpiresAt = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
+            if (newExpiresAt) {
+              startRefreshTimer(newExpiresAt);
+            }
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [state.sessionExpiresAt, refreshSession, startRefreshTimer]);
+
+  // Start/stop timer based on session expiry state
+  useEffect(() => {
+    if (state.isAuthenticated && state.sessionExpiresAt) {
+      startRefreshTimer(state.sessionExpiresAt);
+    } else {
+      stopRefreshTimer();
+    }
+
+    return () => stopRefreshTimer();
+  }, [state.isAuthenticated, state.sessionExpiresAt, startRefreshTimer, stopRefreshTimer]);
+
+  // ==========================================
+  // LOGIN/LOGOUT HANDLERS
+  // ==========================================
 
   // Login function (project-scoped)
   const login = async (
@@ -201,6 +401,11 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
         
         if (response.project) {
           localStorage.setItem(STORAGE_KEYS.CURRENT_PROJECT, JSON.stringify(response.project));
+        }
+
+        // Store session expiry
+        if (response.expires_at) {
+          localStorage.setItem(SESSION_EXPIRES_AT_KEY, response.expires_at);
         }
 
         dispatch({
@@ -246,13 +451,18 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
         // Platform sessions have no bound project — clear any stale project data
         localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
 
+        // Store session expiry
+        if (response.expires_at) {
+          localStorage.setItem(SESSION_EXPIRES_AT_KEY, response.expires_at);
+        }
+
         // Dispatch with null project (platform session)
         dispatch({
           type: AuthActionType.LOGIN_SUCCESS,
           payload: {
             ...response,
             project: null, // Explicitly no project for platform sessions
-          },
+          } as LoginResponse,
         });
 
         return true;
@@ -271,6 +481,9 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
 
   // Logout function
   const logout = async (): Promise<void> => {
+    // Stop refresh timer
+    stopRefreshTimer();
+    
     try {
       await authService.logout();
     } catch (error) {
@@ -280,9 +493,11 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER_DATA);
       localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+      localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
       cache.clearAll();
       tokenValidationRef.current = false;
       permissionsLoadedRef.current = false;
+      refreshRetryCountRef.current = 0;
       
       dispatch({ type: AuthActionType.LOGOUT });
     }
@@ -488,6 +703,11 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     loadUserPermissions,
     effectivePermissions: state.effectivePermissions,
     permissionsLoading: state.permissionsLoading,
+    sessionExpiresAt: state.sessionExpiresAt,
+    refreshSession,
+    refreshRetryCount: refreshRetryCountRef.current,
+    showSessionExpiryWarning,
+    dismissSessionExpiryWarning,
   };
 
   return (

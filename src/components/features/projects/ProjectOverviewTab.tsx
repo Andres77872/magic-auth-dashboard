@@ -2,25 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { StatCard } from '@/components/common';
 import { projectService } from '@/services';
-import { useToast } from '@/hooks';
 import type {
   ProjectDetails,
   UserAccess,
   ProjectStatistics,
   ProjectGroupInfo,
 } from '@/types/project.types';
+import { CopyableId } from '@/components/common';
+import { formatDate } from '@/utils/component-utils';
 import {
   Activity,
   Clock,
-  Copy,
-  Check,
   Users,
   Layers,
   Zap,
@@ -42,8 +36,6 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
 }) => {
   const [activity, setActivity] = useState<any[]>([]);
   const [isLoadingActivity, setIsLoadingActivity] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const { showToast } = useToast();
 
   useEffect(() => {
     const fetchRecentActivity = async () => {
@@ -55,8 +47,9 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
             limit: 5,
           }
         );
-        if (response.success && response.data) {
-          setActivity(response.data);
+        if (response.success) {
+          // Backend returns 'activities' key, fallback to 'data' for compatibility
+          setActivity(response.activities || response.data || []);
         }
       } catch (err) {
         console.error('Error fetching project activity:', err);
@@ -68,70 +61,12 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
     fetchRecentActivity();
   }, [project.project_hash]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const copyToClipboard = async (text: string, id: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedId(id);
-      showToast('Copied to clipboard', 'success');
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      showToast('Failed to copy', 'error');
-    }
-  };
-
-  const truncateHash = (hash: string, startChars = 8, endChars = 8) => {
-    if (hash.length <= startChars + endChars + 3) return hash;
-    return `${hash.slice(0, startChars)}...${hash.slice(-endChars)}`;
-  };
-
   const getStatValue = (value: number | string | undefined): number => {
     if (typeof value === 'number') return value;
     if (typeof value === 'string' && !isNaN(Number(value)))
       return Number(value);
     return 0;
   };
-
-  const CopyableId: React.FC<{
-    id: string;
-    label?: string;
-    fullWidth?: boolean;
-  }> = ({ id, label, fullWidth = false }) => (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            onClick={() => copyToClipboard(id, id)}
-            className={`group flex items-center gap-2 px-3 py-2 rounded-md bg-muted hover:bg-muted/80 transition-colors text-left ${fullWidth ? 'w-full' : ''}`}
-          >
-            <code className="text-xs font-mono text-muted-foreground truncate flex-1">
-              {truncateHash(id)}
-            </code>
-            {copiedId === id ? (
-              <Check className="h-3.5 w-3.5 text-success flex-shrink-0" />
-            ) : (
-              <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground flex-shrink-0" />
-            )}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs">
-          <p className="text-xs font-mono break-all">{id}</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {label || 'Click to copy'}
-          </p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
 
   const totalUsers = getStatValue(statistics?.total_users);
   const totalGroups = getStatValue(statistics?.total_groups);
@@ -140,63 +75,37 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
     <div className="space-y-6">
       {/* Stats Cards Row */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{totalUsers}</p>
-                <p className="text-xs text-muted-foreground">Total Users</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Users"
+          value={totalUsers}
+          icon={<Users className="h-5 w-5" aria-hidden="true" />}
+          variant="primary"
+          gradient
+        />
 
-        <Card className="bg-gradient-to-br from-success/5 to-success/10 border-success/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <Layers className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{totalGroups}</p>
-                <p className="text-xs text-muted-foreground">Total Groups</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Groups"
+          value={totalGroups}
+          icon={<Layers className="h-5 w-5" aria-hidden="true" />}
+          variant="success"
+          gradient
+        />
 
-        <Card className="bg-gradient-to-br from-info/5 to-info/10 border-info/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-info/10">
-                <Zap className="h-5 w-5 text-info" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">
-                  {statistics?.active_sessions ?? 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Active Sessions</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Active Sessions"
+          value={statistics?.active_sessions ?? 0}
+          icon={<Zap className="h-5 w-5" aria-hidden="true" />}
+          variant="info"
+          gradient
+        />
 
-        <Card className="bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <FolderTree className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{projectGroups.length}</p>
-                <p className="text-xs text-muted-foreground">Project Groups</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Project Groups"
+          value={projectGroups.length}
+          icon={<FolderTree className="h-5 w-5" aria-hidden="true" />}
+          variant="warning"
+          gradient
+        />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -213,7 +122,7 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
               <CopyableId
                 id={project.project_hash}
                 label="Click to copy project hash"
-                fullWidth
+                className="w-full"
               />
             </div>
 
@@ -222,7 +131,13 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
                 <p className="text-sm font-medium text-muted-foreground">
                   Created
                 </p>
-                <p className="text-sm">{formatDate(project.created_at)}</p>
+                <p className="text-sm">{formatDate(project.created_at, {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
@@ -230,7 +145,13 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
                 </p>
                 <p className="text-sm">
                   {project.updated_at
-                    ? formatDate(project.updated_at)
+                    ? formatDate(project.updated_at, {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
                     : 'Never'}
                 </p>
               </div>
@@ -356,7 +277,13 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
                     <Clock className="h-3 w-3" />
-                    {item.created_at && formatDate(item.created_at)}
+                    {item.created_at && formatDate(item.created_at, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                   </div>
                 </div>
               ))}

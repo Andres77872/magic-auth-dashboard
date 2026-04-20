@@ -22,7 +22,7 @@ import {
 import { IconContainer } from '@/components/common';
 import { usePermissionManagement } from '@/contexts/PermissionManagementContext';
 import { permissionAssignmentsService } from '@/services';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 
 interface BulkAssignModalProps {
   isOpen: boolean;
@@ -45,7 +45,7 @@ export function BulkAssignModal({
   existingAssignments,
   onSuccess,
 }: BulkAssignModalProps): React.JSX.Element {
-  const { addToast } = useToast();
+  const { showToast } = useToast();
   const { permissionGroups, permissionGroupsLoading } =
     usePermissionManagement();
 
@@ -110,32 +110,17 @@ export function BulkAssignModal({
           (r: AssignResult) => r.success
         ).length;
         if (successCount === data.results.length) {
-          addToast({
-            message: `Successfully assigned ${successCount} permission group${successCount !== 1 ? 's' : ''}`,
-            variant: 'success',
-          });
+          showToast(`Successfully assigned ${successCount} permission group${successCount !== 1 ? 's' : ''}`, 'success');
         } else {
-          addToast({
-            message: `Assigned ${successCount} of ${data.results.length} permission groups`,
-            variant: 'warning',
-          });
+          showToast(`Assigned ${successCount} of ${data.results.length} permission groups`, 'warning');
         }
       } else {
-        addToast({
-          message: 'Permission groups assigned successfully',
-          variant: 'success',
-        });
+        showToast('Permission groups assigned successfully', 'success');
         onSuccess();
         onClose();
       }
     } catch (error) {
-      addToast({
-        message:
-          error instanceof Error
-            ? error.message
-            : 'Failed to assign permission groups',
-        variant: 'error',
-      });
+showToast(error instanceof Error ? error.message : 'Failed to assign permission groups', 'error');
     } finally {
       setIsAssigning(false);
     }

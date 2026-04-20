@@ -10,6 +10,8 @@ import {
   LoadingSpinner,
   ConfirmDialog,
   TabNavigation,
+  CopyableId,
+  StatsGrid,
   type Tab,
 } from '@/components/common';
 import { GroupMembersTable } from '@/components/features/groups/GroupMembersTable';
@@ -166,6 +168,7 @@ export const GroupDetailsPage: React.FC = () => {
         title={group.group_name}
         subtitle={group.description || undefined}
         icon={<Users size={28} />}
+        badge={<Badge variant="secondary">User Group</Badge>}
         actions={
           <>
             <Button
@@ -184,7 +187,32 @@ export const GroupDetailsPage: React.FC = () => {
             </Button>
           </>
         }
-      />
+/>
+
+      {/* Statistics Grid */}
+      <div className="mb-6">
+        <StatsGrid
+          stats={[
+            {
+              title: 'Members',
+              value: statistics?.total_members ?? group.member_count ?? 0,
+              icon: <User size={16} />,
+              variant: 'primary',
+              gradient: true,
+            },
+            {
+              title: 'Accessible Projects',
+              value: statistics?.total_projects ?? 0,
+              icon: <FolderOpen size={16} />,
+              variant: 'info',
+              gradient: true,
+              subValue: 'Through granted project groups',
+            },
+          ]}
+          columns={2}
+          loading={isLoading}
+        />
+      </div>
 
       {/* Group Information Card */}
       <Card className="mb-6">
@@ -201,6 +229,11 @@ export const GroupDetailsPage: React.FC = () => {
               <p className="font-medium">
                 {group.description || 'No description'}
               </p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Group Hash</span>
+              <CopyableId id={group.group_hash} />
             </div>
 
             <div className="space-y-1">

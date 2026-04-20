@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart3, Layers, User, Users } from 'lucide-react';
 import {
   Card,
@@ -16,6 +16,7 @@ import {
   usePermissionManagement,
   useToast,
 } from '@/hooks';
+import { formatDate } from '@/utils/component-utils';
 
 interface UserGroupUsage {
   group_hash: string;
@@ -93,11 +94,7 @@ export const AnalyticsTab: React.FC = () => {
     }
   }, [permissionGroups, permissionGroupsLoading, selectedPermissionGroup]);
 
-  const formatDate = useCallback((value?: string) => {
-    if (!value) return '—';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
-  }, []);
+  
 
   const userGroupColumns: DataViewColumn<UserGroupUsage>[] = [
     {

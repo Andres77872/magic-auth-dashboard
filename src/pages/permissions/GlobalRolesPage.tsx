@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGlobalRoles, usePermissionAssignments } from '@/hooks';
 import {
+  PageHeader,
   Card,
   CardHeader,
   CardTitle,
@@ -9,7 +10,7 @@ import {
   Input,
   Badge,
 } from '@/components/common';
-import { User, Check, X, ShieldCheck, Lock } from 'lucide-react';
+import { User, Check, X, ShieldCheck, Lock, Shield } from 'lucide-react';
 
 export function GlobalRolesPage() {
   const {
@@ -54,21 +55,18 @@ export function GlobalRolesPage() {
 
   return (
     <div className="global-roles-page">
-      {/* Page Header */}
-      <div className="page-header">
-        <div>
-          <h1>🛡️ Global Roles Management</h1>
-          <p className="subtitle">
-            Manage global roles and permission assignments across all projects
-          </p>
-        </div>
-
-        {hasAdminPermission && (
-          <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-            + Create Role
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Global Roles Management"
+        subtitle="Manage global roles and permission assignments across all projects"
+        icon={<Shield size={24} />}
+        actions={
+          hasAdminPermission ? (
+            <Button onClick={() => setShowCreateForm(!showCreateForm)}>
+              + Create Role
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Current User Info */}
       {currentRole && (

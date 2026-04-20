@@ -180,6 +180,8 @@ export interface AuthState {
   // RBAC Integration
   effectivePermissions: string[]; // List of permission names user has through roles
   permissionsLoading: boolean;
+  // Session expiry tracking
+  sessionExpiresAt: string | null; // ISO 8601 from LoginResponse.expires_at
 }
 
 export const AuthActionType = {
@@ -192,6 +194,7 @@ export const AuthActionType = {
   LOAD_PERMISSIONS_START: 'LOAD_PERMISSIONS_START',
   LOAD_PERMISSIONS_SUCCESS: 'LOAD_PERMISSIONS_SUCCESS',
   LOAD_PERMISSIONS_FAILURE: 'LOAD_PERMISSIONS_FAILURE',
+  SESSION_EXPIRY_UPDATE: 'SESSION_EXPIRY_UPDATE',
 } as const;
 
 export type AuthActionType = typeof AuthActionType[keyof typeof AuthActionType];
@@ -205,4 +208,5 @@ export type AuthAction =
   | { type: typeof AuthActionType.CLEAR_ERROR }
   | { type: typeof AuthActionType.LOAD_PERMISSIONS_START }
   | { type: typeof AuthActionType.LOAD_PERMISSIONS_SUCCESS; payload: { permissions: string[] } }
-  | { type: typeof AuthActionType.LOAD_PERMISSIONS_FAILURE; payload: { error: string } }; 
+  | { type: typeof AuthActionType.LOAD_PERMISSIONS_FAILURE; payload: { error: string } }
+  | { type: typeof AuthActionType.SESSION_EXPIRY_UPDATE; payload: { expires_at: string } }; 

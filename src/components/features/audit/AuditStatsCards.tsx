@@ -1,14 +1,12 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
 import {
   Activity,
   CheckCircle,
   XCircle,
   Clock,
 } from 'lucide-react';
+import { StatCard } from '@/components/common';
 
 export interface AuditStatsCardsProps {
   totalRequests: number;
@@ -18,75 +16,6 @@ export interface AuditStatsCardsProps {
   avgDurationMs: number;
   isLoading?: boolean;
   className?: string;
-}
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  subValue?: string;
-  icon: React.ElementType;
-  iconColor?: string;
-  progress?: number;
-  progressColor?: string;
-  isLoading?: boolean;
-}
-
-/**
- * StatCard - Individual statistics display card
- */
-function StatCard({
-  title,
-  value,
-  subValue,
-  icon: Icon,
-  iconColor = 'text-muted-foreground',
-  progress,
-  progressColor,
-  isLoading = false,
-}: StatCardProps) {
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2 flex-1">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-8 w-20" />
-              {progress !== undefined && <Skeleton className="h-2 w-full mt-2" />}
-            </div>
-            <Skeleton className="h-10 w-10 rounded-lg" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1 flex-1 min-w-0">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold truncate">
-              {typeof value === 'number' ? value.toLocaleString() : value}
-            </p>
-            {subValue && (
-              <p className="text-xs text-muted-foreground">{subValue}</p>
-            )}
-            {progress !== undefined && (
-              <Progress
-                value={progress}
-                className={cn('h-1.5 mt-2', progressColor)}
-              />
-            )}
-          </div>
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted flex-shrink-0 ml-4">
-            <Icon className={cn('h-5 w-5', iconColor)} aria-hidden="true" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
 /**
@@ -116,10 +45,9 @@ export function AuditStatsCards({
       {/* Total Requests */}
       <StatCard
         title="Total Requests"
-        value={totalRequests}
-        icon={Activity}
-        iconColor="text-primary"
-        isLoading={isLoading}
+        value={totalRequests.toLocaleString()}
+        icon={<Activity className="h-5 w-5" aria-hidden="true" />}
+        loading={isLoading}
       />
 
       {/* Success Rate */}
@@ -127,30 +55,28 @@ export function AuditStatsCards({
         title="Success Rate"
         value={`${successRate.toFixed(1)}%`}
         subValue={`${successCount.toLocaleString()} successful`}
-        icon={CheckCircle}
-        iconColor="text-success"
-        progress={successRate}
-        progressColor="[&>div]:bg-success"
-        isLoading={isLoading}
+        icon={<CheckCircle className="h-5 w-5" aria-hidden="true" />}
+        progress={{ value: successRate, color: 'success' }}
+        variant="success"
+        loading={isLoading}
       />
 
       {/* Failure Count */}
       <StatCard
         title="Failed Requests"
-        value={failureCount}
+        value={failureCount.toLocaleString()}
         subValue={`${((failureCount / totalRequests) * 100 || 0).toFixed(1)}% of total`}
-        icon={XCircle}
-        iconColor={failureCount > 0 ? 'text-destructive' : 'text-muted-foreground'}
-        isLoading={isLoading}
+        icon={<XCircle className="h-5 w-5" aria-hidden="true" />}
+        variant={failureCount > 0 ? 'warning' : 'default'}
+        loading={isLoading}
       />
 
       {/* Average Response Time */}
       <StatCard
         title="Avg. Response Time"
         value={formatDuration(avgDurationMs)}
-        icon={Clock}
-        iconColor="text-info"
-        isLoading={isLoading}
+        icon={<Clock className="h-5 w-5" aria-hidden="true" />}
+        loading={isLoading}
       />
     </div>
   );

@@ -25,9 +25,10 @@ import { projectService, projectGroupService } from '@/services';
 import type { ProjectGroup } from '@/services/project-group.service';
 import type { ProjectDetails, ProjectGroupInfo } from '@/types/project.types';
 import type { UserGroup } from '@/types/group.types';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 import { useProjectWorkflow } from '@/hooks/useProjectWorkflow';
 import { isDefaultUserGroup } from '@/utils/default-groups';
+import { formatDate } from '@/utils/component-utils';
 import { 
   Users, 
   FolderTree, 
@@ -74,7 +75,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
   const [isRemoving, setIsRemoving] = useState(false);
   const [isLoadingProjectGroups, setIsLoadingProjectGroups] = useState(false);
 
-  const { addToast } = useToast();
+  const { showToast } = useToast();
 
   // Workflow progress state
   const [workflowCollapsed, setWorkflowCollapsed] = useState(false);
@@ -167,7 +168,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
   // Handle adding project to project groups
   const handleAssignToGroups = async () => {
     if (selectedGroups.length === 0) {
-      addToast({ message: 'Please select at least one project group', variant: 'warning' });
+      showToast('Please select at least one project group', 'warning');
       return;
     }
 
@@ -192,18 +193,12 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
     }
 
     if (successCount > 0) {
-      addToast({
-        message: `Successfully added to ${successCount} project group(s)`,
-        variant: 'success'
-      });
+      showToast(`Successfully added to ${successCount} project group(s)`, 'success');
       onProjectGroupsChange?.();
       await fetchUserGroups(currentPage);
     }
     if (errorCount > 0) {
-      addToast({
-        message: `Failed to add to ${errorCount} project group(s)`,
-        variant: 'error'
-      });
+      showToast(`Failed to add to ${errorCount} project group(s)`, 'error');
     }
 
     setShowAddModal(false);
@@ -223,7 +218,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
       );
 
       if (response.success) {
-        addToast({ message: 'Removed from project group successfully', variant: 'success' });
+        showToast('Removed from project group successfully', 'success');
         setConfirmRemove(null);
         onProjectGroupsChange?.();
         await fetchUserGroups(currentPage);
@@ -232,7 +227,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
       }
     } catch (error) {
       console.error('Failed to remove from project group:', error);
-      addToast({ message: 'Failed to remove from project group', variant: 'error' });
+      showToast('Failed to remove from project group', 'error');
     } finally {
       setIsRemoving(false);
     }
@@ -244,15 +239,6 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
         ? prev.filter(h => h !== projectGroupHash)
         : [...prev, projectGroupHash]
     );
-  };
-
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
   };
 
   const userGroupColumns: DataViewColumn<UserGroup>[] = [
@@ -311,7 +297,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
       key: 'created_at', 
       header: 'Added', 
       sortable: true,
-      render: (value) => formatDate(value as string)
+      render: (value) => value ? formatDate(value as string) : 'N/A'
     },
   ];
 

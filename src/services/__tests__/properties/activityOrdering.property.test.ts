@@ -34,8 +34,8 @@ const activityLogArb = fc.record({
   activityType: fc.constantFrom(...ACTIVITY_TYPES),
   details: fc.dictionary(fc.string({ minLength: 1, maxLength: 10 }), fc.jsonValue()),
   createdAt: fc
-    .date({ min: new Date('2024-01-01'), max: new Date('2025-12-31') })
-    .map((d) => d.toISOString()),
+    .integer({ min: 1704067200000, max: 1830211200000 })
+    .map((ms) => new Date(ms).toISOString()),
   user: fc.option(activityUserArb, { nil: null }),
   project: fc.option(activityProjectArb, { nil: null }),
   targetUser: fc.option(activityUserArb, { nil: null }),

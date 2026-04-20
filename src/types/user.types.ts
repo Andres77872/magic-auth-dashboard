@@ -126,7 +126,6 @@ export interface ResetPasswordResponse extends ApiResponse {
     email: string;
   };
   reset_data: {
-    temporary_password: string;
     expires_at: string;
     must_change_on_login: boolean;
   };

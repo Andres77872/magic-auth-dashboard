@@ -7,6 +7,7 @@ interface UserFormSectionsProps {
   assignedProjects?: string[];
   assignedGroup?: string;
   assignmentError?: string;
+  projectAssignmentError?: string;
   isLoading: boolean;
   onOpenProjectModal: () => void;
   onOpenGroupModal: () => void;
@@ -21,6 +22,7 @@ export function UserFormSections({
   assignedProjects = [],
   assignedGroup,
   assignmentError,
+  projectAssignmentError,
   isLoading,
   onOpenProjectModal,
   onOpenGroupModal,
@@ -32,6 +34,7 @@ export function UserFormSections({
         <h4 className="font-medium">Project Assignment</h4>
         <p className="text-sm text-muted-foreground">
           Assign this admin user to specific projects they can manage.
+          <span className="text-destructive font-medium"> At least one project is required.</span>
         </p>
 
         <div className="flex items-center justify-between">
@@ -57,6 +60,10 @@ export function UserFormSections({
             {assignedProjects.length > 0 ? 'Change' : 'Assign'} Projects
           </Button>
         </div>
+
+        {projectAssignmentError && (
+          <p className="text-xs text-destructive">{projectAssignmentError}</p>
+        )}
       </div>
     );
   }

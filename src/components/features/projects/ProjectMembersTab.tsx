@@ -17,7 +17,7 @@ import type { DataViewColumn } from '@/components/common';
 import { projectService, groupService, userService } from '@/services';
 import type { ProjectDetails, ProjectMember } from '@/types/project.types';
 import type { UserGroup } from '@/types/group.types';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 import { 
   Users, 
   UserPlus,
@@ -29,6 +29,7 @@ import {
   UserCheck
 } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
+import { formatDate } from '@/utils/component-utils';
 
 interface ProjectMembersTabProps {
   project: ProjectDetails;
@@ -65,7 +66,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
   const [selectedUser, setSelectedUser] = useState<SearchedUser | null>(null);
   const [isAddingMember, setIsAddingMember] = useState(false);
 
-  const { addToast } = useToast();
+  const { showToast } = useToast();
 
   // Fetch project members
   const fetchMembers = useCallback(async (page = 1) => {
@@ -144,7 +145,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
       }
     } catch (err) {
       console.error('Error searching users:', err);
-      addToast({ message: 'Failed to search users', variant: 'error' });
+      showToast('Failed to search users', 'error');
     } finally {
       setIsSearching(false);
     }
@@ -162,10 +163,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
       );
 
       if (response.success) {
-        addToast({ 
-          message: `Added ${selectedUser.username} to ${selectedGroup.group_name}`, 
-          variant: 'success' 
-        });
+        showToast(`Added ${selectedUser.username} to ${selectedGroup.group_name}`, 'success');
         setShowAddModal(false);
         setSelectedUser(null);
         setSelectedGroup(null);
@@ -178,19 +176,10 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
       }
     } catch (err) {
       console.error('Error adding member:', err);
-      addToast({ message: 'Failed to add member to group', variant: 'error' });
+      showToast('Failed to add member to group', 'error');
     } finally {
       setIsAddingMember(false);
     }
-  };
-
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
   };
 
   const memberColumns: DataViewColumn<ProjectMember>[] = [
@@ -252,7 +241,10 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
       key: 'joined_at', 
       header: 'Added', 
       sortable: true,
-      render: (value, member) => formatDate(value as string || member.created_at)
+      render: (value, member) => {
+        const dateStr = (value as string) || member.created_at;
+        return dateStr ? formatDate(dateStr) : 'N/A';
+      }
     },
   ];
 

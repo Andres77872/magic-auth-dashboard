@@ -9,6 +9,7 @@ import {
   Badge,
   Pagination,
   ErrorState,
+  StatsGrid,
 } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { ProjectActionsMenu } from '@/components/features/projects/ProjectActionsMenu';
@@ -314,6 +315,23 @@ export const ProjectListPage: React.FC = () => {
           </Button>
         }
       />
+
+      {/* Statistics Grid */}
+      <div className="mb-6">
+        <StatsGrid
+          stats={[
+            {
+              title: 'Total Projects',
+              value: pagination?.total ?? 0,
+              icon: <FolderKanban size={16} />,
+              variant: 'primary',
+              gradient: true,
+            },
+          ]}
+          columns={2}
+          loading={isLoading}
+        />
+      </div>
 
       {/* Error State */}
       {error ? (

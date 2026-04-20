@@ -9,7 +9,8 @@ import {
   Users, 
   ShieldCheck, 
   Settings, 
-  UserCog 
+  UserCog,
+  Key 
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ export function NavigationItem({
       'users-group': <Users size={iconSize} aria-hidden="true" />,
       shield: <ShieldCheck size={iconSize} aria-hidden="true" />,
       'user-badge': <UserCog size={iconSize} aria-hidden="true" />,
+      key: <Key size={iconSize} aria-hidden="true" />,
       settings: <Settings size={iconSize} aria-hidden="true" />,
     };
 

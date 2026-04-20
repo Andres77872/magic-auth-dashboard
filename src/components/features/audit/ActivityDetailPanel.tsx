@@ -11,14 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  Copy,
-  Check,
   User,
   FolderKanban,
   Clock,
@@ -42,6 +34,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { formatDateTime } from '@/utils/component-utils';
+import { CopyButton } from '@/components/common';
 import type { ActivityLog, ActivityType } from '@/types/audit.types';
 
 type ActivityConfig = {
@@ -210,46 +203,6 @@ const DetailRow = memo(function DetailRow({
   );
 });
 
-/**
- * CopyButton - A button that copies text to clipboard
- */
-const CopyButton = memo(function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = React.useState(false);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  }, [text]);
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className="h-7 w-7 p-0"
-          aria-label={copied ? 'Copied!' : 'Copy to clipboard'}
-        >
-          {copied ? (
-            <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" />
-          ) : (
-            <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>{copied ? 'Copied!' : 'Copy to clipboard'}</p>
-      </TooltipContent>
-    </Tooltip>
-  );
-});
-
 // Default config for unknown activity types
 const DEFAULT_DETAIL_CONFIG: ActivityConfig = {
   icon: FileText,
@@ -334,8 +287,7 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-[540px] overflow-y-auto">
-        <TooltipProvider>
-          <SheetHeader>
+        <SheetHeader>
             <div className="flex items-start justify-between gap-4 pr-8">
               <div className="flex items-center gap-3">
                 <div
@@ -381,7 +333,7 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
                 </span>
                 <span className="font-mono text-sm">{activity.id}</span>
               </div>
-              <CopyButton text={activity.id} />
+              <CopyButton value={activity.id} />
             </div>
 
             {/* Timestamp */}
@@ -553,10 +505,9 @@ export const ActivityDetailPanel = memo(function ActivityDetailPanel({
               )}
             </div>
           </div>
-        </TooltipProvider>
-      </SheetContent>
-    </Sheet>
-  );
+        </SheetContent>
+      </Sheet>
+    );
 });
 
 export default ActivityDetailPanel;

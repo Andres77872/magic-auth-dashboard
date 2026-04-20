@@ -16,13 +16,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ConfirmDialog, EmptyState, DataView } from '@/components/common';
+import { ConfirmDialog, EmptyState, DataView, CopyableId } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { Lock, Plus, Trash2, Info, MoreHorizontal } from 'lucide-react';
 import { permissionAssignmentsService, globalRolesService } from '@/services';
 import type { PermissionGroupAssignment } from '@/types/permission-assignments.types';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 
 interface GroupPermissionsTabProps {
   groupHash: string;
@@ -40,7 +40,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
   const [isRemoving, setIsRemoving] = useState(false);
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const { addToast } = useToast();
+  const { showToast } = useToast();
 
   // Fetch assigned permission groups
   // GET /permissions/admin/user-groups/{group_hash}/permission-groups
@@ -59,7 +59,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       }
     } catch (error) {
       console.error('Failed to fetch assigned permission groups:', error);
-      addToast({ message: 'Failed to load permission groups', variant: 'error' });
+      showToast('Failed to load permission groups', 'error');
     } finally {
       setLoading(false);
     }
@@ -98,7 +98,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
   // Handle bulk assignment
   const handleBulkAssign = async () => {
     if (selectedGroups.length === 0) {
-      addToast({ message: 'Please select at least one permission group', variant: 'warning' });
+      showToast('Please select at least one permission group', 'warning');
       return;
     }
 
@@ -110,14 +110,14 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       );
 
       if (response.success) {
-        addToast({ message: `Successfully assigned ${selectedGroups.length} permission group(s)`, variant: 'success' });
+        showToast(`Successfully assigned ${selectedGroups.length} permission group(s)`, 'success');
         setShowAddModal(false);
         setSelectedGroups([]);
         await fetchAssignedGroups();
       }
     } catch (error) {
       console.error('Failed to assign permission groups:', error);
-      addToast({ message: 'Failed to assign permission groups', variant: 'error' });
+      showToast('Failed to assign permission groups', 'error');
     } finally {
       setIsAssigning(false);
     }
@@ -135,13 +135,13 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       );
 
       if (response.success) {
-        addToast({ message: 'Permission group removed successfully', variant: 'success' });
+        showToast('Permission group removed successfully', 'success');
         setConfirmRemove(null);
         await fetchAssignedGroups();
       }
     } catch (error) {
       console.error('Failed to remove permission group:', error);
-      addToast({ message: 'Failed to remove permission group', variant: 'error' });
+      showToast('Failed to remove permission group', 'error');
     } finally {
       setIsRemoving(false);
     }
@@ -197,9 +197,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       width: '150px',
       hideOnMobile: true,
       render: (value) => (
-        <Badge variant="secondary" className="text-xs font-mono">
-          {String(value).slice(0, 12)}...
-        </Badge>
+        <CopyableId id={String(value)} />
       ),
     },
     {
@@ -266,9 +264,7 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
             <Lock className="h-5 w-5 text-primary mt-0.5" aria-hidden="true" />
             <div className="space-y-1">
               <h4 className="font-medium">{assignment.group_display_name || assignment.group_name}</h4>
-              <Badge variant="secondary" className="text-xs">
-                {assignment.group_hash.slice(0, 12)}...
-              </Badge>
+              <CopyableId id={assignment.group_hash} />
             </div>
           </div>
           <Button

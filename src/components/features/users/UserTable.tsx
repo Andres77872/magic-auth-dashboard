@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { DataView, TableSkeleton } from '@/components/common';
+import { DataView, TableSkeleton, ConfirmDialog } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -40,6 +40,7 @@ export function UserTable({
 }: UserTableProps): React.JSX.Element {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [isBulkLoading, setIsBulkLoading] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const { canCreateUser, canCreateAdmin } = usePermissions();
 
   // Determine which users can be bulk operated on
@@ -68,17 +69,21 @@ export function UserTable({
 
   const handleBulkDelete = async () => {
     if (!onBulkDelete || selectedUserHashes.length === 0) return;
-    
-    if (window.confirm(`Are you sure you want to delete ${selectedUserHashes.length} selected users? This action cannot be undone.`)) {
-      setIsBulkLoading(true);
-      try {
-        await onBulkDelete(selectedUserHashes);
-        setSelectedUsers(new Set());
-      } catch (error) {
-        console.error('Bulk delete failed:', error);
-      } finally {
-        setIsBulkLoading(false);
-      }
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (!onBulkDelete || selectedUserHashes.length === 0) return;
+
+    setIsBulkLoading(true);
+    try {
+      await onBulkDelete(selectedUserHashes);
+      setSelectedUsers(new Set());
+      setShowBulkDeleteConfirm(false);
+    } catch (error) {
+      console.error('Bulk delete failed:', error);
+    } finally {
+      setIsBulkLoading(false);
     }
   };
 
@@ -322,6 +327,17 @@ export function UserTable({
         onSort={handleSort}
         emptyMessage="No users found"
         className={isSomeSelected ? 'ring-2 ring-primary/20 rounded-lg' : ''}
+      />
+
+      <ConfirmDialog
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={confirmBulkDelete}
+        title="Delete Selected Users"
+        message={`Are you sure you want to delete ${selectedUserHashes.length} selected user${selectedUserHashes.length !== 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmText="Delete"
+        variant="danger"
+        isLoading={isBulkLoading}
       />
     </>
   );

@@ -28,7 +28,7 @@ import {
 import { ConfirmDialog, TabNavigation, DataView } from '@/components/common';
 import type { Tab, DataViewColumn } from '@/components/common';
 import { globalRolesService, permissionAssignmentsService } from '@/services';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 import type { ProjectDetails } from '@/types/project.types';
 import type { GlobalRole, GlobalPermissionGroup } from '@/types/global-roles.types';
 import { Plus, Trash2, Info, MoreHorizontal, Shield, Lock } from 'lucide-react';
@@ -431,7 +431,7 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
   const [groupsViewMode, setGroupsViewMode] = useState<'table' | 'grid'>('grid');
   const [rolesSearchTerm, setRolesSearchTerm] = useState('');
   const [groupsSearchTerm, setGroupsSearchTerm] = useState('');
-  const { addToast } = useToast();
+  const { showToast } = useToast();
 
   const fetchCatalogData = useCallback(async () => {
     setIsLoading(true);
@@ -469,11 +469,11 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       }
     } catch (error) {
       console.error('Error fetching catalog data:', error);
-      addToast({ message: 'Failed to load permission catalog', variant: 'error' });
+      showToast('Failed to load permission catalog', 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [project.project_hash, activeSection, addToast]);
+  }, [project.project_hash, activeSection, showToast]);
 
   useEffect(() => {
     fetchCatalogData();
@@ -495,18 +495,18 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       );
 
       if (response.success) {
-        addToast({ message: 'Role added to project catalog', variant: 'success' });
+        showToast('Role added to project catalog', 'success');
         setShowAddRoleModal(false);
         setSelectedRoleToAdd('');
         setRolePurpose('');
         setRoleNotes('');
         fetchCatalogData();
       } else {
-        addToast({ message: response.message || 'Failed to add role to catalog', variant: 'error' });
+        showToast(response.message || 'Failed to add role to catalog', 'error');
       }
     } catch (error) {
       console.error('Error adding role to catalog:', error);
-      addToast({ message: 'Failed to add role to catalog', variant: 'error' });
+      showToast('Failed to add role to catalog', 'error');
     } finally {
       setIsAddingRole(false);
     }
@@ -528,18 +528,18 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       );
 
       if (response.success) {
-        addToast({ message: 'Permission group added to project catalog', variant: 'success' });
+        showToast('Permission group added to project catalog', 'success');
         setShowAddPermissionGroupModal(false);
         setSelectedPermissionGroupToAdd('');
         setPermissionGroupPurpose('');
         setPermissionGroupNotes('');
         fetchCatalogData();
       } else {
-        addToast({ message: response.message || 'Failed to add permission group to catalog', variant: 'error' });
+        showToast(response.message || 'Failed to add permission group to catalog', 'error');
       }
     } catch (error) {
       console.error('Error adding permission group to catalog:', error);
-      addToast({ message: 'Failed to add permission group to catalog', variant: 'error' });
+      showToast('Failed to add permission group to catalog', 'error');
     } finally {
       setIsAddingPermissionGroup(false);
     }
@@ -554,15 +554,15 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       );
 
       if (response.success) {
-        addToast({ message: 'Role removed from catalog', variant: 'success' });
+        showToast('Role removed from catalog', 'success');
         setConfirmRemoveRole(null);
         fetchCatalogData();
       } else {
-        addToast({ message: response.message || 'Failed to remove role from catalog', variant: 'error' });
+        showToast(response.message || 'Failed to remove role from catalog', 'error');
       }
     } catch (error) {
       console.error('Error removing role from catalog:', error);
-      addToast({ message: 'Failed to remove role from catalog', variant: 'error' });
+      showToast('Failed to remove role from catalog', 'error');
     }
   };
 
@@ -575,15 +575,15 @@ export const ProjectPermissionsTab: React.FC<ProjectPermissionsTabProps> = ({ pr
       );
 
       if (response.success) {
-        addToast({ message: 'Permission group removed from catalog', variant: 'success' });
+        showToast('Permission group removed from catalog', 'success');
         setConfirmRemovePermissionGroup(null);
         fetchCatalogData();
       } else {
-        addToast({ message: response.message || 'Failed to remove permission group', variant: 'error' });
+        showToast(response.message || 'Failed to remove permission group', 'error');
       }
     } catch (error) {
       console.error('Error removing permission group from catalog:', error);
-      addToast({ message: 'Failed to remove permission group from catalog', variant: 'error' });
+      showToast('Failed to remove permission group from catalog', 'error');
     }
   };
 

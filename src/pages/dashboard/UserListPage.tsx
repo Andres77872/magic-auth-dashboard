@@ -14,7 +14,8 @@ import {
   DataView,
   DataViewCard,
   Badge,
-  ErrorState
+  ErrorState,
+  CopyButton
 } from '@/components/common';
 import {
   Tooltip,
@@ -180,9 +181,12 @@ export function UserListPage(): React.JSX.Element {
             >
               {value as string}
             </button>
-            <span className="text-xs text-muted-foreground" title={user.user_hash}>
-              {truncateHash(user.user_hash)}
-            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground" title={user.user_hash}>
+                {truncateHash(user.user_hash)}
+              </span>
+              <CopyButton value={user.user_hash} size="sm" />
+            </div>
           </div>
         </div>
       ),

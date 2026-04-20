@@ -23,7 +23,7 @@ import { useProjects } from '@/hooks';
 import { usePermissionManagement } from '@/contexts/PermissionManagementContext';
 import { useGlobalRoles } from '@/hooks/useGlobalRoles';
 import { permissionAssignmentsService, globalRolesService } from '@/services';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 import { CategoryBadge } from '../shared/CategoryBadge';
 import { PriorityBadge } from '../shared/PriorityBadge';
 import type { GlobalPermissionGroup, GlobalRole } from '@/types/global-roles.types';
@@ -41,7 +41,7 @@ interface CatalogEntry {
 }
 
 export function ProjectCatalogTab(): React.JSX.Element {
-  const { addToast } = useToast();
+  const { showToast } = useToast();
   const { projects, isLoading: projectsLoading } = useProjects({ limit: 100 });
   const { permissionGroups, permissionGroupsLoading } = usePermissionManagement();
   const { roles, loadingRoles } = useGlobalRoles();
@@ -85,14 +85,11 @@ export function ProjectCatalogTab(): React.JSX.Element {
         setCatalogedRoles(data);
       }
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Failed to load catalog',
-        variant: 'error'
-      });
+      showToast(error instanceof Error ? error.message : 'Failed to load catalog', 'error');
     } finally {
       setLoading(false);
     }
-  }, [selectedProject, addToast]);
+  }, [selectedProject, showToast]);
 
   useEffect(() => {
     loadCatalogData();
@@ -108,17 +105,14 @@ export function ProjectCatalogTab(): React.JSX.Element {
         selectedPGToAdd,
         { catalog_purpose: catalogPurpose, notes: catalogNotes }
       );
-      addToast({ message: 'Permission group added to catalog', variant: 'success' });
+      showToast('Permission group added to catalog', 'success');
       setIsAddPGModalOpen(false);
       setSelectedPGToAdd('');
       setCatalogPurpose('');
       setCatalogNotes('');
       await loadCatalogData();
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Failed to add to catalog',
-        variant: 'error'
-      });
+      showToast(error instanceof Error ? error.message : 'Failed to add to catalog', 'error');
     } finally {
       setIsAdding(false);
     }
@@ -134,17 +128,14 @@ export function ProjectCatalogTab(): React.JSX.Element {
         selectedRoleToAdd,
         { catalog_purpose: catalogPurpose, notes: catalogNotes }
       );
-      addToast({ message: 'Role added to catalog', variant: 'success' });
+      showToast('Role added to catalog', 'success');
       setIsAddRoleModalOpen(false);
       setSelectedRoleToAdd('');
       setCatalogPurpose('');
       setCatalogNotes('');
       await loadCatalogData();
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Failed to add to catalog',
-        variant: 'error'
-      });
+      showToast(error instanceof Error ? error.message : 'Failed to add to catalog', 'error');
     } finally {
       setIsAdding(false);
     }
@@ -159,13 +150,10 @@ export function ProjectCatalogTab(): React.JSX.Element {
         selectedProject,
         groupHash
       );
-      addToast({ message: 'Permission group removed from catalog', variant: 'success' });
+      showToast('Permission group removed from catalog', 'success');
       await loadCatalogData();
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Failed to remove from catalog',
-        variant: 'error'
-      });
+      showToast(error instanceof Error ? error.message : 'Failed to remove from catalog', 'error');
     } finally {
       setIsRemoving(null);
     }
@@ -177,13 +165,10 @@ export function ProjectCatalogTab(): React.JSX.Element {
     setIsRemoving(roleHash);
     try {
       await globalRolesService.removeRoleFromProjectCatalog(selectedProject, roleHash);
-      addToast({ message: 'Role removed from catalog', variant: 'success' });
+      showToast('Role removed from catalog', 'success');
       await loadCatalogData();
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Failed to remove from catalog',
-        variant: 'error'
-      });
+      showToast(error instanceof Error ? error.message : 'Failed to remove from catalog', 'error');
     } finally {
       setIsRemoving(null);
     }

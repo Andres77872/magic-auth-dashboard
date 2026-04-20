@@ -177,13 +177,26 @@ export const truncateString = (str: string, maxLength: number): string => {
 };
 
 /**
- * Truncates a hash to show first N characters with ellipsis
+ * Truncates a hash to show first N and last N characters with ellipsis
  * @param hash - Hash string
- * @param length - Number of characters to show (default: 12)
- * @returns Truncated hash
+ * @param options - Optional configuration object
+ * @param options.startChars - Number of characters to show at start (default: 8)
+ * @param options.endChars - Number of characters to show at end (default: 8)
+ * @returns Truncated hash with ellipsis in the middle
  */
-export const truncateHash = (hash: string, length: number = 12): string => {
-  return `${hash.substring(0, length)}...`;
+export const truncateHash = (
+  hash: string,
+  options?: { startChars?: number; endChars?: number }
+): string => {
+  const startChars = options?.startChars ?? 8;
+  const endChars = options?.endChars ?? 8;
+
+  // Edge case: if hash is too short to truncate meaningfully, return unmodified
+  if (hash.length <= startChars + endChars + 3) {
+    return hash;
+  }
+
+  return `${hash.slice(0, startChars)}...${hash.slice(-endChars)}`;
 };
 
 /**

@@ -10,7 +10,9 @@ import {
   LoadingSpinner,
   ConfirmDialog,
   EmptyState,
-  DataView
+  DataView,
+  CopyableId,
+  StatsGrid,
 } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { projectGroupService } from '@/services';
@@ -20,7 +22,7 @@ import { useToast } from '@/hooks';
 import { useUserGroupsWithAccess } from '@/hooks/useUserGroupsWithAccess';
 import { isDefaultUserGroup } from '@/utils/default-groups';
 import { formatDate } from '@/utils/component-utils';
-import { FolderOpen, Plus, Trash2, ExternalLink, Users, ArrowRight } from 'lucide-react';
+import { FolderOpen, Plus, Trash2, ExternalLink, Users, ArrowRight, Info } from 'lucide-react';
 import { AddProjectsToGroupModal } from '@/components/features/groups/AddProjectsToGroupModal';
 import {
   Tooltip,
@@ -201,6 +203,22 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
         </Badge>
       ),
     },
+    {
+      key: 'group_hash',
+      header: 'Actions',
+      width: '120px',
+      align: 'center',
+      render: (_value, group) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(`${ROUTES.GROUPS}/${group.group_hash}`)}
+        >
+          <ExternalLink size={14} className="mr-1" />
+          Manage
+        </Button>
+      ),
+    },
   ];
 
   if (isLoading) {
@@ -235,6 +253,7 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
         title={project_group.group_name}
         subtitle={project_group.description || undefined}
         icon={<FolderOpen size={28} />}
+        badge={<Badge variant="secondary">Project Group</Badge>}
         actions={
           <>
             <Button
@@ -253,7 +272,24 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
             </Button>
           </>
         }
-      />
+/>
+
+      {/* Statistics Grid */}
+      <div className="mb-6">
+        <StatsGrid
+          stats={[
+            {
+              title: 'Assigned Projects',
+              value: statistics?.total_projects ?? project_group.project_count ?? 0,
+              icon: <FolderOpen size={16} />,
+              variant: 'info',
+              gradient: true,
+            },
+          ]}
+          columns={2}
+          loading={isLoading}
+        />
+      </div>
 
       {/* Group Information Card */}
       <Card className="mb-6">
@@ -268,6 +304,11 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
             <div className="space-y-1">
               <span className="text-sm text-muted-foreground">Description</span>
               <p className="font-medium">{project_group.description || 'No description'}</p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Group Hash</span>
+              <CopyableId id={project_group.group_hash} />
             </div>
 
             <div className="space-y-1">
@@ -361,18 +402,35 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
                   size="sm"
                   onClick={() => navigate(ROUTES.GROUPS)}
                 >
-                  Manage User Groups
+                  Go to User Groups
                 </Button>
               }
             />
           ) : (
-            <DataView
-              data={userGroupsWithAccess}
-              columns={userGroupColumns}
-              viewMode="table"
-              showViewToggle={false}
-              emptyMessage="No user groups found"
-            />
+            <>
+              {userGroupsWithAccess.length > 0 && (
+                <div className="flex items-start gap-2 rounded-md border border-muted bg-muted/30 p-3 mb-4 text-sm text-muted-foreground">
+                  <Info size={16} className="mt-0.5 flex-shrink-0 text-primary" />
+                  <span>
+                    To grant a user group access to this project group, go to the{' '}
+                    <button
+                      className="text-primary hover:underline font-medium"
+                      onClick={() => navigate(ROUTES.GROUPS)}
+                    >
+                      User Groups
+                    </button>{' '}
+                    page, open a user group, and use the <strong>Project Groups</strong> tab.
+                  </span>
+                </div>
+              )}
+              <DataView
+                data={userGroupsWithAccess}
+                columns={userGroupColumns}
+                viewMode="table"
+                showViewToggle={false}
+                emptyMessage="No user groups found"
+              />
+            </>
           )}
         </CardContent>
       </Card>

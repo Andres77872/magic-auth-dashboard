@@ -1,5 +1,5 @@
 import React from 'react';
-import { DataView } from '@/components/common';
+import { DataView, CopyButton } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
 import type { UserType } from '@/types/auth.types';
+import { formatDateTime } from '@/utils/component-utils';
 
 /**
  * Member type for group member tables.
@@ -55,17 +56,6 @@ export function GroupMembersTable({
     }
   };
 
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return '—';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   const columns: DataViewColumn<GroupMember>[] = [
     {
       key: 'username',
@@ -78,7 +68,10 @@ export function GroupMembersTable({
           </div>
           <div className="truncate max-w-200">
             <div className="font-medium text-primary truncate">{value as string}</div>
-            <div className="text-xs text-tertiary truncate">{member.user_hash}</div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-tertiary truncate">{member.user_hash}</span>
+              <CopyButton value={member.user_hash} size="sm" />
+            </div>
           </div>
         </div>
       ),
@@ -105,7 +98,10 @@ export function GroupMembersTable({
       header: 'Joined',
       sortable: true,
       width: '180px',
-      render: (_value, member) => <span>{formatDate(member.joined_at || member.created_at)}</span>,
+      render: (_value, member) => {
+        const dateStr = member.joined_at || member.created_at;
+        return <span>{dateStr ? formatDateTime(dateStr) : '—'}</span>;
+      },
     },
   ];
 

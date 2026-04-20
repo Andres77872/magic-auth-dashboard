@@ -95,9 +95,11 @@ export function UserMenu(): React.JSX.Element {
               </Link>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="flex items-center gap-3 cursor-pointer">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
+            <DropdownMenuItem asChild>
+              <Link to={ROUTES.SETTINGS} className="flex items-center gap-3 cursor-pointer">
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </Link>
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />

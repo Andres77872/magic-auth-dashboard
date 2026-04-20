@@ -63,6 +63,12 @@ export const ROUTES = {
   
   // Profile
   PROFILE: '/dashboard/profile',
+  
+  // API Token Management
+  TOKENS: '/dashboard/tokens',
+
+  // Settings
+  SETTINGS: '/dashboard/settings',
 } as const;
 
 // Navigation Items
@@ -116,6 +122,13 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     label: 'Role Management',
     path: ROUTES.ROLE_MANAGEMENT,
     icon: 'user-badge',
+    allowedUserTypes: ['root', 'admin'],
+  },
+  {
+    id: 'tokens',
+    label: 'API Tokens',
+    path: ROUTES.TOKENS,
+    icon: 'key',
     allowedUserTypes: ['root', 'admin'],
   },
   {

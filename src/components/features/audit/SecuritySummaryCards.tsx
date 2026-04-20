@@ -1,7 +1,5 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import {
   ShieldAlert,
@@ -9,6 +7,7 @@ import {
   AlertTriangle,
   Clock,
 } from 'lucide-react';
+import { StatCard } from '@/components/common';
 import { formatRelativeTime } from '@/utils/component-utils';
 
 /**
@@ -23,100 +22,6 @@ export interface SecuritySummaryCardsProps {
   lastSecurityEvent?: string | null;
   isLoading?: boolean;
   className?: string;
-}
-
-interface MetricCardProps {
-  title: string;
-  value: number | string;
-  icon: React.ElementType;
-  variant: 'default' | 'warning' | 'critical';
-  showWarning?: boolean;
-  warningMessage?: string;
-  isLoading?: boolean;
-}
-
-/**
- * MetricCard - Individual metric display card
- */
-function MetricCard({
-  title,
-  value,
-  icon: Icon,
-  variant,
-  showWarning = false,
-  warningMessage,
-  isLoading = false,
-}: MetricCardProps) {
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-8 w-16" />
-            </div>
-            <Skeleton className="h-10 w-10 rounded-lg" />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card
-      className={cn(
-        variant === 'warning' && 'border-warning/50 bg-warning/5',
-        variant === 'critical' && 'border-destructive/50 bg-destructive/5'
-      )}
-    >
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <div className="flex items-center gap-2">
-              <p
-                className={cn(
-                  'text-2xl font-bold',
-                  variant === 'critical' && 'text-destructive',
-                  variant === 'warning' && 'text-warning'
-                )}
-              >
-                {typeof value === 'number' ? value.toLocaleString() : value}
-              </p>
-              {showWarning && (
-                <Badge variant="warning" size="sm" className="gap-1">
-                  <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                  Warning
-                </Badge>
-              )}
-            </div>
-            {warningMessage && (
-              <p className="text-xs text-warning mt-1">{warningMessage}</p>
-            )}
-          </div>
-          <div
-            className={cn(
-              'flex items-center justify-center w-10 h-10 rounded-lg',
-              variant === 'default' && 'bg-muted',
-              variant === 'warning' && 'bg-warning/10',
-              variant === 'critical' && 'bg-destructive/10'
-            )}
-          >
-            <Icon
-              className={cn(
-                'h-5 w-5',
-                variant === 'default' && 'text-muted-foreground',
-                variant === 'warning' && 'text-warning',
-                variant === 'critical' && 'text-destructive'
-              )}
-              aria-hidden="true"
-            />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
 /**
@@ -140,72 +45,65 @@ export function SecuritySummaryCards({
       aria-label="Security summary"
     >
       {/* Failed Logins */}
-      <MetricCard
+      <StatCard
         title="Failed Logins"
-        value={failedLogins}
-        icon={ShieldX}
+        value={failedLogins.toLocaleString()}
+        icon={<ShieldX className="h-5 w-5" aria-hidden="true" />}
         variant={showFailedLoginWarning ? 'warning' : 'default'}
-        showWarning={showFailedLoginWarning}
-        warningMessage={
+        gradient={showFailedLoginWarning}
+        badge={
+          showFailedLoginWarning ? (
+            <Badge variant="warning" size="sm" className="gap-1">
+              <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+              Warning
+            </Badge>
+          ) : undefined
+        }
+        subValue={
           showFailedLoginWarning
-            ? `High number of failed login attempts detected`
+            ? 'High number of failed login attempts detected'
             : undefined
         }
-        isLoading={isLoading}
+        loading={isLoading}
       />
 
       {/* Unauthorized Attempts */}
-      <MetricCard
+      <StatCard
         title="Unauthorized Attempts"
-        value={unauthorizedAttempts}
-        icon={ShieldAlert}
+        value={unauthorizedAttempts.toLocaleString()}
+        icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}
         variant={unauthorizedAttempts > 0 ? 'warning' : 'default'}
-        isLoading={isLoading}
+        gradient={unauthorizedAttempts > 0}
+        loading={isLoading}
       />
 
       {/* Critical Events */}
-      <MetricCard
+      <StatCard
         title="Critical Events"
-        value={criticalEvents}
-        icon={AlertTriangle}
-        variant={criticalEvents > 0 ? 'critical' : 'default'}
-        isLoading={isLoading}
+        value={criticalEvents.toLocaleString()}
+        icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />}
+        className={criticalEvents > 0 ? 'border-destructive/50 bg-destructive/5' : undefined}
+        badge={
+          criticalEvents > 0 ? (
+            <Badge variant="destructive" size="sm">
+              Alert
+            </Badge>
+          ) : undefined
+        }
+        loading={isLoading}
       />
 
       {/* Last Security Event */}
-      {isLoading ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-28" />
-                <Skeleton className="h-6 w-20" />
-              </div>
-              <Skeleton className="h-10 w-10 rounded-lg" />
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Last Security Event
-                </p>
-                <p className="text-lg font-semibold">
-                  {lastSecurityEvent
-                    ? formatRelativeTime(lastSecurityEvent)
-                    : 'No events'}
-                </p>
-              </div>
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted">
-                <Clock className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <StatCard
+        title="Last Security Event"
+        value={
+          lastSecurityEvent
+            ? formatRelativeTime(lastSecurityEvent)
+            : 'No events'
+        }
+        icon={<Clock className="h-5 w-5" aria-hidden="true" />}
+        loading={isLoading}
+      />
     </div>
   );
 }

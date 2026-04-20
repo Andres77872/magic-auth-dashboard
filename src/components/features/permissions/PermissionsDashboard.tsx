@@ -22,7 +22,7 @@ import { AnalyticsTab } from '@/pages/permissions/tabs/AnalyticsTab';
 import { ProjectCatalogTab } from './catalog/ProjectCatalogTab';
 import { usePermissionManagement } from '@/contexts/PermissionManagementContext';
 import { useGlobalRoles } from '@/hooks/useGlobalRoles';
-import { useToast } from '@/contexts/ToastContext';
+import { useToast } from '@/hooks';
 import { globalRolesService } from '@/services';
 import type {
   GlobalPermission,
@@ -31,7 +31,7 @@ import type {
 } from '@/types/global-roles.types';
 
 export function PermissionsDashboard(): React.JSX.Element {
-  const { addToast } = useToast();
+  const { showToast } = useToast();
   const {
     permissions,
     permissionGroups,
@@ -154,32 +154,23 @@ export function PermissionsDashboard(): React.JSX.Element {
         await globalRolesService.deletePermission(
           deleteTarget.item.permission_hash
         );
-        addToast({
-          message: 'Permission deleted successfully',
-          variant: 'success',
-        });
+        showToast('Permission deleted successfully', 'success');
         await refreshPermissions();
       } else if (deleteTarget.type === 'group') {
         await globalRolesService.deletePermissionGroup(
           deleteTarget.item.group_hash
         );
-        addToast({
-          message: 'Permission group deleted successfully',
-          variant: 'success',
-        });
+        showToast('Permission group deleted successfully', 'success');
         await refreshPermissionGroups();
       } else if (deleteTarget.type === 'role') {
         await globalRolesService.deleteRole(deleteTarget.item.role_hash);
-        addToast({ message: 'Role deleted successfully', variant: 'success' });
+        showToast('Role deleted successfully', 'success');
         await refreshRoles();
       }
       setIsDeleteDialogOpen(false);
       setDeleteTarget(null);
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Delete failed',
-        variant: 'error',
-      });
+showToast(error instanceof Error ? error.message : 'Delete failed', 'error');
     } finally {
       setIsDeleting(false);
     }
@@ -192,24 +183,15 @@ export function PermissionsDashboard(): React.JSX.Element {
           editingPermission.permission_hash,
           data
         );
-        addToast({
-          message: 'Permission updated successfully',
-          variant: 'success',
-        });
+        showToast('Permission updated successfully', 'success');
       } else {
         await globalRolesService.createPermission(data);
-        addToast({
-          message: 'Permission created successfully',
-          variant: 'success',
-        });
+        showToast('Permission created successfully', 'success');
       }
       await refreshPermissions();
       setIsPermissionModalOpen(false);
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Operation failed',
-        variant: 'error',
-      });
+      showToast(error instanceof Error ? error.message : 'Operation failed', 'error');
       throw error;
     }
   };
@@ -221,24 +203,15 @@ export function PermissionsDashboard(): React.JSX.Element {
           editingGroup.group_hash,
           data
         );
-        addToast({
-          message: 'Permission group updated successfully',
-          variant: 'success',
-        });
+        showToast('Permission group updated successfully', 'success');
       } else {
         await globalRolesService.createPermissionGroup(data);
-        addToast({
-          message: 'Permission group created successfully',
-          variant: 'success',
-        });
+        showToast('Permission group created successfully', 'success');
       }
       await refreshPermissionGroups();
       setIsGroupModalOpen(false);
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Operation failed',
-        variant: 'error',
-      });
+      showToast(error instanceof Error ? error.message : 'Operation failed', 'error');
       throw error;
     }
   };
@@ -247,18 +220,15 @@ export function PermissionsDashboard(): React.JSX.Element {
     try {
       if (editingRole) {
         await globalRolesService.updateRole(editingRole.role_hash, data);
-        addToast({ message: 'Role updated successfully', variant: 'success' });
+        showToast('Role updated successfully', 'success');
       } else {
         await globalRolesService.createRole(data);
-        addToast({ message: 'Role created successfully', variant: 'success' });
+        showToast('Role created successfully', 'success');
       }
       await refreshRoles();
       setIsRoleModalOpen(false);
     } catch (error) {
-      addToast({
-        message: error instanceof Error ? error.message : 'Operation failed',
-        variant: 'error',
-      });
+      showToast(error instanceof Error ? error.message : 'Operation failed', 'error');
       throw error;
     }
   };
