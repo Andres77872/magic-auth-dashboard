@@ -188,7 +188,7 @@ class AuditService {
       '/admin/audit/security-events',
       queryParams
     );
-    const data = response as BackendSecurityEventsResponse;
+    const data = response.data as BackendSecurityEventsResponse;
 
     // Map backend events to frontend SecurityEvent format
     const events: SecurityEvent[] = data.events.map((event: BackendSecurityEvent) => {
@@ -253,7 +253,7 @@ class AuditService {
       '/admin/audit/statistics',
       { days }
     );
-    const data = response as BackendAuditStatisticsResponse;
+    const data = response.data as BackendAuditStatisticsResponse;
 
     const totalRequests = data.overview.total_requests;
     const overallSuccessRate = Number(data.overview.success_rate);

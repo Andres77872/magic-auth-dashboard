@@ -17,7 +17,7 @@ import { groupService } from '@/services';
 import { useToast } from '@/hooks';
 import type { UserGroup, GroupFormData, UserGroupProjectValidation } from '@/types/group.types';
 import { isDefaultUserGroup } from '@/utils/default-groups';
-import { Search, XCircle, Plus, Users, CheckCircle, AlertTriangle, Loader2, Info } from 'lucide-react';
+import { Search, XCircle, Plus, Users, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -50,7 +50,7 @@ export function AssignGroupModal({
   const [fetchingGroups, setFetchingGroups] = useState(false);
   const [error, setError] = useState('');
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
-  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [_creatingGroup, setCreatingGroup] = useState(false);
 
   // Pre-validation state
   const [validationCache, setValidationCache] = useState<
@@ -86,8 +86,8 @@ export function AssignGroupModal({
     setValidatingHash(groupHash);
     try {
       const response = await groupService.getGroupProjectGroups(groupHash);
-      const projectGroups = response?.project_groups ?? [];
-      const totalDerivedProjects = response?.total_derived_projects ?? 0;
+      const projectGroups = (response as any)?.project_groups ?? [];
+      const totalDerivedProjects = (response as any)?.total_derived_projects ?? 0;
       
       const validation: UserGroupProjectValidation = {
         groupHash,

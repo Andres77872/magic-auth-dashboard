@@ -154,7 +154,7 @@ class ProjectGroupService {
             const pgResponse = await groupService.getGroupProjectGroups(
               userGroup.group_hash
             );
-            const projectGroups = pgResponse?.project_groups ?? [];
+            const projectGroups = (pgResponse as any)?.project_groups ?? [];
             return {
               ...userGroup,
               projectGroups,

@@ -22,7 +22,7 @@ import { useToast } from '@/hooks';
 import { useUserGroupsWithAccess } from '@/hooks/useUserGroupsWithAccess';
 import { isDefaultUserGroup } from '@/utils/default-groups';
 import { formatDate } from '@/utils/component-utils';
-import { FolderOpen, Plus, Trash2, ExternalLink, Users, ArrowRight, Info } from 'lucide-react';
+import { FolderOpen, Plus, Trash2, ExternalLink, Users, Info } from 'lucide-react';
 import { AddProjectsToGroupModal } from '@/components/features/groups/AddProjectsToGroupModal';
 import {
   Tooltip,

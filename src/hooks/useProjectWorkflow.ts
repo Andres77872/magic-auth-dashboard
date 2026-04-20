@@ -40,12 +40,12 @@ interface UseProjectWorkflowParams {
  * for a specific project.
  */
 export function useProjectWorkflow({
-  projectHash,
+  projectHash: _projectHash,
   projectGroups,
   userGroups,
   userGroupsFetchError = false,
   firstUserGroupHash,
-  onOpenAddToGroupModal,
+  onOpenAddToGroupModal: _onOpenAddToGroupModal,
 }: UseProjectWorkflowParams): UseProjectWorkflowReturn {
   const steps = useMemo<WorkflowStep[]>(() => {
     const hasProjectGroups = projectGroups.length > 0;

@@ -7,7 +7,6 @@ import {
   RootOnlyRoute,
   AdminRoute,
   PublicRoute,
-  ProtectedRoute,
 } from '@/components/guards';
 import { ROUTES } from '@/utils/routes';
 import { SessionExpiryWarningModal } from '@/components/features/settings/SessionExpiryWarningModal';

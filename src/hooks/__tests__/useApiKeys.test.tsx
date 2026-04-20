@@ -124,7 +124,7 @@ describe('useApiKeys', () => {
 
   describe('listKeysByProject', () => {
     it('fetches keys filtered by project hash', async () => {
-      const mockKeys = [createMockKey({ project_name: 'Filtered Project' })];
+      const mockKeys = [createMockKey({ name: 'Filtered Project Key' })];
       mockService.listKeysByProject.mockResolvedValue(createMockListResponse(mockKeys));
 
       const { result } = renderHook(() => useApiKeys({ projectHash: 'prj_xyz' }));

@@ -49,7 +49,7 @@ export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
         );
         if (response.success) {
           // Backend returns 'activities' key, fallback to 'data' for compatibility
-          setActivity(response.activities || response.data || []);
+          setActivity((response as any).activities || response.data || []);
         }
       } catch (err) {
         console.error('Error fetching project activity:', err);

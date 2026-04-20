@@ -162,7 +162,7 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
     }
   };
 
-  const openTransferModal = () => {
+  const _openTransferModal = () => {
     setShowTransferModal(true);
     fetchUsers();
   };

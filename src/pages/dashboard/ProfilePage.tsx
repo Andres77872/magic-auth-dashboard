@@ -42,7 +42,7 @@ export function ProfilePage(): React.JSX.Element {
           <CardContent className="flex flex-col items-center gap-4 text-center">
             <UserAvatar 
               username={user.username} 
-              userType={userType}
+              userType={userType ?? undefined}
               size="lg"
               className="h-20 w-20 text-2xl"
             />
@@ -50,7 +50,7 @@ export function ProfilePage(): React.JSX.Element {
               <h2 className="text-xl font-semibold tracking-tight">{user.username}</h2>
               <p className="text-sm text-muted-foreground">{user.email}</p>
               <Badge 
-                variant={getUserTypeBadgeVariant(userType || undefined)}
+                variant={getUserTypeBadgeVariant(userType ?? 'consumer')}
                 size="md"
               >
                 {getUserTypeLabel()}
@@ -123,7 +123,7 @@ export function ProfilePage(): React.JSX.Element {
         </Card>
 
         {/* Access Summary Card */}
-        {(user.groups?.length > 0 || user.projects?.length > 0) && (
+        {((user.groups?.length ?? 0) > 0 || (user.projects?.length ?? 0) > 0) && (
           <Card padding="lg" className="lg:col-span-3">
             <CardHeader>
               <h3 className="flex items-center gap-2 text-base font-semibold">

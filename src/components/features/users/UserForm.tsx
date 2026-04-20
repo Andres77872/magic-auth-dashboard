@@ -262,8 +262,8 @@ export function UserForm({
     }
 
     try {
-      // Verify current user's password before proceeding
-      const loginResponse = await authService.login({
+      // Verify current user's password before proceeding (using platform login for root/admin)
+      const loginResponse = await authService.platformLogin({
         username: currentUser.username,
         password: rootConfirmationPassword,
       });

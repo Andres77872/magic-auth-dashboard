@@ -25,7 +25,6 @@ import {
   Clock,
   Key,
 } from 'lucide-react';
-import type { UserType } from '@/types/auth.types';
 
 /**
  * UserProfilePage - Admin-facing detailed user profile view

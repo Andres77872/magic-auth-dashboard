@@ -69,6 +69,7 @@ export interface ProjectFormData {
 export interface ProjectFormErrors {
   project_name?: string;
   project_description?: string;
+  general?: string;
 }
 
 export interface ProjectListParams {

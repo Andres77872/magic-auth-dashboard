@@ -41,8 +41,7 @@ import {
   Circle,
   AlertCircle,
   ChevronDown,
-  ChevronUp,
-  Info
+  ChevronUp
 } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
 

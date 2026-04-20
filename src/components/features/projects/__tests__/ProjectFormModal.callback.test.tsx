@@ -30,7 +30,7 @@ describe('ProjectFormModal — onProjectCreated callback contract', () => {
   it('callback should NOT be invoked in edit mode', () => {
     // In edit mode, onProjectCreated should never be called
     let called = false;
-    const onProjectCreated = () => { called = true; };
+    const _onProjectCreated = () => { called = true; };
 
     // Simulate edit mode: no callback invocation
     // (The component only calls onProjectCreated in create mode)

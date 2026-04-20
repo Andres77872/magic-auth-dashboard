@@ -205,7 +205,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
   const tokenValidationRef = useRef(false);
   const permissionsLoadedRef = useRef(false);
-  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRetryCountRef = useRef(0);
   const isRefreshingRef = useRef(false);
   const [showSessionExpiryWarning, setShowSessionExpiryWarning] = useState(false);
@@ -239,29 +239,27 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     try {
       const response = await authService.refreshToken();
       
-      if (response.success && response.data) {
+      if (response.success && 'session_token' in response && 'expires_at' in response) {
         // Handle both LoginResponse and PlatformLoginResponse
-        const loginData = response.data as LoginResponse | PlatformLoginResponse;
+        const loginData = response;
         
-        if ('session_token' in loginData && 'expires_at' in loginData) {
-          // Update token in storage
-          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, loginData.session_token);
-          
-          // Update expiry
-          localStorage.setItem(SESSION_EXPIRES_AT_KEY, loginData.expires_at);
-          
-          // Dispatch expiry update
-          dispatch({
-            type: AuthActionType.SESSION_EXPIRY_UPDATE,
-            payload: { expires_at: loginData.expires_at },
-          });
+        // Update token in storage
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, loginData.session_token);
+        
+        // Update expiry
+        localStorage.setItem(SESSION_EXPIRES_AT_KEY, loginData.expires_at);
+        
+        // Dispatch expiry update
+        dispatch({
+          type: AuthActionType.SESSION_EXPIRY_UPDATE,
+          payload: { expires_at: loginData.expires_at },
+        });
 
-          // Reset retry count
-          refreshRetryCountRef.current = 0;
-          
-          // Restart timer with new expiry
-          return true;
-        }
+        // Reset retry count
+        refreshRetryCountRef.current = 0;
+        
+        // Restart timer with new expiry
+        return true;
       }
       
       return false;
@@ -391,7 +389,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       const response = await authService.login({
         username,
         password,
-        project_hash: projectHash,
+        project_hash: projectHash ?? '',
       });
 
       if (response.success) {
@@ -461,7 +459,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
           type: AuthActionType.LOGIN_SUCCESS,
           payload: {
             ...response,
-            project: null, // Explicitly no project for platform sessions
+            project: undefined,
           } as LoginResponse,
         });
 

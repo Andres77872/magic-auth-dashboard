@@ -415,7 +415,7 @@ export function UserFormModal({
     }
 
     try {
-      const loginResponse = await authService.login({
+      const loginResponse = await authService.platformLogin({
         username: currentUser.username,
         password: password,
       });
@@ -651,7 +651,7 @@ export function UserFormModal({
                 assignedGroup={formData.assignedGroup}
                 assignmentError={errors.assignedGroup}
                 projectAssignmentError={
-                  mode === 'create' && formData.userType === 'admin' && formData.assignedProjects.length === 0
+                  mode === 'create' && formData.userType === 'admin' && (formData.assignedProjects?.length ?? 0) === 0
                     ? 'At least one project must be assigned for admin users.'
                     : undefined
                 }
@@ -679,7 +679,7 @@ export function UserFormModal({
                     (usernameAvailable === false || emailAvailable === false)) ||
                   (mode === 'create' &&
                     formData.userType === 'admin' &&
-                    formData.assignedProjects.length === 0)
+                    (formData.assignedProjects?.length ?? 0) === 0)
                 }
               >
                 {isLoading && <Spinner size="sm" className="mr-2" />}
