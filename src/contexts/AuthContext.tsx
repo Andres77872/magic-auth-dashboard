@@ -1,6 +1,6 @@
 import { createContext, useReducer, useEffect, useCallback, useRef, useState } from 'react';
 import type { ReactNode, JSX } from 'react';
-import type { AuthState, AuthAction, User, UserType, LoginResponse, PlatformLoginResponse } from '@/types/auth.types';
+import type { AuthState, AuthAction, User, UserType, LoginResponse } from '@/types/auth.types';
 import { AuthActionType } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
 import { permissionAssignmentsService } from '@/services/permission-assignments.service';

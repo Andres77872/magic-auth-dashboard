@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
+
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -18,15 +18,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
 import { ProjectForm } from './ProjectForm';
-import { projectService, userService } from '@/services';
+import { projectService } from '@/services';
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/utils/routes';
 import type { ProjectDetails, ProjectFormData } from '@/types/project.types';
@@ -38,13 +32,6 @@ interface ProjectSettingsTabProps {
   onProjectDeleted: () => void;
 }
 
-interface User {
-  user_hash: string;
-  username: string;
-  email: string;
-  user_type: string;
-}
-
 export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
   project,
   onProjectUpdate,
@@ -53,13 +40,8 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
   const navigate = useNavigate();
   const [isUpdating, setIsUpdating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showTransferModal, setShowTransferModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isTransferring, setIsTransferring] = useState(false);
-  const [selectedNewOwner, setSelectedNewOwner] = useState<string>('');
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleUpdate = async (formData: ProjectFormData) => {
@@ -108,63 +90,6 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  const fetchUsers = async () => {
-    try {
-      setIsLoadingUsers(true);
-      const response = await userService.getUsers({
-        limit: 100,
-        user_type_filter: 'admin', // Only allow admins to own projects
-      });
-
-      if (response.success && response.data) {
-        // Filter out current project admin
-        const availableUsers = (response.data as User[]).filter(
-          (user: User) => user.user_hash !== project.admin_user
-        );
-        setUsers(availableUsers);
-      }
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      setError('Failed to load users for transfer.');
-    } finally {
-      setIsLoadingUsers(false);
-    }
-  };
-
-  const handleTransferOwnership = async () => {
-    if (!selectedNewOwner) return;
-
-    try {
-      setIsTransferring(true);
-      const response = await projectService.transferOwnership(
-        project.project_hash,
-        selectedNewOwner
-      );
-
-      if (response.success) {
-        const updatedProject = {
-          ...project,
-          admin_user: selectedNewOwner,
-        };
-        onProjectUpdate(updatedProject);
-        setShowTransferModal(false);
-        setSelectedNewOwner('');
-      } else {
-        setError('Failed to transfer ownership. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error transferring ownership:', err);
-      setError('Failed to transfer ownership. Please try again.');
-    } finally {
-      setIsTransferring(false);
-    }
-  };
-
-  const _openTransferModal = () => {
-    setShowTransferModal(true);
-    fetchUsers();
   };
 
   return (
@@ -318,74 +243,6 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
               loading={isDeleting}
             >
               Delete Project
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Transfer Ownership Modal */}
-      <Dialog
-        open={showTransferModal}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowTransferModal(false);
-            setSelectedNewOwner('');
-          }
-        }}
-      >
-        <DialogContent size="md">
-          <DialogHeader>
-            <DialogTitle>Transfer Project Ownership</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Select a new owner for the project "{project.project_name}". Only
-              admin users can own projects.
-            </p>
-
-            {isLoadingUsers ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner size="lg" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>New Owner</Label>
-                <Select
-                  value={selectedNewOwner}
-                  onValueChange={setSelectedNewOwner}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select new owner..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.user_hash} value={user.user_hash}>
-                        {user.username} ({user.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowTransferModal(false);
-                setSelectedNewOwner('');
-              }}
-              disabled={isTransferring}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleTransferOwnership}
-              disabled={!selectedNewOwner || isTransferring}
-              loading={isTransferring}
-            >
-              Transfer Ownership
             </Button>
           </DialogFooter>
         </DialogContent>
