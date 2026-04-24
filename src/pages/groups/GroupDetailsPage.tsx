@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   PageContainer,
   PageHeader,
@@ -33,11 +33,25 @@ import { Users, User, Lock, FolderOpen, Plus } from 'lucide-react';
 
 type TabType = 'members' | 'project-groups' | 'permissions';
 
+const DEFAULT_TAB: TabType = 'members';
+const VALID_TABS: TabType[] = ['members', 'project-groups', 'permissions'];
+
 export const GroupDetailsPage: React.FC = () => {
   const { groupHash } = useParams<{ groupHash: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<TabType>('members');
+
+  // Derive active tab from URL query param, fallback to default if invalid
+  const tabFromUrl = searchParams.get('tab') as TabType;
+  const activeTab: TabType = VALID_TABS.includes(tabFromUrl) ? tabFromUrl : DEFAULT_TAB;
+
+  const handleTabChange = useCallback((tabId: string) => {
+    setSearchParams((prev) => {
+      prev.set('tab', tabId);
+      return prev;
+    });
+  }, [setSearchParams]);
   const { group, statistics, isLoading, error, updateGroup } =
     useGroupDetails(groupHash);
   const { bulkAddMembers, removeMember } = useGroupMemberActions(groupHash);
@@ -279,7 +293,7 @@ export const GroupDetailsPage: React.FC = () => {
       <TabNavigation
         tabs={tabs}
         activeTab={activeTab}
-        onChange={(tabId) => setActiveTab(tabId as TabType)}
+        onChange={handleTabChange}
         contained
       >
         {activeTab === 'members' && (

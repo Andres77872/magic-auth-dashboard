@@ -115,7 +115,7 @@ export function LoginModal({
       if (success) {
         onClose();
         const from =
-          (location.state as { from?: string })?.from || ROUTES.DASHBOARD;
+          (location.state as { from?: string })?.from || ROUTES.HOME;
         void navigate(from, { replace: true });
       }
     } catch (error) {

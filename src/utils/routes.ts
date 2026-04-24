@@ -3,72 +3,47 @@ export const ROUTES = {
   // Public Routes
   LOGIN: '/login',
   UNAUTHORIZED: '/unauthorized',
-  
-  // Dashboard Routes
-  DASHBOARD: '/dashboard',
-  OVERVIEW: '/dashboard/overview',
-  
-  // User Management
-  USERS: '/dashboard/users',
-  USERS_LIST: '/dashboard/users/list',
-  USERS_CREATE: '/dashboard/users/create',
-  USERS_EDIT: '/dashboard/users/edit',
-  USERS_PROFILE: '/dashboard/users/profile',
-  
-  // Project Management
-  PROJECTS: '/dashboard/projects',
-  PROJECTS_LIST: '/dashboard/projects/list',
-  PROJECTS_CREATE: '/dashboard/projects/create',
-  PROJECTS_EDIT: '/dashboard/projects/edit',
-  PROJECTS_DETAILS: '/dashboard/projects/details',
-  
-  // Group Management
-  GROUPS: '/dashboard/groups',
-  GROUPS_LIST: '/dashboard/groups/list',
-  GROUPS_CREATE: '/dashboard/groups/create',
-  GROUPS_EDIT: '/dashboard/groups/edit',
-  
-  // Project Group Management
-  PROJECT_GROUPS: '/dashboard/groups/project-groups',
-  PROJECT_GROUPS_CREATE: '/dashboard/groups/project-groups/create',
-  PROJECT_GROUPS_EDIT: '/dashboard/groups/project-groups/edit',
-  PROJECT_GROUPS_DETAILS: '/dashboard/groups/project-groups',
-  
-  // RBAC Management
-  PERMISSIONS: '/dashboard/permissions',
-  PERMISSIONS_ROLES: '/dashboard/permissions/roles',
-  PERMISSIONS_LIST: '/dashboard/permissions/permissions',
-  PERMISSIONS_ASSIGNMENTS: '/dashboard/permissions/assignments',
-  
-  // Permission Management (UNIFIED)
-  PERMISSION_MANAGEMENT: '/dashboard/permissions/management',
-  
-  // Global Roles Management (NEW)
-  GLOBAL_ROLES: '/dashboard/permissions/global-roles',
-  PERMISSION_GROUPS: '/dashboard/permissions/permission-groups',
-  PERMISSION_ASSIGNMENTS_MGMT: '/dashboard/permissions/permission-assignments',
-  ROLE_MANAGEMENT: '/dashboard/permissions/role-management',
-  
-  // Audit Log Monitor
-  AUDIT: '/dashboard/audit',
-  AUDIT_ACTIVITY: '/dashboard/audit/activity',
-  AUDIT_SECURITY: '/dashboard/audit/security',
-  AUDIT_STATISTICS: '/dashboard/audit/statistics',
-  
-  // System Management (ROOT only)
-  SYSTEM: '/dashboard/system',
-  SYSTEM_HEALTH: '/dashboard/system/health',
-  SYSTEM_ADMINS: '/dashboard/system/admins',
-  SYSTEM_SETTINGS: '/dashboard/system/settings',
-  
-  // Profile
-  PROFILE: '/dashboard/profile',
-  
-  // API Token Management
-  TOKENS: '/dashboard/tokens',
 
-  // Settings
-  SETTINGS: '/dashboard/settings',
+  // Landing / Home (canonical root)
+  HOME: '/',
+
+  // User Management
+  USERS: '/users',
+  USER: '/users',  // base path for /users/:hash
+
+  // Project Management
+  PROJECTS: '/projects',
+  PROJECT: '/projects',  // base path for /projects/:hash
+
+  // Group Management
+  GROUPS: '/groups',
+  GROUP: '/groups',  // base path for /groups/:hash
+
+  // Project Group Management (route-based, under groups)
+  PROJECT_GROUPS: '/groups/project-groups',
+  PROJECT_GROUPS_CREATE: '/groups/project-groups/create',
+  PROJECT_GROUPS_EDIT: '/groups/project-groups/edit',
+  PROJECT_GROUPS_DETAILS: '/groups/project-groups',
+
+  // Permission Management (top-level)
+  PERMISSIONS: '/permissions',
+  PERMISSIONS_GLOBAL_ROLES: '/permissions/global-roles',
+
+  // Role Management (top-level, separate)
+  ROLES: '/roles',
+
+  // Audit Log
+  AUDIT: '/audit',
+
+  // API Tokens
+  TOKENS: '/tokens',
+
+  // System Management (ROOT only)
+  SYSTEM: '/system',
+
+  // Personal Routes (no Home prefix in breadcrumbs)
+  PROFILE: '/profile',
+  SETTINGS: '/settings',
 } as const;
 
 // Navigation Items
@@ -83,9 +58,9 @@ export interface NavItem {
 
 export const NAVIGATION_ITEMS: NavItem[] = [
   {
-    id: 'overview',
-    label: 'Dashboard',
-    path: ROUTES.OVERVIEW,
+    id: 'home',
+    label: 'Home',
+    path: ROUTES.HOME,
     icon: 'dashboard',
     allowedUserTypes: ['root', 'admin'],
   },
@@ -111,16 +86,16 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     allowedUserTypes: ['root', 'admin'],
   },
   {
-    id: 'permission-management',
-    label: 'Permission Management',
-    path: ROUTES.PERMISSION_MANAGEMENT,
+    id: 'permissions',
+    label: 'Permissions',
+    path: ROUTES.PERMISSIONS,
     icon: 'shield',
     allowedUserTypes: ['root', 'admin'],
   },
   {
-    id: 'role-management',
-    label: 'Role Management',
-    path: ROUTES.ROLE_MANAGEMENT,
+    id: 'roles',
+    label: 'Roles',
+    path: ROUTES.ROLES,
     icon: 'user-badge',
     allowedUserTypes: ['root', 'admin'],
   },
@@ -145,4 +120,4 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     icon: 'settings',
     allowedUserTypes: ['root'],
   },
-]; 
+];

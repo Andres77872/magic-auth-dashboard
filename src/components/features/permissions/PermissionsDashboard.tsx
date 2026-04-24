@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Layers, Users, UserCircle } from 'lucide-react';
 import { ClipboardList, BarChart3, FolderKanban } from 'lucide-react';
@@ -30,8 +31,22 @@ import type {
   GlobalRole,
 } from '@/types/global-roles.types';
 
+const VALID_TABS = [
+  'permissions',
+  'groups',
+  'roles',
+  'assignments',
+  'analytics',
+  'catalog',
+  'my-permissions',
+] as const;
+
+const DEFAULT_TAB = 'permissions';
+
 export function PermissionsDashboard(): React.JSX.Element {
   const { showToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const {
     permissions,
     permissionGroups,
@@ -43,6 +58,22 @@ export function PermissionsDashboard(): React.JSX.Element {
   } = usePermissionManagement();
 
   const { roles, loadingRoles, refreshRoles, currentRole } = useGlobalRoles();
+
+  // Tab state from URL query param
+  const tabParam = searchParams.get('tab');
+  const activeTab = VALID_TABS.includes(tabParam as any)
+    ? tabParam
+    : DEFAULT_TAB;
+
+  const handleTabChange = useCallback(
+    (tabId: string) => {
+      setSearchParams((prev) => {
+        prev.set('tab', tabId);
+        return prev;
+      });
+    },
+    [setSearchParams]
+  );
 
   // Modal states
   const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
@@ -266,7 +297,7 @@ showToast(error instanceof Error ? error.message : 'Delete failed', 'error');
       />
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="permissions" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
           <TabsTrigger value="permissions" className="gap-2">
             <Shield className="h-4 w-4" />

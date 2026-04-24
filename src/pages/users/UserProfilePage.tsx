@@ -49,7 +49,8 @@ export function UserProfilePage(): React.JSX.Element {
 
   const handleEditUser = () => {
     if (userHash) {
-      navigate(`${ROUTES.USERS_EDIT}/${userHash}`);
+      // Navigate to user profile page (edit functionality is handled there)
+      navigate(`${ROUTES.USER}/${userHash}`);
     }
   };
 

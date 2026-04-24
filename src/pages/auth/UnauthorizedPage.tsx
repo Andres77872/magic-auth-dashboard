@@ -18,7 +18,7 @@ export function UnauthorizedPage(): React.JSX.Element {
 
   const handleGoHome = (): void => {
     if (isAuthenticated) {
-      navigate(ROUTES.DASHBOARD);
+      navigate(ROUTES.HOME);
     } else {
       navigate(ROUTES.LOGIN);
     }

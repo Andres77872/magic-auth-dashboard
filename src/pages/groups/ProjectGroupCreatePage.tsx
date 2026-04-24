@@ -10,6 +10,7 @@ import {
 import { ProjectGroupForm } from '@/components/features/groups';
 import { useProjectGroups, useToast } from '@/hooks';
 import { FolderOpen, ArrowLeft } from 'lucide-react';
+import { ROUTES } from '@/utils/routes';
 import type { CreateProjectGroupRequest } from '@/services/project-group.service';
 
 export function ProjectGroupCreatePage(): React.JSX.Element {
@@ -23,7 +24,7 @@ export function ProjectGroupCreatePage(): React.JSX.Element {
     try {
       await createProjectGroup(data);
       showToast(`Project group "${data.group_name}" created successfully`, 'success');
-      navigate('/dashboard/groups/project-groups');
+      navigate(ROUTES.PROJECT_GROUPS);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Failed to create project group', 'error');
     } finally {
@@ -32,7 +33,7 @@ export function ProjectGroupCreatePage(): React.JSX.Element {
   };
 
   const handleCancel = () => {
-    navigate('/dashboard/groups/project-groups');
+    navigate(ROUTES.PROJECT_GROUPS);
   };
 
   return (

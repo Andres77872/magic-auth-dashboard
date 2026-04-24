@@ -33,7 +33,7 @@ export const ProjectActionsMenu: React.FC<ProjectActionsMenuProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleViewDetails = () => {
-    navigate(`${ROUTES.PROJECTS_DETAILS}/${project.project_hash}`);
+    navigate(`${ROUTES.PROJECT}/${project.project_hash}`);
   };
 
   const handleEditProject = () => {

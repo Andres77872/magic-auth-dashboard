@@ -32,12 +32,12 @@ export function NavigationMenu({ userType, collapsed }: NavigationMenuProps): Re
   const isItemActive = (itemPath: string) => {
     const currentPath = location.pathname;
     
-    // Exact match for root paths
-    if (itemPath === '/dashboard') {
-      return currentPath === itemPath;
+    // Exact match for root path only (e.g., '/' for Home)
+    if (itemPath === '/') {
+      return currentPath === '/';
     }
     
-    // Prefix match for nested routes (e.g., /dashboard/users matches /dashboard/users/123)
+    // Prefix match for all other routes (e.g., '/users' matches '/users' and '/users/:hash')
     return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
   };
 

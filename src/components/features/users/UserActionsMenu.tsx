@@ -104,7 +104,7 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails
       onEditUser(user);
     } else {
       // Fallback to navigation if callback not provided
-      navigate(`${ROUTES.USERS_EDIT}/${user.user_hash}`);
+      navigate(`${ROUTES.USER}/${user.user_hash}`);
     }
   };
 

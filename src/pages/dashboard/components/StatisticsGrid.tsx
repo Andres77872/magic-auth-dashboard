@@ -96,7 +96,7 @@ export function StatisticsGrid({
         icon: 'users',
         color: 'warning',
         clickable: true,
-        href: ROUTES.SYSTEM_ADMINS,
+        href: ROUTES.SYSTEM,
       });
     }
 

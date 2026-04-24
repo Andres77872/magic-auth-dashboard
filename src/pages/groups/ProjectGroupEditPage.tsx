@@ -12,6 +12,7 @@ import {
 import { ProjectGroupForm } from '@/components/features/groups';
 import { useProjectGroups, useToast } from '@/hooks';
 import { projectGroupService } from '@/services';
+import { ROUTES } from '@/utils/routes';
 import { FolderOpen, ArrowLeft } from 'lucide-react';
 import type { CreateProjectGroupRequest, ProjectGroup } from '@/services/project-group.service';
 
@@ -59,7 +60,7 @@ export function ProjectGroupEditPage(): React.JSX.Element {
     try {
       await updateProjectGroup(group.group_hash, data);
       showToast(`Project group "${data.group_name}" updated successfully`, 'success');
-      navigate('/dashboard/groups/project-groups');
+      navigate(ROUTES.PROJECT_GROUPS);
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Failed to update project group', 'error');
     } finally {
@@ -68,7 +69,7 @@ export function ProjectGroupEditPage(): React.JSX.Element {
   };
 
   const handleCancel = () => {
-    navigate('/dashboard/groups/project-groups');
+    navigate(ROUTES.PROJECT_GROUPS);
   };
 
   if (isLoadingGroup) {
@@ -88,7 +89,7 @@ export function ProjectGroupEditPage(): React.JSX.Element {
           icon={<FolderOpen size={24} />}
           title="Error Loading Project Group"
           message={error || 'Project group not found'}
-          onRetry={() => navigate('/dashboard/groups/project-groups')}
+          onRetry={() => navigate(ROUTES.PROJECT_GROUPS)}
           retryLabel="Back to Project Groups"
           variant="card"
           size="md"

@@ -24,6 +24,7 @@ import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
 import { Users, Plus, FolderTree, ArrowRight, FolderOpen, Info } from 'lucide-react';
 import { useToast } from '@/hooks';
 import { formatDate, formatCount, truncateHash } from '@/utils/component-utils';
+import { ROUTES } from '@/utils/routes';
 import type { GroupListParams, UserGroup, GroupFormData } from '@/types/group.types';
 import type { ProjectGroup } from '@/services/project-group.service';
 import { Card, CardContent } from '@/components/ui/card';
@@ -178,20 +179,20 @@ export const GroupListPage: React.FC = () => {
 
   // View group details
   const handleView = (group: UserGroup) => {
-    navigate(`/dashboard/groups/${group.group_hash}`);
+    navigate(`${ROUTES.GROUP}/${group.group_hash}`);
   };
 
   // Project Group handlers
   const handleCreateProjectGroup = () => {
-    navigate('/dashboard/groups/project-groups/create');
+    navigate(ROUTES.PROJECT_GROUPS_CREATE);
   };
 
   const handleEditProjectGroup = useCallback((group: ProjectGroup) => {
-    navigate(`/dashboard/groups/project-groups/${group.group_hash}/edit`);
+    navigate(`${ROUTES.PROJECT_GROUPS_EDIT}/${group.group_hash}`);
   }, [navigate]);
 
   const handleViewProjectGroup = useCallback((group: ProjectGroup) => {
-    navigate(`/dashboard/groups/project-groups/${group.group_hash}`);
+    navigate(`${ROUTES.PROJECT_GROUPS_DETAILS}/${group.group_hash}`);
   }, [navigate]);
 
   const handleDeleteProjectGroup = useCallback(async (group: ProjectGroup) => {

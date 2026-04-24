@@ -11,7 +11,7 @@
  * @see docs/DESIGN_SYSTEM/DASHBOARD_PATTERNS.md
  */
 import React from 'react';
-import { useAuth, useUserType } from '@/hooks';
+
 import { useTheme } from '@/contexts';
 import { UserMenu, NotificationBell } from '@/components/navigation';
 import { PanelLeftClose, PanelLeft, Shield, Sun, Moon } from 'lucide-react';
@@ -30,9 +30,6 @@ export function Header({
   onToggleSidebar,
   onToggleMobileMenu,
 }: HeaderProps): React.JSX.Element {
-  // User data
-  const { user } = useAuth();
-  const { getUserTypeLabel } = useUserType();
   const { resolvedTheme, toggleTheme } = useTheme();
 
   return (
@@ -146,23 +143,6 @@ export function Header({
 
         {/* Right section - Notifications and user menu */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* User info - Hidden on mobile */}
-          <div
-            className="hidden lg:flex flex-col items-end text-right mr-1"
-            aria-hidden="true"
-          >
-            <span className="text-sm font-medium text-foreground leading-tight">
-              {user?.username}
-            </span>
-            <span className="text-[10px] text-muted-foreground leading-tight uppercase tracking-wide font-medium">
-              {getUserTypeLabel()}
-            </span>
-          </div>
-          <div
-            className="h-8 w-px bg-border hidden lg:block"
-            aria-hidden="true"
-          />
-
           {/* Dark mode toggle */}
           <button
             type="button"

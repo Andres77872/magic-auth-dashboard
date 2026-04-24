@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
 import type { UserGroup } from '@/types/group.types';
+import { ROUTES } from '@/utils/routes';
 
 interface GroupActionsMenuProps {
   group: UserGroup;
@@ -30,16 +31,16 @@ export const GroupActionsMenu: React.FC<GroupActionsMenuProps> = ({
     if (onView) {
       onView(group);
     } else {
-      navigate(`/dashboard/groups/${group.group_hash}`);
+      navigate(`${ROUTES.GROUP}/${group.group_hash}`);
     }
   };
 
   const handleEdit = () => {
     if (onEdit) {
       onEdit(group);
-    } else {
-      navigate(`/dashboard/groups/${group.group_hash}/edit`);
     }
+    // No fallback navigation - inline modal edit is the approved pattern.
+    // The route /groups/:hash/edit does not exist (GroupEditPage not implemented).
   };
 
   const handleDelete = () => {

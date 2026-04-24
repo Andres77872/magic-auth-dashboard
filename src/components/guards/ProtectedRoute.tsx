@@ -48,7 +48,7 @@ export function ProtectedRoute({
 
   // Redirect authenticated users away from public routes
   if (!requireAuth && isAuthenticated) {
-    return <Navigate to={ROUTES.DASHBOARD} replace />;
+    return <Navigate to={ROUTES.HOME} replace />;
   }
 
   return <>{children}</>;

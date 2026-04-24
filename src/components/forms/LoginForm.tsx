@@ -84,7 +84,7 @@ export function LoginForm(): React.JSX.Element {
       const success = await platformLogin(formData.username, formData.password);
 
       if (success) {
-        const from = (location.state as { from?: string })?.from || ROUTES.DASHBOARD;
+        const from = (location.state as { from?: string })?.from || ROUTES.HOME;
         void navigate(from, { replace: true });
       }
     } catch (error) {

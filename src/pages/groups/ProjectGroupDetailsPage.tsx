@@ -116,7 +116,7 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
       render: (_value, project) => (
         <div className="space-y-0.5">
           <button
-            onClick={() => navigate(`${ROUTES.PROJECTS_DETAILS}/${project.project_hash}`)}
+            onClick={() => navigate(`${ROUTES.PROJECT}/${project.project_hash}`)}
             className="font-medium text-primary hover:underline text-left flex items-center gap-1"
           >
             {project.project_name}

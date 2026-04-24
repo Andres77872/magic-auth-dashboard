@@ -15,6 +15,7 @@ import { ProjectGroupActionsMenu } from '@/components/features/groups/ProjectGro
 import { useProjectGroups } from '@/hooks';
 import { FolderOpen, Plus } from 'lucide-react';
 import { formatDate } from '@/utils/component-utils';
+import { ROUTES } from '@/utils/routes';
 import type { ProjectGroup } from '@/services/project-group.service';
 
 export function ProjectGroupsPage(): React.JSX.Element {
@@ -31,15 +32,15 @@ export function ProjectGroupsPage(): React.JSX.Element {
   } = useProjectGroups();
 
   const handleCreateGroup = () => {
-    navigate('/dashboard/groups/project-groups/create');
+    navigate(ROUTES.PROJECT_GROUPS_CREATE);
   };
 
   const handleEditGroup = useCallback((group: ProjectGroup) => {
-    navigate(`/dashboard/groups/project-groups/${group.group_hash}/edit`);
+    navigate(`${ROUTES.PROJECT_GROUPS_EDIT}/${group.group_hash}`);
   }, [navigate]);
 
   const handleViewGroup = useCallback((group: ProjectGroup) => {
-    navigate(`/dashboard/groups/project-groups/${group.group_hash}`);
+    navigate(`${ROUTES.PROJECT_GROUPS_DETAILS}/${group.group_hash}`);
   }, [navigate]);
 
   const handleDeleteGroup = useCallback(async (group: ProjectGroup) => {

@@ -314,7 +314,7 @@ export const ProjectMembersTab: React.FC<ProjectMembersTabProps> = ({ project })
               description="No user groups have access to this project yet. Go to the Groups tab to add this project to a project group and grant user groups access."
               size="sm"
               action={
-                <Link to={`${ROUTES.PROJECTS_DETAILS}/${project.project_hash}?tab=groups`}>
+                <Link to={`${ROUTES.PROJECT}/${project.project_hash}?tab=groups`}>
                   <Button variant="outline" size="sm">
                     Go to Groups Tab
                   </Button>

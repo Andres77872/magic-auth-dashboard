@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageContainer } from '@/components/common/PageContainer';
@@ -16,8 +17,11 @@ import {
 } from 'lucide-react';
 import type { ActivityFilters } from '@/types/audit.types';
 
+const DEFAULT_TAB = 'activity';
+const VALID_TABS = ['activity', 'security', 'statistics'] as const;
+type TabType = typeof VALID_TABS[number];
+
 export interface AuditLogMonitorPageProps {
-  defaultTab?: 'activity' | 'security' | 'statistics';
   className?: string;
 }
 
@@ -26,12 +30,11 @@ export interface AuditLogMonitorPageProps {
  * Requirements: 1.1, 3.1, 5.1
  */
 export function AuditLogMonitorPage({
-  defaultTab = 'activity',
   className,
 }: AuditLogMonitorPageProps): React.JSX.Element {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filters, _setFilters] = useState<ActivityFilters>({});
 
   // Check if user is root (has access to all tabs)
@@ -40,10 +43,27 @@ export function AuditLogMonitorPage({
   // Get activity logs for export
   const { pagination } = useActivityLogs({ filters, limit: 1 });
 
-  // Handle tab change
+  // Derive active tab from URL query param with validation
+  const tabFromUrl = searchParams.get('tab');
+  const isValidTab = (tab: string | null): tab is TabType =>
+    tab !== null && VALID_TABS.includes(tab as TabType);
+
+  const canAccessTab = (tab: TabType): boolean =>
+    tab === 'activity' || isRoot; // Only root can access security/statistics
+
+  const activeTab: TabType = (() => {
+    if (!isValidTab(tabFromUrl)) return DEFAULT_TAB;
+    if (!canAccessTab(tabFromUrl)) return DEFAULT_TAB;
+    return tabFromUrl;
+  })();
+
+  // Handle tab change - update URL query param
   const handleTabChange = useCallback((value: string) => {
-    setActiveTab(value as 'activity' | 'security' | 'statistics');
-  }, []);
+    setSearchParams(prev => {
+      prev.set('tab', value);
+      return prev;
+    });
+  }, [setSearchParams]);
 
   // Handle user click (navigate to user profile)
   const handleUserClick = useCallback((userId: string) => {

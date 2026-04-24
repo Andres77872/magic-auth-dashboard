@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useGlobalRoles, useUsers } from '@/hooks';
 import {
   PageContainer,
@@ -34,6 +35,10 @@ import type {
 } from '@/types/global-roles.types';
 import type { Tab, StatCardProps } from '@/components/common';
 
+type RoleManagementTabType = 'roles' | 'groups' | 'assignments';
+const DEFAULT_TAB: RoleManagementTabType = 'roles';
+const VALID_TABS: RoleManagementTabType[] = ['roles', 'groups', 'assignments'];
+
 export function RoleManagementPage(): React.JSX.Element {
   const {
     roles,
@@ -50,9 +55,21 @@ export function RoleManagementPage(): React.JSX.Element {
   const { users, fetchUsers } = useUsers();
   const { showToast } = useToast();
 
-  const [activeTab, setActiveTab] = useState<
-    'roles' | 'groups' | 'assignments'
-  >('roles');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Derive active tab from URL query param, fallback to default if invalid
+  const activeTab: RoleManagementTabType = useMemo(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && VALID_TABS.includes(tabFromUrl as RoleManagementTabType)) {
+      return tabFromUrl as RoleManagementTabType;
+    }
+    return DEFAULT_TAB;
+  }, [searchParams]);
+
+  // Tab change handler - updates URL query param
+  const handleTabChange = useCallback((tabId: string) => {
+    setSearchParams({ tab: tabId });
+  }, [setSearchParams]);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
   const [showRoleForm, setShowRoleForm] = useState(false);
@@ -245,9 +262,7 @@ export function RoleManagementPage(): React.JSX.Element {
       <TabNavigation
         tabs={tabs}
         activeTab={activeTab}
-        onChange={(tabId) =>
-          setActiveTab(tabId as 'roles' | 'groups' | 'assignments')
-        }
+        onChange={handleTabChange}
       />
 
       {/* Role Form Dialog */}

@@ -19,13 +19,16 @@ import { Sidebar } from './Sidebar';
 import { Footer } from './Footer';
 import { Breadcrumbs } from './Breadcrumbs';
 
-interface DashboardLayoutProps {
-  children?: React.ReactNode;
-}
-
-export function DashboardLayout({
-  children,
-}: DashboardLayoutProps): React.JSX.Element {
+/**
+ * DashboardLayout Component
+ *
+ * Layout route component for nested routing architecture.
+ * Renders Header, Sidebar, and Footer once as shared layout.
+ * Child routes render into <Outlet /> - no children prop accepted.
+ *
+ * @see docs/DESIGN_SYSTEM/DASHBOARD_PATTERNS.md
+ */
+export function DashboardLayout(): React.JSX.Element {
   // State management
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -133,9 +136,9 @@ export function DashboardLayout({
           <Breadcrumbs />
         </div>
 
-        {/* Page content container */}
+        {/* Page content container - child routes render via Outlet */}
         <div className="flex-1 flex flex-col min-w-0 max-w-[1400px] mx-auto w-full">
-          {children || <Outlet />}
+          <Outlet />
         </div>
       </main>
 

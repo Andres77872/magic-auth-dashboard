@@ -82,7 +82,7 @@ export const ProjectListPage: React.FC = () => {
     
     // Navigate to the newly created project's Groups tab if we have the hash
     if (createdProjectHash) {
-      navigate(`${ROUTES.PROJECTS_DETAILS}/${createdProjectHash}?tab=groups`);
+      navigate(`${ROUTES.PROJECT}/${createdProjectHash}?tab=groups`);
       setCreatedProjectHash(null);
     }
   };
@@ -97,7 +97,7 @@ export const ProjectListPage: React.FC = () => {
 
   const handleViewDetails = useCallback(
     (project: ProjectDetails) => {
-      navigate(`${ROUTES.PROJECTS_DETAILS}/${project.project_hash}`);
+      navigate(`${ROUTES.PROJECT}/${project.project_hash}`);
     },
     [navigate]
   );
