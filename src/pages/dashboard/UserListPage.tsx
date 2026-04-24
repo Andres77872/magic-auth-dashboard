@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { UserEmptyState } from '@/components/features/users/UserEmptyState';
 import { UserFormModal } from '@/components/features/users/UserFormModal';
 import { UserActionsMenu } from '@/components/features/users/UserActionsMenu';
@@ -36,6 +37,7 @@ export interface UserFilters {
 }
 
 export function UserListPage(): React.JSX.Element {
+  const navigate = useNavigate();
   const { canCreateUser } = usePermissions();
   const {
     users,
@@ -143,6 +145,10 @@ export function UserListPage(): React.JSX.Element {
     setShowDetailsModal(true);
   }, []);
 
+  const handleViewFullProfile = useCallback((user: User) => {
+    navigate(`/users/${user.user_hash}`);
+  }, [navigate]);
+
   const handleCloseDetails = () => {
     setShowDetailsModal(false);
     setDetailsUser(null);
@@ -172,15 +178,14 @@ export function UserListPage(): React.JSX.Element {
             size="sm"
           />
           <div className="flex flex-col min-w-0">
-            <button
-              type="button"
-              onClick={() => handleViewDetails(user)}
-              className="text-sm font-medium text-primary hover:underline text-left truncate"
-              title={value as string}
-              aria-label={`View details for ${user.username}`}
+            <Link
+              to={`/users/${user.user_hash}`}
+              className="text-sm font-medium text-primary hover:underline truncate focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+              title={`View full profile for ${user.username}`}
+              aria-label={`View full profile for ${user.username}`}
             >
               {value as string}
-            </button>
+            </Link>
             <div className="flex items-center gap-1">
               <span className="text-xs text-muted-foreground" title={user.user_hash}>
                 {truncateHash(user.user_hash)}
@@ -348,7 +353,7 @@ export function UserListPage(): React.JSX.Element {
           value: formatDateTime(user.created_at)
         }
       ]}
-      onClick={() => handleViewDetails(user)}
+      onClick={() => handleViewFullProfile(user)}
       actions={
         <div onClick={handleCardActionInteraction} onKeyDown={handleCardActionInteraction}>
           <UserActionsMenu 
@@ -360,7 +365,7 @@ export function UserListPage(): React.JSX.Element {
         </div>
       }
     />
-  ), [handleRefresh, handleEditUser, handleViewDetails, handleCardActionInteraction]);
+  ), [handleRefresh, handleEditUser, handleViewDetails, handleViewFullProfile, handleCardActionInteraction]);
 
   // Calculate statistics
   const stats: StatCardProps[] = useMemo(() => {

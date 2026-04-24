@@ -56,18 +56,21 @@ vi.mock('@/utils/userTypeStyles', () => ({
   getUserTypeBadgeClass: vi.fn(() => 'bg-warning text-warning-foreground'),
 }));
 
-vi.mock('@/components/layout/DashboardLayout', () => ({
-  DashboardLayout: () => {
-    const Outlet = require('react-router-dom').Outlet;
-    return (
-      <div data-testid="dashboard-layout">
-        <main data-testid="layout-main">
-          <Outlet />
-        </main>
-      </div>
-    );
-  },
-}));
+vi.mock('@/components/layout/DashboardLayout', async () => {
+  const { Outlet } = await import('react-router-dom');
+
+  return {
+    DashboardLayout: () => {
+      return (
+        <div data-testid="dashboard-layout">
+          <main data-testid="layout-main">
+            <Outlet />
+          </main>
+        </div>
+      );
+    },
+  };
+});
 
 vi.mock('@/components/common', () => ({
   PageContainer: ({ children }: any) => <div data-testid="page-container">{children}</div>,
@@ -80,12 +83,12 @@ import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { UserMenu } from '@/components/navigation/UserMenu';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { ROUTES, NAVIGATION_ITEMS } from '@/utils/routes';
-import { UserType } from '@/types/auth.types';
+import { UserType, type User } from '@/types/auth.types';
 
 const mockUseAuth = vi.mocked(useAuth);
 const mockUseUserType = vi.mocked(useUserType);
 
-const mockAdminUser = {
+const mockAdminUser: User = {
   user_hash: 'admin-123',
   username: 'adminuser',
   email: 'admin@example.com',
@@ -99,7 +102,7 @@ function LocationTracker(): React.JSX.Element {
   return <div data-testid="location">{location.pathname}</div>;
 }
 
-function setupAuthMocks(user: typeof mockAdminUser | null) {
+function setupAuthMocks(user: User | null) {
   mockUseAuth.mockReturnValue({
     isAuthenticated: user !== null,
     isLoading: false,

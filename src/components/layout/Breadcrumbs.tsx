@@ -28,10 +28,10 @@ interface BreadcrumbItem {
 }
 
 // Personal routes without prefix per spec (lines 427-430)
-const PERSONAL_ROUTES = ['/profile', '/settings'] as const;
+const PERSONAL_ROUTES: readonly string[] = ['/profile', '/settings'];
 
 // Section routes that get direct labels per spec (lines 441-474)
-const SECTION_ROUTES = [
+const SECTION_ROUTES: readonly string[] = [
   '/users',
   '/projects',
   '/groups',

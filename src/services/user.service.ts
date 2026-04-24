@@ -84,8 +84,26 @@ class UserService {
   }
 
   // Get user by hash - Updated to handle new API response structure
-  async getUserByHash(userHash: string): Promise<UserProfileResponse> {
-    const response = await apiClient.get<UserProfileResponse>(`/users/${userHash}`);
+  // Options: include_group_hierarchy adds projects_count to groups
+  //          include_permission_details adds effective_permissions and access_groups to projects
+  async getUserByHash(
+    userHash: string,
+    options?: {
+      include_group_hierarchy?: boolean;
+      include_permission_details?: boolean;
+    }
+  ): Promise<UserProfileResponse> {
+    const queryParams: Record<string, string> = {};
+    if (options?.include_group_hierarchy) {
+      queryParams.include_group_hierarchy = 'true';
+    }
+    if (options?.include_permission_details) {
+      queryParams.include_permission_details = 'true';
+    }
+    const response = await apiClient.get<UserProfileResponse>(
+      `/users/${userHash}`,
+      queryParams
+    );
     return response as UserProfileResponse;
   }
 

@@ -19,20 +19,23 @@ vi.mock('@/hooks/useSystemHealth', () => ({
   useSystemHealth: vi.fn(() => ({ health: null, isLoading: true, error: null, refetch: vi.fn() })),
 }));
 
-vi.mock('@/components/layout/DashboardLayout', () => ({
-  DashboardLayout: () => {
-    const Outlet = require('react-router-dom').Outlet;
-    return (
-      <div data-testid="dashboard-layout">
-        <div data-testid="layout-header">Header</div>
-        <div data-testid="layout-sidebar">Sidebar</div>
-        <main data-testid="layout-main">
-          <Outlet />
-        </main>
-      </div>
-    );
-  },
-}));
+vi.mock('@/components/layout/DashboardLayout', async () => {
+  const { Outlet } = await import('react-router-dom');
+
+  return {
+    DashboardLayout: () => {
+      return (
+        <div data-testid="dashboard-layout">
+          <div data-testid="layout-header">Header</div>
+          <div data-testid="layout-sidebar">Sidebar</div>
+          <main data-testid="layout-main">
+            <Outlet />
+          </main>
+        </div>
+      );
+    },
+  };
+});
 
 vi.mock('@/components/features/users/UserAvatar', () => ({
   UserAvatar: ({ username }: { username: string }) => (

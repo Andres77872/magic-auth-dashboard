@@ -41,6 +41,8 @@ const VALID_TABS = [
   'my-permissions',
 ] as const;
 
+type PermissionTab = (typeof VALID_TABS)[number];
+
 const DEFAULT_TAB = 'permissions';
 
 export function PermissionsDashboard(): React.JSX.Element {
@@ -61,9 +63,10 @@ export function PermissionsDashboard(): React.JSX.Element {
 
   // Tab state from URL query param
   const tabParam = searchParams.get('tab');
-  const activeTab = VALID_TABS.includes(tabParam as any)
-    ? tabParam
-    : DEFAULT_TAB;
+  const activeTab: PermissionTab =
+    tabParam !== null && VALID_TABS.includes(tabParam as PermissionTab)
+      ? (tabParam as PermissionTab)
+      : DEFAULT_TAB;
 
   const handleTabChange = useCallback(
     (tabId: string) => {

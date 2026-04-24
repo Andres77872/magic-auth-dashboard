@@ -1,17 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  globalRolesService,
-  permissionAssignmentsService,
-  userService,
-} from '@/services';
-import type { UserProfileResponse } from '@/types/auth.types';
+import { globalRolesService, userService } from '@/services';
+import type { UserProfileResponse, UserGroupAssignment, UserProjectAccess } from '@/types/auth.types';
 import type { GlobalRole } from '@/types/global-roles.types';
-import type { PermissionSource } from '@/types/permission-assignments.types';
 
-interface PermissionSources {
-  from_role: PermissionSource[];
-  from_user_groups: PermissionSource[];
-  from_direct_assignment: PermissionSource[];
+/**
+ * Computed permission sources derived from the user's groups and projects.
+ * This is calculated from the API response data, not fetched separately.
+ */
+interface ComputedPermissionSources {
+  from_user_groups: Array<{
+    group_hash: string;
+    group_name: string;
+    permissions_count: number;
+  }>;
+  from_projects: Array<{
+    project_hash: string;
+    project_name: string;
+    access_groups_count: number;
+    permissions_count: number;
+  }>;
 }
 
 interface UseUserProfileDetailsReturn {
@@ -19,7 +26,8 @@ interface UseUserProfileDetailsReturn {
   isLoading: boolean;
   error: string | null;
   globalRole: GlobalRole | null;
-  permissionSources: PermissionSources | null;
+  /** Computed from user's groups and projects - NOT fetched from API */
+  computedPermissionSources: ComputedPermissionSources | null;
   isGlobalDataLoading: boolean;
   refetch: () => Promise<void>;
 }
@@ -48,6 +56,30 @@ function normalizeUserProfile(
   };
 }
 
+/**
+ * Compute permission sources from user's groups and projects.
+ * This replaces the buggy API call that fetched current user's sources.
+ */
+function computePermissionSources(
+  groups: UserGroupAssignment[],
+  projects: UserProjectAccess[]
+): ComputedPermissionSources {
+  const from_user_groups = groups.map((group) => ({
+    group_hash: group.group_hash,
+    group_name: group.group_name,
+    permissions_count: group.projects_count || 0,
+  }));
+
+  const from_projects = projects.map((project) => ({
+    project_hash: project.project_hash,
+    project_name: project.project_name,
+    access_groups_count: project.access_groups?.length || 0,
+    permissions_count: project.effective_permissions?.length || 0,
+  }));
+
+  return { from_user_groups, from_projects };
+}
+
 export function useUserProfileDetails(
   userHash?: string
 ): UseUserProfileDetailsReturn {
@@ -57,36 +89,18 @@ export function useUserProfileDetails(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [globalRole, setGlobalRole] = useState<GlobalRole | null>(null);
-  const [permissionSources, setPermissionSources] =
-    useState<PermissionSources | null>(null);
+  const [computedPermissionSources, setComputedPermissionSources] =
+    useState<ComputedPermissionSources | null>(null);
   const [isGlobalDataLoading, setIsGlobalDataLoading] = useState(false);
 
-  const fetchGlobalData = useCallback(async (hash: string) => {
+  const fetchGlobalRole = useCallback(async (hash: string) => {
     setIsGlobalDataLoading(true);
+    const roleResult = await globalRolesService.getUserRole(hash);
 
-    const [roleResult, sourcesResult] = await Promise.allSettled([
-      globalRolesService.getUserRole(hash),
-      permissionAssignmentsService.getMyPermissionSources(),
-    ]);
-
-    if (
-      roleResult.status === 'fulfilled' &&
-      roleResult.value.success &&
-      roleResult.value.data
-    ) {
-      setGlobalRole(roleResult.value.data);
+    if (roleResult.success && roleResult.data) {
+      setGlobalRole(roleResult.data);
     } else {
       setGlobalRole(null);
-    }
-
-    if (
-      sourcesResult.status === 'fulfilled' &&
-      sourcesResult.value.success &&
-      sourcesResult.value.data
-    ) {
-      setPermissionSources(sourcesResult.value.data);
-    } else {
-      setPermissionSources(null);
     }
 
     setIsGlobalDataLoading(false);
@@ -96,7 +110,7 @@ export function useUserProfileDetails(
     if (!userHash) {
       setProfileData(null);
       setGlobalRole(null);
-      setPermissionSources(null);
+      setComputedPermissionSources(null);
       setError('User ID is required');
       setIsLoading(false);
       setIsGlobalDataLoading(false);
@@ -107,28 +121,40 @@ export function useUserProfileDetails(
       setIsLoading(true);
       setError(null);
 
-      const response = await userService.getUserByHash(userHash);
+      // Fetch with full enrichment to get all available data
+      const response = await userService.getUserByHash(userHash, {
+        include_group_hierarchy: true,
+        include_permission_details: true,
+      });
 
       if (response.success && response.user) {
-        setProfileData(normalizeUserProfile(response));
-        await fetchGlobalData(userHash);
+        const normalized = normalizeUserProfile(response);
+        setProfileData(normalized);
+        
+        // Compute permission sources from available data (not API call)
+        const groups = normalized.user.groups || [];
+        const projects = normalized.user.projects || [];
+        setComputedPermissionSources(computePermissionSources(groups, projects));
+        
+        // Fetch global role separately (this endpoint is per-user)
+        await fetchGlobalRole(userHash);
       } else {
         setProfileData(null);
         setGlobalRole(null);
-        setPermissionSources(null);
+        setComputedPermissionSources(null);
         setError(response.message || 'Failed to fetch user data');
       }
     } catch (err) {
       setProfileData(null);
       setGlobalRole(null);
-      setPermissionSources(null);
+      setComputedPermissionSources(null);
       setError(
         err instanceof Error ? err.message : 'An unexpected error occurred'
       );
     } finally {
       setIsLoading(false);
     }
-  }, [fetchGlobalData, userHash]);
+  }, [fetchGlobalRole, userHash]);
 
   useEffect(() => {
     void fetchProfile();
@@ -139,7 +165,7 @@ export function useUserProfileDetails(
     isLoading,
     error,
     globalRole,
-    permissionSources,
+    computedPermissionSources,
     isGlobalDataLoading,
     refetch: fetchProfile,
   };

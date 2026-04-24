@@ -118,7 +118,7 @@ vi.mock('@/components/common', () => ({
 }));
 
 vi.mock('@/components/ui/tabs', () => ({
-  Tabs: ({ children, value, onValueChange }: any) => (
+  Tabs: ({ children, value }: any) => (
     <div data-testid="radix-tabs" data-active-tab={value}>
       <div data-testid="tabs-list" role="tablist">
         {React.Children.toArray(children).filter((c: any) => c?.props?.['data-testid'] === 'radix-tabs-list' || c?.type?.name === 'TabsList')}
@@ -246,6 +246,11 @@ vi.mock('@/components/features/groups/GroupFormModal', () => ({
 
 vi.mock('@/services', () => ({
   globalRolesService: {
+    getRoles: vi.fn(async () => ({ success: true, roles: [] })),
+    getPermissionGroups: vi.fn(async () => ({ success: true, permission_groups: [] })),
+    getPermissions: vi.fn(async () => ({ success: true, permissions: [] })),
+    getMyPermissions: vi.fn(async () => ({ success: true, permissions: [] })),
+    getMyRole: vi.fn(async () => ({ success: true, role: null })),
     deletePermission: vi.fn(),
     deletePermissionGroup: vi.fn(),
     deleteRole: vi.fn(),
@@ -264,12 +269,12 @@ import { GroupDetailsPage } from '@/pages/groups/GroupDetailsPage';
 import { RoleManagementPage } from '@/pages/permissions/RoleManagementPage';
 import { PermissionsDashboard } from '@/components/features/permissions/PermissionsDashboard';
 import { AuditLogMonitorPage } from '@/components/features/audit/AuditLogMonitorPage';
-import { UserType } from '@/types/auth.types';
+import { UserType, type User } from '@/types/auth.types';
 
 const mockUseAuth = vi.mocked(useAuth);
 const mockUseUserType = vi.mocked(useUserType);
 
-const mockAdminUser = {
+const mockAdminUser: User = {
   user_hash: 'admin-123',
   username: 'adminuser',
   email: 'admin@example.com',
@@ -278,7 +283,7 @@ const mockAdminUser = {
   created_at: '2024-01-01T00:00:00Z',
 };
 
-const mockRootUser = {
+const mockRootUser: User = {
   user_hash: 'root-123',
   username: 'rootuser',
   email: 'root@example.com',
@@ -299,7 +304,7 @@ function LocationTracker(): React.JSX.Element {
   );
 }
 
-function setupAuthMocks(user: typeof mockAdminUser | typeof mockRootUser | null) {
+function setupAuthMocks(user: User | null) {
   mockUseAuth.mockReturnValue({
     isAuthenticated: user !== null,
     isLoading: false,

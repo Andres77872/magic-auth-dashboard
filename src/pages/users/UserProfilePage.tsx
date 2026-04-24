@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, Skeleton, EmptyState, Button, CopyableId } from '@/components/common';
 import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
 import { UserAvatar } from '@/components/features/users/UserAvatar';
-import { useUserProfileDetails } from '@/hooks';
+import { UserFormModal } from '@/components/features/users/UserFormModal';
+import { useUserProfileDetails, usePermissions } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
 import { getUserTypeBadgeVariant, formatDateTime } from '@/utils/component-utils';
 import {
@@ -17,13 +18,13 @@ import {
   AlertTriangle,
   FolderKanban,
   Users,
-  Zap,
   Calendar,
   Activity,
   Hash,
   Mail,
   Clock,
   Key,
+  Building2,
 } from 'lucide-react';
 
 /**
@@ -38,20 +39,39 @@ export function UserProfilePage(): React.JSX.Element {
     isLoading,
     error,
     globalRole,
-    permissionSources,
+    computedPermissionSources,
     isGlobalDataLoading,
     refetch,
   } = useUserProfileDetails(userHash);
+
+  // Modal state for edit functionality
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Permission checks for edit button visibility
+  const { canCreateUser, canCreateAdmin } = usePermissions();
 
   const handleGoBack = () => {
     navigate(ROUTES.USERS);
   };
 
-  const handleEditUser = () => {
-    if (userHash) {
-      // Navigate to user profile page (edit functionality is handled there)
-      navigate(`${ROUTES.USER}/${userHash}`);
+  // Permission helper - mirrors UserActionsMenu.tsx logic
+  const canEditUser = (targetUser: { user_type: string }) => {
+    // Admins can't edit root users
+    if (targetUser.user_type === 'root' && !canCreateAdmin) {
+      return false;
     }
+    return canCreateUser;
+  };
+
+  const handleEditUser = () => {
+    if (profileData?.user) {
+      setShowEditModal(true);
+    }
+  };
+
+  const handleEditModalSuccess = () => {
+    setShowEditModal(false);
+    void refetch();
   };
 
   // Loading state with proper skeleton
@@ -207,14 +227,16 @@ export function UserProfilePage(): React.JSX.Element {
           subtitle={`Detailed information about ${user.username}`}
           icon={<User size={24} aria-hidden="true" />}
           actions={
-            <Button
-              onClick={handleEditUser}
-              variant="primary"
-              leftIcon={<Pencil size={16} aria-hidden="true" />}
-              aria-label="Edit user profile"
-            >
-              Edit User
-            </Button>
+            canEditUser(user) ? (
+              <Button
+                onClick={handleEditUser}
+                variant="primary"
+                leftIcon={<Pencil size={16} aria-hidden="true" />}
+                aria-label="Edit user"
+              >
+                Edit User
+              </Button>
+            ) : undefined
           }
         />
       </header>
@@ -331,38 +353,104 @@ export function UserProfilePage(): React.JSX.Element {
               )}
 
               {/* User Type Info / Capabilities */}
-              {user.user_type_info &&
-                (user.user_type_info.error ? (
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <AlertTriangle size={12} aria-hidden="true" />
-                      User Type Status
-                    </label>
-                    <div className="flex items-center gap-2 text-destructive bg-destructive-subtle rounded-md px-3 py-2">
-                      <AlertTriangle size={14} aria-hidden="true" />
-                      <span className="text-sm">{user.user_type_info.error}</span>
-                    </div>
-                  </div>
-                ) : user.user_type_info.capabilities && user.user_type_info.capabilities.length > 0 ? (
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      <ShieldCheck size={12} aria-hidden="true" />
-                      Capabilities
-                    </label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {user.user_type_info.capabilities.slice(0, 5).map((cap) => (
-                        <Badge key={cap} variant="outline" size="sm">
-                          {cap.replace(/_/g, ' ')}
-                        </Badge>
-                      ))}
-                      {user.user_type_info.capabilities.length > 5 && (
-                        <Badge variant="secondary" size="sm">
-                          +{user.user_type_info.capabilities.length - 5} more
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ) : null)}
+              {user.user_type_info && (
+                <div className="space-y-1 sm:col-span-2">
+                  {user.user_type_info.error ? (
+                    <>
+                      <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <AlertTriangle size={12} aria-hidden="true" />
+                        User Type Status
+                      </label>
+                      <div className="flex items-center gap-2 text-destructive bg-destructive-subtle rounded-md px-3 py-2">
+                        <AlertTriangle size={14} aria-hidden="true" />
+                        <span className="text-sm">{user.user_type_info.error}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <ShieldCheck size={12} aria-hidden="true" />
+                        Capabilities & Access Details
+                      </label>
+                      <div className="space-y-3 p-4 rounded-lg bg-muted-subtle border border-border">
+                        {/* Capabilities */}
+                        {user.user_type_info.capabilities && user.user_type_info.capabilities.length > 0 && (
+                          <div className="space-y-2">
+                            <span className="text-xs font-medium text-muted-foreground">Capabilities</span>
+                            <div className="flex flex-wrap gap-1.5">
+                              {user.user_type_info.capabilities.map((cap) => (
+                                <Badge key={cap} variant="outline" size="sm">
+                                  {cap.replace(/_/g, ' ')}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* User Type Specific Details */}
+                        {user.user_type === 'root' && (
+                          <div className="space-y-2">
+                            <span className="text-xs font-medium text-muted-foreground">Root Access</span>
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="primary" size="sm">Unrestricted Platform Access</Badge>
+                              <Badge variant="success" size="sm">All Projects</Badge>
+                              <Badge variant="info" size="sm">All Users</Badge>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {user.user_type === 'admin' && (
+                          <div className="space-y-2">
+                            <span className="text-xs font-medium text-muted-foreground">Admin Scope</span>
+                            <div className="flex items-center gap-3">
+                              {user.user_type_info.accessible_projects && (
+                                <div className="flex items-center gap-1.5">
+                                  <Building2 size={14} className="text-muted-foreground" aria-hidden="true" />
+                                  <span className="text-sm">
+                                    {user.user_type_info.accessible_projects.length} managed projects
+                                  </span>
+                                </div>
+                              )}
+                              {user.user_type_info.user_groups && user.user_type_info.user_groups.length > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                  <Users size={14} className="text-muted-foreground" aria-hidden="true" />
+                                  <span className="text-sm">
+                                    {user.user_type_info.user_groups.length} user groups
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {user.user_type === 'consumer' && (
+                          <div className="space-y-2">
+                            <span className="text-xs font-medium text-muted-foreground">Consumer Scope</span>
+                            <div className="flex flex-wrap items-center gap-3">
+                              {user.user_type_info.accessible_projects && (
+                                <div className="flex items-center gap-1.5">
+                                  <FolderKanban size={14} className="text-muted-foreground" aria-hidden="true" />
+                                  <span className="text-sm">
+                                    {user.user_type_info.accessible_projects.length} accessible projects
+                                  </span>
+                                </div>
+                              )}
+                              {user.user_type_info.user_groups && user.user_type_info.user_groups.length > 0 && (
+                                <div className="flex items-center gap-1.5">
+                                  <Users size={14} className="text-muted-foreground" aria-hidden="true" />
+                                  <span className="text-sm">
+                                    {user.user_type_info.user_groups.length} user groups
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -405,14 +493,17 @@ export function UserProfilePage(): React.JSX.Element {
           </CardContent>
         </Card>
 
-        {/* Global Permissions Card */}
-        {(globalRole || permissionSources || isGlobalDataLoading) && (
+        {/* Access Summary Card */}
+        {(globalRole || computedPermissionSources || isGlobalDataLoading) && (
           <Card padding="lg" className="lg:col-span-3">
             <CardHeader>
               <h3 className="flex items-center gap-2 text-base font-semibold">
                 <ShieldCheck size={18} aria-hidden="true" />
-                Global Permissions
+                Access Summary
               </h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                Derived from user's group memberships and project access
+              </p>
             </CardHeader>
             <CardContent>
               {isGlobalDataLoading ? (
@@ -424,7 +515,7 @@ export function UserProfilePage(): React.JSX.Element {
                   {/* Global Role */}
                   {globalRole && (
                     <div className="space-y-3">
-                      <h4 className="text-sm font-medium text-muted-foreground">Global Role</h4>
+                      <h4 className="text-sm font-medium text-muted-foreground">Global Role Assignment</h4>
                       <div className="flex items-start gap-4">
                         <Badge variant="primary" size="lg">
                           {globalRole.role_display_name}
@@ -444,78 +535,54 @@ export function UserProfilePage(): React.JSX.Element {
                     </div>
                   )}
 
-                  {/* Permission Sources */}
-                  {permissionSources && (
+                  {/* Computed Permission Sources */}
+                  {computedPermissionSources && (
                     <div className="space-y-3">
                       <h4 className="text-sm font-medium text-muted-foreground">Permission Sources</h4>
-                      <div className="grid gap-4 sm:grid-cols-3">
-                        {/* From Role */}
-                        <div className="space-y-2 p-4 rounded-lg bg-muted-subtle border border-border">
-                          <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-md bg-primary-subtle flex items-center justify-center">
-                              <ShieldCheck size={16} className="text-primary-subtle-foreground" aria-hidden="true" />
-                            </div>
-                            <span className="text-sm font-medium">From Role</span>
-                          </div>
-                          <p className="text-2xl font-semibold tabular-nums">{permissionSources.from_role.length}</p>
-                          {permissionSources.from_role.length > 0 && (
-                            <div className="space-y-1">
-                              {permissionSources.from_role.slice(0, 3).map((source, idx) => (
-                                <div key={idx} className="flex items-center gap-2">
-                                  <Badge variant="secondary" size="sm">{source.permission_group_name}</Badge>
-                                  <span className="text-xs text-muted-foreground">{source.permissions_count} perms</span>
-                                </div>
-                              ))}
-                              {permissionSources.from_role.length > 3 && (
-                                <span className="text-xs text-muted-foreground">+{permissionSources.from_role.length - 3} more</span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* From Groups */}
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {/* From User Groups */}
                         <div className="space-y-2 p-4 rounded-lg bg-muted-subtle border border-border">
                           <div className="flex items-center gap-2">
                             <div className="h-8 w-8 rounded-md bg-purple-subtle flex items-center justify-center">
                               <Users size={16} className="text-purple-subtle-foreground" aria-hidden="true" />
                             </div>
-                            <span className="text-sm font-medium">From Groups</span>
+                            <span className="text-sm font-medium">From User Groups</span>
                           </div>
-                          <p className="text-2xl font-semibold tabular-nums">{permissionSources.from_user_groups.length}</p>
-                          {permissionSources.from_user_groups.length > 0 && (
+                          <p className="text-2xl font-semibold tabular-nums">{computedPermissionSources.from_user_groups.length}</p>
+                          {computedPermissionSources.from_user_groups.length > 0 && (
                             <div className="space-y-1">
-                              {permissionSources.from_user_groups.slice(0, 3).map((source, idx) => (
-                                <div key={idx} className="flex items-center gap-2">
-                                  <Badge variant="info" size="sm">{source.user_group_name}</Badge>
-                                  <span className="text-xs text-muted-foreground">{source.permissions_count} perms</span>
+                              {computedPermissionSources.from_user_groups.slice(0, 4).map((source) => (
+                                <div key={source.group_hash} className="flex items-center gap-2">
+                                  <Badge variant="info" size="sm">{source.group_name}</Badge>
+                                  <span className="text-xs text-muted-foreground">{source.permissions_count} projects</span>
                                 </div>
                               ))}
-                              {permissionSources.from_user_groups.length > 3 && (
-                                <span className="text-xs text-muted-foreground">+{permissionSources.from_user_groups.length - 3} more</span>
+                              {computedPermissionSources.from_user_groups.length > 4 && (
+                                <span className="text-xs text-muted-foreground">+{computedPermissionSources.from_user_groups.length - 4} more</span>
                               )}
                             </div>
                           )}
                         </div>
 
-                        {/* Direct Assignment */}
+                        {/* From Projects */}
                         <div className="space-y-2 p-4 rounded-lg bg-muted-subtle border border-border">
                           <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-md bg-success-subtle flex items-center justify-center">
-                              <Zap size={16} className="text-success-subtle-foreground" aria-hidden="true" />
+                            <div className="h-8 w-8 rounded-md bg-info-subtle flex items-center justify-center">
+                              <FolderKanban size={16} className="text-info-subtle-foreground" aria-hidden="true" />
                             </div>
-                            <span className="text-sm font-medium">Direct Assignment</span>
+                            <span className="text-sm font-medium">From Projects</span>
                           </div>
-                          <p className="text-2xl font-semibold tabular-nums">{permissionSources.from_direct_assignment.length}</p>
-                          {permissionSources.from_direct_assignment.length > 0 && (
+                          <p className="text-2xl font-semibold tabular-nums">{computedPermissionSources.from_projects.length}</p>
+                          {computedPermissionSources.from_projects.length > 0 && (
                             <div className="space-y-1">
-                              {permissionSources.from_direct_assignment.slice(0, 3).map((source, idx) => (
-                                <div key={idx} className="flex items-center gap-2">
-                                  <Badge variant="success" size="sm">{source.permission_group_name}</Badge>
-                                  <span className="text-xs text-muted-foreground">{source.permissions_count} perms</span>
+                              {computedPermissionSources.from_projects.slice(0, 4).map((source) => (
+                                <div key={source.project_hash} className="flex items-center gap-2">
+                                  <Badge variant="success" size="sm">{source.project_name}</Badge>
+                                  <span className="text-xs text-muted-foreground">{source.permissions_count} perms via {source.access_groups_count} groups</span>
                                 </div>
                               ))}
-                              {permissionSources.from_direct_assignment.length > 3 && (
-                                <span className="text-xs text-muted-foreground">+{permissionSources.from_direct_assignment.length - 3} more</span>
+                              {computedPermissionSources.from_projects.length > 4 && (
+                                <span className="text-xs text-muted-foreground">+{computedPermissionSources.from_projects.length - 4} more</span>
                               )}
                             </div>
                           )}
@@ -534,7 +601,7 @@ export function UserProfilePage(): React.JSX.Element {
           <CardHeader>
             <h3 className="flex items-center gap-2 text-base font-semibold">
               <FolderKanban size={18} aria-hidden="true" />
-              Assigned Projects ({userProjects.length})
+              Project Access ({userProjects.length})
             </h3>
           </CardHeader>
           <CardContent>
@@ -554,24 +621,40 @@ export function UserProfilePage(): React.JSX.Element {
                         <p className="text-xs font-mono text-muted-foreground">ID: {project.project_hash}</p>
                       </div>
                       <Badge variant="info" size="sm">
-                        {project.effective_permissions.length} permissions
+                        {project.effective_permissions?.length || 0} permissions
                       </Badge>
                     </div>
 
-                    {/* Access Groups */}
+                    {/* Access Groups with Permissions */}
                     {project.access_groups && project.access_groups.length > 0 && (
                       <div className="space-y-2">
-                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Access Groups</label>
-                        <div className="flex flex-wrap gap-2">
-                          {project.access_groups.map((group: any) => (
+                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                          Access Groups ({project.access_groups.length})
+                        </label>
+                        <div className="space-y-2">
+                          {project.access_groups.map((group) => (
                             <div 
                               key={group.group_hash} 
-                              className="flex items-center gap-2 px-2 py-1 rounded-md bg-purple-subtle"
+                              className="flex items-start gap-3 p-2 rounded-md bg-purple-subtle/50"
                             >
-                              <span className="text-sm font-medium text-purple-subtle-foreground">{group.group_name}</span>
-                              {group.permission_group_count !== undefined && (
-                                <span className="text-xs text-muted-foreground">{group.permission_group_count} groups</span>
-                              )}
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-purple-subtle-foreground">{group.group_name}</span>
+                                  <Badge variant="outline" size="sm">{group.permissions?.length || 0} perms</Badge>
+                                </div>
+                                {group.permissions && group.permissions.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {group.permissions.slice(0, 5).map((perm, idx) => (
+                                      <Badge key={idx} variant="secondary" size="sm" className="text-xs">
+                                        {perm}
+                                      </Badge>
+                                    ))}
+                                    {group.permissions.length > 5 && (
+                                      <span className="text-xs text-muted-foreground">+{group.permissions.length - 5}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -583,14 +666,14 @@ export function UserProfilePage(): React.JSX.Element {
                       <div className="space-y-2">
                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Effective Permissions</label>
                         <div className="flex flex-wrap gap-1.5">
-                          {project.effective_permissions.slice(0, 8).map((permission, permIndex) => (
+                          {project.effective_permissions.slice(0, 10).map((permission, permIndex) => (
                             <Badge key={permIndex} variant="secondary" size="sm">
                               {permission}
                             </Badge>
                           ))}
-                          {project.effective_permissions.length > 8 && (
+                          {project.effective_permissions.length > 10 && (
                             <Badge variant="outline" size="sm">
-                              +{project.effective_permissions.length - 8} more
+                              +{project.effective_permissions.length - 10} more
                             </Badge>
                           )}
                         </div>
@@ -615,7 +698,7 @@ export function UserProfilePage(): React.JSX.Element {
           <CardHeader>
             <h3 className="flex items-center gap-2 text-base font-semibold">
               <Users size={18} aria-hidden="true" />
-              User Groups ({userGroups.length})
+              User Group Memberships ({userGroups.length})
             </h3>
           </CardHeader>
           <CardContent>
@@ -633,14 +716,20 @@ export function UserProfilePage(): React.JSX.Element {
                           <p className="text-sm text-muted-foreground">{group.group_description}</p>
                         )}
                       </div>
-                      <Badge variant="info" size="sm">
-                        {group.projects_count} projects
-                      </Badge>
+                      {group.projects_count !== undefined && (
+                        <Badge variant="info" size="sm">
+                          {group.projects_count} projects
+                        </Badge>
+                      )}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
                       <span className="font-mono">ID: {group.group_hash}</span>
-                      <span>Assigned: {formatDateTime(group.assigned_at)}</span>
-                      {group.assigned_by && <span>By: {group.assigned_by}</span>}
+                      {group.assigned_at && (
+                        <span>Joined: {formatDateTime(group.assigned_at)}</span>
+                      )}
+                      {group.assigned_by && (
+                        <span>By: {group.assigned_by}</span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -692,6 +781,15 @@ export function UserProfilePage(): React.JSX.Element {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit User Modal */}
+      <UserFormModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={handleEditModalSuccess}
+        mode="edit"
+        user={user}
+      />
     </PageContainer>
   );
 }
