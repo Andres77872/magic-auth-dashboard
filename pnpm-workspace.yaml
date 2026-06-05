@@ -1,0 +1,5 @@
+# pnpm settings (pnpm 11 reads its build-script allowlist and other config from
+# here, not from the "pnpm" field in package.json).
+# Allow esbuild (used by Vite/Vitest) to run its install build script.
+allowBuilds:
+  esbuild: true

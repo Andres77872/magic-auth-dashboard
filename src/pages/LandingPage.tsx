@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Key,
   Layers,
-  Github,
   BookOpen,
   UserPlus,
   FileKey,
@@ -23,6 +22,7 @@ import {
   FeatureCard,
   CapabilityItem,
   FlowCard,
+  GithubIcon,
 } from '@/pages/landing/components';
 import {
   features,
@@ -83,7 +83,7 @@ export function LandingPage(): React.JSX.Element {
               rel="noopener noreferrer"
               className="hidden items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:flex"
             >
-              <Github size={14} />
+              <GithubIcon size={14} />
               GitHub
             </a>
             <button
@@ -170,7 +170,7 @@ export function LandingPage(): React.JSX.Element {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
               >
-                <Github size={16} />
+                <GithubIcon size={16} />
                 Frontend
               </a>
               <span className="text-border">•</span>
@@ -180,7 +180,7 @@ export function LandingPage(): React.JSX.Element {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
               >
-                <Github size={16} />
+                <GithubIcon size={16} />
                 Backend
               </a>
               <span className="text-border">•</span>
@@ -451,7 +451,7 @@ export function LandingPage(): React.JSX.Element {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary"
               >
-                <Github size={14} />
+                <GithubIcon size={14} />
                 Frontend
               </a>
               <a
@@ -460,7 +460,7 @@ export function LandingPage(): React.JSX.Element {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-primary"
               >
-                <Github size={14} />
+                <GithubIcon size={14} />
                 Backend
               </a>
             </div>

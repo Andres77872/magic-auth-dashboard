@@ -4,8 +4,8 @@ Admin dashboard for the Magic Auth authentication system with 3-tier user manage
 
 ## Stack
 
-- **React 19** + **TypeScript 5.8**
-- **Vite 7** (build tool)
+- **React 19** + **TypeScript 6**
+- **Vite 8** (build tool)
 - **Tailwind CSS 4** + **shadcn/ui** (22 components)
 - **Radix UI** primitives
 - **React Router 7**
@@ -15,25 +15,28 @@ Admin dashboard for the Magic Auth authentication system with 3-tier user manage
 
 ## Quick Start
 
+This project uses **[pnpm](https://pnpm.io/) 11** (pinned via the `packageManager` field). If you have a recent Node.js, enable it with Corepack:
+
 ```bash
-npm install
-npm run dev          # Start dev server (http://localhost:5173)
+corepack enable          # one-time: makes the pinned pnpm available
+pnpm install
+pnpm dev                 # Start dev server (http://localhost:5173)
 ```
 
 ## Scripts
 
-| Command                | Description                         |
-| ---------------------- | ----------------------------------- |
-| `npm run dev`          | Start development server            |
-| `npm run build`        | TypeScript check + production build |
-| `npm run preview`      | Preview production build            |
-| `npm run type-check`   | TypeScript type checking only       |
-| `npm run lint`         | ESLint with strict warnings         |
-| `npm run lint:fix`     | ESLint with auto-fix                |
-| `npm run format`       | Prettier format                     |
-| `npm run format:check` | Prettier check                      |
-| `npm run test`         | Vitest (watch mode)                 |
-| `npm run test:run`     | Vitest (single run)                 |
+| Command              | Description                         |
+| -------------------- | ----------------------------------- |
+| `pnpm dev`           | Start development server            |
+| `pnpm build`         | TypeScript check + production build |
+| `pnpm preview`       | Preview production build            |
+| `pnpm type-check`    | TypeScript type checking only       |
+| `pnpm lint`          | ESLint with strict warnings         |
+| `pnpm lint:fix`      | ESLint with auto-fix                |
+| `pnpm format`        | Prettier format                     |
+| `pnpm format:check`  | Prettier check                      |
+| `pnpm test`          | Vitest (watch mode)                 |
+| `pnpm test:run`      | Vitest (single run)                 |
 
 ## Project Structure
 
