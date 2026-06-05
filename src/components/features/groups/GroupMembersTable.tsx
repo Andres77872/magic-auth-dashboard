@@ -63,13 +63,13 @@ export function GroupMembersTable({
       sortable: true,
       render: (value, member) => (
         <div className="user-info flex items-center gap-2">
-                              <div className="group-member-avatar bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+          <div className="group-member-avatar bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
             {(member.username || '?').charAt(0).toUpperCase()}
           </div>
           <div className="truncate max-w-200">
             <div className="font-medium text-primary truncate">{value as string}</div>
             <div className="flex items-center gap-1">
-              <span className="text-xs text-tertiary truncate">{member.user_hash}</span>
+              <span className="text-xs text-muted-foreground truncate">{member.user_hash}</span>
               <CopyButton value={member.user_hash} size="sm" />
             </div>
           </div>

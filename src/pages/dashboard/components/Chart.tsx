@@ -27,6 +27,12 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
   const minValue = Math.min(...data.map(d => d.value));
   const range = maxValue - minValue || 1;
 
+  // Text alternative for assistive technology — summarizes the series so the
+  // chart isn't invisible to screen readers.
+  const chartDescription = `${title ? `${title}. ` : ''}${type} chart with ${data.length} data points: ${data
+    .map(d => `${d.label} ${d.value}`)
+    .join(', ')}`;
+
   const renderLineChart = () => {
     const width = 400;
     const chartHeight = height - 40;
@@ -48,7 +54,13 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
 
     return (
       <div className="w-full overflow-hidden">
-        <svg width="100%" viewBox={`0 0 ${width} ${height}`} className="block">
+        <svg
+          width="100%"
+          viewBox={`0 0 ${width} ${height}`}
+          className="block"
+          role="img"
+          aria-label={chartDescription}
+        >
           {/* Grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
             const y = 20 + chartHeight * (1 - ratio);
@@ -106,10 +118,10 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
                   cx={x}
                   cy={y}
                   r="4"
-                  fill="white"
+                  fill="var(--color-card)"
                   stroke={color}
                   strokeWidth="2"
-                  className="hover:r-6 transition-all cursor-pointer"
+                  className="transition-opacity hover:opacity-80 cursor-pointer"
                 />
                 {/* Tooltip on hover */}
                 <title>{`${point.label}: ${point.value}`}</title>
@@ -146,7 +158,13 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
 
     return (
       <div className="w-full overflow-hidden">
-        <svg width="100%" viewBox={`0 0 ${width} ${height}`} className="block">
+        <svg
+          width="100%"
+          viewBox={`0 0 ${width} ${height}`}
+          className="block"
+          role="img"
+          aria-label={chartDescription}
+        >
           {/* Grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
             const y = 20 + chartHeight * (1 - ratio);
@@ -217,7 +235,13 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
 
     return (
       <div className="flex flex-col sm:flex-row items-center gap-6">
-        <svg width={size} height={size} className="shrink-0">
+        <svg
+          width={size}
+          height={size}
+          className="shrink-0"
+          role="img"
+          aria-label={chartDescription}
+        >
           {data.map((point, index) => {
             const angle = (point.value / total) * 360;
             const startAngle = currentAngle;
@@ -246,7 +270,7 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
                 key={index}
                 d={pathData}
                 fill={CHART_COLORS[index % CHART_COLORS.length]}
-                stroke="white"
+                stroke="var(--color-card)"
                 strokeWidth="2"
                 className="transition-opacity hover:opacity-80 cursor-pointer"
               >
@@ -285,7 +309,13 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
     return (
       <div className="flex flex-col sm:flex-row items-center gap-6">
         <div className="relative">
-          <svg width={size} height={size} className="shrink-0">
+          <svg
+            width={size}
+            height={size}
+            className="shrink-0"
+            role="img"
+            aria-label={chartDescription}
+          >
             {data.map((point, index) => {
               const angle = (point.value / total) * 360;
               const startAngle = currentAngle;

@@ -29,24 +29,24 @@ export function Footer({ className }: FooterProps): React.JSX.Element {
           © {currentYear} Magic Auth Dashboard. All rights reserved.
         </span>
         <div className="flex gap-4">
-          <a 
-            href="/docs" 
+          <a
+            href="https://auth-v2.arz.ai/docs"
             className="text-xs text-muted-foreground hover:text-primary transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
             Documentation
           </a>
-          <a 
-            href="/support" 
+          <a
+            href="https://github.com/Andres77872/magic-auth-dashboard"
             className="text-xs text-muted-foreground hover:text-primary transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Support
+            GitHub
           </a>
-          <a 
-            href="mailto:admin@magicauth.com" 
+          <a
+            href="mailto:andres@arz.ai"
             className="text-xs text-muted-foreground hover:text-primary transition-colors"
           >
             Contact

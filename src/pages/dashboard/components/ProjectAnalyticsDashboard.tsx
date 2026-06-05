@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ProjectAnalyticsCard } from './ProjectAnalyticsCard';
 import { analyticsService } from '@/services/analytics.service';
+import { ROUTES } from '@/utils/routes';
 import {
   Card,
   CardHeader,
@@ -35,6 +37,7 @@ const DATE_PRESETS: { value: DateRangePreset; label: string }[] = [
 ];
 
 export function ProjectAnalyticsDashboard(): React.JSX.Element {
+  const navigate = useNavigate();
   const [data, setData] = useState<ProjectAnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +101,7 @@ export function ProjectAnalyticsDashboard(): React.JSX.Element {
   };
 
   const handleProjectClick = (projectId: string) => {
-    console.log('Project clicked:', projectId);
+    navigate(`${ROUTES.PROJECT}/${projectId}`);
   };
 
   if (error) {

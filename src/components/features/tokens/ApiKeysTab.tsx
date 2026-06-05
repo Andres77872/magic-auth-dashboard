@@ -147,9 +147,9 @@ export function ApiKeysTab(): React.JSX.Element {
       if (success) {
         setIsRevokeDialogOpen(false);
         setSelectedKey(null);
-        setTimeout(() => {
-          void refetch();
-        }, 60000);
+        // Refresh immediately so the revoked key reflects its new status
+        // right away instead of appearing "Active" until the next refetch.
+        void refetch();
       }
     });
   }, [selectedKey, revokeKey, refetch]);

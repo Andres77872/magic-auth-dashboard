@@ -4,13 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import {
   Dialog,
   DialogContent,
@@ -130,37 +123,6 @@ export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
             onCancel={() => navigate(ROUTES.PROJECTS)}
             isSubmitting={isUpdating}
           />
-        </CardContent>
-      </Card>
-
-      {/* Project Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            Project Management
-            <Badge variant="subtleWarning" size="sm">
-              Coming Soon
-            </Badge>
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Transfer ownership or change project status.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" disabled>
-                    Transfer Ownership
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Feature not yet implemented</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
         </CardContent>
       </Card>
 

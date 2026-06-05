@@ -12,6 +12,7 @@ import {
 import { UserActionsMenu } from './UserActionsMenu';
 import { UserAvatar } from './UserAvatar';
 import { BulkActionsBar } from './BulkActionsBar';
+import { AssignGroupModal } from './AssignGroupModal';
 import { usePermissions } from '@/hooks';
 import { Users, FolderKanban, AlertTriangle } from 'lucide-react';
 import { formatDateTime, getUserTypeBadgeVariant, truncateHash } from '@/utils/component-utils';
@@ -41,6 +42,7 @@ export function UserTable({
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [isBulkLoading, setIsBulkLoading] = useState(false);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [showAssignGroupModal, setShowAssignGroupModal] = useState(false);
   const { canCreateUser, canCreateAdmin } = usePermissions();
 
   // Determine which users can be bulk operated on
@@ -115,21 +117,22 @@ export function UserTable({
     }
   };
 
-  const handleBulkAssignGroup = async () => {
+  const handleBulkAssignGroup = () => {
     if (!onBulkAssignGroup || selectedUserHashes.length === 0) return;
-    
-    // TODO: Show group selection modal
-    const groupId = prompt('Enter group ID:');
-    if (groupId) {
-      setIsBulkLoading(true);
-      try {
-        await onBulkAssignGroup(selectedUserHashes, groupId);
-        setSelectedUsers(new Set());
-      } catch (error) {
-        console.error('Bulk assign group failed:', error);
-      } finally {
-        setIsBulkLoading(false);
-      }
+    setShowAssignGroupModal(true);
+  };
+
+  const handleConfirmAssignGroup = async (groupHash: string) => {
+    if (!onBulkAssignGroup || selectedUserHashes.length === 0) return;
+    setIsBulkLoading(true);
+    try {
+      await onBulkAssignGroup(selectedUserHashes, groupHash);
+      setSelectedUsers(new Set());
+      setShowAssignGroupModal(false);
+    } catch (error) {
+      console.error('Bulk assign group failed:', error);
+    } finally {
+      setIsBulkLoading(false);
     }
   };
 
@@ -196,7 +199,12 @@ export function UserTable({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="text-destructive cursor-help">
+                  <span
+                    className="text-destructive cursor-help rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
+                    tabIndex={0}
+                    role="img"
+                    aria-label={`User type warning: ${user.user_type_info.error}`}
+                  >
                     <AlertTriangle size={16} aria-hidden="true" />
                   </span>
                 </TooltipTrigger>
@@ -338,6 +346,14 @@ export function UserTable({
         confirmText="Delete"
         variant="danger"
         isLoading={isBulkLoading}
+      />
+
+      <AssignGroupModal
+        isOpen={showAssignGroupModal}
+        onClose={() => setShowAssignGroupModal(false)}
+        onConfirm={(groupHash) => void handleConfirmAssignGroup(groupHash)}
+        isLoading={isBulkLoading}
+        userName={`${selectedUserHashes.length} selected user${selectedUserHashes.length !== 1 ? 's' : ''}`}
       />
     </>
   );

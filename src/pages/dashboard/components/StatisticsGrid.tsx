@@ -146,8 +146,9 @@ export function StatisticsGrid({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {[...Array(5)].map((_, _index) => (
+          {[...Array(5)].map((_, index) => (
             <DashboardStatCard
+              key={index}
               data={{
                 title: '',
                 value: '',
@@ -195,8 +196,12 @@ export function StatisticsGrid({
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {statCards.map((cardData, _index) => (
-          <DashboardStatCard data={cardData} isLoading={isLoading} />
+        {statCards.map((cardData) => (
+          <DashboardStatCard
+            key={cardData.title}
+            data={cardData}
+            isLoading={isLoading}
+          />
         ))}
       </div>
 

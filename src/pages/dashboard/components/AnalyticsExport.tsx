@@ -19,6 +19,7 @@ import {
   FileJson,
   FileType,
   CheckCircle,
+  AlertCircle,
   Loader2,
 } from 'lucide-react';
 import type {
@@ -62,6 +63,7 @@ export function AnalyticsExport({
 }: AnalyticsExportProps): React.JSX.Element {
   const [isExporting, setIsExporting] = useState(false);
   const [exportData, setExportData] = useState<ExportData | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [exportOptions, setExportOptions] = useState<ExportOptions>({
     format: 'csv',
     dateRange: {
@@ -77,6 +79,7 @@ export function AnalyticsExport({
   const handleExport = async () => {
     setIsExporting(true);
     setExportData(null);
+    setExportError(null);
 
     try {
       const result = await analyticsService.exportAnalytics({
@@ -94,6 +97,11 @@ export function AnalyticsExport({
       document.body.removeChild(link);
     } catch (error) {
       console.error('Export failed:', error);
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : 'Export failed. Please try again.'
+      );
     } finally {
       setIsExporting(false);
     }
@@ -334,6 +342,27 @@ export function AnalyticsExport({
                     Download Again
                   </a>
                 </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {exportError && (
+          <div className="status-error" role="alert" aria-live="polite">
+            <div className="flex items-start gap-3">
+              <IconContainer
+                variant="destructive"
+                size="sm"
+                icon={<AlertCircle className="h-4 w-4" />}
+              />
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-foreground mb-1">
+                  Export Failed
+                </h4>
+                <p className="text-sm text-muted-foreground break-words">
+                  {exportError}
+                </p>
               </div>
             </div>
           </div>

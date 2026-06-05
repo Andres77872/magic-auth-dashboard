@@ -61,7 +61,13 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <h4 className="text-sm font-semibold text-foreground">{title}</h4>
-          <div className={cn('h-2 w-2 rounded-full animate-pulse', config.bg)} />
+          <div
+            className={cn(
+              'h-2 w-2 rounded-full animate-pulse motion-reduce:animate-none',
+              config.bg
+            )}
+            aria-hidden="true"
+          />
         </div>
         <div className={cn('flex items-center gap-1.5 text-xs font-medium', config.color)}>
           <StatusIcon className="h-4 w-4" />

@@ -157,9 +157,10 @@ export function SystemHealthPanel({
             <div className="flex items-center gap-3">
               <div
                 className={cn(
-                  'h-3 w-3 rounded-full animate-pulse',
+                  'h-3 w-3 rounded-full animate-pulse motion-reduce:animate-none',
                   statusStyles.bg
                 )}
+                aria-hidden="true"
               />
               <span className="text-sm text-foreground">System Status:</span>
               <Badge variant="outline" className={statusStyles.badge}>

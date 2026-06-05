@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   PageContainer,
   PageHeader,
   Button,
@@ -8,11 +8,12 @@ import {
   DataViewCard,
   Badge,
   ErrorState,
-  Pagination
+  Pagination,
+  ConfirmDialog
 } from '@/components/common';
 import type { DataViewColumn } from '@/components/common';
 import { ProjectGroupActionsMenu } from '@/components/features/groups/ProjectGroupActionsMenu';
-import { useProjectGroups } from '@/hooks';
+import { useProjectGroups, useToast } from '@/hooks';
 import { FolderOpen, Plus } from 'lucide-react';
 import { formatDate } from '@/utils/component-utils';
 import { ROUTES } from '@/utils/routes';
@@ -20,7 +21,10 @@ import type { ProjectGroup } from '@/services/project-group.service';
 
 export function ProjectGroupsPage(): React.JSX.Element {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [groupToDelete, setGroupToDelete] = useState<ProjectGroup | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const {
     projectGroups,
@@ -43,14 +47,30 @@ export function ProjectGroupsPage(): React.JSX.Element {
     navigate(`${ROUTES.PROJECT_GROUPS_DETAILS}/${group.group_hash}`);
   }, [navigate]);
 
-  const handleDeleteGroup = useCallback(async (group: ProjectGroup) => {
+  const handleDeleteGroup = useCallback((group: ProjectGroup) => {
+    setGroupToDelete(group);
+  }, []);
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!groupToDelete) return;
+    setIsDeleting(true);
     try {
-      await deleteProjectGroup(group.group_hash);
+      await deleteProjectGroup(groupToDelete.group_hash);
+      showToast(
+        `Project group "${groupToDelete.group_name}" deleted successfully`,
+        'success'
+      );
+      setGroupToDelete(null);
       await fetchProjectGroups();
     } catch (err) {
-      console.error('Failed to delete project group:', err);
+      showToast(
+        err instanceof Error ? err.message : 'Failed to delete project group',
+        'error'
+      );
+    } finally {
+      setIsDeleting(false);
     }
-  }, [deleteProjectGroup, fetchProjectGroups]);
+  }, [groupToDelete, deleteProjectGroup, fetchProjectGroups, showToast]);
 
   const handleSearch = useCallback((term: string) => {
     fetchProjectGroups({ search: term, offset: 0 });
@@ -234,6 +254,17 @@ export function ProjectGroupsPage(): React.JSX.Element {
           />
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={groupToDelete !== null}
+        onClose={() => setGroupToDelete(null)}
+        onConfirm={() => void handleConfirmDelete()}
+        title="Delete Project Group"
+        message={`Are you sure you want to delete "${groupToDelete?.group_name}"? This action cannot be undone and will remove the group from all ${groupToDelete?.project_count ?? 0} associated project(s).`}
+        confirmText="Delete"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </PageContainer>
   );
 }

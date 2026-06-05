@@ -367,36 +367,43 @@ export function UserListPage(): React.JSX.Element {
     />
   ), [handleRefresh, handleEditUser, handleViewDetails, handleViewFullProfile, handleCardActionInteraction]);
 
-  // Calculate statistics
+  // Calculate statistics.
+  // "Total Users" reflects the full, server-side count; the active/inactive/admin
+  // breakdowns can only be derived from the currently loaded page, so they are
+  // explicitly scoped to avoid implying they are global totals.
   const stats: StatCardProps[] = useMemo(() => {
-    const totalUsers = users.length;
+    const pageCount = users.length;
     const activeUsers = users.filter(u => u.is_active).length;
-    const inactiveUsers = totalUsers - activeUsers;
+    const inactiveUsers = pageCount - activeUsers;
     const adminUsers = users.filter(u => u.user_type === 'admin').length;
+    const onThisPage = 'on this page';
 
     return [
       {
         title: 'Total Users',
-        value: totalUsers,
+        value: pagination?.total ?? pageCount,
         icon: <UserIcon size={20} />,
       },
       {
         title: 'Active Users',
         value: activeUsers,
+        subValue: onThisPage,
         icon: <Check size={20} />,
       },
       {
         title: 'Inactive Users',
         value: inactiveUsers,
+        subValue: onThisPage,
         icon: <AlertTriangle size={20} />,
       },
       {
         title: 'Admin Users',
         value: adminUsers,
+        subValue: onThisPage,
         icon: <Users size={20} />,
       },
     ];
-  }, [users]);
+  }, [users, pagination?.total]);
 
   // Filter options for FilterBar
   const filterBarFilters: Filter[] = [

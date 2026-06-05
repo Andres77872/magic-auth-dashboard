@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import type { NavItem } from '@/utils/routes';
 import { 
   ChevronDown, 
@@ -29,7 +29,17 @@ export function NavigationItem({
   collapsed,
   level = 0,
 }: NavigationItemProps): React.JSX.Element {
+  const location = useLocation();
   const hasChildren = item.children && item.children.length > 0;
+
+  // Compute active state for a path (mirrors NavigationMenu's matching logic)
+  // so nested children highlight independently of their parent.
+  const isPathActive = (path: string): boolean => {
+    if (path === '/') return location.pathname === '/';
+    return (
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
+    );
+  };
 
   // Get icon component based on icon name - consistent 20px size
   const getIcon = (iconName: string) => {
@@ -134,7 +144,7 @@ export function NavigationItem({
             <NavigationItem
               key={child.id}
               item={child}
-              isActive={isActive}
+              isActive={isPathActive(child.path)}
               collapsed={false}
               level={level + 1}
             />

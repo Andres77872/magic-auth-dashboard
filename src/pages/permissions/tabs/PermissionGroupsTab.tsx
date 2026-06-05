@@ -17,6 +17,10 @@ import { useToast, usePermissionManagement } from '@/hooks';
 import { globalRolesService } from '@/services';
 import type { GlobalPermissionGroup } from '@/types/global-roles.types';
 
+// Sentinel value for the "All Categories" option. Radix Select forbids an empty
+// string as an item value, so we map this sentinel back to '' (= no filter).
+const ALL_CATEGORIES = '__all__';
+
 export const PermissionGroupsTab: React.FC = () => {
   const { showToast } = useToast();
   const {
@@ -183,7 +187,7 @@ export const PermissionGroupsTab: React.FC = () => {
       header: 'Description',
       sortable: false,
       width: '35%',
-      render: (value) => value || <span className="text-muted">—</span>,
+      render: (value) => value || <span className="text-muted-foreground">—</span>,
     },
     {
       key: 'group_category',
@@ -264,12 +268,17 @@ export const PermissionGroupsTab: React.FC = () => {
         </div>
 
         <div className="tab-filters">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <Select
+            value={selectedCategory || ALL_CATEGORIES}
+            onValueChange={(value) =>
+              setSelectedCategory(value === ALL_CATEGORIES ? '' : value)
+            }
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
               {categories.map((cat: string) => (
                 <SelectItem key={cat} value={cat}>
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}

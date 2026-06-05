@@ -13,6 +13,7 @@ import {
   Button,
   Badge,
   DataView,
+  ConfirmDialog,
 } from '@/components/common';
 import {
   Dialog,
@@ -75,6 +76,8 @@ export function RoleManagementPage(): React.JSX.Element {
   const [showRoleForm, setShowRoleForm] = useState(false);
   const [editingRole, setEditingRole] = useState<GlobalRole | null>(null);
   const [selectedRole, setSelectedRole] = useState<GlobalRole | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<GlobalRole | null>(null);
+  const [isDeletingRole, setIsDeletingRole] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
 
   // Filter roles based on search
@@ -140,12 +143,21 @@ export function RoleManagementPage(): React.JSX.Element {
     }
   };
 
-  const handleDeleteRole = async (role: GlobalRole) => {
+  const handleDeleteRole = (role: GlobalRole) => {
+    setRoleToDelete(role);
+  };
+
+  const handleConfirmDeleteRole = async () => {
+    if (!roleToDelete) return;
+    setIsDeletingRole(true);
     try {
-      await deleteRole(role.role_hash);
-      showToast('Role deleted successfully', 'success');
+      await deleteRole(roleToDelete.role_hash);
+      showToast(`Role "${roleToDelete.role_name}" deleted successfully`, 'success');
+      setRoleToDelete(null);
     } catch (error) {
       showToast('Failed to delete role', 'error');
+    } finally {
+      setIsDeletingRole(false);
     }
   };
 
@@ -499,6 +511,19 @@ export function RoleManagementPage(): React.JSX.Element {
           current_role: u.user_type,
         }))}
         onAssignRole={handleAssignRole}
+      />
+
+      {/* Role Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={roleToDelete !== null}
+        onClose={() => setRoleToDelete(null)}
+        onConfirm={() => void handleConfirmDeleteRole()}
+        title="Delete Role"
+        message={`Are you sure you want to delete the role "${roleToDelete?.role_name}"? This action cannot be undone, and any users currently assigned this role will lose its permissions.`}
+        confirmText="Delete Role"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeletingRole}
       />
     </PageContainer>
   );

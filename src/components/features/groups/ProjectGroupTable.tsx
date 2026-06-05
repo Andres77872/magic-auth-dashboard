@@ -89,12 +89,11 @@ export function ProjectGroupTable({
   ];
 
   const emptyAction = (
-    <Button 
-      variant="primary"
-      onClick={() => window.location.href = ROUTES.PROJECT_GROUPS_CREATE}
-    >
-      <Plus className="h-4 w-4" />
-      Create Project Group
+    <Button variant="primary" asChild>
+      <Link to={ROUTES.PROJECT_GROUPS_CREATE}>
+        <Plus className="h-4 w-4" />
+        Create Project Group
+      </Link>
     </Button>
   );
 

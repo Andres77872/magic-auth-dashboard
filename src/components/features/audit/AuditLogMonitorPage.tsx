@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/utils/routes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/common/PageHeader';
 import { PageContainer } from '@/components/common/PageContainer';
@@ -35,6 +36,7 @@ export function AuditLogMonitorPage({
   const { user } = useAuth();
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [filters, _setFilters] = useState<ActivityFilters>({});
 
   // Check if user is root (has access to all tabs)
@@ -67,15 +69,13 @@ export function AuditLogMonitorPage({
 
   // Handle user click (navigate to user profile)
   const handleUserClick = useCallback((userId: string) => {
-    // Navigate to user profile
-    window.location.href = `/users/${userId}`;
-  }, []);
+    navigate(`${ROUTES.USER}/${userId}`);
+  }, [navigate]);
 
   // Handle project click (navigate to project page)
   const handleProjectClick = useCallback((projectId: string) => {
-    // Navigate to project page
-    window.location.href = `/projects/${projectId}`;
-  }, []);
+    navigate(`${ROUTES.PROJECT}/${projectId}`);
+  }, [navigate]);
 
   // Handle export events
   const handleExportStart = useCallback(() => {

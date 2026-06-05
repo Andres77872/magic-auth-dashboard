@@ -78,6 +78,9 @@ export const GroupListPage: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<UserGroup | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [projectGroupToDelete, setProjectGroupToDelete] =
+    useState<ProjectGroup | null>(null);
+  const [isDeletingProjectGroup, setIsDeletingProjectGroup] = useState(false);
 
   const handlePageChange = useCallback((page: number) => {
     const offset = (page - 1) * (filters.limit || 20);
@@ -195,15 +198,27 @@ export const GroupListPage: React.FC = () => {
     navigate(`${ROUTES.PROJECT_GROUPS_DETAILS}/${group.group_hash}`);
   }, [navigate]);
 
-  const handleDeleteProjectGroup = useCallback(async (group: ProjectGroup) => {
+  const handleDeleteProjectGroup = useCallback((group: ProjectGroup) => {
+    setProjectGroupToDelete(group);
+  }, []);
+
+  const handleConfirmDeleteProjectGroup = useCallback(async () => {
+    if (!projectGroupToDelete) return;
+    setIsDeletingProjectGroup(true);
     try {
-      await deleteProjectGroup(group.group_hash);
-      showToast(`Project group "${group.group_name}" deleted successfully`, 'success');
+      await deleteProjectGroup(projectGroupToDelete.group_hash);
+      showToast(
+        `Project group "${projectGroupToDelete.group_name}" deleted successfully`,
+        'success'
+      );
+      setProjectGroupToDelete(null);
       await fetchProjectGroups();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to delete project group', 'error');
+    } finally {
+      setIsDeletingProjectGroup(false);
     }
-  }, [deleteProjectGroup, fetchProjectGroups, showToast]);
+  }, [projectGroupToDelete, deleteProjectGroup, fetchProjectGroups, showToast]);
 
   const handleSearchProjectGroups = useCallback((term: string) => {
     fetchProjectGroups({ search: term, offset: 0 });
@@ -719,6 +734,19 @@ export const GroupListPage: React.FC = () => {
         cancelText="Cancel"
         variant="danger"
         isLoading={isDeleting}
+      />
+
+      {/* Project Group Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={projectGroupToDelete !== null}
+        onClose={() => setProjectGroupToDelete(null)}
+        onConfirm={() => void handleConfirmDeleteProjectGroup()}
+        title="Delete Project Group"
+        message={`Are you sure you want to delete "${projectGroupToDelete?.group_name}"? This action cannot be undone and will remove the group from all ${projectGroupToDelete?.project_count ?? 0} associated project(s).`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={isDeletingProjectGroup}
       />
     </PageContainer>
   );

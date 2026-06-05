@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,10 +17,6 @@ interface GroupCardProps {
  * Uses shared formatters and follows Design System guidelines
  */
 export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
-  const handleViewDetails = () => {
-    window.location.href = `${ROUTES.GROUPS}/${group.group_hash}`;
-  };
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between pb-2">
@@ -29,12 +26,8 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
             <p className="text-sm text-muted-foreground">{group.description}</p>
           )}
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleViewDetails}
-        >
-          View Details
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`${ROUTES.GROUPS}/${group.group_hash}`}>View Details</Link>
         </Button>
       </CardHeader>
       <CardContent>

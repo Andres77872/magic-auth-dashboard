@@ -141,8 +141,9 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
           size="sm"
           onClick={() => setConfirmRemove(project)}
           className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          aria-label={`Remove ${project.project_name} from group`}
         >
-          <Trash2 size={16} />
+          <Trash2 size={16} aria-hidden="true" />
         </Button>
       ),
     },
@@ -286,7 +287,7 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
               gradient: true,
             },
           ]}
-          columns={2}
+          columns={1}
           loading={isLoading}
         />
       </div>

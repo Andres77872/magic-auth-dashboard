@@ -23,8 +23,14 @@ export function WelcomeSection(): React.JSX.Element {
     return 'Good evening';
   };
 
-  const formatLastLogin = (): string => {
-    return 'Today at 9:30 AM';
+  const formatLastLogin = (): string | null => {
+    if (!user?.last_login) return null;
+    const date = new Date(user.last_login);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
   };
 
   if (!user) {
@@ -65,10 +71,13 @@ export function WelcomeSection(): React.JSX.Element {
               {getUserTypeLabel()}
             </Badge>
             
-            <span className="text-sm text-muted-foreground">
-              Last login: <span className="text-foreground font-medium">{formatLastLogin()}</span>
-            </span>
-            
+            {formatLastLogin() && (
+              <span className="text-sm text-muted-foreground">
+                Last login:{' '}
+                <span className="text-foreground font-medium">{formatLastLogin()}</span>
+              </span>
+            )}
+
             <div className="flex items-center gap-1.5 text-success">
               <CheckCircle2 className="h-4 w-4" />
               <span className="text-sm font-medium">System Online</span>

@@ -56,6 +56,18 @@ export function DashboardLayout(): React.JSX.Element {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  // Close mobile menu on Escape for keyboard users
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [mobileMenuOpen]);
+
   // Handle mobile menu overlay clicks
   const handleOverlayClick = () => {
     setMobileMenuOpen(false);

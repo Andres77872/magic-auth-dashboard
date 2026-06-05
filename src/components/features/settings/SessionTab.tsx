@@ -175,7 +175,7 @@ export function SessionTab(): React.JSX.Element {
                 'text-lg font-semibold',
                 isNearExpiry && 'text-warning'
               )}>
-                {formattedExpiry ? `Expires at ${formattedExpiry}` : 'Unknown'}
+                {formattedExpiry || 'Unknown'}
               </p>
             </div>
 

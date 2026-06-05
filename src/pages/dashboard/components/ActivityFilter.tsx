@@ -305,40 +305,65 @@ export function ActivityFilter({
           {filters.type && (
             <Badge variant="secondary" className="gap-1">
               Type: {ACTIVITY_TYPES.find(t => t.value === filters.type)?.label}
-              <button onClick={() => removeFilter('type')} className="ml-1 hover:text-destructive">
-                <X size={12} />
+              <button
+                type="button"
+                onClick={() => removeFilter('type')}
+                className="ml-1 hover:text-destructive"
+                aria-label="Remove type filter"
+              >
+                <X size={12} aria-hidden="true" />
               </button>
             </Badge>
           )}
           {filters.userType && showUserTypeFilter && (
             <Badge variant="secondary" className="gap-1">
               User: {USER_TYPES.find(t => t.value === filters.userType)?.label}
-              <button onClick={() => removeFilter('userType')} className="ml-1 hover:text-destructive">
-                <X size={12} />
+              <button
+                type="button"
+                onClick={() => removeFilter('userType')}
+                className="ml-1 hover:text-destructive"
+                aria-label="Remove user type filter"
+              >
+                <X size={12} aria-hidden="true" />
               </button>
             </Badge>
           )}
           {filters.severity && (
             <Badge variant="secondary" className="gap-1">
               Severity: {SEVERITY_LEVELS.find(s => s.value === filters.severity)?.label}
-              <button onClick={() => removeFilter('severity')} className="ml-1 hover:text-destructive">
-                <X size={12} />
+              <button
+                type="button"
+                onClick={() => removeFilter('severity')}
+                className="ml-1 hover:text-destructive"
+                aria-label="Remove severity filter"
+              >
+                <X size={12} aria-hidden="true" />
               </button>
             </Badge>
           )}
           {filters.dateRange && (
             <Badge variant="secondary" className="gap-1">
               Date Range: Custom
-              <button onClick={() => removeFilter('dateRange')} className="ml-1 hover:text-destructive">
-                <X size={12} />
+              <button
+                type="button"
+                onClick={() => removeFilter('dateRange')}
+                className="ml-1 hover:text-destructive"
+                aria-label="Remove date range filter"
+              >
+                <X size={12} aria-hidden="true" />
               </button>
             </Badge>
           )}
           {filters.search && (
             <Badge variant="secondary" className="gap-1">
               Search: "{filters.search}"
-              <button onClick={() => removeFilter('search')} className="ml-1 hover:text-destructive">
-                <X size={12} />
+              <button
+                type="button"
+                onClick={() => removeFilter('search')}
+                className="ml-1 hover:text-destructive"
+                aria-label="Remove search filter"
+              >
+                <X size={12} aria-hidden="true" />
               </button>
             </Badge>
           )}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -75,6 +75,7 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
   const [isLoadingProjectGroups, setIsLoadingProjectGroups] = useState(false);
 
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   // Workflow progress state
   const [workflowCollapsed, setWorkflowCollapsed] = useState(false);
@@ -95,10 +96,10 @@ export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({
       if (action === 'open-modal') {
         setShowAddModal(true);
       } else if (action === 'navigate' && target) {
-        window.location.href = target;
+        navigate(target);
       }
     },
-    []
+    [navigate]
   );
 
   // Update assigned project groups when prop changes
