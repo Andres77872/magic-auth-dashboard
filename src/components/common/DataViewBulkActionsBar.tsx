@@ -23,9 +23,9 @@ export function DataViewBulkActionsBar<T extends object>({
   if (!selectable || selectedItems.length === 0) return null;
 
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-2 bg-primary/5 border border-primary/20 rounded-lg mb-4">
+    <div className="mb-3 flex items-center justify-between gap-4 rounded-md border border-primary/30 bg-primary/15 px-3.5 py-2.5">
       <div className="flex items-center gap-3">
-        <span className="text-sm font-medium">
+        <span className="text-[13px] font-medium">
           {selectedItems.length} selected
         </span>
         <Button

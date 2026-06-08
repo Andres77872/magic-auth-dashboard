@@ -1,124 +1,96 @@
 /**
  * Sidebar Component
  *
- * Grid-based navigation sidebar containing:
- * - Navigation menu with role-based items
- * - Collapsible on desktop
- * - Slide-in drawer on mobile
- * - Sticky footer with version and environment info
- *
- * Follows Design System sidebar patterns
- * @see docs/DESIGN_SYSTEM/DASHBOARD_PATTERNS.md
+ * Meridian fixed app shell sidebar (240px, no collapse):
+ * - Brand (Magic Auth mark + wordmark)
+ * - Role-based navigation menu
+ * - Footer: theme toggle + user menu
+ * - Slide-in drawer on mobile (same content)
  */
 import React from 'react';
+import { Link } from 'react-router-dom';
 import type { UserType } from '@/types/auth.types';
-import { NavigationMenu } from '@/components/navigation';
-import { Sparkles } from 'lucide-react';
+import { NavigationMenu, UserMenu } from '@/components/navigation';
+import { useTheme } from '@/contexts';
+import { Moon, Shield, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
-  collapsed: boolean;
   mobileMenuOpen: boolean;
   userType: UserType | null;
 }
 
-export function Sidebar({
-  collapsed,
-  mobileMenuOpen,
-  userType,
-}: SidebarProps): React.JSX.Element {
+function SidebarInner({ userType }: { userType: UserType | null }): React.JSX.Element {
+  const { resolvedTheme, toggleTheme } = useTheme();
+
   return (
     <>
-      {/* Desktop Sidebar - CSS Grid item */}
+      {/* Brand */}
+      <Link
+        to="/"
+        className="flex h-14 shrink-0 items-center gap-2.5 border-b border-border px-4 no-underline"
+        aria-label="Magic Auth home"
+      >
+        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+          <Shield size={16} aria-hidden="true" />
+        </span>
+        <span className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+          Magic Auth
+        </span>
+      </Link>
+
+      {/* Navigation */}
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-2.5 py-2">
+        <NavigationMenu userType={userType} />
+      </div>
+
+      {/* Footer: theme toggle + user */}
+      <div className="shrink-0 border-t border-border p-2.5">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="mb-1 flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label={
+            resolvedTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+          }
+        >
+          {resolvedTheme === 'dark' ? (
+            <Sun size={17} aria-hidden="true" />
+          ) : (
+            <Moon size={17} aria-hidden="true" />
+          )}
+          <span>{resolvedTheme === 'dark' ? 'Light theme' : 'Dark theme'}</span>
+        </button>
+        <UserMenu />
+      </div>
+    </>
+  );
+}
+
+export function Sidebar({ mobileMenuOpen, userType }: SidebarProps): React.JSX.Element {
+  return (
+    <>
+      {/* Desktop sidebar — fixed 240px column */}
       <aside
         id="sidebar-navigation"
-        className={cn(
-          '[grid-area:sidebar] hidden lg:flex flex-col',
-          'bg-card border-r border-border',
-          'overflow-hidden',
-          'sticky top-16 h-[calc(100vh-4rem)]'
-        )}
+        className="hidden h-screen flex-col overflow-hidden border-r border-border bg-card lg:flex"
         role="navigation"
         aria-label="Main navigation"
       >
-        {/* Scrollable navigation area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
-          <NavigationMenu userType={userType} collapsed={collapsed} />
-        </div>
-
-        {/* Sidebar footer */}
-        <div
-          className={cn(
-            'shrink-0 border-t border-border bg-muted/30',
-            collapsed ? 'p-2' : 'p-4'
-          )}
-        >
-          {collapsed ? (
-            <div className="flex items-center justify-center">
-              <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
-                <Sparkles size={14} className="text-success" />
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/10">
-                <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                <span className="text-xs font-medium text-foreground">
-                  {userType?.toUpperCase() || 'USER'} Access
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground px-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono">v1.0.0</span>
-                  <span className="text-border">•</span>
-                  <span className="px-1.5 py-0.5 rounded bg-success/10 text-success font-medium uppercase tracking-wider">
-                    Prod
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <SidebarInner userType={userType} />
       </aside>
 
-      {/* Mobile Sidebar - Fixed overlay */}
+      {/* Mobile sidebar — fixed slide-in drawer */}
       <aside
         className={cn(
-          'fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 z-dropdown',
-          'bg-card border-r border-border shadow-2xl',
-          'flex flex-col lg:hidden',
-          'transition-transform duration-300 ease-in-out',
+          'fixed left-0 top-0 z-50 flex h-screen w-60 flex-col border-r border-border bg-card shadow-2xl transition-transform duration-300 ease-in-out lg:hidden',
           mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         role="navigation"
         aria-label="Mobile navigation"
         aria-hidden={!mobileMenuOpen}
       >
-        {/* Scrollable navigation area */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
-          <NavigationMenu userType={userType} collapsed={false} />
-        </div>
-
-        {/* Sidebar footer */}
-        <div className="shrink-0 border-t border-border bg-muted/30 p-4">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/5 border border-primary/10">
-              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              <span className="text-xs font-medium text-foreground">
-                {userType?.toUpperCase() || 'USER'} Access
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-[10px] text-muted-foreground px-1">
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono">v1.0.0</span>
-                <span className="text-border">•</span>
-                <span className="px-1.5 py-0.5 rounded bg-success/10 text-success font-medium uppercase tracking-wider">
-                  Prod
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <SidebarInner userType={userType} />
       </aside>
     </>
   );

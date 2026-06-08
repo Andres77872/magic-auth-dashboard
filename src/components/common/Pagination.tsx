@@ -1,7 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
 interface PaginationProps {
   currentPage: number;
@@ -100,25 +99,26 @@ export function Pagination({
       className={cn('flex flex-col sm:flex-row items-center justify-between gap-4', className)}
       aria-label="Pagination"
     >
-      <div className="text-sm text-muted-foreground">
+      <div className="text-xs text-muted-foreground">
         <span aria-live="polite">
-          Showing {startItem} to {endItem} of {totalItems}{' '}
+          Showing {startItem}–{endItem} of {totalItems}{' '}
           {totalItems === 1 ? itemLabelSingular : itemLabelPlural}
         </span>
       </div>
 
       <div className="flex items-center gap-1">
-        <Button
-          variant="outline"
-          size={size}
+        <button
+          type="button"
           onClick={handlePrevious}
           disabled={currentPage === 1}
           aria-label="Previous page"
-          className="gap-1"
+          className={cn(
+            'inline-flex items-center justify-center rounded-[4px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
+            sizeClasses[size]
+          )}
         >
-          <ChevronLeft className="h-4 w-4" style={{ width: iconSize, height: iconSize }} />
-          <span className="hidden sm:inline">Previous</span>
-        </Button>
+          <ChevronLeft style={{ width: iconSize, height: iconSize }} />
+        </button>
 
         <div className="flex items-center gap-1" role="group" aria-label="Page numbers">
           {visiblePages.map((page, index) =>
@@ -138,11 +138,11 @@ export function Pagination({
                 key={page}
                 type="button"
                 className={cn(
-                  'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'inline-flex items-center justify-center rounded-[4px] font-medium transition-colors',
                   sizeClasses[size],
                   page === currentPage
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted'
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                 )}
                 onClick={() => handlePageClick(page)}
                 aria-label={`Go to page ${page}`}
@@ -154,17 +154,18 @@ export function Pagination({
           )}
         </div>
 
-        <Button
-          variant="outline"
-          size={size}
+        <button
+          type="button"
           onClick={handleNext}
           disabled={currentPage === totalPages}
           aria-label="Next page"
-          className="gap-1"
+          className={cn(
+            'inline-flex items-center justify-center rounded-[4px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
+            sizeClasses[size]
+          )}
         >
-          <span className="hidden sm:inline">Next</span>
-          <ChevronRight className="h-4 w-4" style={{ width: iconSize, height: iconSize }} />
-        </Button>
+          <ChevronRight style={{ width: iconSize, height: iconSize }} />
+        </button>
       </div>
     </nav>
   );

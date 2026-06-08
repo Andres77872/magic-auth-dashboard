@@ -23,6 +23,14 @@ interface UseApiKeysOptions {
   userHash?: string;
   /** Filter by project hash */
   projectHash?: string;
+  /** Only return active keys (server-side filter) */
+  activeOnly?: boolean;
+  /**
+   * Gate auto-fetching. Admins can list all their projects' keys with no
+   * filter, but root users must supply a user/project filter — the caller
+   * sets `enabled` accordingly so we never fire an invalid unscoped request.
+   */
+  enabled?: boolean;
 }
 
 interface UseApiKeysReturn {
@@ -37,11 +45,19 @@ interface UseApiKeysReturn {
 }
 
 export function useApiKeys(options?: UseApiKeysOptions): UseApiKeysReturn {
-  const { autoFetch = true, limit = 10, offset = 0, userHash, projectHash } = options || {};
+  const {
+    autoFetch = true,
+    limit = 10,
+    offset = 0,
+    userHash,
+    projectHash,
+    activeOnly,
+    enabled = true,
+  } = options || {};
 
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(autoFetch);
+  const [isLoading, setIsLoading] = useState(autoFetch && enabled);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch keys — routes to correct admin endpoint based on filter
@@ -50,10 +66,11 @@ export function useApiKeys(options?: UseApiKeysOptions): UseApiKeysReturn {
     setError(null);
 
     try {
-      const params = {
+      const params: { limit: number; offset: number; active_only?: boolean } = {
         limit: fetchParams?.limit ?? limit,
         offset: fetchParams?.offset ?? offset,
       };
+      if (activeOnly) params.active_only = true;
 
       let response;
       if (userHash) {
@@ -76,17 +93,16 @@ export function useApiKeys(options?: UseApiKeysOptions): UseApiKeysReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [limit, offset, userHash, projectHash]);
+  }, [limit, offset, userHash, projectHash, activeOnly]);
 
-  // Auto-fetch on mount — but ONLY when a filter is provided.
-  // The backend requires user_hash or project_hash for root users.
-  const hasFilter = Boolean(userHash || projectHash);
-
+  // Auto-fetch on mount/dependency change, gated by `enabled`. Admins fetch
+  // their global list with no filter; root must pass a filter and the caller
+  // sets `enabled=false` until one is chosen so we never make an invalid call.
   useEffect(() => {
-    if (autoFetch && hasFilter) {
+    if (autoFetch && enabled) {
       void fetchKeys();
     }
-  }, [autoFetch, hasFilter, fetchKeys]);
+  }, [autoFetch, enabled, fetchKeys]);
 
   // Create key
   const createKey = useCallback(async (request: CreateApiKeyRequest): Promise<CreateApiKeyResponse> => {

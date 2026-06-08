@@ -25,7 +25,7 @@ export function StatsGrid({
 }: StatsGridProps): React.JSX.Element {
   return (
     <div
-      className={cn('grid gap-4', columnClasses[columns], className)}
+      className={cn('grid gap-3.5', columnClasses[columns], className)}
       role="group"
       aria-label="Statistics"
     >

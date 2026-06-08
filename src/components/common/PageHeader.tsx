@@ -21,8 +21,8 @@ export function PageHeader({
   className = '',
 }: PageHeaderProps): React.JSX.Element {
   return (
-    <header className={cn('space-y-4 pb-4', className)}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <header className={cn('space-y-4 pb-5', className)}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             {icon && (
@@ -30,11 +30,13 @@ export function PageHeader({
                 {icon}
               </span>
             )}
-            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+            <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.01em]">
+              {title}
+            </h1>
             {badge && <span>{badge}</span>}
           </div>
           {subtitle && (
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <p className="text-[13px] text-muted-foreground">{subtitle}</p>
           )}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}

@@ -18,7 +18,8 @@ import type { DataViewColumn } from '@/components/common';
 import { projectGroupService } from '@/services';
 import type { ProjectGroupDetailsResponse, AssignedProject } from '@/services/project-group.service';
 import { ROUTES } from '@/utils/routes';
-import { useToast } from '@/hooks';
+import { useToast, useBackNavigation } from '@/hooks';
+import { useSetBreadcrumbLabel } from '@/contexts';
 import { useUserGroupsWithAccess } from '@/hooks/useUserGroupsWithAccess';
 import { isDefaultUserGroup } from '@/utils/default-groups';
 import { formatDate } from '@/utils/component-utils';
@@ -34,6 +35,7 @@ import {
 export function ProjectGroupDetailsPage(): React.JSX.Element {
   const { groupHash } = useParams<{ groupHash: string }>();
   const navigate = useNavigate();
+  const handleGoBack = useBackNavigation(ROUTES.PROJECT_GROUPS);
   const { showToast } = useToast();
 
   const [groupDetails, setGroupDetails] = useState<ProjectGroupDetailsResponse | null>(null);
@@ -54,6 +56,9 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
     error: userGroupsError,
     refetch: refetchUserGroupsAccess,
   } = useUserGroupsWithAccess(groupHash);
+
+  // Show the project group name in the breadcrumb leaf once details load.
+  useSetBreadcrumbLabel(groupDetails?.project_group?.group_name);
 
   const fetchGroupDetails = useCallback(async () => {
     if (!groupHash) {
@@ -238,7 +243,7 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
         <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
           <FolderOpen size={48} className="text-muted-foreground" />
           <p className="text-muted-foreground">{error || 'Project group not found'}</p>
-          <Button variant="primary" onClick={() => navigate(ROUTES.PROJECT_GROUPS)}>
+          <Button variant="primary" onClick={handleGoBack}>
             Back to Project Groups
           </Button>
         </div>
@@ -260,7 +265,7 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
             <Button
               variant="outline"
               size="md"
-              onClick={() => navigate(ROUTES.PROJECT_GROUPS)}
+              onClick={handleGoBack}
             >
               Back to Project Groups
             </Button>

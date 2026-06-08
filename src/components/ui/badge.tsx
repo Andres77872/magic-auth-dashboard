@@ -2,33 +2,30 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
+// Meridian status pills are borderless quiet tints (saturated text on a faint
+// tinted background). Solid semantic fills are not part of the language, so the
+// semantic variants render as quiet tints — same look as their `subtle*` twins.
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center gap-1.5 rounded-full font-medium whitespace-nowrap transition-colors',
   {
     variants: {
       variant: {
-        primary: 'border-transparent bg-primary text-primary-foreground',
-        secondary: 'border-transparent bg-secondary text-secondary-foreground',
-        destructive:
-          'border-transparent bg-destructive text-destructive-foreground',
-        error: 'border-transparent bg-destructive text-destructive-foreground',
-        success: 'border-transparent bg-success text-success-foreground',
-        warning: 'border-transparent bg-warning text-warning-foreground',
-        info: 'border-transparent bg-info text-info-foreground',
-        outline: 'text-foreground',
-        // Subtle variants for badges with light backgrounds
-        subtle:
-          'border-transparent bg-muted-subtle text-muted-subtle-foreground',
-        subtlePrimary:
-          'border-transparent bg-primary-subtle text-primary-subtle-foreground',
+        primary: 'bg-primary-subtle text-primary-subtle-foreground',
+        secondary: 'bg-muted-subtle text-muted-subtle-foreground',
+        destructive: 'bg-destructive-subtle text-destructive-subtle-foreground',
+        error: 'bg-destructive-subtle text-destructive-subtle-foreground',
+        success: 'bg-success-subtle text-success-subtle-foreground',
+        warning: 'bg-warning-subtle text-warning-subtle-foreground',
+        info: 'bg-info-subtle text-info-subtle-foreground',
+        outline: 'border border-border text-foreground',
+        // Subtle variants (kept for explicit callers; identical to semantic twins)
+        subtle: 'bg-muted-subtle text-muted-subtle-foreground',
+        subtlePrimary: 'bg-primary-subtle text-primary-subtle-foreground',
         subtleDestructive:
-          'border-transparent bg-destructive-subtle text-destructive-subtle-foreground',
-        subtleSuccess:
-          'border-transparent bg-success-subtle text-success-subtle-foreground',
-        subtleWarning:
-          'border-transparent bg-warning-subtle text-warning-subtle-foreground',
-        subtleInfo:
-          'border-transparent bg-info-subtle text-info-subtle-foreground',
+          'bg-destructive-subtle text-destructive-subtle-foreground',
+        subtleSuccess: 'bg-success-subtle text-success-subtle-foreground',
+        subtleWarning: 'bg-warning-subtle text-warning-subtle-foreground',
+        subtleInfo: 'bg-info-subtle text-info-subtle-foreground',
       },
       size: {
         sm: 'px-2 py-0.5 text-[10px]',
@@ -62,24 +59,7 @@ function Badge({
     <div className={cn(badgeVariants({ variant, size }), className)} {...props}>
       {dot && (
         <span
-          className={cn(
-            'mr-1.5 h-1.5 w-1.5 rounded-full',
-            (variant === 'success' || variant === 'subtleSuccess') &&
-              'bg-success-foreground',
-            (variant === 'error' ||
-              variant === 'destructive' ||
-              variant === 'subtleDestructive') &&
-              'bg-destructive-foreground',
-            (variant === 'warning' || variant === 'subtleWarning') &&
-              'bg-warning-foreground',
-            (variant === 'info' || variant === 'subtleInfo') &&
-              'bg-info-foreground',
-            (variant === 'primary' || variant === 'subtlePrimary') &&
-              'bg-primary-foreground',
-            (variant === 'secondary' || variant === 'subtle') &&
-              'bg-secondary-foreground',
-            (!variant || variant === 'outline') && 'bg-current'
-          )}
+          className="h-1.5 w-1.5 rounded-full bg-current"
           aria-hidden="true"
         />
       )}

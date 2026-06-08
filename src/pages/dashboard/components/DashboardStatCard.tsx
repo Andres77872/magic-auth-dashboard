@@ -20,29 +20,22 @@ interface StatCardProps {
   isLoading?: boolean;
 }
 
-const colorConfig: Record<
-  string,
-  { bg: string; icon: string; border: string }
-> = {
+const colorConfig: Record<string, { bg: string; icon: string }> = {
   primary: {
     bg: 'bg-primary-subtle',
     icon: 'text-primary-subtle-foreground',
-    border: 'border-l-primary',
   },
   success: {
     bg: 'bg-success-subtle',
     icon: 'text-success-subtle-foreground',
-    border: 'border-l-success',
   },
   warning: {
     bg: 'bg-warning-subtle',
     icon: 'text-warning-subtle-foreground',
-    border: 'border-l-warning',
   },
   info: {
     bg: 'bg-info-subtle',
     icon: 'text-info-subtle-foreground',
-    border: 'border-l-info',
   },
 };
 
@@ -79,7 +72,7 @@ export function DashboardStatCard({
 
   if (isLoading) {
     return (
-      <Card className="relative overflow-hidden border-l-4 border-l-muted">
+      <Card className="relative overflow-hidden">
         <CardContent className="p-5">
           <div className="flex items-start justify-between mb-4">
             <Skeleton className="h-10 w-10 rounded-lg" />
@@ -95,10 +88,8 @@ export function DashboardStatCard({
   const cardContent = (
     <Card
       className={cn(
-        'relative overflow-hidden border-l-4 transition-all duration-200',
-        config.border,
-        data.clickable &&
-          'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 group'
+        'relative overflow-hidden transition-colors',
+        data.clickable && 'group cursor-pointer hover:border-input'
       )}
     >
       <CardContent className="p-5">
@@ -138,7 +129,7 @@ export function DashboardStatCard({
         {data.clickable && (
           <div className="flex items-center gap-1 mt-4 pt-3 border-t border-border">
             <span className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">
-              View Details
+              View details
             </span>
             <ChevronRight
               size={14}

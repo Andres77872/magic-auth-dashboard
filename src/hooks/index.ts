@@ -56,3 +56,6 @@ export {
 // Workflow hooks
 export { useProjectWorkflow } from './useProjectWorkflow';
 export { useUserGroupsWithAccess } from './useUserGroupsWithAccess';
+
+// Navigation hooks
+export { useBackNavigation } from './useBackNavigation';

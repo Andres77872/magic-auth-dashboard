@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import {
   PageContainer,
   PageHeader,
@@ -27,8 +27,10 @@ import {
   useGroupMemberActions,
   useToast,
   useUsersByGroup,
+  useBackNavigation,
 } from '@/hooks';
 import { formatDate } from '@/utils/component-utils';
+import { useSetBreadcrumbLabel } from '@/contexts';
 import { Users, User, Lock, FolderOpen, Plus } from 'lucide-react';
 
 type TabType = 'members' | 'project-groups' | 'permissions';
@@ -38,7 +40,7 @@ const VALID_TABS: TabType[] = ['members', 'project-groups', 'permissions'];
 
 export const GroupDetailsPage: React.FC = () => {
   const { groupHash } = useParams<{ groupHash: string }>();
-  const navigate = useNavigate();
+  const handleGoBack = useBackNavigation(ROUTES.GROUPS);
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
 
@@ -55,6 +57,9 @@ export const GroupDetailsPage: React.FC = () => {
   const { group, statistics, isLoading, error, updateGroup } =
     useGroupDetails(groupHash);
   const { bulkAddMembers, removeMember } = useGroupMemberActions(groupHash);
+
+  // Show the group name in the breadcrumb leaf once details load.
+  useSetBreadcrumbLabel(group?.group_name);
 
   // Use the hook to fetch group members
   const {
@@ -168,7 +173,7 @@ export const GroupDetailsPage: React.FC = () => {
         <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
           <Users size={48} className="text-muted-foreground" />
           <p className="text-muted-foreground">{error || 'Group not found'}</p>
-          <Button variant="primary" onClick={() => navigate(ROUTES.GROUPS)}>
+          <Button variant="primary" onClick={handleGoBack}>
             Back to Groups
           </Button>
         </div>
@@ -188,7 +193,7 @@ export const GroupDetailsPage: React.FC = () => {
             <Button
               variant="outline"
               size="md"
-              onClick={() => navigate(ROUTES.GROUPS)}
+              onClick={handleGoBack}
             >
               Back to Groups
             </Button>

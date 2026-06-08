@@ -155,8 +155,8 @@ export function LoginModal({
         }
       >
         <DialogHeader className="space-y-2 text-center">
-          <DialogTitle className="text-2xl font-bold tracking-tight">
-            Welcome Back
+          <DialogTitle className="text-2xl font-semibold tracking-[-0.01em]">
+            Welcome back
           </DialogTitle>
           <DialogDescription className="text-sm">
             Sign in to access the Magic Auth Dashboard
@@ -166,7 +166,7 @@ export function LoginModal({
             aria-label="Secure connection"
           >
             <ShieldCheck size={12} />
-            <span>Secure Connection</span>
+            <span>Secure connection</span>
           </div>
         </DialogHeader>
 
@@ -277,7 +277,7 @@ export function LoginModal({
                 isSubmitting || !formData.username || !formData.password
               }
             >
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
             </Button>
           </div>
 
@@ -289,7 +289,7 @@ export function LoginModal({
                 href="mailto:andres@arz.ai"
                 className="font-medium text-primary underline-offset-4 transition-colors hover:underline"
               >
-                Contact Administrator
+                Contact administrator
               </a>
             </p>
           </div>

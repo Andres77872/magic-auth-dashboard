@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useUserType } from '@/hooks';
-import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { User, Settings, LogOut, ChevronsUpDown } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
-import { getUserTypeBadgeClass } from '@/utils/userTypeStyles';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,13 +16,14 @@ import {
   DialogHeader,
   DialogTitle,
   Button,
+  Avatar,
+  Badge,
 } from '@/components/ui';
-import { cn } from '@/lib/utils';
 
 export function UserMenu(): React.JSX.Element {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { user, logout } = useAuth();
-  const { getUserTypeLabel, userType } = useUserType();
+  const { getUserTypeLabel } = useUserType();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -50,68 +50,65 @@ export function UserMenu(): React.JSX.Element {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2 p-2 bg-transparent border-none rounded-md cursor-pointer transition-colors hover:bg-muted focus-visible:outline-[3px] focus-visible:outline-primary focus-visible:outline-offset-2"
+            className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent"
             aria-label="User menu"
           >
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground text-sm font-bold">
-                {user.username.charAt(0).toUpperCase()}
+            <Avatar name={user.username} size="md" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[13px] font-medium text-foreground">
+                {user.username}
               </span>
-            </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform" />
+              <span className="block truncate text-xs text-muted-foreground">
+                {user.email}
+              </span>
+            </span>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end" className="w-[280px]">
+        <DropdownMenuContent side="top" align="start" className="w-[232px]">
           {/* User info header */}
-          <div className="p-4 border-b border-border bg-muted/50">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground text-lg font-bold">
-                  {user.username.charAt(0).toUpperCase()}
-                </span>
+          <div className="flex items-center gap-3 px-2 pb-2 pt-1.5">
+            <Avatar name={user.username} size="lg" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[13px] font-semibold text-foreground">
+                {user.username}
               </div>
-              <div className="flex-1">
-                <div className="text-base font-semibold text-foreground mb-1">{user.username}</div>
-                <div className="text-sm text-muted-foreground mb-1">{user.email}</div>
-                <div 
-                  className={cn(
-                    'inline-block text-xs font-bold uppercase tracking-wide px-2 py-1 rounded-sm',
-                    getUserTypeBadgeClass(userType || undefined)
-                  )}
-                >
-                  {getUserTypeLabel()}
-                </div>
+              <div className="mb-1.5 truncate text-xs text-muted-foreground">
+                {user.email}
               </div>
+              <Badge variant="subtle" size="sm">
+                {getUserTypeLabel()}
+              </Badge>
             </div>
           </div>
 
-          {/* Menu items */}
-          <div className="p-2">
-            <DropdownMenuItem asChild>
-              <Link to={ROUTES.PROFILE} className="flex items-center gap-3 cursor-pointer">
-                <User className="h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </DropdownMenuItem>
+          <DropdownMenuSeparator />
 
-            <DropdownMenuItem asChild>
-              <Link to={ROUTES.SETTINGS} className="flex items-center gap-3 cursor-pointer">
-                <Settings className="h-4 w-4" />
-                <span>Settings</span>
-              </Link>
-            </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={ROUTES.PROFILE} className="cursor-pointer">
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </Link>
+          </DropdownMenuItem>
 
-            <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to={ROUTES.SETTINGS} className="cursor-pointer">
+              <Settings className="h-4 w-4" />
+              <span>Settings</span>
+            </Link>
+          </DropdownMenuItem>
 
-            <DropdownMenuItem 
-              className="flex items-center gap-3 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-              onClick={() => setShowLogoutConfirm(true)}
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
-            </DropdownMenuItem>
-          </div>
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem
+            destructive
+            className="cursor-pointer"
+            onClick={() => setShowLogoutConfirm(true)}
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Sign out</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -119,18 +116,16 @@ export function UserMenu(): React.JSX.Element {
       <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Sign Out</DialogTitle>
+            <DialogTitle>Sign out</DialogTitle>
             <DialogDescription>
-              Are you sure you want to sign out of your account?
+              You'll be returned to the sign-in screen.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLogoutConfirm(false)}>
               Cancel
             </Button>
-            <Button onClick={handleLogoutConfirm}>
-              Sign Out
-            </Button>
+            <Button onClick={handleLogoutConfirm}>Sign out</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

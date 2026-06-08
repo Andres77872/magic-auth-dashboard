@@ -19,26 +19,11 @@ export interface ToastProps {
   className?: string;
 }
 
-const variantStyles: Record<
-  ToastVariant,
-  { container: string; icon: React.ReactNode }
-> = {
-  success: {
-    container: 'border-success/50 bg-success/10',
-    icon: <CheckCircle className="h-5 w-5 text-success" />,
-  },
-  error: {
-    container: 'border-destructive/50 bg-destructive/10',
-    icon: <XCircle className="h-5 w-5 text-destructive" />,
-  },
-  warning: {
-    container: 'border-warning/50 bg-warning/10',
-    icon: <AlertTriangle className="h-5 w-5 text-warning" />,
-  },
-  info: {
-    container: 'border-info/50 bg-info/10',
-    icon: <Info className="h-5 w-5 text-info" />,
-  },
+const variantStyles: Record<ToastVariant, { icon: React.ReactNode }> = {
+  success: { icon: <CheckCircle className="h-5 w-5 text-success" /> },
+  error: { icon: <XCircle className="h-5 w-5 text-destructive" /> },
+  warning: { icon: <AlertTriangle className="h-5 w-5 text-warning" /> },
+  info: { icon: <Info className="h-5 w-5 text-info" /> },
 };
 
 export const Toast = forwardRef<HTMLDivElement, ToastProps>(
@@ -84,8 +69,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
       <div
         ref={ref}
         className={cn(
-          'flex items-start gap-3 p-4 rounded-lg border shadow-lg transition-all duration-300',
-          styles.container,
+          'flex items-start gap-3 rounded-md border bg-popover p-3.5 shadow-lg transition-all duration-300',
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2',
           isExiting && 'opacity-0 translate-y-2',
           className
@@ -112,7 +96,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
 
         <button
           type="button"
-          className="shrink-0 p-1 rounded hover:bg-muted transition-colors"
+          className="shrink-0 rounded p-1 transition-colors hover:bg-accent"
           onClick={handleClose}
           aria-label="Close notification"
         >

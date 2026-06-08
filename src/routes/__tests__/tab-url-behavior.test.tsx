@@ -60,6 +60,7 @@ vi.mock('@/hooks', () => ({
   useToast: vi.fn(() => ({
     showToast: vi.fn(),
   })),
+  useBackNavigation: vi.fn(() => vi.fn()),
 }));
 
 vi.mock('@/contexts/PermissionManagementContext', () => ({

@@ -6,3 +6,4 @@ export { ApiKeysTab } from './ApiKeysTab';
 export { ApiKeyCreateModal } from './ApiKeyCreateModal';
 export { ApiKeyEditModal } from './ApiKeyEditModal';
 export { ApiKeyRevealModal } from './ApiKeyRevealModal';
+export { ApiKeyDetailSheet } from './ApiKeyDetailSheet';

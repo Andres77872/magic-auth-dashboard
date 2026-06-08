@@ -35,7 +35,7 @@ describe('ProjectGroupsTab — Workflow Progress Integration', () => {
     expect(step3.cta).toBeDefined();
     expect(step3.cta!.label).toBe('Add Users');
     expect(step3.cta!.action).toBe('navigate');
-    expect(step3.cta!.target).toBe('/dashboard/groups/UG-first');
+    expect(step3.cta!.target).toBe('/groups/UG-first');
   });
 
   it('shows unknown/error state for step 2 when userGroupsFetchError is true', () => {

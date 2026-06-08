@@ -116,7 +116,7 @@ describe('useProjectWorkflow', () => {
     expect(cta).toBeDefined();
     expect(cta!.label).toBe('Grant User Group Access');
     expect(cta!.action).toBe('navigate');
-    expect(cta!.target).toBe('/dashboard/groups');
+    expect(cta!.target).toBe('/groups');
   });
 
   it('provides CTA for "Add Users" when step 3 incomplete with firstUserGroupHash', () => {
@@ -133,7 +133,7 @@ describe('useProjectWorkflow', () => {
     expect(cta).toBeDefined();
     expect(cta!.label).toBe('Add Users');
     expect(cta!.action).toBe('navigate');
-    expect(cta!.target).toBe('/dashboard/groups/UG-abc');
+    expect(cta!.target).toBe('/groups/UG-abc');
   });
 
   it('does not provide "Add Users" CTA when no user group hash is available', () => {

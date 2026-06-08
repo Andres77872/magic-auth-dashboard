@@ -101,14 +101,14 @@ export const NAVIGATION_ITEMS: NavItem[] = [
   },
   {
     id: 'tokens',
-    label: 'API Tokens',
+    label: 'API tokens',
     path: ROUTES.TOKENS,
     icon: 'key',
     allowedUserTypes: ['root', 'admin'],
   },
   {
     id: 'audit',
-    label: 'Audit Logs',
+    label: 'Audit logs',
     path: ROUTES.AUDIT,
     icon: 'document',
     allowedUserTypes: ['root', 'admin'],
@@ -119,5 +119,141 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     path: ROUTES.SYSTEM,
     icon: 'settings',
     allowedUserTypes: ['root'],
+  },
+];
+
+// Grouped navigation (sidebar sections with optional nested sub-items).
+// NAVIGATION_ITEMS above is kept as a flat reference; the sidebar renders
+// from NAVIGATION_SECTIONS so related views nest under a parent.
+export interface NavSection {
+  id: string;
+  label: string;
+  allowedUserTypes: string[];
+  items: NavItem[];
+}
+
+export const NAVIGATION_SECTIONS: NavSection[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    allowedUserTypes: ['root', 'admin'],
+    items: [
+      {
+        id: 'home',
+        label: 'Home',
+        path: ROUTES.HOME,
+        icon: 'dashboard',
+        allowedUserTypes: ['root', 'admin'],
+      },
+    ],
+  },
+  {
+    id: 'access-management',
+    label: 'Access Management',
+    allowedUserTypes: ['root', 'admin'],
+    items: [
+      {
+        id: 'users',
+        label: 'Users',
+        path: ROUTES.USERS,
+        icon: 'users',
+        allowedUserTypes: ['root', 'admin'],
+      },
+      {
+        id: 'projects',
+        label: 'Projects',
+        path: ROUTES.PROJECTS,
+        icon: 'folder',
+        allowedUserTypes: ['root', 'admin'],
+      },
+      {
+        id: 'groups',
+        label: 'Groups',
+        path: ROUTES.GROUPS,
+        icon: 'users-group',
+        allowedUserTypes: ['root', 'admin'],
+        children: [
+          {
+            id: 'user-groups',
+            label: 'User Groups',
+            path: ROUTES.GROUPS,
+            icon: 'users-group',
+            allowedUserTypes: ['root', 'admin'],
+          },
+          {
+            id: 'project-groups',
+            label: 'Project Groups',
+            path: `${ROUTES.GROUPS}?tab=project-groups`,
+            icon: 'folder',
+            allowedUserTypes: ['root', 'admin'],
+          },
+        ],
+      },
+      {
+        id: 'permissions',
+        label: 'Permissions',
+        path: ROUTES.PERMISSIONS,
+        icon: 'shield',
+        allowedUserTypes: ['root', 'admin'],
+        children: [
+          {
+            id: 'permissions-management',
+            label: 'Permissions',
+            path: ROUTES.PERMISSIONS,
+            icon: 'shield',
+            allowedUserTypes: ['root', 'admin'],
+          },
+          {
+            id: 'global-roles',
+            label: 'Global Roles',
+            path: ROUTES.PERMISSIONS_GLOBAL_ROLES,
+            icon: 'user-badge',
+            allowedUserTypes: ['root', 'admin'],
+          },
+        ],
+      },
+      {
+        id: 'roles',
+        label: 'Roles',
+        path: ROUTES.ROLES,
+        icon: 'user-badge',
+        allowedUserTypes: ['root', 'admin'],
+      },
+    ],
+  },
+  {
+    id: 'operations',
+    label: 'Operations',
+    allowedUserTypes: ['root', 'admin'],
+    items: [
+      {
+        id: 'tokens',
+        label: 'API tokens',
+        path: ROUTES.TOKENS,
+        icon: 'key',
+        allowedUserTypes: ['root', 'admin'],
+      },
+      {
+        id: 'audit',
+        label: 'Audit logs',
+        path: ROUTES.AUDIT,
+        icon: 'document',
+        allowedUserTypes: ['root', 'admin'],
+      },
+    ],
+  },
+  {
+    id: 'system',
+    label: 'System',
+    allowedUserTypes: ['root'],
+    items: [
+      {
+        id: 'system',
+        label: 'System',
+        path: ROUTES.SYSTEM,
+        icon: 'settings',
+        allowedUserTypes: ['root'],
+      },
+    ],
   },
 ];

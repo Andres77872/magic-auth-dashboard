@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 
@@ -64,21 +64,15 @@ export function StatCard({
     neutral: 'text-muted-foreground',
   };
 
-  // Map variant to Tailwind color class
-  const variantColors: Record<string, string> = {
-    default: 'primary',
-    success: 'success',
-    warning: 'warning',
-    info: 'info',
-    primary: 'primary',
+  // Meridian metric icon tile tint per variant (quiet tint + saturated icon)
+  const iconTints: Record<string, string> = {
+    default: 'bg-primary/15 text-primary',
+    primary: 'bg-primary/15 text-primary',
+    success: 'bg-success/15 text-success',
+    warning: 'bg-warning/15 text-warning',
+    info: 'bg-info/15 text-info',
   };
-
-  const variantColor = variantColors[variant] || 'primary';
-
-  // Build gradient classes if enabled
-  const gradientClasses = gradient
-    ? `bg-gradient-to-br from-${variantColor}/5 to-${variantColor}/10`
-    : '';
+  const iconTint = iconTints[variant] || iconTints.default;
 
   // Map progress color to Progress component variant
   const progressVariantMap: Record<string, 'primary' | 'success' | 'warning' | 'destructive'> = {
@@ -91,38 +85,49 @@ export function StatCard({
 
   return (
     <Card
+      // `gradient` retained for API compatibility but is a no-op — Meridian cards are flat.
       className={cn(
-        onClick && 'cursor-pointer transition-colors hover:bg-muted/50',
-        gradientClasses,
+        'p-4',
+        onClick && 'cursor-pointer transition-colors hover:border-input',
+        gradient && '',
         className
       )}
       onClick={onClick}
       aria-label={onClick ? `View ${title}` : undefined}
     >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
           {title}
-        </CardTitle>
+        </span>
         <div className="flex items-center gap-2">
           {badge && <span>{badge}</span>}
           {icon && (
-            <span className="h-4 w-4 text-muted-foreground" aria-hidden="true">
+            <span
+              className={cn(
+                'flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md [&_svg]:h-4 [&_svg]:w-4',
+                iconTint
+              )}
+              aria-hidden="true"
+            >
               {icon}
             </span>
           )}
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+
+      <div className="mt-2.5">
         {loading ? (
           <Skeleton className="h-8 w-4/5" />
         ) : (
-          <div className="text-2xl font-bold">{value}</div>
+          <div className="text-[30px] font-semibold leading-none tracking-[-0.01em]">
+            {value}
+          </div>
         )}
         {subValue && !loading && (
-          <div className="text-sm text-muted-foreground mt-1">{subValue}</div>
+          <div className="mt-1.5 text-[13px] text-muted-foreground">{subValue}</div>
         )}
         {progress && !loading && (
-          <div className="mt-2">
+          <div className="mt-2.5">
             <Progress
               value={(progress.value / (progress.max ?? 100)) * 100}
               variant={progressVariantMap[progress.color ?? 'default']}
@@ -131,7 +136,7 @@ export function StatCard({
           </div>
         )}
         {trend && !loading && (
-          <div className={cn('flex items-center gap-1 mt-1', trendColors[trendDirection])}>
+          <div className={cn('mt-2 flex items-center gap-1', trendColors[trendDirection])}>
             <span>{getTrendIcon()}</span>
             <span className="text-xs font-medium">{Math.abs(trend.value)}%</span>
             {trend.label && (
@@ -139,7 +144,7 @@ export function StatCard({
             )}
           </div>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 }

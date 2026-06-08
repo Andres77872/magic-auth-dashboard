@@ -24,7 +24,8 @@ import {
   ShieldCheck,
   Settings,
 } from 'lucide-react';
-import { useProjectDetails } from '@/hooks';
+import { useProjectDetails, useBackNavigation } from '@/hooks';
+import { useSetBreadcrumbLabel } from '@/contexts';
 import { ROUTES } from '@/utils/routes';
 import type { ProjectDetails } from '@/types/project.types';
 
@@ -35,6 +36,7 @@ export const ProjectDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const handleGoBack = useBackNavigation(ROUTES.PROJECTS);
   const {
     project,
     userAccess,
@@ -45,6 +47,9 @@ export const ProjectDetailsPage: React.FC = () => {
     refetch,
     updateProjectState,
   } = useProjectDetails(projectHash);
+
+  // Show the project name in the breadcrumb leaf once details load.
+  useSetBreadcrumbLabel(project?.project_name);
 
   // Check for tab query parameter
   useEffect(() => {
@@ -100,7 +105,7 @@ export const ProjectDetailsPage: React.FC = () => {
             {error || 'Project not found'}
           </p>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => navigate(ROUTES.PROJECTS)}>
+            <Button variant="outline" onClick={handleGoBack}>
               Back to Projects
             </Button>
             {projectHash && (
@@ -165,7 +170,7 @@ export const ProjectDetailsPage: React.FC = () => {
           <Button
             variant="outline"
             size="md"
-            onClick={() => navigate(ROUTES.PROJECTS)}
+            onClick={handleGoBack}
             aria-label="Return to projects list"
           >
             Back to Projects

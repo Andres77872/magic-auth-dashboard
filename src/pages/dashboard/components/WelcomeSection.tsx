@@ -4,6 +4,7 @@ import { useAuth, useUserType } from '@/hooks';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/utils/routes';
 import { User, CheckCircle2 } from 'lucide-react';
 
 const userTypeStyles = {
@@ -86,7 +87,7 @@ export function WelcomeSection(): React.JSX.Element {
         </div>
 
         <Button variant="outline" asChild className="shrink-0">
-          <Link to="/dashboard/profile">
+          <Link to={ROUTES.PROFILE}>
             <User className="h-4 w-4 mr-2" />
             View Profile
           </Link>

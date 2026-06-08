@@ -1,49 +1,70 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import type { NavItem } from '@/utils/routes';
-import { 
-  ChevronDown, 
-  LayoutDashboard, 
-  User, 
-  FolderKanban, 
-  Users, 
-  ShieldCheck, 
-  Settings, 
+import {
+  ChevronDown,
+  LayoutDashboard,
+  User,
+  FolderKanban,
+  Users,
+  ShieldCheck,
+  Settings,
   UserCog,
   Key,
-  FileText 
+  FileText,
 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 interface NavigationItemProps {
   item: NavItem;
   isActive: boolean;
-  collapsed: boolean;
   level?: number;
 }
 
 export function NavigationItem({
   item,
   isActive,
-  collapsed,
   level = 0,
 }: NavigationItemProps): React.JSX.Element {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const hasChildren = item.children && item.children.length > 0;
 
-  // Compute active state for a path (mirrors NavigationMenu's matching logic)
-  // so nested children highlight independently of their parent.
-  const isPathActive = (path: string): boolean => {
-    if (path === '/') return location.pathname === '/';
-    return (
-      location.pathname === path || location.pathname.startsWith(`${path}/`)
-    );
+  // Exact, tab-aware active matching for a given item path. Used for child
+  // items where one sibling's path may be a prefix of another (e.g.
+  // /permissions vs /permissions/global-roles) or distinguished only by a
+  // query tab (e.g. /groups vs /groups?tab=project-groups).
+  const isPathActive = (rawPath: string): boolean => {
+    const [pathname, query] = rawPath.split('?');
+    const wantedTab = query ? new URLSearchParams(query).get('tab') : null;
+    if (location.pathname !== pathname) return false;
+    const currentTab = searchParams.get('tab');
+    if (wantedTab) return currentTab === wantedTab;
+    return !currentTab;
   };
 
-  // Get icon component based on icon name - consistent 20px size
-  const getIcon = (iconName: string) => {
-    const iconSize = 20;
+  const isDescendantActive =
+    !!item.children && item.children.some((child) => isPathActive(child.path));
+
+  // A parent highlights when its own (prefix) route is active or any child is.
+  const active = isActive || isDescendantActive;
+
+  // Auto-expand when this branch becomes active; never force-collapse, so a
+  // section a user opened manually stays open as they navigate. Uses the
+  // "adjust state during render" pattern (no effect) to react to `active`
+  // changing without a cascading re-render.
+  const [expanded, setExpanded] = useState<boolean>(active);
+  const [prevActive, setPrevActive] = useState<boolean>(active);
+  if (active !== prevActive) {
+    setPrevActive(active);
+    if (active) setExpanded(true);
+  }
+
+  const childListId = `nav-children-${item.id}`;
+
+  // Icon component based on icon name — Meridian nav icons are ~17px.
+  const getIcon = (iconName: string): React.ReactElement => {
+    const iconSize = 17;
     const icons: Record<string, React.ReactElement> = {
       dashboard: <LayoutDashboard size={iconSize} aria-hidden="true" />,
       users: <User size={iconSize} aria-hidden="true" />,
@@ -59,93 +80,76 @@ export function NavigationItem({
     return icons[iconName] || <LayoutDashboard size={iconSize} aria-hidden="true" />;
   };
 
-  const linkContent = (
-    <Link
-      to={item.path}
-      className={cn(
-        'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg',
-        'no-underline transition-all duration-200',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-        // Default state
-        'text-muted-foreground',
-        // Hover state
-        'hover:bg-muted hover:text-foreground',
-        // Collapsed state centering
-        collapsed && 'justify-center px-0',
-        // Active state
-        isActive && [
-          'bg-primary text-primary-foreground shadow-md',
-          'hover:bg-primary/90 hover:text-primary-foreground',
-        ]
-      )}
-      aria-label={collapsed ? item.label : undefined}
-      aria-current={isActive ? 'page' : undefined}
-    >
-      {/* Active indicator bar */}
-      {isActive && !collapsed && (
-        <span 
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground/30 rounded-r-full"
-          aria-hidden="true" 
-        />
-      )}
-
-      {/* Icon */}
-      <span 
-        className={cn(
-          'flex items-center justify-center shrink-0 transition-transform duration-200',
-          !collapsed && 'group-hover:scale-110',
-          collapsed && 'w-10 h-10 rounded-lg',
-          collapsed && !isActive && 'group-hover:bg-muted',
-          collapsed && isActive && 'bg-primary-foreground/10'
-        )}
-      >
-        {getIcon(item.icon)}
-      </span>
-      
-      {/* Label */}
-      {!collapsed && (
-        <span className="flex-1 text-sm font-medium truncate">{item.label}</span>
-      )}
-
-      {/* Expand indicator for items with children */}
-      {!collapsed && hasChildren && (
-        <span className="ml-auto transition-transform" aria-hidden="true">
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </span>
-      )}
-    </Link>
-  );
-
   return (
     <li className="relative">
-      {collapsed ? (
-        <TooltipProvider delayDuration={0}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              {linkContent}
-            </TooltipTrigger>
-            <TooltipContent 
-              side="right" 
-              sideOffset={12}
-              className="font-medium"
-            >
-              {item.label}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ) : (
-        linkContent
-      )}
+      <div className="relative flex items-center">
+        <Link
+          to={item.path}
+          className={cn(
+            'group relative flex flex-1 items-center gap-2.5 rounded-[4px] px-2.5 py-[7px] text-[13px] font-medium no-underline transition-colors',
+            'text-muted-foreground hover:bg-accent hover:text-foreground',
+            active && 'bg-primary/15 text-foreground hover:bg-primary/15',
+            level > 0 && 'text-[12.5px]'
+          )}
+          aria-current={!hasChildren && isActive ? 'page' : undefined}
+        >
+          {/* Active accent bar (Meridian .sb-item.active::before) */}
+          {active && (
+            <span
+              className="absolute -left-2.5 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary"
+              aria-hidden="true"
+            />
+          )}
 
-      {/* Nested items (for future expansion) */}
-      {!collapsed && hasChildren && (
-        <ul className="list-none m-0 p-0 pl-4 mt-1 space-y-1">
+          <span
+            className={cn(
+              'flex shrink-0 items-center justify-center',
+              active
+                ? 'text-primary'
+                : 'text-muted-foreground group-hover:text-foreground'
+            )}
+          >
+            {getIcon(item.icon)}
+          </span>
+
+          <span className="flex-1 truncate">{item.label}</span>
+        </Link>
+
+        {hasChildren && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              setExpanded((value) => !value);
+            }}
+            className="ml-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-expanded={expanded}
+            aria-controls={childListId}
+            aria-label={`${expanded ? 'Collapse' : 'Expand'} ${item.label} submenu`}
+          >
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 transition-transform',
+                expanded && 'rotate-180'
+              )}
+              aria-hidden="true"
+            />
+          </button>
+        )}
+      </div>
+
+      {/* Nested sub-items */}
+      {hasChildren && expanded && (
+        <ul
+          id={childListId}
+          className="m-0 mt-0.5 list-none space-y-0.5 p-0 pl-5"
+        >
           {item.children?.map((child) => (
             <NavigationItem
               key={child.id}
               item={child}
               isActive={isPathActive(child.path)}
-              collapsed={false}
               level={level + 1}
             />
           ))}
@@ -155,4 +159,4 @@ export function NavigationItem({
   );
 }
 
-export default NavigationItem; 
+export default NavigationItem;

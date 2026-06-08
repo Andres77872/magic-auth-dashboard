@@ -1,77 +1,78 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import type { UserType } from '@/types/auth.types';
-import { NAVIGATION_ITEMS } from '@/utils/routes';
+import { NAVIGATION_SECTIONS } from '@/utils/routes';
+import type { NavItem } from '@/utils/routes';
 import { NavigationItem } from './NavigationItem';
 import { usePermissions } from '@/hooks';
-import { cn } from '@/lib/utils';
 
 interface NavigationMenuProps {
   userType: UserType | null;
-  collapsed: boolean;
 }
 
-export function NavigationMenu({ userType, collapsed }: NavigationMenuProps): React.JSX.Element {
+export function NavigationMenu({ userType }: NavigationMenuProps): React.JSX.Element {
   const location = useLocation();
   const { isAuthenticated } = usePermissions();
 
-  // Filter navigation items based on user permissions
-  const getFilteredNavigationItems = () => {
-    if (!userType || !isAuthenticated) {
-      return [];
-    }
+  // Recursively filter an item (and its children) by the user's role.
+  const filterItemByRole = (item: NavItem): NavItem => ({
+    ...item,
+    children: item.children
+      ?.filter((child) => userType && child.allowedUserTypes.includes(userType))
+      .map(filterItemByRole),
+  });
 
-    return NAVIGATION_ITEMS.filter(item => 
-      item.allowedUserTypes.includes(userType)
-    );
-  };
+  // Build visible sections: drop sections/items the user can't access, and
+  // drop any section left with no visible items.
+  const visibleSections =
+    !userType || !isAuthenticated
+      ? []
+      : NAVIGATION_SECTIONS.filter((section) =>
+          section.allowedUserTypes.includes(userType)
+        )
+          .map((section) => ({
+            ...section,
+            items: section.items
+              .filter((item) => item.allowedUserTypes.includes(userType))
+              .map(filterItemByRole),
+          }))
+          .filter((section) => section.items.length > 0);
 
-  const filteredItems = getFilteredNavigationItems();
-
-  // Check if navigation item is active - supports both exact and prefix matching
-  const isItemActive = (itemPath: string) => {
+  // Top-level active state uses prefix matching so a parent highlights while
+  // viewing any descendant route. Children compute their own (tab-aware,
+  // exact) active state inside NavigationItem.
+  const isItemActive = (itemPath: string): boolean => {
     const currentPath = location.pathname;
-    
-    // Exact match for root path only (e.g., '/' for Home)
     if (itemPath === '/') {
       return currentPath === '/';
     }
-    
-    // Prefix match for all other routes (e.g., '/users' matches '/users' and '/users/:hash')
     return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
   };
 
   return (
-    <nav 
-      className={cn(
-        'flex flex-col py-2',
-        collapsed ? 'px-2' : 'px-3'
-      )} 
-      role="navigation" 
-      aria-label="Dashboard navigation"
-    >
-      {/* Navigation section label */}
-      {!collapsed && (
-        <div className="px-3 mb-2">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-            Main Menu
-          </span>
-        </div>
-      )}
+    <nav className="flex flex-col gap-1" role="navigation" aria-label="Dashboard navigation">
+      {visibleSections.map((section) => (
+        <div key={section.id}>
+          {/* Section overline (Meridian .sb-group) */}
+          <div className="px-2.5 pb-1.5 pt-2">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
+              {section.label}
+            </span>
+          </div>
 
-      {/* Navigation items */}
-      <ul className="list-none m-0 p-0 space-y-1">
-        {filteredItems.map((item) => (
-          <NavigationItem
-            key={item.id}
-            item={item}
-            isActive={isItemActive(item.path)}
-            collapsed={collapsed}
-          />
-        ))}
-      </ul>
+          <ul className="m-0 list-none space-y-0.5 p-0">
+            {section.items.map((item) => (
+              <NavigationItem
+                key={item.id}
+                item={item}
+                isActive={isItemActive(item.path)}
+              />
+            ))}
+          </ul>
+        </div>
+      ))}
     </nav>
   );
 }
 
-export default NavigationMenu; 
+export default NavigationMenu;

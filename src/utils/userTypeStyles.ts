@@ -1,69 +1,62 @@
 import { UserType } from '@/types/auth.types';
 
 /**
- * Get CSS class name for user type badge styling (text color only)
+ * Tailwind text-color utility for a user-type label (Meridian semantic tokens).
  */
 export function getUserTypeBadgeClass(userType?: UserType | string): string {
-  if (!userType) {
-    return 'user-type-badge-unknown';
-  }
-
   const type = typeof userType === 'string' ? userType.toLowerCase() : userType;
-  
+
   switch (type) {
     case UserType.ROOT:
     case 'root':
-      return 'user-type-badge-root';
+      return 'text-primary-subtle-foreground';
     case UserType.ADMIN:
     case 'admin':
-      return 'user-type-badge-admin';
+      return 'text-info-subtle-foreground';
     case UserType.CONSUMER:
     case 'consumer':
-      return 'user-type-badge-consumer';
+      return 'text-muted-subtle-foreground';
     default:
-      return 'user-type-badge-unknown';
+      return 'text-muted-subtle-foreground';
   }
 }
 
 /**
- * Get CSS class name for user type badge with background styling
+ * Tailwind quiet-tint badge utilities (bg + text) for a user type.
  */
 export function getUserTypeBadgeBackgroundClass(userType?: UserType | string): string {
-  if (!userType) {
-    return 'user-type-badge-bg-unknown';
-  }
-
   const type = typeof userType === 'string' ? userType.toLowerCase() : userType;
-  
+
   switch (type) {
     case UserType.ROOT:
     case 'root':
-      return 'user-type-badge-bg-root';
+      return 'bg-primary-subtle text-primary-subtle-foreground';
     case UserType.ADMIN:
     case 'admin':
-      return 'user-type-badge-bg-admin';
+      return 'bg-info-subtle text-info-subtle-foreground';
     case UserType.CONSUMER:
     case 'consumer':
-      return 'user-type-badge-bg-consumer';
+      return 'bg-muted-subtle text-muted-subtle-foreground';
     default:
-      return 'user-type-badge-bg-unknown';
+      return 'bg-muted-subtle text-muted-subtle-foreground';
   }
 }
 
 /**
- * Get CSS class name for activity severity styling
+ * Tailwind text-color utility for an activity severity (Meridian semantic tokens).
  */
-export function getSeverityClass(severity: 'critical' | 'warning' | 'info' | 'success'): string {
+export function getSeverityClass(
+  severity: 'critical' | 'warning' | 'info' | 'success'
+): string {
   switch (severity) {
     case 'critical':
-      return 'severity-critical';
+      return 'text-destructive';
     case 'warning':
-      return 'severity-warning';
-    case 'info':
-      return 'severity-info';
+      return 'text-warning';
     case 'success':
-      return 'severity-success';
+      return 'text-success';
+    case 'info':
     default:
-      return 'severity-info';
+      return 'text-info';
   }
-} 
+}

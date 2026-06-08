@@ -8,3 +8,9 @@ export { PermissionManagementProvider, usePermissionManagement } from './Permiss
 
 export { ThemeProvider, useTheme } from './ThemeContext';
 export type { Theme, ResolvedTheme } from './ThemeContext';
+
+export {
+  BreadcrumbLabelProvider,
+  useBreadcrumbLabel,
+  useSetBreadcrumbLabel,
+} from './BreadcrumbLabelContext';

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, Skeleton, EmptyState, Button, CopyableId } from '@/components/common';
 import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
 import { UserAvatar } from '@/components/features/users/UserAvatar';
 import { UserFormModal } from '@/components/features/users/UserFormModal';
-import { useUserProfileDetails, usePermissions } from '@/hooks';
+import { useUserProfileDetails, usePermissions, useBackNavigation } from '@/hooks';
+import { useSetBreadcrumbLabel } from '@/contexts';
 import { ROUTES } from '@/utils/routes';
 import { getUserTypeBadgeVariant, formatDateTime } from '@/utils/component-utils';
 import {
@@ -32,7 +33,6 @@ import {
  * Displays comprehensive user information including permissions, groups, projects, and statistics.
  */
 export function UserProfilePage(): React.JSX.Element {
-  const navigate = useNavigate();
   const { userHash } = useParams<{ userHash: string }>();
   const {
     profileData,
@@ -44,15 +44,16 @@ export function UserProfilePage(): React.JSX.Element {
     refetch,
   } = useUserProfileDetails(userHash);
 
+  // Show the username in the breadcrumb leaf once the profile loads.
+  useSetBreadcrumbLabel(profileData?.user?.username);
+
   // Modal state for edit functionality
   const [showEditModal, setShowEditModal] = useState(false);
 
   // Permission checks for edit button visibility
   const { canCreateUser, canCreateAdmin } = usePermissions();
 
-  const handleGoBack = () => {
-    navigate(ROUTES.USERS);
-  };
+  const handleGoBack = useBackNavigation(ROUTES.USERS);
 
   // Permission helper - mirrors UserActionsMenu.tsx logic
   const canEditUser = (targetUser: { user_type: string }) => {

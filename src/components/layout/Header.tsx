@@ -1,172 +1,76 @@
 /**
- * Header Component
+ * Header (Top bar)
  *
- * Fixed top navigation bar containing:
+ * Meridian top bar (56px), spans the main content column:
  * - Mobile menu toggle (mobile only)
- * - Sidebar collapse toggle (desktop only)
- * - Brand logo and name
- * - User menu and notifications
+ * - Breadcrumb trail
+ * - Notifications
  *
- * Follows Design System header patterns
- * @see docs/DESIGN_SYSTEM/DASHBOARD_PATTERNS.md
+ * Brand, theme toggle, and the user menu live in the sidebar.
  */
 import React from 'react';
-
-import { useTheme } from '@/contexts';
-import { UserMenu, NotificationBell } from '@/components/navigation';
-import { PanelLeftClose, PanelLeft, Shield, Sun, Moon } from 'lucide-react';
+import { NotificationBell } from '@/components/navigation';
+import { Breadcrumbs } from './Breadcrumbs';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
-  sidebarCollapsed: boolean;
   mobileMenuOpen: boolean;
-  onToggleSidebar: () => void;
   onToggleMobileMenu: () => void;
 }
 
 export function Header({
-  sidebarCollapsed,
   mobileMenuOpen,
-  onToggleSidebar,
   onToggleMobileMenu,
 }: HeaderProps): React.JSX.Element {
-  const { resolvedTheme, toggleTheme } = useTheme();
-
   return (
     <header
-      className="[grid-area:header] h-16 bg-card border-b border-border shadow-sm z-dropdown sticky top-0"
+      className="z-30 flex h-14 shrink-0 items-center gap-3.5 border-b border-border bg-background px-4 lg:px-5"
       role="banner"
     >
-      <div className="flex items-center justify-between h-full px-4 lg:px-6">
-        {/* Left section - Logo and navigation */}
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Mobile menu toggle - Visible only on mobile */}
-          <button
-            type="button"
+      {/* Mobile menu toggle */}
+      <button
+        type="button"
+        className={cn(
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors lg:hidden',
+          'hover:bg-accent hover:text-foreground',
+          mobileMenuOpen && 'bg-accent text-foreground'
+        )}
+        onClick={onToggleMobileMenu}
+        aria-label={mobileMenuOpen ? 'Close mobile menu' : 'Open mobile menu'}
+        aria-expanded={mobileMenuOpen}
+        aria-controls="sidebar-navigation"
+      >
+        <div className="flex h-5 w-5 flex-col items-center justify-center gap-1.5">
+          <span
             className={cn(
-              'flex lg:hidden items-center justify-center w-10 h-10 rounded-lg',
-              'bg-transparent border border-transparent cursor-pointer',
-              'transition-all duration-200',
-              'hover:bg-muted hover:border-border',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-              mobileMenuOpen && 'bg-muted border-border'
+              'block h-0.5 w-5 origin-center rounded-full bg-current transition-all duration-300',
+              mobileMenuOpen && 'translate-y-2 rotate-45'
             )}
-            onClick={onToggleMobileMenu}
-            aria-label={
-              mobileMenuOpen ? 'Close mobile menu' : 'Open mobile menu'
-            }
-            aria-expanded={mobileMenuOpen}
-            aria-controls="sidebar-navigation"
-          >
-            <div className="flex flex-col items-center justify-center gap-1.5 w-5 h-5">
-              <span
-                className={cn(
-                  'block w-5 h-0.5 bg-foreground rounded-full transition-all duration-300 origin-center',
-                  mobileMenuOpen && 'rotate-45 translate-y-2'
-                )}
-                aria-hidden="true"
-              />
-              <span
-                className={cn(
-                  'block w-5 h-0.5 bg-foreground rounded-full transition-all duration-300',
-                  mobileMenuOpen && 'opacity-0 scale-0'
-                )}
-                aria-hidden="true"
-              />
-              <span
-                className={cn(
-                  'block w-5 h-0.5 bg-foreground rounded-full transition-all duration-300 origin-center',
-                  mobileMenuOpen && '-rotate-45 -translate-y-2'
-                )}
-                aria-hidden="true"
-              />
-            </div>
-          </button>
-
-          {/* Desktop sidebar toggle - Visible only on desktop */}
-          <button
-            type="button"
+            aria-hidden="true"
+          />
+          <span
             className={cn(
-              'hidden lg:flex items-center justify-center w-10 h-10 rounded-lg',
-              'bg-transparent border border-transparent cursor-pointer',
-              'transition-all duration-200',
-              'hover:bg-muted hover:border-border',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
+              'block h-0.5 w-5 rounded-full bg-current transition-all duration-300',
+              mobileMenuOpen && 'scale-0 opacity-0'
             )}
-            onClick={onToggleSidebar}
-            aria-label={
-              sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
-            }
-            aria-expanded={!sidebarCollapsed}
-            aria-controls="sidebar-navigation"
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {sidebarCollapsed ? (
-              <PanelLeft
-                size={20}
-                className="text-muted-foreground"
-                aria-hidden="true"
-              />
-            ) : (
-              <PanelLeftClose
-                size={20}
-                className="text-muted-foreground"
-                aria-hidden="true"
-              />
-            )}
-          </button>
-
-          {/* Logo and brand */}
-          <div className="flex items-center gap-3 ml-1">
-            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-md">
-              <Shield
-                size={20}
-                className="text-primary-foreground"
-                aria-hidden="true"
-              />
-            </div>
-            <div className="hidden sm:flex flex-col">
-              <span className="text-base font-bold text-foreground leading-tight tracking-tight">
-                Magic Auth
-              </span>
-              <span className="text-[10px] text-muted-foreground leading-tight uppercase tracking-wider font-medium">
-                Admin Dashboard
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Center section - Global search (future implementation) */}
-        <div className="flex-1 max-w-md mx-4 hidden md:block">
-          {/* Global search will be added in future milestone */}
-        </div>
-
-        {/* Right section - Notifications and user menu */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Dark mode toggle */}
-          <button
-            type="button"
-            onClick={toggleTheme}
+            aria-hidden="true"
+          />
+          <span
             className={cn(
-              'flex items-center justify-center w-9 h-9 rounded-lg',
-              'bg-transparent border border-transparent cursor-pointer',
-              'transition-all duration-200',
-              'hover:bg-muted hover:border-border',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
+              'block h-0.5 w-5 origin-center rounded-full bg-current transition-all duration-300',
+              mobileMenuOpen && '-translate-y-2 -rotate-45'
             )}
-            aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            title={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {resolvedTheme === 'dark' ? (
-              <Sun size={18} className="text-muted-foreground" aria-hidden="true" />
-            ) : (
-              <Moon size={18} className="text-muted-foreground" aria-hidden="true" />
-            )}
-          </button>
-
-          <NotificationBell />
-          <UserMenu />
+            aria-hidden="true"
+          />
         </div>
+      </button>
+
+      {/* Breadcrumb trail */}
+      <Breadcrumbs />
+
+      {/* Actions */}
+      <div className="ml-auto flex items-center gap-1">
+        <NotificationBell />
       </div>
     </header>
   );

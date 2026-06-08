@@ -3,6 +3,7 @@ import { Clock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ROUTES } from '@/utils/routes';
 
 interface ComingSoonProps {
   title: string;
@@ -16,8 +17,8 @@ export function ComingSoon({
   title,
   description,
   feature,
-  backUrl = '/dashboard',
-  backLabel = 'Back to Dashboard',
+  backUrl = ROUTES.HOME,
+  backLabel = 'Back to Home',
 }: ComingSoonProps): React.JSX.Element {
   return (
     <div className="flex min-h-[400px] items-center justify-center p-8">

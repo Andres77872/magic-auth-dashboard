@@ -209,7 +209,7 @@ export function StatisticsGrid({
       {isRoot && stats && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* User Type Breakdown */}
-          <Card className="border-l-4 border-l-primary">
+          <Card>
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Users className="h-5 w-5 text-primary" />
@@ -307,7 +307,7 @@ export function StatisticsGrid({
           </Card>
 
           {/* Growth & Activity Metrics */}
-          <Card className="border-l-4 border-l-success">
+          <Card>
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="h-5 w-5 text-success" />
@@ -317,7 +317,7 @@ export function StatisticsGrid({
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 rounded-lg bg-success/5 border border-success/20">
+                <div className="p-3 rounded-lg bg-muted/40 border border-border">
                   <p className="text-xs text-muted-foreground mb-1">
                     New Users
                   </p>
@@ -325,7 +325,7 @@ export function StatisticsGrid({
                     +{stats.newUsersWeek}
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <div className="p-3 rounded-lg bg-muted/40 border border-border">
                   <p className="text-xs text-muted-foreground mb-1">
                     New Projects
                   </p>
@@ -333,7 +333,7 @@ export function StatisticsGrid({
                     +{stats.newProjectsWeek}
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-info/5 border border-info/20">
+                <div className="p-3 rounded-lg bg-muted/40 border border-border">
                   <p className="text-xs text-muted-foreground mb-1">
                     Activities
                   </p>
@@ -341,7 +341,7 @@ export function StatisticsGrid({
                     {stats.activitiesWeek.toLocaleString()}
                   </p>
                 </div>
-                <div className="p-3 rounded-lg bg-warning/5 border border-warning/20">
+                <div className="p-3 rounded-lg bg-muted/40 border border-border">
                   <p className="text-xs text-muted-foreground mb-1">
                     Avg Users/Group
                   </p>

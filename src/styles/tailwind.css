@@ -1,115 +1,170 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
 @import 'tailwindcss';
+
+/* Radix enter/exit animation utilities (animate-in, fade-in-0, zoom-in-95,
+   slide-in-from-*). Installed as a dependency but must be loaded explicitly
+   under Tailwind v4. */
+@plugin 'tailwindcss-animate';
 
 /* Enable class-based dark mode (.dark on <html>) */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ============================================================================
+   MERIDIAN ADMIN — Design Tokens (Tailwind CSS v4)
+   A dense, calm, technical user-management console.
+   Same blue-gray hue (256) drives both themes; dark "ink" is the default,
+   light is the inverse. Existing semantic token NAMES are preserved so the
+   ~163 components keep working; only their VALUES change to the Meridian palette.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   PRIMITIVE COLOR RAMPS — internal anchors (hue 256 = blue-gray; low chroma)
+   Defined as plain custom properties so they don't generate utilities; the
+   semantic --color-* tokens below reference them via var().
+   ---------------------------------------------------------------------------- */
+:root {
+  --ink-25: oklch(0.985 0.003 256);
+  --ink-50: oklch(0.97 0.004 256);
+  --ink-100: oklch(0.945 0.006 256);
+  --ink-150: oklch(0.92 0.007 256);
+  --ink-200: oklch(0.885 0.008 256);
+  --ink-300: oklch(0.8 0.012 256);
+  --ink-400: oklch(0.68 0.016 256);
+  --ink-500: oklch(0.58 0.02 256);
+  --ink-600: oklch(0.48 0.022 256);
+  --ink-700: oklch(0.37 0.022 256);
+  --ink-750: oklch(0.315 0.021 256);
+  --ink-800: oklch(0.262 0.021 256);
+  --ink-850: oklch(0.228 0.02 256);
+  --ink-900: oklch(0.198 0.019 256);
+  --ink-950: oklch(0.168 0.018 256);
+  --ink-980: oklch(0.14 0.016 256);
+
+  --azure-300: oklch(0.82 0.09 256);
+  --azure-400: oklch(0.73 0.13 256);
+  --azure-500: oklch(0.645 0.155 256);
+  --azure-600: oklch(0.56 0.165 258);
+  --azure-700: oklch(0.47 0.15 260);
+
+  --green-400: oklch(0.76 0.15 158);
+  --green-500: oklch(0.68 0.15 158);
+  --green-600: oklch(0.58 0.14 158);
+  --amber-400: oklch(0.82 0.14 78);
+  --amber-500: oklch(0.76 0.15 72);
+  --amber-600: oklch(0.68 0.14 66);
+  --red-400: oklch(0.7 0.18 22);
+  --red-500: oklch(0.625 0.205 25);
+  --red-600: oklch(0.55 0.2 26);
+  --violet-500: oklch(0.64 0.165 295);
+  --teal-500: oklch(0.7 0.11 200);
+
+  color-scheme: light;
+}
+
 /* ============================================
-   THEME CONFIGURATION (Tailwind CSS v4)
+   THEME CONFIGURATION — default = LIGHT (Meridian white-gray)
    ============================================ */
 
 @theme {
-  /* Primary Colors */
-  --color-primary-50: #eff6ff;
-  --color-primary-100: #dbeafe;
-  --color-primary-200: #bfdbfe;
-  --color-primary-300: #93c5fd;
-  --color-primary-400: #60a5fa;
-  --color-primary-500: #3b82f6;
-  --color-primary-600: #2563eb;
-  --color-primary-700: #1d4ed8;
-  --color-primary-800: #1e40af;
-  --color-primary-900: #1e3a8a;
+  /* Brand azure ramp (theme-invariant; anchored on Meridian azure-300..700) */
+  --color-primary-50: oklch(0.97 0.012 256);
+  --color-primary-100: oklch(0.93 0.03 256);
+  --color-primary-200: oklch(0.88 0.055 256);
+  --color-primary-300: oklch(0.82 0.09 256);
+  --color-primary-400: oklch(0.73 0.13 256);
+  --color-primary-500: oklch(0.645 0.155 256);
+  --color-primary-600: oklch(0.56 0.165 258);
+  --color-primary-700: oklch(0.47 0.15 260);
+  --color-primary-800: oklch(0.405 0.13 261);
+  --color-primary-900: oklch(0.34 0.105 262);
 
-  /* Semantic Colors */
-  --color-background: #f9fafb;
-  --color-foreground: #111827;
+  /* Semantic Colors — light */
+  --color-background: var(--ink-50);
+  --color-foreground: oklch(0.255 0.022 256);
 
-  --color-card: #ffffff;
-  --color-card-foreground: #111827;
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.255 0.022 256);
 
-  --color-popover: #ffffff;
-  --color-popover-foreground: #111827;
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.255 0.022 256);
 
-  --color-primary: #3b82f6;
-  --color-primary-foreground: #ffffff;
+  --color-primary: var(--azure-600);
+  --color-primary-foreground: oklch(0.99 0.005 256);
 
-  --color-secondary: #f3f4f6;
-  --color-secondary-foreground: #111827;
+  --color-secondary: var(--ink-100);
+  --color-secondary-foreground: oklch(0.255 0.022 256);
 
-  --color-muted: #f3f4f6;
-  --color-muted-foreground: #6b7280;
+  --color-muted: var(--ink-100);
+  --color-muted-foreground: oklch(0.575 0.02 256);
 
-  --color-accent: #f3f4f6;
-  --color-accent-foreground: #111827;
+  --color-accent: var(--ink-100);
+  --color-accent-foreground: oklch(0.255 0.022 256);
 
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
+  --color-destructive: var(--red-600);
+  --color-destructive-foreground: oklch(0.99 0.005 256);
 
-  --color-success: #22c55e;
-  --color-success-foreground: #ffffff;
+  --color-success: var(--green-600);
+  --color-success-foreground: oklch(0.99 0.005 256);
 
-  --color-warning: #f59e0b;
-  --color-warning-foreground: #ffffff;
+  --color-warning: var(--amber-600);
+  --color-warning-foreground: oklch(0.255 0.022 256);
 
-  --color-info: #06b6d4;
-  --color-info-foreground: #ffffff;
+  --color-info: var(--azure-600);
+  --color-info-foreground: oklch(0.99 0.005 256);
 
-  --color-border: #e5e7eb;
-  --color-input: #e5e7eb;
-  --color-ring: #3b82f680;
+  --color-border: var(--ink-150);
+  --color-input: var(--ink-200);
+  --color-ring: oklch(0.56 0.165 258 / 0.45);
 
-  /* Semantic Subtle Colors (for badges, icon containers, backgrounds) */
-  --color-muted-subtle: #f3f4f6;
-  --color-muted-subtle-foreground: #6b7280;
+  /* Semantic Subtle Colors — light (quiet tint bg + saturated fg) */
+  --color-muted-subtle: oklch(0.43 0.022 256 / 0.07);
+  --color-muted-subtle-foreground: oklch(0.43 0.022 256);
 
-  --color-destructive-subtle: #fef2f2;
-  --color-destructive-subtle-foreground: #dc2626;
+  --color-destructive-subtle: oklch(0.55 0.2 26 / 0.1);
+  --color-destructive-subtle-foreground: oklch(0.55 0.2 26);
 
-  --color-success-subtle: #f0fdf4;
-  --color-success-subtle-foreground: #16a34a;
+  --color-success-subtle: oklch(0.58 0.14 158 / 0.11);
+  --color-success-subtle-foreground: oklch(0.58 0.14 158);
 
-  --color-warning-subtle: #fffbeb;
-  --color-warning-subtle-foreground: #d97706;
+  --color-warning-subtle: oklch(0.68 0.14 66 / 0.13);
+  --color-warning-subtle-foreground: oklch(0.68 0.14 66);
 
-  --color-info-subtle: #eff6ff;
-  --color-info-subtle-foreground: #2563eb;
+  --color-info-subtle: oklch(0.56 0.165 258 / 0.1);
+  --color-info-subtle-foreground: oklch(0.56 0.165 258);
 
-  --color-primary-subtle: #eff6ff;
-  --color-primary-subtle-foreground: #2563eb;
+  --color-primary-subtle: oklch(0.56 0.165 258 / 0.09);
+  --color-primary-subtle-foreground: oklch(0.56 0.165 258);
 
-  /* Purple subtle (for groups/permission-groups branding) */
-  --color-purple-subtle: #f3e8ff;
-  --color-purple-subtle-foreground: #7c3aed;
+  /* Purple/violet subtle (groups / permission-groups branding) */
+  --color-purple-subtle: oklch(0.64 0.165 295 / 0.1);
+  --color-purple-subtle-foreground: oklch(0.56 0.15 295);
 
-  /* Surface Colors */
-  --color-surface: #ffffff;
-  --color-surface-secondary: #f9fafb;
-  --color-surface-tertiary: #f3f4f6;
+  /* Surface Colors — light */
+  --color-surface: oklch(1 0 0);
+  --color-surface-secondary: var(--ink-100);
+  --color-surface-tertiary: var(--ink-150);
 
-  /* Border Radius */
-  --radius-xs: 0.125rem;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-2xl: 1rem;
+  /* Border Radius (Meridian px scale) */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 16px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg:
-    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl:
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  /* Shadows — light. Borders do the work at rest; shadows for overlays. */
+  --shadow-xs: 0 1px 2px oklch(0.4 0.02 256 / 0.05);
+  --shadow-sm: 0 1px 2px oklch(0.4 0.02 256 / 0.08);
+  --shadow-md: 0 2px 6px oklch(0.4 0.02 256 / 0.1), 0 1px 2px oklch(0.4 0.02 256 / 0.06);
+  --shadow-lg: 0 12px 28px oklch(0.4 0.02 256 / 0.14), 0 2px 6px oklch(0.4 0.02 256 / 0.08);
+  --shadow-xl: 0 16px 40px oklch(0.4 0.02 256 / 0.18), 0 0 0 1px oklch(0.4 0.02 256 / 0.06);
 
-  /* Font Family */
+  /* Font Family — Geist (UI) + Geist Mono (code/IDs) */
   --font-sans:
-    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol', 'Noto Color Emoji';
+    'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono:
-    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono',
+    'Geist Mono', ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas,
     monospace;
 
   /* Font Sizes */
@@ -127,6 +182,9 @@
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.625;
 
+  /* Letter spacing — Meridian overline tracking */
+  --tracking-overline: 0.07em;
+
   /* Z-Index Scale */
   --z-index-dropdown: 50;
   --z-index-sticky: 100;
@@ -137,10 +195,10 @@
   --z-index-tooltip: 600;
   --z-index-toast: 700;
 
-  /* Transitions */
-  --transition-fast: 150ms;
-  --transition-normal: 200ms;
-  --transition-slow: 300ms;
+  /* Transitions (Meridian: minimal & fast) */
+  --transition-fast: 130ms;
+  --transition-normal: 160ms;
+  --transition-slow: 220ms;
 
   /* Animation */
   --animate-accordion-down: accordion-down 0.2s ease-out;
@@ -148,64 +206,88 @@
   --animate-spin: spin 1s linear infinite;
   --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-bounce: bounce 1s infinite;
+  --animate-progress-indeterminate: progress-indeterminate 1.2s ease-in-out infinite;
 }
 
-/* Dark Mode Theme — activated via .dark class on <html> */
+/* ============================================
+   DARK THEME (default appearance) — blue-gray "ink"
+   Activated via .dark class on <html>; applied by default unless the operator
+   has chosen light (see index.html theme script + ThemeContext).
+   ============================================ */
 .dark {
-  --color-background: #111827;
-  --color-foreground: #f3f4f6;
+  color-scheme: dark;
 
-  --color-card: #1f2937;
-  --color-card-foreground: #f3f4f6;
+  --color-background: var(--ink-980);
+  --color-foreground: oklch(0.97 0.004 256);
 
-  --color-popover: #1f2937;
-  --color-popover-foreground: #f3f4f6;
+  --color-card: var(--ink-900);
+  --color-card-foreground: oklch(0.97 0.004 256);
 
-  --color-primary: #3b82f6;
-  --color-primary-foreground: #ffffff;
+  --color-popover: var(--ink-850);
+  --color-popover-foreground: oklch(0.97 0.004 256);
 
-  --color-secondary: #374151;
-  --color-secondary-foreground: #f3f4f6;
+  --color-primary: var(--azure-500);
+  --color-primary-foreground: oklch(0.985 0.01 256);
 
-  --color-muted: #374151;
-  --color-muted-foreground: #9ca3af;
+  --color-secondary: var(--ink-800);
+  --color-secondary-foreground: oklch(0.97 0.004 256);
 
-  --color-accent: #374151;
-  --color-accent-foreground: #f3f4f6;
+  --color-muted: var(--ink-800);
+  --color-muted-foreground: oklch(0.58 0.02 256);
 
-  --color-destructive: #ef4444;
-  --color-destructive-foreground: #ffffff;
+  --color-accent: var(--ink-800);
+  --color-accent-foreground: oklch(0.97 0.004 256);
 
-  --color-border: #374151;
-  --color-input: #374151;
-  --color-ring: #3b82f680;
+  --color-destructive: var(--red-400);
+  --color-destructive-foreground: oklch(0.985 0.01 256);
 
-  --color-surface: #1f2937;
-  --color-surface-secondary: #111827;
-  --color-surface-tertiary: #374151;
+  --color-success: var(--green-400);
+  --color-success-foreground: oklch(0.18 0.02 256);
 
-  /* Semantic Subtle Colors - Dark Mode */
-  --color-muted-subtle: #374151;
-  --color-muted-subtle-foreground: #d1d5db;
+  --color-warning: var(--amber-400);
+  --color-warning-foreground: oklch(0.18 0.02 256);
 
-  --color-destructive-subtle: #450a0a;
-  --color-destructive-subtle-foreground: #f87171;
+  --color-info: var(--azure-400);
+  --color-info-foreground: oklch(0.18 0.02 256);
 
-  --color-success-subtle: #052e16;
-  --color-success-subtle-foreground: #4ade80;
+  --color-border: var(--ink-800);
+  --color-input: var(--ink-750);
+  --color-ring: oklch(0.73 0.13 256 / 0.55);
 
-  --color-warning-subtle: #451a03;
-  --color-warning-subtle-foreground: #fbbf24;
+  /* Surface Colors — dark */
+  --color-surface: var(--ink-900);
+  --color-surface-secondary: var(--ink-950);
+  --color-surface-tertiary: var(--ink-850);
 
-  --color-info-subtle: #1e3a5f;
-  --color-info-subtle-foreground: #60a5fa;
+  /* Semantic Subtle Colors — dark */
+  --color-muted-subtle: oklch(0.745 0.018 256 / 0.1);
+  --color-muted-subtle-foreground: oklch(0.745 0.018 256);
 
-  --color-primary-subtle: #1e3a5f;
-  --color-primary-subtle-foreground: #60a5fa;
+  --color-destructive-subtle: oklch(0.7 0.18 22 / 0.14);
+  --color-destructive-subtle-foreground: oklch(0.7 0.18 22);
 
-  /* Purple subtle - Dark Mode */
-  --color-purple-subtle: #2e1065;
-  --color-purple-subtle-foreground: #a78bfa;
+  --color-success-subtle: oklch(0.76 0.15 158 / 0.14);
+  --color-success-subtle-foreground: oklch(0.76 0.15 158);
+
+  --color-warning-subtle: oklch(0.82 0.14 78 / 0.14);
+  --color-warning-subtle-foreground: oklch(0.82 0.14 78);
+
+  --color-info-subtle: oklch(0.73 0.13 256 / 0.14);
+  --color-info-subtle-foreground: oklch(0.73 0.13 256);
+
+  --color-primary-subtle: oklch(0.645 0.155 256 / 0.14);
+  --color-primary-subtle-foreground: oklch(0.73 0.13 256);
+
+  /* Purple/violet subtle — dark */
+  --color-purple-subtle: oklch(0.64 0.165 295 / 0.16);
+  --color-purple-subtle-foreground: oklch(0.72 0.15 295);
+
+  /* Shadows — dark (heavier; for overlays). Cards rely on borders, not shadow. */
+  --shadow-xs: none;
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-md: 0 2px 6px oklch(0 0 0 / 0.4), 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-lg: 0 12px 28px oklch(0 0 0 / 0.5), 0 2px 6px oklch(0 0 0 / 0.35);
+  --shadow-xl: 0 16px 40px oklch(0 0 0 / 0.55), 0 0 0 1px oklch(0 0 0 / 0.3);
 }
 
 /* ============================================
@@ -255,6 +337,15 @@
   50% {
     transform: translateY(0);
     animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
   }
 }
 
@@ -340,13 +431,26 @@
     background-color: var(--color-muted-foreground);
   }
 
-  /* Focus visible styling */
+  /* Focus visible — Meridian: 2px outline, offset 2px, on every interactive element */
   *:focus-visible {
-    @apply outline-none ring-1 ring-ring;
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
   }
 
   *:focus:not(:focus-visible) {
     outline: none;
+  }
+
+  /* Meridian: no decorative motion — respect reduced-motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -367,10 +471,31 @@
     border: 0;
   }
 
+  /* Meridian typography helpers (opt-in; pair with text-color utilities) */
+  .ds-display {
+    font: 600 30px/1.15 var(--font-sans);
+    letter-spacing: -0.01em;
+  }
+  .ds-h1 {
+    font: 600 22px/1.25 var(--font-sans);
+    letter-spacing: -0.01em;
+  }
+  .ds-h2 {
+    font: 600 18px/1.3 var(--font-sans);
+  }
+  .ds-h3 {
+    font: 600 15px/1.35 var(--font-sans);
+  }
+  .ds-overline {
+    font: 600 11px/1.2 var(--font-sans);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
   /* Status Card Utilities — semantic border+bg combinations */
   .status-warning {
     background-color: var(--color-warning-subtle);
-    border-color: oklch(0.75 0.15 75);
+    border-color: color-mix(in oklab, var(--color-warning) 40%, transparent);
   }
 
   .status-warning-text {
@@ -379,7 +504,7 @@
 
   .status-success {
     background-color: var(--color-success-subtle);
-    border-color: oklch(0.7 0.15 145);
+    border-color: color-mix(in oklab, var(--color-success) 40%, transparent);
   }
 
   .status-success-text {
@@ -388,23 +513,10 @@
 
   .status-error {
     background-color: var(--color-destructive-subtle);
-    border-color: oklch(0.55 0.22 25);
+    border-color: color-mix(in oklab, var(--color-destructive) 40%, transparent);
   }
 
   .status-error-text {
     color: var(--color-destructive-subtle-foreground);
-  }
-
-  /* Dark mode overrides for status utilities */
-  .dark .status-warning {
-    border-color: oklch(0.4 0.08 75);
-  }
-
-  .dark .status-success {
-    border-color: oklch(0.35 0.08 145);
-  }
-
-  .dark .status-error {
-    border-color: oklch(0.25 0.12 25);
   }
 }

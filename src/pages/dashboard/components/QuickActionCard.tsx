@@ -9,10 +9,10 @@ interface QuickActionCardProps {
 }
 
 const colorStyles: Record<string, string> = {
-  primary: 'border-l-primary hover:bg-primary-subtle',
-  success: 'border-l-success hover:bg-success-subtle',
-  warning: 'border-l-warning hover:bg-warning-subtle',
-  info: 'border-l-info hover:bg-info-subtle',
+  primary: 'hover:bg-primary-subtle',
+  success: 'hover:bg-success-subtle',
+  warning: 'hover:bg-warning-subtle',
+  info: 'hover:bg-info-subtle',
 };
 
 const iconColorStyles: Record<string, string> = {
@@ -39,7 +39,7 @@ export function QuickActionCard({ action }: QuickActionCardProps): React.JSX.Ele
   return (
     <Link to={action.href} className="block no-underline">
       <div className={cn(
-        'flex items-center gap-4 p-4 rounded-lg border border-border border-l-4 bg-card transition-colors',
+        'flex items-center gap-4 p-4 rounded-lg border border-border bg-card transition-colors hover:border-input',
         colorStyles[action.color]
       )}>
         <div className={cn('shrink-0', iconColorStyles[action.color])}>

@@ -410,7 +410,7 @@ describe('Gate G3: Navigation UI Runtime Proof (Flat URL Model)', () => {
       setupAuthMocks(mockAdminUser);
       render(
         <TestRouter initialEntries={['/users']}>
-          <NavigationMenu userType={UserType.ADMIN} collapsed={false} />
+          <NavigationMenu userType={UserType.ADMIN} />
         </TestRouter>
       );
 
@@ -428,7 +428,7 @@ describe('Gate G3: Navigation UI Runtime Proof (Flat URL Model)', () => {
       setupAuthMocks(mockAdminUser);
       render(
         <TestRouter initialEntries={['/']}>
-          <NavigationMenu userType={UserType.ADMIN} collapsed={false} />
+          <NavigationMenu userType={UserType.ADMIN} />
         </TestRouter>
       );
 
@@ -444,7 +444,7 @@ describe('Gate G3: Navigation UI Runtime Proof (Flat URL Model)', () => {
       setupAuthMocks(mockAdminUser);
       render(
         <TestRouter initialEntries={['/users']}>
-          <NavigationMenu userType={UserType.ADMIN} collapsed={false} />
+          <NavigationMenu userType={UserType.ADMIN} />
         </TestRouter>
       );
 

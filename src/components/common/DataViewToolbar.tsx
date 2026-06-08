@@ -92,26 +92,28 @@ export function DataViewToolbar({
           {showViewToggle && (
             <TooltipProvider delayDuration={300}>
               <div
-                className="inline-flex items-center rounded-lg border bg-muted/50 p-0.5"
+                className="inline-flex items-center rounded-md border border-border bg-secondary p-[3px]"
                 role="tablist"
                 aria-label="View mode"
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleViewModeChange('table')}
                       role="tab"
                       aria-selected={viewMode === 'table'}
                       aria-controls="data-view-content"
                       className={cn(
-                        'h-8 gap-1.5 px-2.5 transition-all',
-                        viewMode === 'table' && 'shadow-sm'
+                        'h-7 gap-1.5 rounded-[4px] px-2.5 transition-colors',
+                        viewMode === 'table'
+                          ? 'bg-card text-foreground shadow-sm'
+                          : 'text-muted-foreground'
                       )}
                     >
                       <Table2 className="h-4 w-4" aria-hidden="true" />
-                      <span className="hidden sm:inline text-sm">Table</span>
+                      <span className="hidden text-[13px] sm:inline">Table</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="sm:hidden">
@@ -122,19 +124,21 @@ export function DataViewToolbar({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       size="sm"
                       onClick={() => handleViewModeChange('grid')}
                       role="tab"
                       aria-selected={viewMode === 'grid'}
                       aria-controls="data-view-content"
                       className={cn(
-                        'h-8 gap-1.5 px-2.5 transition-all',
-                        viewMode === 'grid' && 'shadow-sm'
+                        'h-7 gap-1.5 rounded-[4px] px-2.5 transition-colors',
+                        viewMode === 'grid'
+                          ? 'bg-card text-foreground shadow-sm'
+                          : 'text-muted-foreground'
                       )}
                     >
                       <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-                      <span className="hidden sm:inline text-sm">Grid</span>
+                      <span className="hidden text-[13px] sm:inline">Grid</span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="sm:hidden">

@@ -96,7 +96,7 @@ export function LandingPage(): React.JSX.Element {
             </button>
             <Button onClick={() => setIsLoginModalOpen(true)} size="md">
               <Lock size={16} />
-              Sign In
+              Sign in
             </Button>
           </div>
         </div>
@@ -112,7 +112,7 @@ export function LandingPage(): React.JSX.Element {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-sm text-primary">
               <Shield size={16} />
-              <span>Core Authentication Infrastructure</span>
+              <span>Core authentication infrastructure</span>
             </div>
 
             <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
@@ -206,7 +206,7 @@ export function LandingPage(): React.JSX.Element {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-16 max-w-2xl text-center">
             <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">
-              Core Features
+              Core features
             </h2>
             <p className="text-lg text-muted-foreground">
               Production-ready authentication infrastructure with
@@ -230,7 +230,7 @@ export function LandingPage(): React.JSX.Element {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-16 max-w-2xl text-center">
             <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">
-              API Capabilities
+              API capabilities
             </h2>
             <p className="text-lg text-muted-foreground">
               RESTful API with comprehensive endpoints for all auth operations
@@ -270,7 +270,7 @@ export function LandingPage(): React.JSX.Element {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="mx-auto mb-16 max-w-2xl text-center">
             <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">
-              System Architecture
+              System architecture
             </h2>
             <p className="text-lg text-muted-foreground">
               How data flows through the authentication system
@@ -374,7 +374,7 @@ export function LandingPage(): React.JSX.Element {
           <Card className="mx-auto max-w-3xl overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/5">
             <CardContent className="p-8 text-center sm:p-12">
               <h2 className="mb-4 text-3xl font-bold text-foreground sm:text-4xl">
-                Explore the Dashboard
+                Explore the dashboard
               </h2>
               <p className="mb-8 text-lg text-muted-foreground">
                 Sign in to access the full authentication management interface,
@@ -387,7 +387,7 @@ export function LandingPage(): React.JSX.Element {
                   className="group"
                 >
                   <Lock size={20} />
-                  Sign In
+                  Sign in
                   <ArrowRight
                     size={16}
                     className="transition-transform group-hover:translate-x-1"
@@ -470,9 +470,7 @@ export function LandingPage(): React.JSX.Element {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <Shield size={18} />
                 </div>
-                <span className="font-semibold text-foreground">
-                  Magic Auth
-                </span>
+                <span className="font-semibold text-foreground">Magic Auth</span>
               </div>
               <div className="flex items-center gap-4 text-sm">
                 <a

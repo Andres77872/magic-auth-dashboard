@@ -4,15 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <title>Magic Auth Dashboard</title>
-    <!-- Inline theme script: prevents flash of wrong theme on initial load -->
+    <!-- Inline theme script: prevents flash of wrong theme on initial load.
+         Meridian is dark-first: default to the dark "ink" theme unless the
+         operator has explicitly chosen light, or chosen "system" (follow OS). -->
     <script>
       (function () {
         try {
           var stored = localStorage.getItem('theme');
           var isDark =
+            !stored ||
             stored === 'dark' ||
-            ((!stored || stored === 'system') &&
+            (stored === 'system' &&
               window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (isDark) document.documentElement.classList.add('dark');
         } catch (e) {}

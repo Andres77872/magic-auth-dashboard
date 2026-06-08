@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import type { ProjectGroupInfo } from '@/types/project.types';
 import type { UserGroup } from '@/types/group.types';
+import { ROUTES } from '@/utils/routes';
 
 export interface WorkflowStep {
   id: string;
@@ -54,7 +55,7 @@ export function useProjectWorkflow({
 
     // Build the "Add Users" target from the first available user group
     const addUserGroupTarget = firstUserGroupHash
-      ? `/dashboard/groups/${firstUserGroupHash}`
+      ? `${ROUTES.GROUPS}/${firstUserGroupHash}`
       : undefined;
 
     return [
@@ -88,7 +89,7 @@ export function useProjectWorkflow({
             ? {
                 label: 'Grant User Group Access',
                 action: 'navigate',
-                target: '/dashboard/groups',
+                target: ROUTES.GROUPS,
               }
             : undefined,
       },

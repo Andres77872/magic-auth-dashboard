@@ -127,7 +127,7 @@ export function DataViewTableView<T extends object>({
               <TableCaption className="sr-only">{caption}</TableCaption>
             )}
             <TableHeader
-              className={cn('bg-muted/40', stickyHeader && 'sticky top-0 z-10')}
+              className={cn('bg-card', stickyHeader && 'sticky top-0 z-10')}
             >
               <TableRow className="hover:bg-transparent">
                 {/* Selection checkbox header */}
@@ -171,7 +171,6 @@ export function DataViewTableView<T extends object>({
                       scope="col"
                       aria-sort={ariaSort as AriaAttributes['aria-sort']}
                       className={cn(
-                        'whitespace-nowrap font-medium text-muted-foreground',
                         ALIGN_CLASSES[column.align ?? 'left'],
                         column.sortable && 'cursor-pointer select-none',
                         column.hideOnMobile && 'hidden md:table-cell'
@@ -186,8 +185,7 @@ export function DataViewTableView<T extends object>({
                           type="button"
                           className={cn(
                             'inline-flex items-center gap-0.5 rounded-sm px-1 -mx-1 py-0.5',
-                            'transition-colors hover:text-foreground focus-visible:outline-none',
-                            'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                            'transition-colors hover:text-foreground',
                             isActive && 'text-foreground'
                           )}
                           onClick={() => onSort(column)}
@@ -260,8 +258,8 @@ export function DataViewTableView<T extends object>({
                       key={getItemKey(row, index)}
                       className={cn(
                         'group transition-colors',
-                        isSelected && 'bg-primary/5',
-                        onRowClick && 'cursor-pointer hover:bg-muted/50',
+                        isSelected && 'bg-primary/10',
+                        onRowClick && 'cursor-pointer',
                         customRowClass
                       )}
                       onClick={(e) => {

@@ -30,20 +30,23 @@ function applyTheme(resolved: ResolvedTheme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Meridian is dark-first: with no stored preference, default to the dark
+  // "ink" theme rather than following the OS. Operators can switch to light
+  // (or "system") and that choice is persisted.
   const [theme, setThemeState] = useState<Theme>(() => {
     try {
-      return (localStorage.getItem('theme') as Theme) ?? 'system';
+      return (localStorage.getItem('theme') as Theme) ?? 'dark';
     } catch {
-      return 'system';
+      return 'dark';
     }
   });
 
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
     const stored = (() => {
       try {
-        return (localStorage.getItem('theme') as Theme) ?? 'system';
+        return (localStorage.getItem('theme') as Theme) ?? 'dark';
       } catch {
-        return 'system' as Theme;
+        return 'dark' as Theme;
       }
     })();
     return resolveTheme(stored);

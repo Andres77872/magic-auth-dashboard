@@ -48,10 +48,10 @@ export function ProjectAnalyticsCard({ project, onClick }: ProjectAnalyticsCardP
   const config = healthConfig[healthLevel];
 
   return (
-    <Card 
+    <Card
       className={cn(
-        'transition-all duration-200 overflow-hidden',
-        onClick && 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 group'
+        'overflow-hidden transition-colors',
+        onClick && 'group cursor-pointer hover:border-input'
       )}
       onClick={onClick}
     >

@@ -8,20 +8,20 @@ interface ChartProps {
   className?: string;
 }
 
-// Modern color palette for charts
+// Meridian categorical palette (hue 256 azure + semantic hues)
 const CHART_COLORS = [
-  'rgb(59, 130, 246)',   // primary blue
-  'rgb(34, 197, 94)',    // green
-  'rgb(245, 158, 11)',   // amber
-  'rgb(239, 68, 68)',    // red
-  'rgb(6, 182, 212)',    // cyan
-  'rgb(168, 162, 158)',  // gray
-  'rgb(139, 92, 246)',   // purple
-  'rgb(236, 72, 153)',   // pink
+  'var(--azure-500)',
+  'var(--green-500)',
+  'var(--amber-500)',
+  'var(--red-500)',
+  'var(--teal-500)',
+  'var(--violet-500)',
+  'var(--ink-400)',
+  'oklch(0.62 0.16 350)',
 ];
 
 export function Chart({ config, className = '' }: ChartProps): React.JSX.Element {
-  const { type, data, title, color = 'rgb(59, 130, 246)', height = 200 } = config;
+  const { type, data, title, color = 'var(--color-primary)', height = 200 } = config;
 
   const maxValue = Math.max(...data.map(d => d.value));
   const minValue = Math.min(...data.map(d => d.value));
@@ -350,7 +350,7 @@ export function Chart({ config, className = '' }: ChartProps): React.JSX.Element
                   key={index}
                   d={pathData}
                   fill={CHART_COLORS[index % CHART_COLORS.length]}
-                  stroke="white"
+                  stroke="var(--color-card)"
                   strokeWidth="2"
                   className="transition-opacity hover:opacity-80 cursor-pointer"
                 >

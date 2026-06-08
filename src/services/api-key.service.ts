@@ -20,7 +20,7 @@ import type {
 } from '@/types/api-key.types';
 
 class ApiKeyService {
-  private buildQuery(params?: Record<string, string | number | undefined>): string {
+  private buildQuery(params?: Record<string, string | number | boolean | undefined>): string {
     if (!params) return '';
     const queryParams = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
@@ -34,7 +34,7 @@ class ApiKeyService {
    * List all API keys (admin scope).
    * GET /api-keys
    */
-  async listKeys(params?: { limit?: number; offset?: number }): Promise<ApiKeyListResponse> {
+  async listKeys(params?: { limit?: number; offset?: number; active_only?: boolean }): Promise<ApiKeyListResponse> {
     const url = `/api-keys${this.buildQuery(params)}`;
     const response = await apiClient.get<ApiKeyListResponse>(url);
     return response as unknown as ApiKeyListResponse;
@@ -44,7 +44,7 @@ class ApiKeyService {
    * List keys by consumer user.
    * GET /api-keys/users/{user_hash}
    */
-  async listKeysByUser(userHash: string, params?: { limit?: number; offset?: number }): Promise<ApiKeyListResponse> {
+  async listKeysByUser(userHash: string, params?: { limit?: number; offset?: number; active_only?: boolean }): Promise<ApiKeyListResponse> {
     const url = `/api-keys/users/${userHash}${this.buildQuery(params)}`;
     const response = await apiClient.get<ApiKeyListResponse>(url);
     return response as unknown as ApiKeyListResponse;
@@ -54,7 +54,7 @@ class ApiKeyService {
    * List keys by project.
    * GET /api-keys/projects/{project_hash}
    */
-  async listKeysByProject(projectHash: string, params?: { limit?: number; offset?: number }): Promise<ApiKeyListResponse> {
+  async listKeysByProject(projectHash: string, params?: { limit?: number; offset?: number; active_only?: boolean }): Promise<ApiKeyListResponse> {
     const url = `/api-keys/projects/${projectHash}${this.buildQuery(params)}`;
     const response = await apiClient.get<ApiKeyListResponse>(url);
     return response as unknown as ApiKeyListResponse;

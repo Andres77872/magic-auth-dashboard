@@ -19,6 +19,7 @@ import React from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
+import { useBreadcrumbLabel } from '@/contexts';
 import { cn } from '@/lib/utils';
 
 interface BreadcrumbItem {
@@ -45,6 +46,10 @@ const SECTION_ROUTES: readonly string[] = [
 export function Breadcrumbs(): React.JSX.Element {
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  // Human-friendly label published by the current detail page (e.g. a
+  // username). Used as the source of truth for the leaf crumb so we show
+  // "Users › John Doe" instead of "Users › 12345678…".
+  const { label: entityLabel } = useBreadcrumbLabel();
 
   // Generate breadcrumbs from current path and query params
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
@@ -87,13 +92,23 @@ export function Breadcrumbs(): React.JSX.Element {
     pathSegments.forEach((segment, index) => {
       currentPath += `/${segment}`;
       const isLast = index === pathSegments.length - 1;
-      const label = formatSegmentLabel(segment);
+      const segmentLabel = formatSegmentLabel(segment);
 
       // For entity hashes (last segment that looks like a hash), show truncated version
       const isEntityHash = isLast && segment.length > 8 && !isNaN(Number(segment.charAt(0)));
 
+      // The page-supplied entity label is the source of truth for the leaf
+      // crumb; fall back to the truncated hash / formatted segment while the
+      // entity name is still loading or unavailable.
+      const displayLabel =
+        isLast && entityLabel
+          ? entityLabel
+          : isEntityHash
+            ? truncateHash(segment)
+            : segmentLabel;
+
       breadcrumbs.push({
-        label: isEntityHash ? truncateHash(segment) : label,
+        label: displayLabel,
         path: isLast ? undefined : currentPath,
         isActive: isLast && !searchParams.get('tab'),
       });

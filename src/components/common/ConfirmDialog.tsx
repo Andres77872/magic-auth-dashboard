@@ -27,16 +27,19 @@ const variantConfig = {
   danger: {
     icon: AlertCircle,
     iconClass: 'text-destructive',
+    tile: 'bg-destructive/10',
     buttonVariant: 'destructive' as const,
   },
   warning: {
     icon: AlertTriangle,
     iconClass: 'text-warning',
+    tile: 'bg-warning/10',
     buttonVariant: 'primary' as const,
   },
   info: {
     icon: Info,
     iconClass: 'text-info',
+    tile: 'bg-info/10',
     buttonVariant: 'primary' as const,
   },
 };
@@ -45,7 +48,7 @@ export function ConfirmDialog({
   isOpen,
   onClose,
   onConfirm,
-  title = 'Confirm Action',
+  title = 'Confirm action',
   message,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
@@ -62,7 +65,8 @@ export function ConfirmDialog({
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-full bg-muted',
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+                config.tile,
                 config.iconClass
               )}
               aria-hidden="true"

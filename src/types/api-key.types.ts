@@ -22,7 +22,17 @@ export interface ApiKey {
   last_used_at?: string | null;
   is_active: boolean;
   created_at: string;
+  updated_at?: string | null;
   revoked_at?: string | null;
+  revoke_reason?: string | null;
+  hash_algorithm?: string;
+  // Enrichment fields joined in by the list/detail endpoints (optional —
+  // not present on the one-time create response).
+  project_name?: string;
+  project_hash?: string;
+  owner_username?: string;
+  owner_user_hash?: string;
+  owner_user_type?: string;
 }
 
 /**

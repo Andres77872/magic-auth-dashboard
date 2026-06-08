@@ -28,6 +28,10 @@ export type {
 export { Badge, badgeVariants } from './badge';
 export type { BadgeProps } from './badge';
 
+// Avatar
+export { Avatar, avatarVariants } from './avatar';
+export type { AvatarProps } from './avatar';
+
 // Dialog
 export {
   Dialog,
