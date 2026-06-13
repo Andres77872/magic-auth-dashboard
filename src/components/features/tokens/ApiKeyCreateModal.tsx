@@ -1,8 +1,8 @@
 /**
  * API Key Create Modal
  *
- * Modal for admins to create API keys FOR a consumer user.
- * Requires selecting both a target consumer (user_hash) and a project.
+ * Modal for admins to create API keys for a user.
+ * Requires selecting both a target owner (user_hash) and a project.
  * Uses FormData per backend spec.
  */
 
@@ -35,7 +35,7 @@ interface ApiKeyCreateModalProps {
   onClose: () => void;
   onSuccess: (response: CreateApiKeyResponse) => void;
   accessibleProjects: Project[];
-  /** Pre-filled user hash from parent (user-centric flow) */
+  /** Pre-filled user hash from parent (owner-centric flow) */
   prefilledUserHash?: string;
 }
 
@@ -76,7 +76,7 @@ export function ApiKeyCreateModal({
     
     void (async (): Promise<void> => {
       if (!userHash.trim()) {
-        setError('Consumer user hash is required');
+        setError('Owner user hash is required');
         return;
       }
 
@@ -127,11 +127,10 @@ export function ApiKeyCreateModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Key className="h-5 w-5" />
-            Create Consumer API Token
+            Create API Token
           </DialogTitle>
           <DialogDescription>
-            Create a project-scoped API token for a consumer user.
-            The token grants programmatic access on their behalf.
+            Create a project-scoped API token for a user.
           </DialogDescription>
         </DialogHeader>
 
@@ -141,15 +140,15 @@ export function ApiKeyCreateModal({
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
               <p className="text-sm text-muted-foreground">
-                You are creating this token on behalf of a consumer user.
+                You are creating this token on behalf of a user.
                 The token's permissions are scoped to the selected project.
               </p>
             </div>
           </div>
 
-          {/* Consumer user hash (required) */}
+          {/* Owner user hash (required) */}
           <div className="space-y-2">
-            <Label htmlFor="user_hash">Consumer User Hash *</Label>
+            <Label htmlFor="user_hash">Owner User Hash *</Label>
             <Input
               id="user_hash"
               value={userHash}
@@ -162,7 +161,7 @@ export function ApiKeyCreateModal({
             <p className="text-xs text-muted-foreground">
               {prefilledUserHash
                 ? 'Pre-filled from selected user'
-                : 'The hash of the consumer user this token will belong to'}
+                : 'The hash of the user this token will belong to'}
             </p>
           </div>
 

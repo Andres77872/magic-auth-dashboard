@@ -1,8 +1,8 @@
 /**
  * API Tokens overview
  *
- * Unified, filterable management view for consumer API tokens. Admins see all
- * tokens across the projects they administer; root users pick a consumer user
+ * Unified, filterable management view for API tokens. Admins see all
+ * tokens across the projects they administer; root users pick an owner user
  * or project to scope the list (the backend requires a filter for root).
  *
  * Mirrors the Users / Projects list pages: stats row, filter bar + search,
@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Clock,
   Ban,
+  KeyRound,
 } from 'lucide-react';
 import {
   PageHeader,
@@ -40,11 +41,17 @@ import type { Filter, StatCardProps, DataViewColumn } from '@/components/common'
 import { Avatar } from '@/components/ui/avatar';
 import { useApiKeys, useUsers, useUserType } from '@/hooks';
 import { ApiKeyCreateModal } from './ApiKeyCreateModal';
+import { DelegatedAuthTokenCreateModal } from './DelegatedAuthTokenCreateModal';
 import { ApiKeyEditModal } from './ApiKeyEditModal';
 import { ApiKeyRevealModal } from './ApiKeyRevealModal';
 import { ApiKeyDetailSheet } from './ApiKeyDetailSheet';
 import { computeApiKeyStatus } from '@/types/api-key.types';
-import type { ApiKey, ApiKeyStatus, CreateApiKeyResponse } from '@/types/api-key.types';
+import type {
+  ApiKey,
+  ApiKeyStatus,
+  CreateApiKeyResponse,
+  DelegatedAuthRevealConfig,
+} from '@/types/api-key.types';
 import type { ProjectDetails } from '@/types/project.types';
 import { projectService } from '@/services/project.service';
 import { formatDateTime } from '@/utils/component-utils';
@@ -76,21 +83,20 @@ export function ApiKeysTab(): React.JSX.Element {
 
   // Modal / drawer state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDelegatedCreateModalOpen, setIsDelegatedCreateModalOpen] = useState(false);
   const [isRevealModalOpen, setIsRevealModalOpen] = useState(false);
   const [isRevokeDialogOpen, setIsRevokeDialogOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [createdKeyData, setCreatedKeyData] = useState<CreateApiKeyResponse | null>(null);
+  const [createdDelegatedAuthConfig, setCreatedDelegatedAuthConfig] =
+    useState<DelegatedAuthRevealConfig | null>(null);
   const [selectedKey, setSelectedKey] = useState<ApiKey | null>(null);
   const [detailKey, setDetailKey] = useState<ApiKey | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
 
   // Filter option sources
-  const { users } = useUsers({ limit: 50, initialFilters: { userType: 'consumer' } });
-  const consumerUsers = useMemo(
-    () => users.filter((u) => u.user_type === 'consumer'),
-    [users]
-  );
+  const { users } = useUsers({ limit: 100 });
   const [availableProjects, setAvailableProjects] = useState<ProjectDetails[]>([]);
   useEffect(() => {
     projectService
@@ -203,16 +209,32 @@ export function ApiKeysTab(): React.JSX.Element {
 
   // Create / reveal / edit / revoke / detail handlers
   const handleCreateClick = useCallback(() => setIsCreateModalOpen(true), []);
+  const handleDelegatedCreateClick = useCallback(
+    () => setIsDelegatedCreateModalOpen(true),
+    []
+  );
 
   const handleCreateSuccess = useCallback((response: CreateApiKeyResponse) => {
     setCreatedKeyData(response);
+    setCreatedDelegatedAuthConfig(null);
     setIsCreateModalOpen(false);
     setIsRevealModalOpen(true);
   }, []);
 
+  const handleDelegatedCreateSuccess = useCallback(
+    (response: CreateApiKeyResponse, config: DelegatedAuthRevealConfig) => {
+      setCreatedKeyData(response);
+      setCreatedDelegatedAuthConfig(config);
+      setIsDelegatedCreateModalOpen(false);
+      setIsRevealModalOpen(true);
+    },
+    []
+  );
+
   const handleRevealConfirm = useCallback(() => {
     setIsRevealModalOpen(false);
     setCreatedKeyData(null);
+    setCreatedDelegatedAuthConfig(null);
     void refetch();
   }, [refetch]);
 
@@ -475,12 +497,12 @@ export function ApiKeysTab(): React.JSX.Element {
   const filters: Filter[] = [
     {
       key: 'user',
-      label: 'All users',
+      label: 'All owners',
       value: filterUserHash || '',
       onChange: handleSelectUser,
       options: [
-        { value: '', label: 'All users' },
-        ...consumerUsers.map((u) => ({ value: u.user_hash, label: u.username })),
+        { value: '', label: 'All owners' },
+        ...users.map((u) => ({ value: u.user_hash, label: u.username })),
       ],
     },
     {
@@ -524,18 +546,29 @@ export function ApiKeysTab(): React.JSX.Element {
     <>
       <PageHeader
         title="API Tokens"
-        subtitle="View and manage consumer API tokens across your projects"
+        subtitle="View and manage project-scoped API tokens and delegated auth tokens"
         icon={<Key size={28} />}
         actions={
-          <Button
-            variant="primary"
-            size="md"
-            leftIcon={<Plus size={16} />}
-            onClick={handleCreateClick}
-            aria-label="Create a new API token"
-          >
-            Create Token
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="md"
+              leftIcon={<KeyRound size={16} />}
+              onClick={handleDelegatedCreateClick}
+              aria-label="Create a new delegation token"
+            >
+              Create Delegation Token
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<Plus size={16} />}
+              onClick={handleCreateClick}
+              aria-label="Create a new API token"
+            >
+              Create Token
+            </Button>
+          </div>
         }
       />
 
@@ -567,7 +600,7 @@ export function ApiKeysTab(): React.JSX.Element {
         <EmptyState
           icon={<Key size={32} />}
           title="Select a user or project"
-          description="Choose a consumer user or a project above to view and manage its API tokens."
+          description="Choose an owner user or a project above to view and manage its API tokens."
         />
       ) : (
         <>
@@ -591,7 +624,7 @@ export function ApiKeysTab(): React.JSX.Element {
             emptyMessage={
               hasActiveFilters ? 'No tokens match your filters' : 'No API tokens found'
             }
-            emptyDescription="Create a token to grant a consumer programmatic project access"
+            emptyDescription="Create a token to grant programmatic project access"
             emptyIcon={<Key size={32} />}
             emptyAction={emptyAction}
             skeletonRows={8}
@@ -626,12 +659,21 @@ export function ApiKeysTab(): React.JSX.Element {
         prefilledUserHash={filterUserHash}
       />
 
+      <DelegatedAuthTokenCreateModal
+        isOpen={isDelegatedCreateModalOpen}
+        onClose={() => setIsDelegatedCreateModalOpen(false)}
+        onSuccess={handleDelegatedCreateSuccess}
+        availableProjects={availableProjects}
+        availableUsers={users}
+      />
+
       {/* One-time reveal modal */}
       {createdKeyData && (
         <ApiKeyRevealModal
           isOpen={isRevealModalOpen}
           onClose={handleRevealConfirm}
           keyData={createdKeyData}
+          delegatedAuthConfig={createdDelegatedAuthConfig || undefined}
         />
       )}
 
@@ -654,7 +696,7 @@ export function ApiKeysTab(): React.JSX.Element {
           setSelectedKey(null);
         }}
         onConfirm={handleRevokeConfirm}
-        title="Revoke Consumer Token"
+        title="Revoke API Token"
         message={
           selectedKey
             ? `Are you sure you want to revoke token "${selectedKey.fingerprint}"? This action cannot be undone. Any services using this token will lose access immediately. Changes may take up to 60 seconds to propagate due to cache.`

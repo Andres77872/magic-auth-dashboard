@@ -3,7 +3,7 @@
  *
  * Types for admin-managed API key operations.
  * Admins create/list/revoke project-scoped machine-to-machine credentials
- * FOR consumer users. Consumers cannot log into the dashboard.
+ * for user or service-account owners.
  */
 
 /**
@@ -37,10 +37,10 @@ export interface ApiKey {
 
 /**
  * Create request (FormData per backend spec)
- * Admin creates a key FOR a consumer user on a specific project.
+ * Admin creates a key for a user on a specific project.
  */
 export interface CreateApiKeyRequest {
-  user_hash: string;          // Required — target consumer user
+  user_hash: string;          // Required — target owner user
   project_hash: string;       // Required
   name?: string;
   description?: string;
@@ -58,6 +58,21 @@ export interface CreateApiKeyResponse {
   data: ApiKey & {
     api_key: string;          // Full token sk_{public_id}.{secret} — ONLY at creation
   };
+}
+
+/**
+ * UI-only metadata for delegated-auth service tokens.
+ *
+ * These values are not persisted by api.auth. They are used after creation to
+ * render the env snippets required by the caller service and the target LLM
+ * service.
+ */
+export interface DelegatedAuthRevealConfig {
+  sourceProjectHash: string;
+  sourceProjectName?: string;
+  targetProjectHash: string;
+  targetProjectName?: string;
+  ownerUserHash: string;
 }
 
 /**

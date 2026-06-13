@@ -25,22 +25,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import type { CreateApiKeyResponse } from '@/types/api-key.types';
+import type {
+  CreateApiKeyResponse,
+  DelegatedAuthRevealConfig,
+} from '@/types/api-key.types';
 
 interface ApiKeyRevealModalProps {
   isOpen: boolean;
   onClose: () => void;
   keyData: CreateApiKeyResponse;
+  delegatedAuthConfig?: DelegatedAuthRevealConfig;
 }
 
 export function ApiKeyRevealModal({
   isOpen,
   onClose,
   keyData,
+  delegatedAuthConfig,
 }: ApiKeyRevealModalProps): React.JSX.Element {
   // State
   const [hasCopied, setHasCopied] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [hasConfirmed, setHasConfirmed] = useState(false);
   const [showConfirmWarning, setShowConfirmWarning] = useState(false);
 
@@ -59,29 +65,38 @@ export function ApiKeyRevealModal({
     if (!isOpen) {
       tokenRef.current = null;
       setHasCopied(false);
+      setCopiedField(null);
       setHasConfirmed(false);
       setShowConfirmWarning(false);
     }
   }, [isOpen]);
 
   // Copy to clipboard
-  const handleCopy = useCallback(async () => {
-    if (!tokenRef.current) return;
+  const handleCopy = useCallback(async (
+    value?: string,
+    field: string = 'token',
+    fallbackElementId: string = 'api-key-token',
+    countsAsSecretSaved: boolean = true
+  ) => {
+    const textToCopy = value || tokenRef.current;
+    if (!textToCopy) return;
 
     setIsCopying(true);
     try {
-      await navigator.clipboard.writeText(tokenRef.current);
-      setHasCopied(true);
-      
-      setTimeout(() => setHasCopied(false), 2000);
+      await navigator.clipboard.writeText(textToCopy);
+      if (countsAsSecretSaved) setHasCopied(true);
+      setCopiedField(field);
+
+      setTimeout(() => setCopiedField(null), 2000);
     } catch {
-      const tokenField = document.getElementById('api-key-token');
-      if (tokenField instanceof HTMLInputElement) {
+      const tokenField = document.getElementById(fallbackElementId);
+      if (tokenField instanceof HTMLInputElement || tokenField instanceof HTMLTextAreaElement) {
         tokenField.select();
         try {
           document.execCommand('copy');
-          setHasCopied(true);
-          setTimeout(() => setHasCopied(false), 2000);
+          if (countsAsSecretSaved) setHasCopied(true);
+          setCopiedField(field);
+          setTimeout(() => setCopiedField(null), 2000);
         } catch {
           console.error('Copy failed: fallback execCommand also failed');
         }
@@ -116,6 +131,12 @@ export function ApiKeyRevealModal({
   // Get key details
   const key = keyData?.data;
   const token = key?.api_key || '';
+  const callerEnvSnippet = delegatedAuthConfig
+    ? `MAGIC_LLM_DELEGATION_API_KEY=${token}`
+    : '';
+  const targetEnvSnippet = delegatedAuthConfig
+    ? `DELEGATED_AUTH_TRUSTED_CLIENTS=${delegatedAuthConfig.sourceProjectHash}:${key?.public_id || ''}`
+    : '';
 
   if (!key) return <></>;
 
@@ -145,7 +166,7 @@ export function ApiKeyRevealModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Key className="h-5 w-5 text-success" />
-            API Key Created
+            {delegatedAuthConfig ? 'Delegation Token Created' : 'API Key Created'}
           </DialogTitle>
           <DialogDescription>
             Your new API key has been created. Save this token now — it will not be shown again.
@@ -205,10 +226,80 @@ export function ApiKeyRevealModal({
               )}
             </Button>
           </div>
-          {hasCopied && (
+          {copiedField === 'token' && (
             <p className="text-sm text-success">Copied to clipboard!</p>
           )}
         </div>
+
+        {delegatedAuthConfig && (
+          <div className="space-y-4 rounded-sm border border-primary/20 bg-primary/5 p-4">
+            <div>
+              <h4 className="font-semibold text-foreground">Delegated Auth Configuration</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Target project: {delegatedAuthConfig.targetProjectName || delegatedAuthConfig.targetProjectHash}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Source project: {delegatedAuthConfig.sourceProjectName || delegatedAuthConfig.sourceProjectHash}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Caller service env</label>
+              <div className="relative">
+                <textarea
+                  id="delegated-caller-env"
+                  value={callerEnvSnippet}
+                  readOnly
+                  rows={2}
+                  className="flex w-full resize-none rounded-md border border-input bg-muted px-3 py-2 pr-10 font-mono text-sm shadow-sm"
+                  onClick={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-2 h-7"
+                  onClick={() => void handleCopy(callerEnvSnippet, 'caller-env', 'delegated-caller-env', true)}
+                  disabled={isCopying}
+                >
+                  {copiedField === 'caller-env' ? (
+                    <Check className="h-4 w-4 text-success" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Target service env</label>
+              <div className="relative">
+                <textarea
+                  id="delegated-target-env"
+                  value={targetEnvSnippet}
+                  readOnly
+                  rows={2}
+                  className="flex w-full resize-none rounded-md border border-input bg-muted px-3 py-2 pr-10 font-mono text-sm shadow-sm"
+                  onClick={(e) => e.currentTarget.select()}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-2 h-7"
+                  onClick={() => void handleCopy(targetEnvSnippet, 'target-env', 'delegated-target-env', false)}
+                  disabled={isCopying}
+                >
+                  {copiedField === 'target-env' ? (
+                    <Check className="h-4 w-4 text-success" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Confirmation checkbox */}
         <div className="flex items-start gap-3 py-4">

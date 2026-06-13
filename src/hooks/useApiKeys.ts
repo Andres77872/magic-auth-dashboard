@@ -3,7 +3,7 @@
  *
  * Hook for admin-managed API key operations with loading/error/refetch states.
  * Supports listing all keys, filtering by user or project, and CRUD operations.
- * Admins manage tokens FOR consumer users — this is NOT self-service.
+ * Admins manage tokens for user/service-account owners — this is NOT self-service.
  */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -19,7 +19,7 @@ interface UseApiKeysOptions {
   autoFetch?: boolean;
   limit?: number;
   offset?: number;
-  /** Filter by consumer user hash */
+  /** Filter by owner user hash */
   userHash?: string;
   /** Filter by project hash */
   projectHash?: string;

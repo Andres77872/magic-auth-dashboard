@@ -3,7 +3,7 @@
  *
  * Service for admin-managed API key operations.
  * All endpoints are under /api-keys for admin-scope management.
- * Admins create/list/revoke tokens FOR consumer users across projects.
+ * Admins create/list/revoke tokens for user/service-account owners across projects.
  *
  * CRITICAL: api_key field is returned ONLY at creation.
  * Frontend must display token in one-time reveal modal.
@@ -41,7 +41,7 @@ class ApiKeyService {
   }
 
   /**
-   * List keys by consumer user.
+   * List keys by owner user.
    * GET /api-keys/users/{user_hash}
    */
   async listKeysByUser(userHash: string, params?: { limit?: number; offset?: number; active_only?: boolean }): Promise<ApiKeyListResponse> {
@@ -61,7 +61,7 @@ class ApiKeyService {
   }
 
   /**
-   * Create new API key FOR a consumer user.
+   * Create new API key for an owner user.
    * POST /api-keys
    *
    * CRITICAL: Returns full token ONE-TIME only.
