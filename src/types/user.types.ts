@@ -138,6 +138,19 @@ export interface DeleteUserResponse extends ApiResponse {
   deleted_at: string;
 }
 
+// Response from the ROOT-only permanent hard delete (DELETE /users/{hash}/hard).
+// `removed` is optional — the backend may omit it; used only for richer messaging.
+export interface HardDeleteUserResponse extends ApiResponse {
+  user_hash: string;
+  username: string;
+  removed?: {
+    mode?: string;
+    user_type?: string;
+    emails_unlinked?: number;
+  };
+  deleted_at?: string;
+}
+
 export interface AdminUserListResponse extends ApiResponse {
   users: User[];
   pagination: PaginationResponse;

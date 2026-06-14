@@ -14,6 +14,7 @@ import type {
   UpdateUserStatusResponse,
   ResetPasswordResponse,
   DeleteUserResponse,
+  HardDeleteUserResponse,
   AdminProjectsResponse
 } from '@/types/user.types';
 import type { User, UserProfileResponse } from '@/types/auth.types';
@@ -117,6 +118,13 @@ class UserService {
   async deleteUser(userHash: string): Promise<DeleteUserResponse> {
     const response = await apiClient.delete<DeleteUserResponse>(`/users/${userHash}`);
     return response as DeleteUserResponse;
+  }
+
+  // Hard delete user (ROOT only) - permanent & irreversible.
+  // Removes the account, all owned content, and unlinks all emails/identities.
+  async hardDeleteUser(userHash: string): Promise<HardDeleteUserResponse> {
+    const response = await apiClient.delete<HardDeleteUserResponse>(`/users/${userHash}/hard`);
+    return response as HardDeleteUserResponse;
   }
 
   // Search users by username or email

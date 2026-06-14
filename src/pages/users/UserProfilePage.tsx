@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, Skeleton, EmptyState, Button, CopyableId } from '@/components/common';
 import { UserPermissionGroupsTab } from '@/components/features/users/UserPermissionGroupsTab';
 import { UserAvatar } from '@/components/features/users/UserAvatar';
 import { UserFormModal } from '@/components/features/users/UserFormModal';
-import { useUserProfileDetails, usePermissions, useBackNavigation } from '@/hooks';
+import { HardDeleteUserDialog } from '@/components/features/users/HardDeleteUserDialog';
+import { useUserProfileDetails, usePermissions, useBackNavigation, useUserType, useUserActions, useToast, useAuth } from '@/hooks';
 import { useSetBreadcrumbLabel } from '@/contexts';
 import { ROUTES } from '@/utils/routes';
 import { getUserTypeBadgeVariant, formatDateTime } from '@/utils/component-utils';
@@ -26,6 +27,7 @@ import {
   Clock,
   Key,
   Building2,
+  Trash2,
 } from 'lucide-react';
 
 /**
@@ -53,6 +55,15 @@ export function UserProfilePage(): React.JSX.Element {
   // Permission checks for edit button visibility
   const { canCreateUser, canCreateAdmin } = usePermissions();
 
+  // ROOT-only hard delete ("Danger Zone")
+  const navigate = useNavigate();
+  const { isRoot } = useUserType();
+  const { user: currentUser } = useAuth();
+  const { hardDeleteUser, isLoading: isHardDeleting } = useUserActions();
+  const { showToast } = useToast();
+  const [showHardDelete, setShowHardDelete] = useState(false);
+  const [hardDeleteError, setHardDeleteError] = useState('');
+
   const handleGoBack = useBackNavigation(ROUTES.USERS);
 
   // Permission helper - mirrors UserActionsMenu.tsx logic
@@ -73,6 +84,19 @@ export function UserProfilePage(): React.JSX.Element {
   const handleEditModalSuccess = () => {
     setShowEditModal(false);
     void refetch();
+  };
+
+  const handleConfirmHardDelete = async () => {
+    if (!userHash || !profileData?.user) return;
+    setHardDeleteError('');
+    try {
+      await hardDeleteUser(userHash);
+      showToast(`User "${profileData.user.username}" was permanently deleted`, 'success');
+      setShowHardDelete(false);
+      navigate(ROUTES.USERS);
+    } catch (err) {
+      setHardDeleteError(err instanceof Error ? err.message : 'Failed to permanently delete user');
+    }
   };
 
   // Loading state with proper skeleton
@@ -781,6 +805,39 @@ export function UserProfilePage(): React.JSX.Element {
             )}
           </CardContent>
         </Card>
+
+        {/* Danger Zone — ROOT-only permanent hard delete. Hidden on your own profile. */}
+        {isRoot && currentUser?.user_hash !== user.user_hash && (
+          <Card padding="lg" elevated className="lg:col-span-3 border-destructive/40">
+            <CardHeader>
+              <h3 className="flex items-center gap-2 text-base font-semibold text-destructive">
+                <AlertTriangle size={18} aria-hidden="true" />
+                Danger Zone
+              </h3>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Permanently delete this user (ROOT)</p>
+                  <p className="text-sm text-muted-foreground">
+                    Irreversibly removes the account, all content, and unlinks every email.
+                    This is a HARD delete — different from the reversible “Delete User”.
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  leftIcon={<Trash2 size={16} aria-hidden="true" />}
+                  onClick={() => {
+                    setHardDeleteError('');
+                    setShowHardDelete(true);
+                  }}
+                >
+                  Permanently delete…
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Edit User Modal */}
@@ -790,6 +847,21 @@ export function UserProfilePage(): React.JSX.Element {
         onSuccess={handleEditModalSuccess}
         mode="edit"
         user={user}
+      />
+
+      {/* ROOT-only Hard Delete Confirmation */}
+      <HardDeleteUserDialog
+        isOpen={showHardDelete}
+        isLoading={isHardDeleting}
+        userName={user.username}
+        onConfirm={handleConfirmHardDelete}
+        onCancel={() => {
+          if (!isHardDeleting) {
+            setShowHardDelete(false);
+            setHardDeleteError('');
+          }
+        }}
+        error={hardDeleteError}
       />
     </PageContainer>
   );

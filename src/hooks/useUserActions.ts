@@ -12,6 +12,7 @@ interface UseUserActionsReturn {
   isLoading: boolean;
   error: string | null;
   deleteUser: (userHash: string) => Promise<void>;
+  hardDeleteUser: (userHash: string) => Promise<void>;
   toggleUserStatus: (userHash: string, isActive: boolean) => Promise<User>;
   resetPassword: (userHash: string) => Promise<ResetPasswordResult>;
   changeUserType: (userHash: string, newType: string) => Promise<User>;
@@ -30,6 +31,25 @@ export function useUserActions(): UseUserActionsReturn {
       
       if (!response.success) {
         throw new Error(response.message || 'Failed to delete user');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const hardDeleteUser = useCallback(async (userHash: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await userService.hardDeleteUser(userHash);
+
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to permanently delete user');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
@@ -125,6 +145,7 @@ export function useUserActions(): UseUserActionsReturn {
     isLoading,
     error,
     deleteUser,
+    hardDeleteUser,
     toggleUserStatus,
     resetPassword,
     changeUserType,
