@@ -41,6 +41,9 @@ export const ROUTES = {
   // System Management (ROOT only)
   SYSTEM: '/system',
 
+  // Email Templates (ROOT only)
+  EMAIL_TEMPLATES: '/email-templates',
+
   // Personal Routes (no Home prefix in breadcrumbs)
   PROFILE: '/profile',
   SETTINGS: '/settings',
@@ -252,6 +255,13 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'System',
         path: ROUTES.SYSTEM,
         icon: 'settings',
+        allowedUserTypes: ['root'],
+      },
+      {
+        id: 'email-templates',
+        label: 'Email templates',
+        path: ROUTES.EMAIL_TEMPLATES,
+        icon: 'mail',
         allowedUserTypes: ['root'],
       },
     ],

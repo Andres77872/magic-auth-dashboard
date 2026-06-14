@@ -13,6 +13,7 @@ export { globalRolesService } from './global-roles.service';
 export { permissionAssignmentsService } from './permission-assignments.service';
 export { auditService } from './audit.service';
 export { apiKeyService } from './api-key.service';
+export { emailTemplatesService } from './email-templates.service';
 
 // Also export defaults for convenience
 export { default as ApiClient } from './api.client';
@@ -26,4 +27,5 @@ export { default as AdminService } from './admin.service';
 export { default as GlobalRolesService } from './global-roles.service';
 export { default as PermissionAssignmentsService } from './permission-assignments.service';
 export { default as AuditService } from './audit.service';
-export { default as ApiKeyService } from './api-key.service'; 
+export { default as ApiKeyService } from './api-key.service';
+export { default as EmailTemplatesService } from './email-templates.service';

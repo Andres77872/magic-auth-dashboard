@@ -14,7 +14,7 @@ import { useAuth } from '@/hooks';
 import { cn } from '@/lib/utils';
 
 export function SessionTab(): React.JSX.Element {
-  const { sessionExpiresAt, refreshSession } = useAuth();
+  const { sessionExpiresAt, refreshExpiresAt, rememberMe, refreshSession } = useAuth();
   
   // State
   const [timeRemaining, setTimeRemaining] = useState<string>('');
@@ -62,6 +62,17 @@ export function SessionTab(): React.JSX.Element {
     const expiry = new Date(sessionExpiresAt);
     return expiry.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }, [sessionExpiresAt]);
+
+  const formattedRefreshExpiry = useMemo(() => {
+    if (!refreshExpiresAt) return null;
+    const expiry = new Date(refreshExpiresAt);
+    return expiry.toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, [refreshExpiresAt]);
 
   // Manual refresh handler (fallback)
   const handleManualRefresh = (): void => {
@@ -165,7 +176,7 @@ export function SessionTab(): React.JSX.Element {
           </div>
 
           {/* Expiry details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Absolute expiry */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-muted-foreground">
@@ -189,6 +200,16 @@ export function SessionTab(): React.JSX.Element {
                 isNearExpiry && 'text-warning'
               )}>
                 {timeRemaining}
+              </p>
+            </div>
+
+            {/* Remembered session expiry */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">
+                Remembered Until
+              </label>
+              <p className="text-lg font-semibold">
+                {rememberMe && formattedRefreshExpiry ? formattedRefreshExpiry : 'Not enabled'}
               </p>
             </div>
           </div>
@@ -216,8 +237,8 @@ export function SessionTab(): React.JSX.Element {
               <div>
                 <h4 className="font-medium text-foreground mb-1">Auto-Refresh Enabled</h4>
                 <p className="text-sm text-muted-foreground">
-                  Your session is automatically refreshed 5 minutes before expiry.
-                  No manual action is required to keep your session active.
+                  Your short-lived dashboard access is automatically refreshed 5 minutes before expiry.
+                  Remembered sessions can refresh until their remembered expiry.
                 </p>
               </div>
             </div>

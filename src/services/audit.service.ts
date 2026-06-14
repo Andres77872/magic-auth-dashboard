@@ -1,5 +1,5 @@
 import { apiClient } from './api.client';
-import { API_CONFIG, STORAGE_KEYS } from '@/utils/constants';
+import { API_CONFIG } from '@/utils/constants';
 import type {
   ActivityLog,
   ActivityLogParams,
@@ -354,11 +354,6 @@ class AuditService {
    * Export activity logs via backend streaming endpoint
    */
   async exportActivityLogs(params: ExportParams): Promise<Blob> {
-    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-    if (!token) {
-      throw new Error('Authentication required for export');
-    }
-
     // Build request body for backend endpoint
     const requestBody = {
       source: 'activity_log',
@@ -376,14 +371,29 @@ class AuditService {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
       },
+      credentials: 'include',
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Export failed' }));
-      throw new Error(errorData.message || `Export failed with status ${response.status}`);
+      let errorMessage = `Export failed with status ${response.status}`;
+
+      try {
+        const errorData: unknown = await response.json();
+        if (
+          typeof errorData === 'object' &&
+          errorData !== null &&
+          'message' in errorData &&
+          typeof errorData.message === 'string'
+        ) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        errorMessage = 'Export failed';
+      }
+
+      throw new Error(errorMessage);
     }
 
     // Return blob for download handling

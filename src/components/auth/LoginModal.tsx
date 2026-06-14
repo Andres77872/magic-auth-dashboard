@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/utils/routes';
@@ -49,19 +49,18 @@ export function LoginModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    if (Object.keys(errors).length > 0 || state.error) {
-      setErrors({});
-    }
-  }, [formData.username, formData.password]);
+  const resetForm = (): void => {
+    setFormData({ username: '', password: '', rememberMe: false });
+    setErrors({});
+    setShowPassword(false);
+  };
 
-  useEffect(() => {
-    if (!isOpen) {
-      setFormData({ username: '', password: '', rememberMe: false });
-      setErrors({});
-      setShowPassword(false);
+  const handleOpenChange = (open: boolean): void => {
+    if (!open) {
+      resetForm();
+      onClose();
     }
-  }, [isOpen]);
+  };
 
   const handleInputChange = (
     field: keyof LoginFormData,
@@ -71,6 +70,9 @@ export function LoginModal({
       ...prev,
       [field]: value,
     }));
+    if (Object.keys(errors).length > 0 || state.error) {
+      setErrors({});
+    }
   };
 
   const validateForm = (): boolean => {
@@ -110,9 +112,14 @@ export function LoginModal({
     setErrors({});
 
     try {
-      const success = await platformLogin(formData.username, formData.password);
+      const success = await platformLogin(
+        formData.username,
+        formData.password,
+        formData.rememberMe
+      );
 
       if (success) {
+        resetForm();
         onClose();
         const from =
           (location.state as { from?: string })?.from || ROUTES.HOME;
@@ -133,7 +140,7 @@ export function LoginModal({
 
   if (isLoading) {
     return (
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent
           size="md"
           onPointerDownOutside={(e) => e.preventDefault()}
@@ -147,11 +154,11 @@ export function LoginModal({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent
         size="md"
         onPointerDownOutside={
-          isSubmitting ? (e) => e.preventDefault() : undefined
+          isSubmitting ? (e): void => e.preventDefault() : undefined
         }
       >
         <DialogHeader className="space-y-2 text-center">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/utils/routes';
@@ -34,17 +34,14 @@ export function LoginForm(): React.JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    if (Object.keys(errors).length > 0 || state.error) {
-      setErrors({});
-    }
-  }, [formData.username, formData.password, state.error]);
-
   const handleInputChange = (field: keyof LoginFormData, value: string | boolean): void => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
+    if (Object.keys(errors).length > 0 || state.error) {
+      setErrors({});
+    }
   };
 
   const validateForm = (): boolean => {
@@ -81,7 +78,11 @@ export function LoginForm(): React.JSX.Element {
     setErrors({});
 
     try {
-      const success = await platformLogin(formData.username, formData.password);
+      const success = await platformLogin(
+        formData.username,
+        formData.password,
+        formData.rememberMe
+      );
 
       if (success) {
         const from = (location.state as { from?: string })?.from || ROUTES.HOME;
@@ -220,4 +221,4 @@ export function LoginForm(): React.JSX.Element {
   );
 }
 
-export default LoginForm; 
+export default LoginForm;

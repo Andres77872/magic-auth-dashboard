@@ -23,14 +23,6 @@ class AuthService {
       true // Skip auth for login
     );
 
-    if (response.success && response.data) {
-      const loginData = response.data as LoginResponse;
-      if ('session_token' in loginData) {
-        // Store token on successful login
-        apiClient.setAuthToken(loginData.session_token);
-      }
-    }
-
     return response as LoginResponse;
   }
 
@@ -45,14 +37,6 @@ class AuthService {
       credentials,
       true // Skip auth for login
     );
-
-    if (response.success && response.data) {
-      const loginData = response.data as PlatformLoginResponse;
-      if ('session_token' in loginData) {
-        // Store token on successful login
-        apiClient.setAuthToken(loginData.session_token);
-      }
-    }
 
     return response as PlatformLoginResponse;
   }
@@ -92,15 +76,12 @@ class AuthService {
     } catch (error) {
       // Continue with local logout even if API call fails
       console.warn('Logout API call failed:', error);
-    } finally {
-      // Always clear local auth data
-      apiClient.clearAuthToken();
     }
   }
 
   // Refresh token (if needed)
   async refreshToken(): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/auth/refresh');
+    const response = await apiClient.post<LoginResponse>('/auth/refresh', undefined, true);
     return response as LoginResponse;
   }
 
@@ -111,14 +92,6 @@ class AuthService {
       { project_hash: projectHash }
     );
 
-    if (response.success && response.data) {
-      const loginData = response.data as LoginResponse;
-      if ('session_token' in loginData) {
-        // Update token with new project context
-        apiClient.setAuthToken(loginData.session_token);
-      }
-    }
-
     return response as LoginResponse;
   }
 
@@ -127,7 +100,7 @@ class AuthService {
     try {
       const response = await apiClient.head('/access');
       return response.status === 204;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

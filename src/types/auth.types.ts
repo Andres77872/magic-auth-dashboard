@@ -17,6 +17,7 @@ export interface LoginRequest {
   username: string;
   password: string;
   project_hash: string; // Required for project-scoped sessions
+  remember_me?: boolean;
 }
 
 /**
@@ -27,6 +28,7 @@ export interface LoginRequest {
 export interface PlatformLoginRequest {
   username: string;
   password: string;
+  remember_me?: boolean;
 }
 
 /**
@@ -36,11 +38,17 @@ export interface PlatformLoginRequest {
 export interface LoginResponse {
   success: boolean;
   message: string;
+  access_token?: string;
+  refresh_token?: string;
   session_token: string;
+  token_type?: string;
+  expires_in?: number;
+  refresh_expires_in?: number;
   user: User;
   project?: Project;
   accessible_projects: Project[];
   expires_at: string;
+  refresh_expires_at?: string;
 }
 
 /**
@@ -50,10 +58,16 @@ export interface LoginResponse {
 export interface PlatformLoginResponse {
   success: boolean;
   message: string;
+  access_token?: string;
+  refresh_token?: string;
   session_token: string;
+  token_type?: string;
+  expires_in?: number;
+  refresh_expires_in?: number;
   user: User;
   accessible_projects: Project[]; // Admin may have multiple projects to manage
   expires_at: string;
+  refresh_expires_at?: string;
 }
 
 export interface RegisterRequest {
@@ -134,8 +148,8 @@ export interface UserProfileResponse {
   message: string | null;
   user: User;
   permissions: string[];
-  groups: any[]; // Legacy field, usually empty
-  accessible_projects: any[]; // Legacy field, usually empty
+  groups: unknown[]; // Legacy field, usually empty
+  accessible_projects: unknown[]; // Legacy field, usually empty
   statistics: UserStatistics | null;
 }
 
@@ -152,8 +166,11 @@ export interface ValidationResponse {
   user: User;
   project?: Project;
   session: {
-    session_id: string;
-    expires_at: string;
+    session_id?: string;
+    expires_at?: string;
+    refresh_expires_at?: string;
+    remember_me?: boolean;
+    scope?: string;
   };
 }
 
@@ -182,6 +199,8 @@ export interface AuthState {
   permissionsLoading: boolean;
   // Session expiry tracking
   sessionExpiresAt: string | null; // ISO 8601 from LoginResponse.expires_at
+  refreshExpiresAt: string | null; // ISO 8601 from LoginResponse.refresh_expires_at
+  rememberMe: boolean;
 }
 
 export const AuthActionType = {
@@ -204,9 +223,22 @@ export type AuthAction =
   | { type: typeof AuthActionType.LOGIN_SUCCESS; payload: LoginResponse }
   | { type: typeof AuthActionType.LOGIN_FAILURE; payload: { error: string } }
   | { type: typeof AuthActionType.LOGOUT }
-  | { type: typeof AuthActionType.VALIDATE_TOKEN; payload: { valid: boolean; user?: User; project?: Project } }
+  | {
+      type: typeof AuthActionType.VALIDATE_TOKEN;
+      payload: {
+        valid: boolean;
+        user?: User;
+        project?: Project;
+        expires_at?: string;
+        refresh_expires_at?: string;
+        remember_me?: boolean;
+      };
+    }
   | { type: typeof AuthActionType.CLEAR_ERROR }
   | { type: typeof AuthActionType.LOAD_PERMISSIONS_START }
   | { type: typeof AuthActionType.LOAD_PERMISSIONS_SUCCESS; payload: { permissions: string[] } }
   | { type: typeof AuthActionType.LOAD_PERMISSIONS_FAILURE; payload: { error: string } }
-  | { type: typeof AuthActionType.SESSION_EXPIRY_UPDATE; payload: { expires_at: string } }; 
+  | {
+      type: typeof AuthActionType.SESSION_EXPIRY_UPDATE;
+      payload: { expires_at: string; refresh_expires_at?: string; remember_me?: boolean };
+    };

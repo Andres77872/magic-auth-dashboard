@@ -16,12 +16,11 @@ export function ProtectedRoute({
   redirectTo = ROUTES.LOGIN,
   requireAuth = true,
 }: ProtectedRouteProps): React.JSX.Element {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
 
-  // Only show loading if we don't have user data yet
-  // This eliminates blink when we have cached auth state
-  if (isLoading && !user) {
+  // Wait for server-backed validation before rendering protected content.
+  if (isLoading) {
     return (
       <div className="route-loading">
         <LoadingSpinner 
@@ -54,4 +53,4 @@ export function ProtectedRoute({
   return <>{children}</>;
 }
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

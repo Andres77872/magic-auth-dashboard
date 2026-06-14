@@ -107,7 +107,7 @@ function LegacyProjectsRedirect(): React.JSX.Element {
 }
 
 // Import pages
-import { LandingPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage, SettingsPage } from '@/pages';
+import { LandingPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage, SettingsPage, EmailTemplatesPage, EmailTemplateEditorPage } from '@/pages';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
 import {
   GroupListPage,
@@ -244,6 +244,10 @@ function AppRoutes(): React.JSX.Element {
         {/* ROOT-only System route */}
         {/* RootOnlyRoute guard inside child route element */}
         <Route path="system" element={<RootOnlyRoute><SystemPage /></RootOnlyRoute>} />
+
+        {/* ROOT-only Email Templates editor */}
+        <Route path="email-templates" element={<RootOnlyRoute><EmailTemplatesPage /></RootOnlyRoute>} />
+        <Route path="email-templates/:templateCode" element={<RootOnlyRoute><EmailTemplateEditorPage /></RootOnlyRoute>} />
         
         {/* Personal Routes */}
         <Route path="profile" element={<ProfilePage />} />

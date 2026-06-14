@@ -1,4 +1,4 @@
-import { API_CONFIG, HTTP_STATUS, STORAGE_KEYS } from '@/utils/constants';
+import { API_CONFIG, ERROR_MESSAGES, HTTP_STATUS } from '@/utils/constants';
 import type { ApiResponse } from '@/types/api.types';
 import { HttpMethod } from '@/types/api.types';
 
@@ -8,23 +8,25 @@ interface RequestConfig {
   body?: unknown;
   params?: Record<string, string | number>;
   skipAuth?: boolean;
+  skipRefresh?: boolean;
   retries?: number;
   isFormData?: boolean;
   isMultipart?: boolean;
 }
 
-export function filterUndefinedValues<T extends Record<string, any>>(
-  params: T
-): Partial<T> {
-  const cleanParams: Partial<T> = {};
+type QueryParamValue = string | number;
 
-  Object.entries(params).forEach(([key, value]) => {
+export function filterUndefinedValues(params: object): Record<string, QueryParamValue> {
+  const cleanParams: Record<string, QueryParamValue> = {};
+
+  Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
     if (
       value !== undefined &&
       value !== null &&
-      (typeof value !== 'string' || value !== '')
+      (typeof value !== 'string' || value !== '') &&
+      (typeof value === 'string' || typeof value === 'number')
     ) {
-      cleanParams[key as keyof T] = value as T[keyof T];
+      cleanParams[key] = value;
     }
   });
 
@@ -34,6 +36,7 @@ export function filterUndefinedValues<T extends Record<string, any>>(
 class ApiClient {
   private baseURL: string;
   private defaultHeaders: Record<string, string>;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor(baseURL: string = API_CONFIG.BASE_URL) {
     this.baseURL = baseURL;
@@ -41,10 +44,6 @@ class ApiClient {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-  }
-
-  private getAuthToken(): string | null {
-    return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
   }
 
   private buildURL(
@@ -87,13 +86,30 @@ class ApiClient {
 
   // Public utility method to filter undefined values from params
   static filterUndefinedValues(
-    params: Record<string, any>
-  ): Record<string, any> {
+    params: Record<string, unknown>
+  ): Record<string, QueryParamValue> {
     return filterUndefinedValues(params);
   }
 
   private async sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private serializeFormValue(value: unknown): string {
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    if (
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      typeof value === 'bigint'
+    ) {
+      return String(value);
+    }
+
+    return JSON.stringify(value) ?? '';
   }
 
   private buildFormBody(data: Record<string, unknown>): URLSearchParams {
@@ -107,19 +123,63 @@ class ApiClient {
       if (Array.isArray(value)) {
         value.forEach((item) => {
           if (item !== undefined && item !== null) {
-            formData.append(key, String(item));
+            formData.append(key, this.serializeFormValue(item));
           }
         });
         return;
       }
 
-      formData.append(key, String(value));
+      formData.append(key, this.serializeFormValue(value));
     });
 
     return formData;
   }
 
-  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+  private isLoginEndpoint(endpoint: string): boolean {
+    return endpoint === '/auth/login' || endpoint === '/auth/platform/login';
+  }
+
+  private isRefreshEndpoint(endpoint: string): boolean {
+    return endpoint === '/auth/refresh';
+  }
+
+  private shouldAttemptRefresh(endpoint: string, config: RequestConfig): boolean {
+    return (
+      !config.skipAuth &&
+      !config.skipRefresh &&
+      !this.isLoginEndpoint(endpoint) &&
+      !this.isRefreshEndpoint(endpoint)
+    );
+  }
+
+  private dispatchUnauthorized(): void {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('magic-auth-unauthorized'));
+    }
+  }
+
+  private async refreshAuthSession(): Promise<boolean> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.requestRawWithRetry('/auth/refresh', {
+        method: HttpMethod.POST,
+        skipAuth: true,
+        skipRefresh: true,
+        retries: 0,
+      })
+        .then((response) => response.ok)
+        .catch(() => false)
+        .finally(() => {
+          this.refreshPromise = null;
+        });
+    }
+
+    return this.refreshPromise;
+  }
+
+  private async handleResponse<T>(
+    response: Response,
+    endpoint: string
+  ): Promise<ApiResponse<T>> {
     const contentType = response.headers.get('content-type');
 
     if (!contentType?.includes('application/json')) {
@@ -132,19 +192,13 @@ class ApiClient {
       // Handle specific HTTP status codes
       switch (response.status) {
         case HTTP_STATUS.UNAUTHORIZED:
-          // Check if this is a login endpoint - if so, just throw error instead of redirecting
-          const isLoginEndpoint = response.url.includes('/auth/login');
-
-          if (isLoginEndpoint) {
+          if (this.isLoginEndpoint(endpoint)) {
             // For login failures, return the error response to be handled by the login form
             throw new Error(data.message || 'Invalid username or password');
           } else {
-            // For other 401s (expired sessions, etc.), clear auth data and redirect
-            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-            localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-            window.location.href = '/login';
+            this.dispatchUnauthorized();
+            throw new Error(data.message || ERROR_MESSAGES.SESSION_EXPIRED);
           }
-          break;
         case HTTP_STATUS.FORBIDDEN:
           throw new Error('Access denied. Insufficient permissions.');
         case HTTP_STATUS.NOT_FOUND:
@@ -165,16 +219,11 @@ class ApiClient {
     config: RequestConfig
   ): Promise<Response> {
     const url = this.buildURL(endpoint, config.params);
-    const token = this.getAuthToken();
 
     const headers: Record<string, string> = {
       ...this.defaultHeaders,
       ...config.headers,
     };
-
-    if (token && !config.skipAuth) {
-      headers.Authorization = `Bearer ${token}`;
-    }
 
     if (config.isMultipart) {
       delete headers['Content-Type'];
@@ -183,6 +232,7 @@ class ApiClient {
     const requestInit: RequestInit = {
       method: config.method,
       headers,
+      credentials: 'include',
       signal: AbortSignal.timeout(API_CONFIG.TIMEOUT),
     };
 
@@ -250,8 +300,19 @@ class ApiClient {
     endpoint: string,
     config: RequestConfig
   ): Promise<ApiResponse<T>> {
-    const response = await this.requestRawWithRetry(endpoint, config);
-    return this.handleResponse<T>(response);
+    let response = await this.requestRawWithRetry(endpoint, config);
+
+    if (
+      response.status === HTTP_STATUS.UNAUTHORIZED &&
+      this.shouldAttemptRefresh(endpoint, config)
+    ) {
+      const refreshed = await this.refreshAuthSession();
+      if (refreshed) {
+        response = await this.requestRawWithRetry(endpoint, config);
+      }
+    }
+
+    return this.handleResponse<T>(response, endpoint);
   }
 
   // Public HTTP methods
@@ -356,16 +417,15 @@ class ApiClient {
 
   // Utility methods
   setAuthToken(token: string): void {
-    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+    void token;
   }
 
   clearAuthToken(): void {
-    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+    // Auth credentials are stored in HttpOnly cookies by the API.
   }
 
   isAuthenticated(): boolean {
-    return !!this.getAuthToken();
+    return false;
   }
 }
 

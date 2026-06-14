@@ -11,6 +11,9 @@ export default defineConfig({
     },
   },
   server: {
+    host: 'localhost',
+    port: 5173,
+    strictPort: true,
     watch: {
       ignored: [
         '**/node_modules/**',
@@ -21,5 +24,10 @@ export default defineConfig({
         '**/.cursor/**'
       ]
     }
+  },
+  preview: {
+    host: 'localhost',
+    port: 4173,
+    strictPort: true
   }
 })

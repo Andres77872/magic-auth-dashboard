@@ -12,6 +12,7 @@ import {
   UserCog,
   Key,
   FileText,
+  Mail,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -75,6 +76,7 @@ export function NavigationItem({
       key: <Key size={iconSize} aria-hidden="true" />,
       settings: <Settings size={iconSize} aria-hidden="true" />,
       document: <FileText size={iconSize} aria-hidden="true" />,
+      mail: <Mail size={iconSize} aria-hidden="true" />,
     };
 
     return icons[iconName] || <LayoutDashboard size={iconSize} aria-hidden="true" />;

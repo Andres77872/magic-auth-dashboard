@@ -8,6 +8,7 @@ export { useGroups } from './useGroups';
 export { useProjectGroups } from './useProjectGroups';
 export { useToast } from './useToast';
 export { useApiKeys } from './useApiKeys';
+export { useEmailTemplates, useEmailTemplate } from './useEmailTemplates';
 
 // Dashboard hooks
 export { default as useSystemStats } from './dashboard/useSystemStats';

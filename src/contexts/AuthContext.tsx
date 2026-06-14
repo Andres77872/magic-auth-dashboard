@@ -9,68 +9,44 @@ import { handleApiError } from '@/utils/error-handler';
 import { hasPermission as checkPermission, canAccessRoute as checkRoute } from '@/utils/permissions';
 import { cache } from '@/utils/cache';
 
-// Session expiry storage key
 const SESSION_EXPIRES_AT_KEY = 'session_expires_at';
-
-// Refresh threshold: 5 minutes before expiry
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
-// Retry delay on refresh failure
 const REFRESH_RETRY_DELAY_MS = 30 * 1000;
-// Max refresh retries before warning
 const MAX_REFRESH_RETRIES = 3;
+const REMEMBERED_REFRESH_MIN_SECONDS = 7 * 24 * 60 * 60;
 
-// Try to restore auth state from localStorage immediately
-const getInitialAuthState = (): AuthState => {
-  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-  const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
-  const projectStr = localStorage.getItem(STORAGE_KEYS.CURRENT_PROJECT);
-  const expiresAtStr = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
-
-  // If we have stored data, start with it to eliminate blink
-  if (token && userDataStr) {
-    try {
-      const user = JSON.parse(userDataStr);
-      const currentProject = projectStr ? JSON.parse(projectStr) : null;
-      
-      return {
-        isAuthenticated: true,
-        user,
-        token,
-        currentProject,
-        accessibleProjects: [],
-        isLoading: true, // Still validate in background
-        error: null,
-        effectivePermissions: [],
-        permissionsLoading: false,
-        sessionExpiresAt: expiresAtStr || null,
-      };
-    } catch {
-      // If parsing fails, clear storage
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
-      localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
-    }
-  }
-
-  // Default initial state
-  return {
-    isAuthenticated: false,
-    user: null,
-    token: null,
-    currentProject: null,
-    accessibleProjects: [],
-    isLoading: true,
-    error: null,
-    effectivePermissions: [],
-    permissionsLoading: false,
-    sessionExpiresAt: null,
-  };
+const getPermissionNames = (
+  response: Awaited<ReturnType<typeof permissionAssignmentsService.getMyPermissions>>
+): string[] => {
+  return Array.isArray(response.data) ? response.data : [];
 };
 
-const initialAuthState: AuthState = getInitialAuthState();
+const clearStoredAuthState = (): void => {
+  localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+  localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+  localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
+  localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
+};
 
-// Authentication reducer
+const isRememberedResponse = (payload: LoginResponse): boolean => {
+  return (payload.refresh_expires_in ?? 0) > REMEMBERED_REFRESH_MIN_SECONDS;
+};
+
+const initialAuthState: AuthState = {
+  isAuthenticated: false,
+  user: null,
+  token: null,
+  currentProject: null,
+  accessibleProjects: [],
+  isLoading: true,
+  error: null,
+  effectivePermissions: [],
+  permissionsLoading: false,
+  sessionExpiresAt: null,
+  refreshExpiresAt: null,
+  rememberMe: false,
+};
+
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case AuthActionType.LOGIN_START:
@@ -85,12 +61,14 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         ...state,
         isAuthenticated: true,
         user: action.payload.user,
-        token: action.payload.session_token,
+        token: null,
         currentProject: action.payload.project || null,
         accessibleProjects: action.payload.accessible_projects || [],
         isLoading: false,
         error: null,
         sessionExpiresAt: action.payload.expires_at || null,
+        refreshExpiresAt: action.payload.refresh_expires_at || null,
+        rememberMe: isRememberedResponse(action.payload),
       };
 
     case AuthActionType.LOGIN_FAILURE:
@@ -103,6 +81,9 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         accessibleProjects: [],
         isLoading: false,
         error: action.payload.error,
+        sessionExpiresAt: null,
+        refreshExpiresAt: null,
+        rememberMe: false,
       };
 
     case AuthActionType.LOGOUT:
@@ -112,6 +93,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         effectivePermissions: [],
         permissionsLoading: false,
         sessionExpiresAt: null,
+        refreshExpiresAt: null,
+        rememberMe: false,
       };
 
     case AuthActionType.VALIDATE_TOKEN:
@@ -120,16 +103,19 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
           ...state,
           isAuthenticated: true,
           user: action.payload.user || null,
-          currentProject: action.payload.project || state.currentProject,
+          currentProject: action.payload.project || null,
           isLoading: false,
           error: null,
-        };
-      } else {
-        return {
-          ...initialAuthState,
-          isLoading: false,
+          sessionExpiresAt: action.payload.expires_at || state.sessionExpiresAt,
+          refreshExpiresAt: action.payload.refresh_expires_at || state.refreshExpiresAt,
+          rememberMe: action.payload.remember_me ?? state.rememberMe,
         };
       }
+
+      return {
+        ...initialAuthState,
+        isLoading: false,
+      };
 
     case AuthActionType.CLEAR_ERROR:
       return {
@@ -161,6 +147,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         sessionExpiresAt: action.payload.expires_at,
+        refreshExpiresAt: action.payload.refresh_expires_at || state.refreshExpiresAt,
+        rememberMe: action.payload.remember_me ?? state.rememberMe,
       };
 
     default:
@@ -168,11 +156,10 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-// Context interface
 interface AuthContextType {
   state: AuthState;
-  login: (username: string, password: string, projectHash?: string) => Promise<boolean>;
-  platformLogin: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string, projectHash?: string, rememberMe?: boolean) => Promise<boolean>;
+  platformLogin: (username: string, password: string, rememberMe?: boolean) => Promise<boolean>;
   logout: () => Promise<void>;
   validateToken: () => Promise<void>;
   clearError: () => void;
@@ -187,16 +174,16 @@ interface AuthContextType {
   effectivePermissions: string[];
   permissionsLoading: boolean;
   sessionExpiresAt: string | null;
+  refreshExpiresAt: string | null;
+  rememberMe: boolean;
   refreshSession: () => Promise<boolean>;
   refreshRetryCount: number;
   showSessionExpiryWarning: boolean;
   dismissSessionExpiryWarning: () => void;
 }
 
-// Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// AuthProvider component
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -207,181 +194,145 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const permissionsLoadedRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRetryCountRef = useRef(0);
-  const isRefreshingRef = useRef(false);
+  const refreshPromiseRef = useRef<Promise<boolean> | null>(null);
+  const [refreshRetryCount, setRefreshRetryCount] = useState(0);
   const [showSessionExpiryWarning, setShowSessionExpiryWarning] = useState(false);
 
-  // Dismiss session expiry warning
   const dismissSessionExpiryWarning = useCallback(() => {
     setShowSessionExpiryWarning(false);
   }, []);
 
-  // ==========================================
-  // SESSION AUTO-REFRESH TIMER MANAGEMENT
-  // ==========================================
+  const updateRefreshRetryCount = useCallback((count: number): void => {
+    refreshRetryCountRef.current = count;
+    setRefreshRetryCount(count);
+  }, []);
 
-  // Stop refresh timer
   const stopRefreshTimer = useCallback(() => {
     if (refreshTimerRef.current) {
       clearTimeout(refreshTimerRef.current);
       refreshTimerRef.current = null;
     }
-    refreshRetryCountRef.current = 0;
-  }, []);
+    updateRefreshRetryCount(0);
+  }, [updateRefreshRetryCount]);
 
-  // Refresh session function
+  const clearClientAuthState = useCallback(() => {
+    clearStoredAuthState();
+    cache.clearAll();
+    tokenValidationRef.current = false;
+    permissionsLoadedRef.current = false;
+    updateRefreshRetryCount(0);
+  }, [updateRefreshRetryCount]);
+
   const refreshSession = useCallback(async (): Promise<boolean> => {
-    if (isRefreshingRef.current) {
-      return false;
+    if (!refreshPromiseRef.current) {
+      refreshPromiseRef.current = (async (): Promise<boolean> => {
+        try {
+          const response = await authService.refreshToken();
+
+          if (response.success && response.expires_at) {
+            clearStoredAuthState();
+            dispatch({
+              type: AuthActionType.LOGIN_SUCCESS,
+              payload: response,
+            });
+            setShowSessionExpiryWarning(false);
+            updateRefreshRetryCount(0);
+            return true;
+          }
+
+          return false;
+        } catch (error) {
+          console.warn('Session refresh failed:', error);
+          return false;
+        } finally {
+          refreshPromiseRef.current = null;
+        }
+      })();
     }
 
-    isRefreshingRef.current = true;
+    return refreshPromiseRef.current;
+  }, [updateRefreshRetryCount]);
 
-    try {
-      const response = await authService.refreshToken();
-      
-      if (response.success && 'session_token' in response && 'expires_at' in response) {
-        // Handle both LoginResponse and PlatformLoginResponse
-        const loginData = response;
-        
-        // Update token in storage
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, loginData.session_token);
-        
-        // Update expiry
-        localStorage.setItem(SESSION_EXPIRES_AT_KEY, loginData.expires_at);
-        
-        // Dispatch expiry update
-        dispatch({
-          type: AuthActionType.SESSION_EXPIRY_UPDATE,
-          payload: { expires_at: loginData.expires_at },
-        });
-
-        // Reset retry count
-        refreshRetryCountRef.current = 0;
-        
-        // Restart timer with new expiry
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.warn('Session refresh failed:', error);
-      return false;
-    } finally {
-      isRefreshingRef.current = false;
-    }
-  }, []);
-
-  // Start refresh timer - triggers 5 minutes before expiry
   const startRefreshTimer = useCallback((expiresAt: string) => {
-    // Stop any existing timer
     stopRefreshTimer();
 
     const expiryDate = new Date(expiresAt);
     const now = new Date();
     const diffMs = expiryDate.getTime() - now.getTime();
-
-    // Calculate when to refresh (5 minutes before expiry)
     const refreshDelay = diffMs - REFRESH_THRESHOLD_MS;
 
     if (refreshDelay <= 0) {
-      // Already within refresh threshold - refresh immediately
       void refreshSession().then((success) => {
-        if (success) {
-          // Read fresh expiry from localStorage (dispatch may have updated it)
-          const newExpiresAt = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
-          if (newExpiresAt) {
-            startRefreshTimer(newExpiresAt);
-          }
-        } else {
+        if (!success) {
           setShowSessionExpiryWarning(true);
         }
       });
       return;
     }
 
-    // Set timer
-    refreshTimerRef.current = setTimeout(async () => {
-      const success = await refreshSession();
-      
-      if (success) {
-        // Get new expiry from state (updated by dispatch)
-        const newExpiresAt = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
-        if (newExpiresAt) {
-          startRefreshTimer(newExpiresAt);
-        }
-      } else {
-        // Refresh failed - retry with delay
-        refreshRetryCountRef.current++;
-        
-        if (refreshRetryCountRef.current <= MAX_REFRESH_RETRIES) {
-          // Retry after 30 seconds
-          refreshTimerRef.current = setTimeout(async () => {
-            const retrySuccess = await refreshSession();
-            if (retrySuccess) {
-              const newExpiresAt = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
-              if (newExpiresAt) {
-                startRefreshTimer(newExpiresAt);
-              }
-            } else {
-              refreshRetryCountRef.current++;
-              if (refreshRetryCountRef.current > MAX_REFRESH_RETRIES) {
-                setShowSessionExpiryWarning(true);
-              }
-            }
-          }, REFRESH_RETRY_DELAY_MS);
-        } else {
-          // Max retries exceeded - show warning modal
-          setShowSessionExpiryWarning(true);
-        }
-      }
-    }, refreshDelay);
-  }, [stopRefreshTimer, refreshSession]);
+    refreshTimerRef.current = setTimeout((): void => {
+      void (async (): Promise<void> => {
+        const success = await refreshSession();
 
-  // Visibility change listener - refresh on window focus if near expiry
+        if (!success) {
+          updateRefreshRetryCount(refreshRetryCountRef.current + 1);
+
+          if (refreshRetryCountRef.current <= MAX_REFRESH_RETRIES) {
+            refreshTimerRef.current = setTimeout((): void => {
+              void (async (): Promise<void> => {
+                const retrySuccess = await refreshSession();
+                if (!retrySuccess) {
+                  updateRefreshRetryCount(refreshRetryCountRef.current + 1);
+                  if (refreshRetryCountRef.current > MAX_REFRESH_RETRIES) {
+                    setShowSessionExpiryWarning(true);
+                  }
+                }
+              })();
+            }, REFRESH_RETRY_DELAY_MS);
+          } else {
+            setShowSessionExpiryWarning(true);
+          }
+        }
+      })();
+    }, refreshDelay);
+  }, [stopRefreshTimer, refreshSession, updateRefreshRetryCount]);
+
   useEffect(() => {
-    const handleVisibilityChange = async () => {
+    const handleVisibilityChange = (): void => {
       if (document.visibilityState === 'visible' && state.sessionExpiresAt) {
         const expiryDate = new Date(state.sessionExpiresAt);
         const now = new Date();
         const diffMs = expiryDate.getTime() - now.getTime();
 
-        // If within 10 minutes of expiry, try refresh
         if (diffMs < 10 * 60 * 1000 && diffMs > 0) {
-          const success = await refreshSession();
-          if (success) {
-            const newExpiresAt = localStorage.getItem(SESSION_EXPIRES_AT_KEY);
-            if (newExpiresAt) {
-              startRefreshTimer(newExpiresAt);
-            }
-          }
+          void refreshSession();
         }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [state.sessionExpiresAt, refreshSession, startRefreshTimer]);
+    return (): void => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [state.sessionExpiresAt, refreshSession]);
 
-  // Start/stop timer based on session expiry state
   useEffect(() => {
-    if (state.isAuthenticated && state.sessionExpiresAt) {
-      startRefreshTimer(state.sessionExpiresAt);
-    } else {
+    const timerId = window.setTimeout((): void => {
+      if (state.isAuthenticated && state.sessionExpiresAt) {
+        startRefreshTimer(state.sessionExpiresAt);
+      } else {
+        stopRefreshTimer();
+      }
+    }, 0);
+
+    return (): void => {
+      window.clearTimeout(timerId);
       stopRefreshTimer();
-    }
-
-    return () => stopRefreshTimer();
+    };
   }, [state.isAuthenticated, state.sessionExpiresAt, startRefreshTimer, stopRefreshTimer]);
-
-  // ==========================================
-  // LOGIN/LOGOUT HANDLERS
-  // ==========================================
-
-  // Login function (project-scoped)
   const login = async (
-    username: string, 
-    password: string, 
-    projectHash?: string
+    username: string,
+    password: string,
+    projectHash?: string,
+    rememberMe = false
   ): Promise<boolean> => {
     try {
       dispatch({ type: AuthActionType.LOGIN_START });
@@ -390,31 +341,19 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
         username,
         password,
         project_hash: projectHash ?? '',
+        remember_me: rememberMe,
       });
 
       if (response.success) {
-        // Store token and user data
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.session_token);
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.user));
-        
-        if (response.project) {
-          localStorage.setItem(STORAGE_KEYS.CURRENT_PROJECT, JSON.stringify(response.project));
-        }
-
-        // Store session expiry
-        if (response.expires_at) {
-          localStorage.setItem(SESSION_EXPIRES_AT_KEY, response.expires_at);
-        }
-
+        clearStoredAuthState();
         dispatch({
           type: AuthActionType.LOGIN_SUCCESS,
           payload: response,
         });
-
         return true;
-      } else {
-        throw new Error(response.message || 'Login failed');
       }
+
+      throw new Error(response.message || 'Login failed');
     } catch (error) {
       const errorMessage = handleApiError(error);
       dispatch({
@@ -425,13 +364,10 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     }
   };
 
-  /**
-   * Platform login (for admin dashboard — root/admin only).
-   * POST /auth/platform/login — no project binding.
-   */
   const platformLogin = async (
-    username: string, 
-    password: string
+    username: string,
+    password: string,
+    rememberMe = false
   ): Promise<boolean> => {
     try {
       dispatch({ type: AuthActionType.LOGIN_START });
@@ -439,34 +375,22 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       const response = await authService.platformLogin({
         username,
         password,
+        remember_me: rememberMe,
       });
 
       if (response.success) {
-        // Store token and user data
-        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, response.session_token);
-        localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(response.user));
-        
-        // Platform sessions have no bound project — clear any stale project data
-        localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
-
-        // Store session expiry
-        if (response.expires_at) {
-          localStorage.setItem(SESSION_EXPIRES_AT_KEY, response.expires_at);
-        }
-
-        // Dispatch with null project (platform session)
+        clearStoredAuthState();
         dispatch({
           type: AuthActionType.LOGIN_SUCCESS,
           payload: {
             ...response,
             project: undefined,
-          } as LoginResponse,
+          },
         });
-
         return true;
-      } else {
-        throw new Error(response.message || 'Platform login failed');
       }
+
+      throw new Error(response.message || 'Platform login failed');
     } catch (error) {
       const errorMessage = handleApiError(error);
       dispatch({
@@ -477,101 +401,49 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     }
   };
 
-  // Logout function
   const logout = async (): Promise<void> => {
-    // Stop refresh timer
     stopRefreshTimer();
-    
+
     try {
       await authService.logout();
     } catch (error) {
       console.warn('Logout API call failed:', error);
     } finally {
-      // Clear all stored data and cache
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
-      localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
-      cache.clearAll();
-      tokenValidationRef.current = false;
-      permissionsLoadedRef.current = false;
-      refreshRetryCountRef.current = 0;
-      
+      clearClientAuthState();
       dispatch({ type: AuthActionType.LOGOUT });
     }
   };
 
-  // Optimized token validation with caching
-  const validateToken = async (): Promise<void> => {
-    // Prevent duplicate validation calls
+  const validateToken = useCallback(async (): Promise<void> => {
     if (tokenValidationRef.current) {
-      return;
-    }
-    
-    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
-    
-    if (!token) {
-      dispatch({
-        type: AuthActionType.VALIDATE_TOKEN,
-        payload: { valid: false },
-      });
       return;
     }
 
     tokenValidationRef.current = true;
 
     try {
-      // Check cache first
-      const cacheKey = `auth:validation:${token}`;
-      const cachedValidation = cache.get<boolean>(cacheKey);
-      
-      if (cachedValidation === true) {
-        // Use cached state, token already validated
-        dispatch({
-          type: AuthActionType.VALIDATE_TOKEN,
-          payload: {
-            valid: true,
-            user: state.user || undefined,
-            project: state.currentProject || undefined,
-          },
-        });
-        return;
-      }
-
       const response = await authService.validateSession();
-      
+
       if (response.success && response.valid) {
-        // Cache successful validation for 5 minutes
-        cache.set(cacheKey, true, 5 * 60 * 1000);
-        
+        clearStoredAuthState();
         dispatch({
           type: AuthActionType.VALIDATE_TOKEN,
           payload: {
             valid: true,
             user: response.user,
             project: response.project,
+            expires_at: response.session?.expires_at,
+            refresh_expires_at: response.session?.refresh_expires_at,
+            remember_me: response.session?.remember_me,
           },
         });
-      } else {
-        // Token is invalid, clear everything
-        localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-        localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
-        cache.clearAll();
-        
-        dispatch({
-          type: AuthActionType.VALIDATE_TOKEN,
-          payload: { valid: false },
-        });
+        return;
       }
+
+      throw new Error(response.message || 'Invalid session');
     } catch (error) {
-      console.error('Token validation failed:', error);
-      // Clear storage on validation error
-      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
-      cache.clearAll();
-      
+      console.warn('Token validation failed:', error);
+      clearClientAuthState();
       dispatch({
         type: AuthActionType.VALIDATE_TOKEN,
         payload: { valid: false },
@@ -579,32 +451,26 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     } finally {
       tokenValidationRef.current = false;
     }
-  };
+  }, [clearClientAuthState]);
 
-  // Clear error function
   const clearError = (): void => {
     dispatch({ type: AuthActionType.CLEAR_ERROR });
   };
 
-  // Optimized RBAC permissions loading with caching
   const loadUserPermissions = useCallback(async (): Promise<void> => {
     if (!state.user || !state.currentProject) {
       return;
     }
 
-    // ROOT users have all permissions
     if (state.user.user_type === 'root') {
       return;
     }
 
-    // Prevent duplicate permission loading
     if (permissionsLoadedRef.current) {
       return;
     }
 
     const cacheKey = `permissions:${state.user.user_hash}:${state.currentProject.project_hash}`;
-    
-    // Check cache first
     const cachedPermissions = cache.get<string[]>(cacheKey);
     if (cachedPermissions) {
       dispatch({
@@ -618,13 +484,12 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     dispatch({ type: AuthActionType.LOAD_PERMISSIONS_START });
 
     try {
-      const response: any = await permissionAssignmentsService.getMyPermissions();
-      const permissionNames = response.permissions || response.data || [];
+      const response = await permissionAssignmentsService.getMyPermissions();
+      const permissionNames = getPermissionNames(response);
 
       if (response.success !== false && Array.isArray(permissionNames)) {
-        // Cache permissions for 5 minutes
         cache.set(cacheKey, permissionNames, 5 * 60 * 1000);
-        
+
         dispatch({
           type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
           payload: { permissions: permissionNames },
@@ -646,44 +511,46 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     }
   }, [state.user, state.currentProject]);
 
-  // Enhanced permission checking function with RBAC integration
   const hasPermission = (permission: string): boolean => {
     if (!state.user) return false;
-    
-    // ROOT users have all permissions
+
     if (state.user.user_type === 'root') {
       return true;
     }
-    
-    // Check RBAC permissions first (from loaded effective permissions)
+
     if (state.effectivePermissions.includes(permission)) {
       return true;
     }
-    
-    // Fall back to user type-based permissions for system-level operations
+
     return checkPermission(state.user.user_type, permission);
   };
 
-  // Route access checking function
   const canAccessRoute = (routePath: string): boolean => {
     if (!state.user) return false;
-    
     return checkRoute(state.user.user_type, routePath);
   };
 
-  // Initialize authentication on mount
   useEffect(() => {
-    validateToken();
-  }, []);
+    void validateToken();
+  }, [validateToken]);
 
-  // Load permissions when user and project are available
+  useEffect(() => {
+    const handleUnauthorized = (): void => {
+      stopRefreshTimer();
+      clearClientAuthState();
+      dispatch({ type: AuthActionType.LOGOUT });
+    };
+
+    window.addEventListener('magic-auth-unauthorized', handleUnauthorized);
+    return (): void => window.removeEventListener('magic-auth-unauthorized', handleUnauthorized);
+  }, [clearClientAuthState, stopRefreshTimer]);
+
   useEffect(() => {
     if (state.isAuthenticated && state.user && state.currentProject) {
-      loadUserPermissions();
+      void loadUserPermissions();
     }
   }, [state.isAuthenticated, state.user, state.currentProject, loadUserPermissions]);
 
-  // Context value
   const contextValue: AuthContextType = {
     state,
     login,
@@ -702,8 +569,10 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     effectivePermissions: state.effectivePermissions,
     permissionsLoading: state.permissionsLoading,
     sessionExpiresAt: state.sessionExpiresAt,
+    refreshExpiresAt: state.refreshExpiresAt,
+    rememberMe: state.rememberMe,
     refreshSession,
-    refreshRetryCount: refreshRetryCountRef.current,
+    refreshRetryCount,
     showSessionExpiryWarning,
     dismissSessionExpiryWarning,
   };
@@ -715,5 +584,4 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   );
 }
 
-// Export context
-export { AuthContext }; 
+export { AuthContext };
