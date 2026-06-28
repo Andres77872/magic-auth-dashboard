@@ -14,6 +14,8 @@ export { permissionAssignmentsService } from './permission-assignments.service';
 export { auditService } from './audit.service';
 export { apiKeyService } from './api-key.service';
 export { emailTemplatesService } from './email-templates.service';
+export { patreonService } from './patreon.service';
+export { billingService } from './billing.service';
 
 // Also export defaults for convenience
 export { default as ApiClient } from './api.client';
@@ -29,3 +31,5 @@ export { default as PermissionAssignmentsService } from './permission-assignment
 export { default as AuditService } from './audit.service';
 export { default as ApiKeyService } from './api-key.service';
 export { default as EmailTemplatesService } from './email-templates.service';
+export { default as PatreonService } from './patreon.service';
+export { default as BillingService } from './billing.service';

@@ -15,6 +15,10 @@ export const ROUTES = {
   PROJECTS: '/projects',
   PROJECT: '/projects',  // base path for /projects/:hash
 
+  // Billing (groups, catalog, per-account Stripe credentials)
+  BILLING: '/billing',
+  BILLING_GROUP: '/billing',  // base path for /billing/:groupHash
+
   // Group Management
   GROUPS: '/groups',
   GROUP: '/groups',  // base path for /groups/:hash
@@ -43,6 +47,9 @@ export const ROUTES = {
 
   // Email Templates (ROOT only)
   EMAIL_TEMPLATES: '/email-templates',
+
+  // Patreon Operations (ROOT only)
+  PATREON: '/system/patreon',
 
   // Personal Routes (no Home prefix in breadcrumbs)
   PROFILE: '/profile',
@@ -79,6 +86,13 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     label: 'Projects',
     path: ROUTES.PROJECTS,
     icon: 'folder',
+    allowedUserTypes: ['root', 'admin'],
+  },
+  {
+    id: 'billing',
+    label: 'Billing',
+    path: ROUTES.BILLING,
+    icon: 'credit-card',
     allowedUserTypes: ['root', 'admin'],
   },
   {
@@ -258,10 +272,24 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         allowedUserTypes: ['root'],
       },
       {
+        id: 'billing',
+        label: 'Billing',
+        path: ROUTES.BILLING,
+        icon: 'credit-card',
+        allowedUserTypes: ['root'],
+      },
+      {
         id: 'email-templates',
         label: 'Email templates',
         path: ROUTES.EMAIL_TEMPLATES,
         icon: 'mail',
+        allowedUserTypes: ['root'],
+      },
+      {
+        id: 'patreon',
+        label: 'Patreon',
+        path: ROUTES.PATREON,
+        icon: 'heart-handshake',
         allowedUserTypes: ['root'],
       },
     ],

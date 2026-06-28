@@ -154,7 +154,7 @@ export function AddUserToProjectModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isSubmitting && !open && handleCancel()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>Add {userName} to Project via Group</DialogTitle>
         </DialogHeader>

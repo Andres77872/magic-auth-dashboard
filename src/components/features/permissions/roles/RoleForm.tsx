@@ -259,7 +259,7 @@ export function RoleForm({
               disabled={isLoading}
               aria-labelledby="priority-label"
             />
-            <input
+            <Input
               type="number"
               min={0}
               max={1000}
@@ -268,7 +268,7 @@ export function RoleForm({
               onBlur={() => handleBlur('role_priority')}
               disabled={isLoading}
               aria-labelledby="priority-label"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              fullWidth
             />
           </div>
           <div className="space-y-2">

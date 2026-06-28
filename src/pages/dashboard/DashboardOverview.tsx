@@ -5,10 +5,11 @@ import {
   RecentActivityFeed,
   StatisticsGrid
 } from './components';
-import { 
+import {
   PageContainer,
   PageHeader,
 } from '@/components/common';
+import { BillingSummaryPanel } from '@/components/features/billing';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -111,6 +112,9 @@ export function DashboardOverview(): React.JSX.Element {
           </div>
         </div>
       )}
+
+      {/* Billing & Plans metrics (admin+) */}
+      <BillingSummaryPanel />
 
       {/* Quick Actions Panel */}
       <QuickActionsPanel />

@@ -9,6 +9,13 @@ export { useProjectGroups } from './useProjectGroups';
 export { useToast } from './useToast';
 export { useApiKeys } from './useApiKeys';
 export { useEmailTemplates, useEmailTemplate } from './useEmailTemplates';
+export { usePatreonStatus } from './usePatreonStatus';
+export { usePatreonEntitlements } from './usePatreonEntitlements';
+export { usePatreonEntitlement } from './usePatreonEntitlement';
+export { usePatreonTierMap } from './usePatreonTierMap';
+export { usePatreonSyncJobs } from './usePatreonSyncJobs';
+export { usePatreonWebhooks } from './usePatreonWebhooks';
+export { useResyncPatreon } from './useResyncPatreon';
 
 // Dashboard hooks
 export { default as useSystemStats } from './dashboard/useSystemStats';
@@ -17,6 +24,7 @@ export { default as useSystemCacheStats } from './dashboard/useSystemCacheStats'
 export { default as useDashboardCache } from './dashboard/useDashboardCache';
 export { useRecentActivity } from './dashboard/useRecentActivity';
 export { default as useAdminStats } from './dashboard/useAdminStats';
+export { default as useBillingMetrics } from './dashboard/useBillingMetrics';
 
 // User Profile & Management hooks
 export { default as useUserProfile } from './useUserProfile';

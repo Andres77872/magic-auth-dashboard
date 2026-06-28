@@ -11,6 +11,8 @@ export * from './global-roles.types';
 export * from './permission-assignments.types';
 export * from './api-key.types';
 export * from './email-templates.types';
+export * from './patreon.types';
+export * from './billing.types';
 
 // Export analytics types but exclude ActivityFilters to avoid duplicate with audit.types
 export {

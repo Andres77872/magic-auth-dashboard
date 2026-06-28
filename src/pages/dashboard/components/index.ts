@@ -6,6 +6,9 @@ export { default as QuickActionCard } from './QuickActionCard';
 export { default as SystemHealthPanel } from './SystemHealthPanel';
 export { default as HealthIndicator } from './HealthIndicator';
 
+// System Health Monitor — curated subsystem sections + primitives
+export * from './health';
+
 // Activity Feed Components
 export { default as RecentActivityFeed } from './RecentActivityFeed';
 export { default as ActivityItem } from './ActivityItem';

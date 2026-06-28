@@ -2,6 +2,13 @@ import React, { useState, useCallback, useEffect, useMemo, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Pagination } from '@/components/common/Pagination';
 import { ActivityTable } from './ActivityTable';
 import { ActivityFilters } from './ActivityFilters';
@@ -113,13 +120,6 @@ export const ActivityLogTab = memo(function ActivityLogTab({
     [refetch]
   );
 
-  // Memoized handler for select onChange
-  const handlePageSizeSelectChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      handlePageSizeChange(Number(e.target.value));
-    },
-    [handlePageSizeChange]
-  );
 
   // Handle manual refresh
   const handleRefresh = useCallback(() => {
@@ -254,17 +254,20 @@ export const ActivityLogTab = memo(function ActivityLogTab({
               {/* Page Size Selector - Hidden on very small screens */}
               <div className="hidden xs:flex items-center gap-2">
                 <span className="text-sm text-muted-foreground hidden sm:inline">Per page:</span>
-                <select
-                  value={pageSize}
-                  onChange={handlePageSizeSelectChange}
-                  className="h-8 w-16 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  aria-label="Items per page"
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(value) => handlePageSizeChange(Number(value))}
                 >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
+                  <SelectTrigger className="h-8 w-[4.5rem] px-2.5" aria-label="Items per page">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Page Navigation */}

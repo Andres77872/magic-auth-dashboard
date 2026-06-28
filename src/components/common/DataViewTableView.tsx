@@ -118,7 +118,7 @@ export function DataViewTableView<T extends object>({
         <div
           className={cn(
             'w-full overflow-auto',
-            stickyHeader && 'max-h-[600px]'
+            stickyHeader && !maxHeight && 'max-h-[70vh] md:max-h-[600px]'
           )}
           style={maxHeight ? { maxHeight } : undefined}
         >

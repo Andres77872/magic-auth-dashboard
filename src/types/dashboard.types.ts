@@ -1,4 +1,4 @@
-import type { HealthComponent } from './system.types';
+import type { HealthComponent, HealthStatus } from './system.types';
 
 // Dashboard Types
 export interface DashboardStats {
@@ -59,13 +59,12 @@ export interface QuickAction {
 }
 
 export interface SystemHealthData {
-  status: 'healthy' | 'warning' | 'critical' | 'degraded' | 'unhealthy';
+  status: HealthStatus | (string & {});
   timestamp: string;
-  components: {
-    database: HealthComponent;
-    redis: HealthComponent;
-    group_system: HealthComponent;
-  };
+  // The API returns an open-ended set of components (database, redis, email_*,
+  // patreon, billing, …). Keep the full map so the health monitor can surface
+  // every check instead of just the three it used to hardcode.
+  components: Record<string, HealthComponent>;
 }
 
 export interface WelcomeData {

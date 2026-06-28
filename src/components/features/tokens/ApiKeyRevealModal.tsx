@@ -153,8 +153,8 @@ export function ApiKeyRevealModal({
         }
       }}
     >
-      <DialogContent 
-        className="sm:max-w-[600px]"
+      <DialogContent
+        size="lg"
         // Hide close button by overlaying style
         onPointerDownOutside={(e) => {
           // Prevent backdrop click closing

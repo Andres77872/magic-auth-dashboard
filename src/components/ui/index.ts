@@ -129,6 +129,13 @@ export {
 // Tabs
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 
+// Collapsible
+export {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from './collapsible';
+
 // Label
 export { Label, labelVariants } from './label';
 

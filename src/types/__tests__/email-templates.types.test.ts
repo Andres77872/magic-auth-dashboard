@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  draftFieldIssues,
   extractPlaceholders,
   validateTemplateDraft,
   emailTemplateLabel,
@@ -70,6 +71,16 @@ describe('validateTemplateDraft', () => {
     expect(result.valid).toBe(false);
   });
 
+  it('does not name <style> in the disallowed-tag message (style is allowed)', () => {
+    const result = validateTemplateDraft(
+      draft({ htmlTemplate: '<p>$activation_link</p><script>x</script>' }),
+      OPTS
+    );
+    const tagError = result.errors.find((e) => e.includes('disallowed tag'));
+    expect(tagError).toBeDefined();
+    expect(tagError).not.toContain('<style>');
+  });
+
   it('allows the structural tags used by the best-practice document (style/meta/table)', () => {
     const html =
       '<style>body{margin:0}</style><meta name="color-scheme" content="light dark">' +
@@ -83,5 +94,32 @@ describe('emailTemplateLabel', () => {
   it('maps known codes to friendly labels and falls back to the code', () => {
     expect(emailTemplateLabel('email_activation')).toBe('Email activation');
     expect(emailTemplateLabel('unknown_code')).toBe('unknown_code');
+  });
+
+  it('labels the patreon + credit-grant templates (previously shown as raw codes)', () => {
+    expect(emailTemplateLabel('patreon_link_proof')).toBe('Patreon link proof');
+    expect(emailTemplateLabel('email_credit_grant_notification')).toBe('Credit grant notification');
+  });
+});
+
+describe('draftFieldIssues', () => {
+  const OPTS_FIELDS = { allowedVariables: OPTS.allowedVariables };
+
+  it('reports no issues for a clean draft', () => {
+    expect(draftFieldIssues(draft(), OPTS_FIELDS)).toEqual({ subject: false, html: false, text: false });
+  });
+
+  it('attributes a forbidden tag / unknown var to the HTML field', () => {
+    expect(draftFieldIssues(draft({ htmlTemplate: '<script>x</script>' }), OPTS_FIELDS).html).toBe(true);
+    expect(draftFieldIssues(draft({ htmlTemplate: '<p>$nope</p>' }), OPTS_FIELDS).html).toBe(true);
+  });
+
+  it('flags an empty or unknown-var plain-text body', () => {
+    expect(draftFieldIssues(draft({ textTemplate: '   ' }), OPTS_FIELDS).text).toBe(true);
+    expect(draftFieldIssues(draft({ textTemplate: '$nope' }), OPTS_FIELDS).text).toBe(true);
+  });
+
+  it('flags a multi-line subject', () => {
+    expect(draftFieldIssues(draft({ subjectTemplate: 'a\nb' }), OPTS_FIELDS).subject).toBe(true);
   });
 });

@@ -38,15 +38,30 @@ export function NavigationMenu({ userType }: NavigationMenuProps): React.JSX.Ele
           }))
           .filter((section) => section.items.length > 0);
 
-  // Top-level active state uses prefix matching so a parent highlights while
-  // viewing any descendant route. Children compute their own (tab-aware,
-  // exact) active state inside NavigationItem.
-  const isItemActive = (itemPath: string): boolean => {
+  const topLevelPaths = visibleSections.flatMap((section) =>
+    section.items.map((item) => item.path.split('?')[0])
+  );
+
+  // Top-level active state uses prefix matching for detail pages, but a more
+  // specific sibling route wins. That keeps /system from staying active while
+  // /system/patreon is selected.
+  const isItemActive = (item: NavItem): boolean => {
     const currentPath = location.pathname;
+    const itemPath = item.path.split('?')[0];
+
     if (itemPath === '/') {
       return currentPath === '/';
     }
-    return currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
+
+    const matches = currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
+    if (!matches) return false;
+
+    return !topLevelPaths.some(
+      (candidatePath) =>
+        candidatePath !== itemPath &&
+        candidatePath.startsWith(`${itemPath}/`) &&
+        (currentPath === candidatePath || currentPath.startsWith(`${candidatePath}/`))
+    );
   };
 
   return (
@@ -65,7 +80,7 @@ export function NavigationMenu({ userType }: NavigationMenuProps): React.JSX.Ele
               <NavigationItem
                 key={item.id}
                 item={item}
-                isActive={isItemActive(item.path)}
+                isActive={isItemActive(item)}
               />
             ))}
           </ul>

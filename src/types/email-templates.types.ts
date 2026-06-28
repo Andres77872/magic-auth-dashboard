@@ -121,6 +121,8 @@ export const EMAIL_TEMPLATE_LABELS: Record<string, string> = {
   admin_password_reset: 'Admin password reset',
   security_notification: 'Security notification',
   delivery_operation: 'Delivery update',
+  patreon_link_proof: 'Patreon link proof',
+  email_credit_grant_notification: 'Credit grant notification',
 };
 
 export function emailTemplateLabel(code: string): string {
@@ -182,7 +184,7 @@ export function validateTemplateDraft(
   }
 
   if (FORBIDDEN_TAG_RE.test(htmlTemplate)) {
-    errors.push('HTML contains a disallowed tag (e.g. <script>, <iframe>, <style>).');
+    errors.push('HTML contains a disallowed tag (e.g. <script>, <iframe>).');
   }
   if (FORBIDDEN_ATTR_RE.test(htmlTemplate)) {
     errors.push('HTML contains an inline event handler (on… attribute).');
@@ -192,4 +194,35 @@ export function validateTemplateDraft(
   }
 
   return { valid: errors.length === 0, errors };
+}
+
+// ─── Which editable field(s) a validation problem belongs to ───────────────
+// Drives the per-tab "has issues" dot so an error on the inactive body tab is
+// not missed. `requiredVariables` (a cross-field rule) is intentionally not
+// attributed to a single field — the aggregate error list still reports it.
+export interface DraftFieldIssues {
+  subject: boolean;
+  html: boolean;
+  text: boolean;
+}
+
+export function draftFieldIssues(
+  draft: EmailTemplateDraft,
+  options: { allowedVariables: string[] }
+): DraftFieldIssues {
+  const allowed = new Set(options.allowedVariables);
+  const hasUnknown = (text: string): boolean =>
+    extractPlaceholders(text).some((name) => !allowed.has(name));
+  const { subjectTemplate, htmlTemplate, textTemplate } = draft;
+
+  return {
+    subject: !subjectTemplate.trim() || /[\r\n]/.test(subjectTemplate) || hasUnknown(subjectTemplate),
+    html:
+      !htmlTemplate.trim() ||
+      hasUnknown(htmlTemplate) ||
+      FORBIDDEN_TAG_RE.test(htmlTemplate) ||
+      FORBIDDEN_ATTR_RE.test(htmlTemplate) ||
+      FORBIDDEN_URL_RE.test(htmlTemplate),
+    text: !textTemplate.trim() || hasUnknown(textTemplate),
+  };
 }

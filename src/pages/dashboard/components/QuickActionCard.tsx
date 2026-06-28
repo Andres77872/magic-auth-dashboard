@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, User, FolderKanban, Users, Settings, Activity, ShieldCheck } from 'lucide-react';
+import { ChevronRight, User, FolderKanban, Users, Settings, Activity, ShieldCheck, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { QuickAction } from '@/types/dashboard.types';
 
@@ -23,7 +23,7 @@ const iconColorStyles: Record<string, string> = {
 };
 
 export function QuickActionCard({ action }: QuickActionCardProps): React.JSX.Element {
-  const getIcon = (iconName: string) => {
+  const getIcon = (iconName: string): React.ReactElement => {
     const icons: Record<string, React.ReactElement> = {
       'user-plus': <User size={24} />,
       'folder-plus': <FolderKanban size={24} />,
@@ -31,6 +31,7 @@ export function QuickActionCard({ action }: QuickActionCardProps): React.JSX.Ele
       'settings': <Settings size={24} />,
       'bar-chart': <Activity size={24} />,
       'shield': <ShieldCheck size={24} />,
+      'credit-card': <CreditCard size={24} />,
     };
 
     return icons[iconName] || <User size={24} />;

@@ -8,7 +8,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Pencil } from 'lucide-react';
-import { Button, EmptyState, ErrorState } from '@/components/common';
+import { Badge, Button, EmptyState, ErrorState, Skeleton } from '@/components/common';
 import { useEmailTemplates } from '@/hooks/useEmailTemplates';
 import { ROUTES } from '@/utils/routes';
 import { emailTemplateLabel } from '@/types/email-templates.types';
@@ -17,7 +17,7 @@ export function EmailTemplatesList(): React.JSX.Element {
   const { templates, isLoading, error, refetch } = useEmailTemplates();
 
   if (isLoading) {
-    return <div className="py-12 text-center text-sm text-muted-foreground">Loading email templates…</div>;
+    return <EmailTemplatesListSkeleton />;
   }
   if (error) {
     return <ErrorState title="Couldn't load templates" message={error} onRetry={() => void refetch()} />;
@@ -49,15 +49,9 @@ export function EmailTemplatesList(): React.JSX.Element {
                 <p className="font-mono text-xs text-muted-foreground">{t.templateCode}</p>
               </div>
             </div>
-            <span
-              className={
-                t.isCustomized
-                  ? 'rounded bg-info/10 px-2 py-0.5 text-xs text-info'
-                  : 'rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground'
-              }
-            >
+            <Badge variant={t.isCustomized ? 'info' : 'secondary'} size="sm">
               {t.isCustomized ? `Customized · v${t.version}` : 'Default'}
-            </span>
+            </Badge>
           </div>
 
           <p className="line-clamp-2 text-sm text-muted-foreground">
@@ -77,6 +71,26 @@ export function EmailTemplatesList(): React.JSX.Element {
               </Button>
             </Link>
           </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EmailTemplatesListSkeleton(): React.JSX.Element {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-8 w-20 self-end" />
         </div>
       ))}
     </div>

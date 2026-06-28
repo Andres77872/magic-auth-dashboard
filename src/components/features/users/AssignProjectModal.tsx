@@ -132,7 +132,7 @@ export function AssignProjectModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !isLoading && !open && handleCancel()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent size="md">
         <DialogHeader>
           <DialogTitle>Assign {allowMultiple ? 'Projects' : 'Project'} to {userName}</DialogTitle>
           <DialogDescription>

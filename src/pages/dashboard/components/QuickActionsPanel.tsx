@@ -52,6 +52,15 @@ export function QuickActionsPanel(): React.JSX.Element {
           requiredUserType: 'admin',
         },
         {
+          id: 'billing',
+          title: 'Billing & Plans',
+          description: 'Manage groups, plans & Stripe',
+          icon: 'credit-card',
+          href: ROUTES.BILLING,
+          color: 'info',
+          requiredUserType: 'admin',
+        },
+        {
           id: 'audit-logs',
           title: 'Audit Logs',
           description: 'View system activity and events',

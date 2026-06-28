@@ -15,8 +15,6 @@ const buttonVariants = cva(
         // Quiet-tint danger (Meridian doesn't use solid red fills)
         destructive:
           'border border-destructive/35 bg-destructive/10 text-destructive hover:bg-destructive/20',
-        danger:
-          'border border-destructive/35 bg-destructive/10 text-destructive hover:bg-destructive/20',
         // Outline converges with bordered secondary
         outline: 'border border-input bg-card text-foreground hover:bg-accent',
         ghost: 'text-muted-foreground hover:bg-accent hover:text-foreground',

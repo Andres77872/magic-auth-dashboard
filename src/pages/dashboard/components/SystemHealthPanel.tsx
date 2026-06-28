@@ -22,8 +22,15 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { statusTone, toneClasses, type StatusTone } from '@/lib/status-tone';
 import { useSystemCacheStats, useUserType } from '@/hooks';
 import type { SystemHealthData } from '@/types/dashboard.types';
+import {
+  EmailPipelineSection,
+  PatreonHealthSection,
+  BillingHealthSection,
+  UnknownComponentsSection,
+} from './health';
 
 interface SystemHealthPanelProps {
   health: SystemHealthData | null;
@@ -31,6 +38,32 @@ interface SystemHealthPanelProps {
   error: string | null;
   onRefresh: () => void;
 }
+
+// Solid dot color per tone (toneClasses gives a faint /10 fill, too light for the
+// pulsing status dot).
+const TONE_DOT: Record<StatusTone, string> = {
+  success: 'bg-success',
+  warning: 'bg-warning',
+  destructive: 'bg-destructive',
+  info: 'bg-info',
+  muted: 'bg-muted-foreground',
+};
+
+// Core infra checks keep the existing compact HealthIndicator cards.
+const CORE_KEYS = ['database', 'redis', 'group_system'];
+// The API duplicates billing's children at the top level; hide the duplicates
+// since the same data already appears nested under `billing`.
+const IGNORED_DUPLICATE_KEYS = ['billing_provider_stripe', 'billing_webhooks', 'billing_sync'];
+// Keys already surfaced by a curated section (so UnknownComponentsSection skips them).
+const HANDLED_KEYS = [
+  ...CORE_KEYS,
+  'email_provider',
+  'email_outbox',
+  'email_worker',
+  'patreon',
+  'billing',
+  ...IGNORED_DUPLICATE_KEYS,
+];
 
 export function SystemHealthPanel({
   health,
@@ -44,39 +77,6 @@ export function SystemHealthPanel({
   if (!isRoot) {
     return <></>;
   }
-
-  const getStatusStyles = (
-    status?: 'healthy' | 'warning' | 'critical' | 'degraded' | 'unhealthy'
-  ) => {
-    switch (status) {
-      case 'healthy':
-        return {
-          bg: 'bg-success',
-          text: 'text-success',
-          badge: 'bg-success/10 text-success border-success/30',
-        };
-      case 'warning':
-      case 'degraded':
-        return {
-          bg: 'bg-warning',
-          text: 'text-warning',
-          badge: 'bg-warning/10 text-warning border-warning/30',
-        };
-      case 'critical':
-      case 'unhealthy':
-        return {
-          bg: 'bg-destructive',
-          text: 'text-destructive',
-          badge: 'bg-destructive/10 text-destructive border-destructive/30',
-        };
-      default:
-        return {
-          bg: 'bg-muted-foreground',
-          text: 'text-muted-foreground',
-          badge: 'bg-muted text-muted-foreground',
-        };
-    }
-  };
 
   const formatTimestamp = (timestamp?: string) => {
     if (!timestamp) return 'Unknown';
@@ -122,7 +122,7 @@ export function SystemHealthPanel({
     );
   }
 
-  const statusStyles = getStatusStyles(health?.status);
+  const rollupTone = statusTone(health?.status);
 
   return (
     <Card className="mt-6">
@@ -158,12 +158,12 @@ export function SystemHealthPanel({
               <div
                 className={cn(
                   'h-3 w-3 rounded-full animate-pulse motion-reduce:animate-none',
-                  statusStyles.bg
+                  TONE_DOT[rollupTone]
                 )}
                 aria-hidden="true"
               />
               <span className="text-sm text-foreground">System Status:</span>
-              <Badge variant="outline" className={statusStyles.badge}>
+              <Badge variant="outline" className={toneClasses(rollupTone)}>
                 {health.status?.toUpperCase() || 'UNKNOWN'}
               </Badge>
             </div>
@@ -193,18 +193,24 @@ export function SystemHealthPanel({
           </div>
         ) : health ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <HealthIndicator
-              title="Database"
-              component={health.components.database}
-            />
-            <HealthIndicator
-              title="Redis Cache"
-              component={health.components.redis}
-            />
-            <HealthIndicator
-              title="Group System"
-              component={health.components.group_system}
-            />
+            {health.components.database && (
+              <HealthIndicator
+                title="Database"
+                component={health.components.database}
+              />
+            )}
+            {health.components.redis && (
+              <HealthIndicator
+                title="Redis Cache"
+                component={health.components.redis}
+              />
+            )}
+            {health.components.group_system && (
+              <HealthIndicator
+                title="Group System"
+                component={health.components.group_system}
+              />
+            )}
           </div>
         ) : null}
 
@@ -316,6 +322,19 @@ export function SystemHealthPanel({
               </div>
             ) : null}
           </div>
+        )}
+
+        {/* Subsystem health sections */}
+        {health && (
+          <>
+            <EmailPipelineSection components={health.components} />
+            <PatreonHealthSection data={health.components.patreon} />
+            <BillingHealthSection data={health.components.billing} />
+            <UnknownComponentsSection
+              components={health.components}
+              handledKeys={HANDLED_KEYS}
+            />
+          </>
         )}
       </CardContent>
 

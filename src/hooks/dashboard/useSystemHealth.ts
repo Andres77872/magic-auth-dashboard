@@ -31,40 +31,15 @@ export function useSystemHealth(): UseSystemHealthReturn {
       const response = await systemService.getSystemHealth();
       
       if (response.success) {
-        // Helper function to map status
-        const mapStatus = (status: string): HealthComponent['status'] => {
-          const statusMap: Record<string, HealthComponent['status']> = {
-            'healthy': 'healthy',
-            'warning': 'warning',
-            'critical': 'critical',
-            'unhealthy': 'unhealthy',
-            'degraded': 'degraded'
-          };
-          return statusMap[status] || 'critical';
-        };
-        
-        // Data is at the top level of response, not nested under 'data'
+        // Pass the full components map through untouched so the health monitor
+        // can surface every check the API returns (email, patreon, billing, …),
+        // not just the three it used to cherry-pick. Status tolerance for
+        // unknown/new values lives in the shared `statusTone` helper.
+        // Data is at the top level of the response, not nested under 'data'.
         setHealth({
-          status: mapStatus(response.status),
+          status: response.status ?? 'unhealthy',
           timestamp: response.timestamp,
-          components: {
-            database: {
-              status: mapStatus(response.components?.database?.status),
-              message: response.components?.database?.message,
-              response_time_ms: response.components?.database?.response_time_ms,
-              connection_pool: response.components?.database?.connection_pool,
-            },
-            redis: {
-              status: mapStatus(response.components?.redis?.status),
-              message: response.components?.redis?.message,
-              response_time_ms: response.components?.redis?.response_time_ms,
-              memory_usage: response.components?.redis?.memory_usage,
-            },
-            group_system: {
-              status: mapStatus(response.components?.group_system?.status),
-              message: response.components?.group_system?.message,
-            },
-          },
+          components: (response.components ?? {}) as Record<string, HealthComponent>,
         });
       } else {
         setError(response.message || 'Failed to fetch system health');

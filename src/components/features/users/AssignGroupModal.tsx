@@ -202,7 +202,7 @@ export function AssignGroupModal({
   return (
     <>
       <Dialog open={isOpen && !showCreateGroupModal} onOpenChange={(open) => !isLoading && !open && handleCancel()}>
-        <DialogContent className="max-w-lg">
+        <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>Assign Group to {userName}</DialogTitle>
             <DialogDescription>

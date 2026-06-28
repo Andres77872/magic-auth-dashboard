@@ -456,7 +456,7 @@ export function UserFormModal({
         open={isOpen && !showRootConfirmation}
         onOpenChange={(open) => !isLoading && !open && onClose()}
       >
-        <DialogContent className="max-w-lg">
+        <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>
               {mode === 'create' ? 'Create New User' : 'Edit User'}

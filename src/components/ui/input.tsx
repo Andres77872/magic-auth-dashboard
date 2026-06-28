@@ -105,25 +105,27 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{rightIcon}</div>
           )}
         </div>
-        <div className="flex justify-between mt-1.5">
-          <div>
-            {error && (
-              <p id={`${inputId}-error`} className="text-sm text-destructive">
-                {error}
-              </p>
-            )}
-            {!error && helperText && (
-              <p id={`${inputId}-helper`} className="text-sm text-muted-foreground">
-                {helperText}
-              </p>
+        {(error || helperText || (showCharCount && maxLength)) && (
+          <div className="flex justify-between mt-1.5">
+            <div>
+              {error && (
+                <p id={`${inputId}-error`} className="text-sm text-destructive">
+                  {error}
+                </p>
+              )}
+              {!error && helperText && (
+                <p id={`${inputId}-helper`} className="text-sm text-muted-foreground">
+                  {helperText}
+                </p>
+              )}
+            </div>
+            {showCharCount && maxLength && (
+              <span className="text-xs text-muted-foreground">
+                {charCount}/{maxLength}
+              </span>
             )}
           </div>
-          {showCharCount && maxLength && (
-            <span className="text-xs text-muted-foreground">
-              {charCount}/{maxLength}
-            </span>
-          )}
-        </div>
+        )}
       </div>
     );
   }

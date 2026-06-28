@@ -99,7 +99,7 @@ export function Pagination({
       className={cn('flex flex-col sm:flex-row items-center justify-between gap-4', className)}
       aria-label="Pagination"
     >
-      <div className="text-xs text-muted-foreground">
+      <div className="text-sm text-muted-foreground sm:text-xs">
         <span aria-live="polite">
           Showing {startItem}–{endItem} of {totalItems}{' '}
           {totalItems === 1 ? itemLabelSingular : itemLabelPlural}

@@ -1,6 +1,7 @@
 import React from 'react';
-import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { CheckCircle, AlertTriangle, XCircle, RefreshCw, MinusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { statusTone, type StatusTone } from '@/lib/status-tone';
 import type { HealthComponent } from '@/types/system.types';
 
 interface HealthIndicatorProps {
@@ -8,46 +9,28 @@ interface HealthIndicatorProps {
   component: HealthComponent;
 }
 
-const statusConfig = {
-  healthy: { 
-    icon: CheckCircle, 
-    text: 'Healthy', 
-    color: 'text-success', 
-    bg: 'bg-success',
-    border: 'border-success/30'
-  },
-  warning: { 
-    icon: AlertTriangle, 
-    text: 'Warning', 
-    color: 'text-warning', 
-    bg: 'bg-warning',
-    border: 'border-warning/30'
-  },
-  degraded: { 
-    icon: AlertTriangle, 
-    text: 'Degraded', 
-    color: 'text-warning', 
-    bg: 'bg-warning',
-    border: 'border-warning/30'
-  },
-  critical: { 
-    icon: XCircle, 
-    text: 'Critical', 
-    color: 'text-destructive', 
-    bg: 'bg-destructive',
-    border: 'border-destructive/30'
-  },
-  unhealthy: { 
-    icon: XCircle, 
-    text: 'Unhealthy', 
-    color: 'text-destructive', 
-    bg: 'bg-destructive',
-    border: 'border-destructive/30'
-  },
+// Derive the icon/colors from the shared status tone so any status (including
+// `ready`/`disabled`/`not_ready`/`retrying` and unknown future values) renders
+// correctly instead of defaulting to red "Unhealthy".
+const toneConfig: Record<
+  StatusTone,
+  { icon: typeof CheckCircle; color: string; bg: string; border: string }
+> = {
+  success: { icon: CheckCircle, color: 'text-success', bg: 'bg-success', border: 'border-success/30' },
+  warning: { icon: AlertTriangle, color: 'text-warning', bg: 'bg-warning', border: 'border-warning/30' },
+  destructive: { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive', border: 'border-destructive/30' },
+  info: { icon: RefreshCw, color: 'text-info', bg: 'bg-info', border: 'border-info/30' },
+  muted: { icon: MinusCircle, color: 'text-muted-foreground', bg: 'bg-muted-foreground', border: 'border-border' },
 };
 
+function statusLabel(status?: string): string {
+  if (!status) return 'Unknown';
+  const text = status.replace(/_/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export function HealthIndicator({ title, component }: HealthIndicatorProps): React.JSX.Element {
-  const config = statusConfig[component.status] || statusConfig.unhealthy;
+  const config = toneConfig[statusTone(component.status)];
   const StatusIcon = config.icon;
 
   const formatResponseTime = (time?: number) => {
@@ -71,7 +54,7 @@ export function HealthIndicator({ title, component }: HealthIndicatorProps): Rea
         </div>
         <div className={cn('flex items-center gap-1.5 text-xs font-medium', config.color)}>
           <StatusIcon className="h-4 w-4" />
-          <span>{config.text}</span>
+          <span>{statusLabel(component.status)}</span>
         </div>
       </div>
 

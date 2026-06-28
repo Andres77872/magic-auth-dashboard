@@ -23,4 +23,33 @@ describe('EmailTemplatePreview', () => {
     const { getByText } = render(<EmailTemplatePreview html="" isLoading />);
     expect(getByText(/Rendering preview/i)).toBeTruthy();
   });
+
+  it('shows the rendered subject line above the body', () => {
+    const { getByText } = render(
+      <EmailTemplatePreview html="<p>hi</p>" subject="Activate your Magic Auth email" />
+    );
+    expect(getByText('Activate your Magic Auth email')).toBeTruthy();
+  });
+
+  it('renders the plain-text body (not an iframe) in text mode', () => {
+    const { container, getByText } = render(
+      <EmailTemplatePreview html="<p>ignored</p>" text="Plain text body line" mode="text" />
+    );
+    expect(container.querySelector('iframe')).toBeNull();
+    expect(getByText('Plain text body line')).toBeTruthy();
+  });
+
+  it('keeps the last render visible and shows a non-destructive error banner', () => {
+    const { container, getByText } = render(
+      <EmailTemplatePreview html="<p>last good</p>" error="Preview failed: 500" />
+    );
+    // The toolbar + iframe survive; the error is an in-pane banner.
+    expect(container.querySelector('iframe')).not.toBeNull();
+    expect(getByText(/Preview failed: 500/)).toBeTruthy();
+  });
+
+  it('overlays an out-of-date notice when paused', () => {
+    const { getByText } = render(<EmailTemplatePreview html="<p>stale</p>" paused />);
+    expect(getByText(/Preview paused/i)).toBeTruthy();
+  });
 });

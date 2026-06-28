@@ -5,12 +5,13 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   error?: string;
   helperText?: string;
   label?: string;
+  validationState?: 'success' | 'error' | 'warning' | null;
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, error, helperText, label, id, ...props }, ref) => {
+  ({ className, error, helperText, label, validationState, id, ...props }, ref) => {
     const textareaId = id || React.useId();
-    const hasError = !!error;
+    const hasError = !!error || validationState === 'error';
 
     return (
       <div className="w-full">
@@ -25,6 +26,8 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className={cn(
             'flex min-h-[60px] w-full rounded-sm border border-input bg-card px-3 py-2 text-sm transition-[color,box-shadow,border-color] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
             hasError && 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/40',
+            validationState === 'success' && 'border-success focus-visible:border-success focus-visible:ring-success/40',
+            validationState === 'warning' && 'border-warning focus-visible:border-warning focus-visible:ring-warning/40',
             className
           )}
           ref={ref}

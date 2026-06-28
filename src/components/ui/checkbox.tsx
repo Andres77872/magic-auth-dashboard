@@ -6,13 +6,15 @@ import { cn } from '@/lib/utils';
 export interface CheckboxProps extends React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> {
   label?: string;
   error?: string;
+  validationState?: 'success' | 'error' | 'warning' | null;
 }
 
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   CheckboxProps
->(({ className, label, error, id, ...props }, ref) => {
+>(({ className, label, error, validationState, id, ...props }, ref) => {
   const checkboxId = id || React.useId();
+  const hasError = !!error || validationState === 'error';
 
   return (
     <div className="flex items-start gap-2">
@@ -21,7 +23,9 @@ const Checkbox = React.forwardRef<
         id={checkboxId}
         className={cn(
           'peer h-[17px] w-[17px] shrink-0 rounded-[4px] border-[1.5px] border-input bg-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-primary-foreground',
-          error && 'border-destructive',
+          hasError && 'border-destructive',
+          validationState === 'success' && 'border-success',
+          validationState === 'warning' && 'border-warning',
           className
         )}
         {...props}
