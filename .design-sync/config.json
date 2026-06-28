@@ -1,0 +1,37 @@
+{
+  "projectId": "dc9e5d99-66b1-467b-9fbc-7c9cfecfefb1",
+  "pkg": "magic-auth-dashboard",
+  "globalName": "Meridian",
+  "shape": "package",
+  "buildCmd": "pnpm exec vite build && cp dist/assets/index-*.css dist/ds-styles.css",
+  "tsconfig": "tsconfig.app.json",
+  "cssEntry": "dist/ds-styles.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "srcDir": "src/components/ui",
+  "libOverrides": {
+    "dts.mjs": "noEmit app — load .tsx source into ts-morph so <Name>Props resolves (repo ships no .d.ts tree)"
+  },
+  "componentSrcMap": {
+    "Popover": null,
+    "PopoverTrigger": null,
+    "PopoverContent": null,
+    "PopoverAnchor": null,
+    "SearchableSelect": null
+  },
+  "overrides": {
+    "Table": { "cardMode": "column" },
+    "TableCaption": { "cardMode": "column" },
+    "TableCell": { "cardMode": "column" },
+    "TableHead": { "cardMode": "column" },
+    "Card": { "cardMode": "column" },
+    "CardHeader": { "cardMode": "column" },
+    "Tabs": { "cardMode": "column" },
+    "Textarea": { "cardMode": "column" },
+    "Dialog": { "cardMode": "single", "viewport": "600x440", "primaryStory": "InviteMember" },
+    "Sheet": { "cardMode": "single", "viewport": "720x460", "primaryStory": "MemberDetail" },
+    "Select": { "cardMode": "single", "viewport": "360x430", "primaryStory": "Open" },
+    "DropdownMenu": { "cardMode": "single", "viewport": "360x400", "primaryStory": "RowActions" },
+    "DropdownMenuLabel": { "cardMode": "single", "viewport": "360x400", "primaryStory": "InMenu" },
+    "Tooltip": { "cardMode": "single", "viewport": "400x200", "primaryStory": "OnButton" }
+  }
+}
