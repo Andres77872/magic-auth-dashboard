@@ -12,6 +12,7 @@ import {
   TabNavigation,
   CopyableId,
   StatsGrid,
+  ErrorState,
   type Tab,
 } from '@/components/common';
 import { GroupMembersTable } from '@/components/features/groups/GroupMembersTable';
@@ -170,13 +171,15 @@ export const GroupDetailsPage: React.FC = () => {
   if (error || !group) {
     return (
       <PageContainer>
-        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-          <Users size={48} className="text-muted-foreground" />
-          <p className="text-muted-foreground">{error || 'Group not found'}</p>
+        <ErrorState
+          variant="fullpage"
+          title="Couldn't load group"
+          message={error || 'This group could not be found.'}
+        >
           <Button variant="primary" onClick={handleGoBack}>
             Back to Groups
           </Button>
-        </div>
+        </ErrorState>
       </PageContainer>
     );
   }

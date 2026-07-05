@@ -119,15 +119,17 @@ export interface UpdateUserStatusResponse extends ApiResponse {
   is_active: boolean;
 }
 
+// Reset only enqueues a secure reset link email; no plaintext password is ever
+// returned. Shape mirrors the API's actual response.
 export interface ResetPasswordResponse extends ApiResponse {
   user: {
     user_hash: string;
     username: string;
-    email: string;
   };
   reset_data: {
     expires_at: string;
-    must_change_on_login: boolean;
+    delivery_status: string;
+    has_delivery_target: boolean;
   };
   instructions: string;
 }

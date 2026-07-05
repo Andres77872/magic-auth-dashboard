@@ -304,7 +304,7 @@ class GlobalRolesService {
   
   /**
    * Get current user's permissions
-   * GET /roles/users/me/permissions
+   * GET /permissions/users/me/permissions
    */
   async getMyPermissions(): Promise<ApiResponse<string[]>> {
     return await apiClient.get<string[]>('/permissions/users/me/permissions');
@@ -312,7 +312,7 @@ class GlobalRolesService {
 
   /**
    * Check specific permission
-   * GET /roles/users/me/permissions/check/{permission_name}
+   * GET /permissions/users/me/permissions/check/{permission_name}
    */
   async checkPermission(permissionName: string): Promise<ApiResponse<{
     has_permission: boolean;

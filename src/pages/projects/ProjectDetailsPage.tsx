@@ -7,6 +7,7 @@ import {
   Button,
   Badge,
   TabNavigation,
+  ErrorState,
 } from '@/components/common';
 import type { Tab } from '@/components/common';
 import {
@@ -100,21 +101,17 @@ export const ProjectDetailsPage: React.FC = () => {
   if (error || !project) {
     return (
       <PageContainer>
-        <div className="flex flex-col gap-4 py-8" role="main">
-          <p className="text-sm text-destructive" role="alert">
-            {error || 'Project not found'}
-          </p>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleGoBack}>
-              Back to Projects
-            </Button>
-            {projectHash && (
-              <Button variant="primary" onClick={() => void refetch()}>
-                Retry
-              </Button>
-            )}
-          </div>
-        </div>
+        <ErrorState
+          variant="fullpage"
+          title="Couldn't load project"
+          message={error || 'This project could not be found.'}
+          onRetry={projectHash ? () => void refetch() : undefined}
+          isRetrying={isLoading}
+        >
+          <Button variant="outline" onClick={handleGoBack}>
+            Back to Projects
+          </Button>
+        </ErrorState>
       </PageContainer>
     );
   }

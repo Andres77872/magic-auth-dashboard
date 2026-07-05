@@ -38,15 +38,19 @@ class UserService {
     return await apiClient.get<any>('/users/access-summary');
   }
 
-  // Create ROOT user (ROOT only)
+  // Create ROOT user (ROOT only).
+  // Backend declares username/password/email as Form(...) fields, so this must
+  // be sent as application/x-www-form-urlencoded (postForm), not JSON.
   async createRootUser(userData: CreateRootUserRequest): Promise<CreateRootUserResponse> {
-    const response = await apiClient.post<CreateRootUserResponse>('/user-types/root', userData);
+    const response = await apiClient.postForm<CreateRootUserResponse>('/user-types/root', userData);
     return response as CreateRootUserResponse;
   }
 
-  // Create ADMIN user (ROOT only)
+  // Create ADMIN user (ROOT only).
+  // Backend expects Form(...) fields (username/password/email/assigned_project_ids),
+  // so send as form-encoded; the ids array is emitted as repeated fields.
   async createAdminUser(userData: CreateAdminUserRequest): Promise<CreateAdminUserResponse> {
-    const response = await apiClient.post<CreateAdminUserResponse>('/user-types/admin', userData);
+    const response = await apiClient.postForm<CreateAdminUserResponse>('/user-types/admin', userData);
     return response as CreateAdminUserResponse;
   }
 

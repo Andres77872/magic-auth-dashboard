@@ -257,6 +257,13 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         icon: 'document',
         allowedUserTypes: ['root', 'admin'],
       },
+      {
+        id: 'billing',
+        label: 'Billing',
+        path: ROUTES.BILLING,
+        icon: 'credit-card',
+        allowedUserTypes: ['root', 'admin'],
+      },
     ],
   },
   {
@@ -269,13 +276,6 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'System',
         path: ROUTES.SYSTEM,
         icon: 'settings',
-        allowedUserTypes: ['root'],
-      },
-      {
-        id: 'billing',
-        label: 'Billing',
-        path: ROUTES.BILLING,
-        icon: 'credit-card',
         allowedUserTypes: ['root'],
       },
       {

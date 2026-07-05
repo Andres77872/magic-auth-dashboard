@@ -64,6 +64,8 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
     };
 
     const styles = variantStyles[variant];
+    // Errors/warnings interrupt (assertive); success/info are announced politely.
+    const isUrgent = variant === 'error' || variant === 'warning';
 
     return (
       <div
@@ -74,8 +76,8 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
           isExiting && 'opacity-0 translate-y-2',
           className
         )}
-        role="alert"
-        aria-live="polite"
+        role={isUrgent ? 'alert' : 'status'}
+        aria-live={isUrgent ? 'assertive' : 'polite'}
       >
         <div className="shrink-0" aria-hidden="true">
           {styles.icon}

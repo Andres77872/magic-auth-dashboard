@@ -1,16 +1,15 @@
 /**
- * System management landing page (ROOT only).
+ * System landing page (ROOT only).
  *
- * Surfaces ROOT-level administration entry points. The individual tools are
- * not built yet, so each tile is marked "Coming Soon" — built from
- * design-system primitives rather than hand-rolled markup.
+ * Acts as a launcher for the root-level tools that exist today. Each tile links
+ * to a real, working page — no placeholders — and is built from design-system
+ * primitives rather than hand-rolled markup.
  */
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard, Layers, Settings, ShieldCheck, SlidersHorizontal, Users } from 'lucide-react';
+import { CreditCard, Mail, HeartHandshake, Settings, ShieldCheck } from 'lucide-react';
 import {
-  Badge,
   Card,
   IconContainer,
   PageContainer,
@@ -21,6 +20,7 @@ import { BillingSummaryPanel } from '@/components/features/billing';
 import { ROUTES } from '@/utils/routes';
 
 interface SystemTile {
+  to: string;
   icon: React.ReactNode;
   iconVariant: IconContainerVariant;
   title: string;
@@ -29,22 +29,26 @@ interface SystemTile {
 
 const SYSTEM_TILES: SystemTile[] = [
   {
-    icon: <Users className="h-5 w-5" />,
+    to: ROUTES.BILLING,
+    icon: <CreditCard className="h-5 w-5" />,
     iconVariant: 'primary',
-    title: 'Admin Management',
-    description: 'Create and manage admin users and their project assignments.',
+    title: 'Billing & plans',
+    description:
+      'Manage billing groups, the catalog of plans & packages, and per-account Stripe credentials.',
   },
   {
-    icon: <SlidersHorizontal className="h-5 w-5" />,
-    iconVariant: 'warning',
-    title: 'System Settings',
-    description: 'Configure system-wide settings and preferences.',
-  },
-  {
-    icon: <Layers className="h-5 w-5" />,
+    to: ROUTES.EMAIL_TEMPLATES,
+    icon: <Mail className="h-5 w-5" />,
     iconVariant: 'info',
-    title: 'Cache Management',
-    description: 'View cache statistics and clear system caches.',
+    title: 'Email templates',
+    description: 'Edit and preview the transactional emails the platform sends.',
+  },
+  {
+    to: ROUTES.PATREON,
+    icon: <HeartHandshake className="h-5 w-5" />,
+    iconVariant: 'warning',
+    title: 'Patreon',
+    description: 'Review entitlements, tier mappings, sync jobs, and webhooks.',
   },
 ];
 
@@ -53,8 +57,8 @@ export function SystemPage(): React.JSX.Element {
     <PageContainer>
       <div className="space-y-6">
         <PageHeader
-          title="System Management"
-          subtitle="ROOT-level system configuration and administration"
+          title="System"
+          subtitle="Root-level system configuration and administration"
           icon={<Settings size={24} />}
         />
 
@@ -66,7 +70,7 @@ export function SystemPage(): React.JSX.Element {
               icon={<ShieldCheck className="h-4 w-4" />}
             />
             <div>
-              <h3 className="font-semibold text-foreground">ROOT Access Verified</h3>
+              <h3 className="font-semibold text-foreground">Root access verified</h3>
               <p className="text-sm text-muted-foreground">
                 You have full system administrator privileges.
               </p>
@@ -77,27 +81,17 @@ export function SystemPage(): React.JSX.Element {
         <BillingSummaryPanel />
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Link to={ROUTES.BILLING} className="no-underline">
-            <Card padding="lg" className="h-full space-y-3 transition-colors hover:border-input">
-              <IconContainer variant="primary" size="lg" icon={<CreditCard className="h-5 w-5" />} />
-              <h3 className="font-semibold text-foreground">Billing &amp; Plans</h3>
-              <p className="text-sm text-muted-foreground">
-                Manage billing groups, the catalog of plans &amp; packages, and per-account Stripe credentials.
-              </p>
-              <Badge variant="success" size="sm">
-                Available
-              </Badge>
-            </Card>
-          </Link>
           {SYSTEM_TILES.map((tile) => (
-            <Card key={tile.title} padding="lg" className="space-y-3">
-              <IconContainer variant={tile.iconVariant} size="lg" icon={tile.icon} />
-              <h3 className="font-semibold text-foreground">{tile.title}</h3>
-              <p className="text-sm text-muted-foreground">{tile.description}</p>
-              <Badge variant="secondary" size="sm">
-                Coming Soon
-              </Badge>
-            </Card>
+            <Link key={tile.title} to={tile.to} className="no-underline">
+              <Card
+                padding="lg"
+                className="h-full space-y-3 transition-colors hover:border-input"
+              >
+                <IconContainer variant={tile.iconVariant} size="lg" icon={tile.icon} />
+                <h3 className="font-semibold text-foreground">{tile.title}</h3>
+                <p className="text-sm text-muted-foreground">{tile.description}</p>
+              </Card>
+            </Link>
           ))}
         </div>
       </div>

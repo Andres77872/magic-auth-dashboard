@@ -23,11 +23,9 @@ export { default as useSystemHealth } from './dashboard/useSystemHealth';
 export { default as useSystemCacheStats } from './dashboard/useSystemCacheStats';
 export { default as useDashboardCache } from './dashboard/useDashboardCache';
 export { useRecentActivity } from './dashboard/useRecentActivity';
-export { default as useAdminStats } from './dashboard/useAdminStats';
 export { default as useBillingMetrics } from './dashboard/useBillingMetrics';
 
 // User Profile & Management hooks
-export { default as useUserProfile } from './useUserProfile';
 export { default as useUserProfileDetails } from './useUserProfileDetails';
 export { default as useUserActions } from './useUserActions';
 export { default as useProjectDetails } from './useProjectDetails';
@@ -38,15 +36,7 @@ export { default as useGroupMembers } from './useGroupMembers';
 export { useUsersByGroup } from './useUsersByGroup';
 
 // Utility hooks
-export {
-  useOptimisticQuery,
-  useOptimisticMutation,
-} from './useOptimisticQuery';
-export { useUsersOptimized } from './useUsersOptimized';
 export { useDebounce, useDebouncedCallback } from './useDebounce';
-
-// Admin Operations hooks
-export { default as useAdminOperations } from './useAdminOperations';
 
 // Global Roles & Permission Assignments hooks
 export { useGlobalRoles } from './useGlobalRoles';

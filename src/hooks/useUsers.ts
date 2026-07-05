@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { userService } from '@/services';
 import type { UserListParams } from '@/types/user.types';
-import type { User } from '@/types/auth.types';
+import type { User, UserType } from '@/types/auth.types';
 import type { PaginationResponse } from '@/types/api.types';
 
 interface UseUsersFilters {
@@ -23,15 +23,17 @@ interface UseUsersReturn {
   fetchUsers: () => Promise<void>;
   setFilters: (filters: UseUsersFilters) => void;
   setPage: (page: number) => void;
+  setPageSize: (size: number) => void;
   setSort: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
   filters: UseUsersFilters;
   currentPage: number;
+  limit: number;
   sortBy: string | null;
   sortOrder: 'asc' | 'desc';
 }
 
 export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
-  const { limit = 10, initialFilters = {} } = options;
+  const { limit: initialLimit = 25, initialFilters = {} } = options;
 
   const [users, setUsers] = useState<User[]>([]);
   const [pagination, setPagination] = useState<PaginationResponse | null>(null);
@@ -39,6 +41,7 @@ export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFiltersState] = useState<UseUsersFilters>(initialFilters);
   const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(initialLimit);
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -51,7 +54,7 @@ export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
         limit,
         offset: (currentPage - 1) * limit,
         search: filters.search,
-        user_type_filter: filters.userType as any,
+        user_type_filter: filters.userType as UserType | undefined,
         include_inactive: filters.isActive === false ? true : filters.isActive === true ? false : undefined,
         ...(sortBy && { sort_by: sortBy }),
         ...(sortBy && { sort_order: sortOrder }),
@@ -83,6 +86,11 @@ export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
     setCurrentPage(page);
   }, []);
 
+  const setPageSize = useCallback((size: number) => {
+    setLimit(size);
+    setCurrentPage(1); // Reset to first page when page size changes
+  }, []);
+
   const setSort = useCallback((newSortBy: string, newSortOrder: 'asc' | 'desc') => {
     setSortBy(newSortBy);
     setSortOrder(newSortOrder);
@@ -101,9 +109,11 @@ export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
     fetchUsers,
     setFilters,
     setPage,
+    setPageSize,
     setSort,
     filters,
     currentPage,
+    limit,
     sortBy,
     sortOrder,
   };

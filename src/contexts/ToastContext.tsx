@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 export interface Toast {
@@ -49,20 +49,18 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
   defaultDuration = 5000,
 }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
-  const [timers, setTimers] = useState<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  // Auto-dismiss timers live in a ref, not state: keeping them out of the
+  // render cycle avoids re-running effects (and cancelling other toasts'
+  // timers) every time the set of pending timers changes.
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
-    setTimers((prev) => {
-      const timer = prev.get(id);
-      if (timer) {
-        clearTimeout(timer);
-        const newTimers = new Map(prev);
-        newTimers.delete(id);
-        return newTimers;
-      }
-      return prev;
-    });
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
   }, []);
 
   const addToast = useCallback(
@@ -87,11 +85,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
           removeToast(id);
         }, toast.duration);
 
-        setTimers((prev) => {
-          const newTimers = new Map(prev);
-          newTimers.set(id, timer);
-          return newTimers;
-        });
+        timersRef.current.set(id, timer);
       }
 
       return id;
@@ -101,17 +95,18 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
 
   const clearAllToasts = useCallback(() => {
     // Clear all timers
-    timers.forEach((timer) => clearTimeout(timer));
-    setTimers(new Map());
+    timersRef.current.forEach((timer) => clearTimeout(timer));
+    timersRef.current.clear();
     setToasts([]);
-  }, [timers]);
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
+    const timers = timersRef.current;
     return () => {
       timers.forEach((timer) => clearTimeout(timer));
     };
-  }, [timers]);
+  }, []);
 
   const value: ToastContextValue = {
     toasts,

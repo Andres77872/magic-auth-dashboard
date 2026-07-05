@@ -236,9 +236,9 @@ export function RoleManagementPage(): React.JSX.Element {
   return (
     <PageContainer>
       <PageHeader
-        title="Role Management"
+        title="Roles"
         subtitle="Manage global roles, permission groups, and role assignments"
-        icon={<ShieldCheck size={28} />}
+        icon={<ShieldCheck size={24} />}
         actions={
           <>
             {activeTab === 'roles' && (

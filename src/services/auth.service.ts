@@ -94,16 +94,6 @@ class AuthService {
 
     return response as LoginResponse;
   }
-
-  // Middleware access check (HEAD request)
-  async checkAccess(): Promise<boolean> {
-    try {
-      const response = await apiClient.head('/access');
-      return response.status === 204;
-    } catch {
-      return false;
-    }
-  }
 }
 
 export const authService = new AuthService();

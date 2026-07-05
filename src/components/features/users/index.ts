@@ -2,7 +2,6 @@ export { UserFilter } from './UserFilter';
 export { UserTable } from './UserTable';
 export { UserActionsMenu } from './UserActionsMenu';
 export { UserFormModal } from './UserFormModal';
-export { UserForm } from './UserForm';
 export { UserDetailsModal } from './UserDetailsModal';
 export { UserAvatar } from './UserAvatar';
 export { UserStats } from './UserStats';

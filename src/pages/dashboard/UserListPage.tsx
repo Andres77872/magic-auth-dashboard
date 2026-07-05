@@ -47,10 +47,11 @@ export function UserListPage(): React.JSX.Element {
     fetchUsers,
     setFilters,
     setPage,
+    setPageSize,
     setSort,
     currentPage,
   } = useUsers({
-    limit: 10,
+    limit: 25,
     initialFilters: {}
   });
 
@@ -104,6 +105,10 @@ export function UserListPage(): React.JSX.Element {
 
   const handlePageChange = (page: number) => {
     setPage(page);
+  };
+
+  const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setPageSize(Number(e.target.value));
   };
 
   const handleRetry = () => {
@@ -435,9 +440,9 @@ export function UserListPage(): React.JSX.Element {
   return (
     <PageContainer>
       <PageHeader
-        title="User Management"
+        title="Users"
         subtitle="Manage system users, permissions, and access controls"
-        icon={<UserIcon size={28} />}
+        icon={<UserIcon size={24} />}
         actions={
           canCreateUser && (
             <Button
@@ -532,9 +537,26 @@ export function UserListPage(): React.JSX.Element {
       {/* Pagination Section */}
       {pagination && pagination.total > 0 && (
         <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">
-            Showing {users.length} of {pagination.total} users
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              Showing {users.length} of {pagination.total} users
+            </span>
+            <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <span className="sr-only sm:not-sr-only">Rows per page</span>
+              <select
+                value={pagination.limit}
+                onChange={handlePageSizeChange}
+                aria-label="Rows per page"
+                className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {[10, 25, 50, 100].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           <Pagination
             currentPage={currentPage}
             totalPages={Math.ceil(pagination.total / pagination.limit)}

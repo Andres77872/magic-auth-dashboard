@@ -253,49 +253,47 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     return refreshPromiseRef.current;
   }, [updateRefreshRetryCount]);
 
+  // Attempt a refresh and, on failure, keep retrying on a fixed delay until
+  // MAX_REFRESH_RETRIES is exhausted, then surface the session-expiry warning.
+  // Retries reuse refreshTimerRef so stopRefreshTimer() cancels a pending retry.
+  const attemptRefreshWithRetries = useCallback((): void => {
+    void (async (): Promise<void> => {
+      const success = await refreshSession();
+
+      if (success) {
+        updateRefreshRetryCount(0);
+        return;
+      }
+
+      const nextCount = refreshRetryCountRef.current + 1;
+      updateRefreshRetryCount(nextCount);
+
+      if (nextCount > MAX_REFRESH_RETRIES) {
+        setShowSessionExpiryWarning(true);
+        return;
+      }
+
+      refreshTimerRef.current = setTimeout(() => {
+        attemptRefreshWithRetries();
+      }, REFRESH_RETRY_DELAY_MS);
+    })();
+  }, [refreshSession, updateRefreshRetryCount]);
+
   const startRefreshTimer = useCallback((expiresAt: string) => {
     stopRefreshTimer();
 
-    const expiryDate = new Date(expiresAt);
-    const now = new Date();
-    const diffMs = expiryDate.getTime() - now.getTime();
+    const diffMs = new Date(expiresAt).getTime() - Date.now();
     const refreshDelay = diffMs - REFRESH_THRESHOLD_MS;
 
     if (refreshDelay <= 0) {
-      void refreshSession().then((success) => {
-        if (!success) {
-          setShowSessionExpiryWarning(true);
-        }
-      });
+      attemptRefreshWithRetries();
       return;
     }
 
-    refreshTimerRef.current = setTimeout((): void => {
-      void (async (): Promise<void> => {
-        const success = await refreshSession();
-
-        if (!success) {
-          updateRefreshRetryCount(refreshRetryCountRef.current + 1);
-
-          if (refreshRetryCountRef.current <= MAX_REFRESH_RETRIES) {
-            refreshTimerRef.current = setTimeout((): void => {
-              void (async (): Promise<void> => {
-                const retrySuccess = await refreshSession();
-                if (!retrySuccess) {
-                  updateRefreshRetryCount(refreshRetryCountRef.current + 1);
-                  if (refreshRetryCountRef.current > MAX_REFRESH_RETRIES) {
-                    setShowSessionExpiryWarning(true);
-                  }
-                }
-              })();
-            }, REFRESH_RETRY_DELAY_MS);
-          } else {
-            setShowSessionExpiryWarning(true);
-          }
-        }
-      })();
+    refreshTimerRef.current = setTimeout(() => {
+      attemptRefreshWithRetries();
     }, refreshDelay);
-  }, [stopRefreshTimer, refreshSession, updateRefreshRetryCount]);
+  }, [stopRefreshTimer, attemptRefreshWithRetries]);
 
   useEffect(() => {
     const handleVisibilityChange = (): void => {

@@ -38,9 +38,9 @@ export function DashboardOverview(): React.JSX.Element {
   return (
     <PageContainer>
       <PageHeader
-        title={user ? `${getGreeting()}, ${user.username}!` : 'Dashboard'}
-        subtitle="Welcome back to the Magic Auth Admin Dashboard"
-        icon={<LayoutDashboard size={32} />}
+        title={user ? `${getGreeting()}, ${user.username}` : 'Dashboard'}
+        subtitle="Overview of your authentication system"
+        icon={<LayoutDashboard size={24} />}
         badge={
           <Badge 
             variant="outline" 

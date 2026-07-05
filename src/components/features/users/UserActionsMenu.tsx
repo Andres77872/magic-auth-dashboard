@@ -166,9 +166,8 @@ export function UserActionsMenu({ user, onUserUpdated, onEditUser, onViewDetails
     try {
       const response = await userService.resetUserPassword(user.user_hash);
       if (response.success) {
-        // Backend does NOT return the temporary password - it's delivered out-of-band
-        // Just show a success message
-        showToast('Password has been reset successfully. The user will be prompted to change it on next login.', 'success');
+        // Backend enqueues a secure reset-link email; no password is returned.
+        showToast('A password reset link has been emailed to the user.', 'success');
         setShowResetPasswordConfirm(false);
         onUserUpdated?.();
       } else {

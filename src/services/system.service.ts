@@ -3,7 +3,7 @@ import type {
   SystemInfoResponse,
   SystemHealthResponse
 } from '@/types/system.types';
-import type { ApiResponse, PaginationParams } from '@/types/api.types';
+import type { ApiResponse } from '@/types/api.types';
 
 export interface DashboardStatsResponse {
   success: boolean;
@@ -43,14 +43,21 @@ export interface DashboardStatsResponse {
   generated_at: string;
 }
 
+/**
+ * SystemService — thin wrapper over the API's system + admin-dashboard surface.
+ * Every method here maps to a route that actually exists in the backend
+ * (src/routes/system.py, prefix /system, and admin_dashboard.py, prefix /admin).
+ */
 class SystemService {
-  // Admin Dashboard Stats - comprehensive statistics
+  // Admin Dashboard Stats — comprehensive statistics (GET /admin/dashboard/stats)
   async getDashboardStats(): Promise<DashboardStatsResponse | null> {
     try {
-      const response = await apiClient.get<any>('/admin/dashboard/stats') as any;
+      const response = (await apiClient.get<DashboardStatsResponse>(
+        '/admin/dashboard/stats'
+      )) as unknown as { totals?: unknown; data?: { totals?: unknown } };
       // The response may come directly or wrapped in a data property
       if (response && (response.totals || response.data?.totals)) {
-        return (response.data || response) as DashboardStatsResponse;
+        return (response.data || response) as unknown as DashboardStatsResponse;
       }
       return null;
     } catch {
@@ -58,136 +65,47 @@ class SystemService {
     }
   }
 
-  // System Information
+  // System information (GET /system/info)
   async getSystemInfo(): Promise<SystemInfoResponse> {
     const response = await apiClient.get<SystemInfoResponse>('/system/info');
     return response as SystemInfoResponse;
   }
 
-  // System Health
+  // System health (GET /system/health)
   async getSystemHealth(): Promise<SystemHealthResponse> {
     const response = await apiClient.get<SystemHealthResponse>('/system/health');
     return response as SystemHealthResponse;
   }
 
-  // Admin Management (ROOT only)
-  async getAdminUsers(params: PaginationParams = {}): Promise<ApiResponse<any[]>> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
-    });
-    
-    return await apiClient.get<any[]>('/system/admins', cleanParams);
+  // Liveness probe (GET /system/ping)
+  async pingSystem(): Promise<ApiResponse<unknown>> {
+    return await apiClient.get<unknown>('/system/ping');
   }
 
-  async createAdminUser(adminData: any): Promise<ApiResponse<any>> {
-    return await apiClient.post<any>('/system/admins', adminData);
+  // Cache statistics (GET /system/cache/stats)
+  async getCacheStats(): Promise<ApiResponse<unknown>> {
+    return await apiClient.get<unknown>('/system/cache/stats');
   }
 
-  async updateAdminUser(userHash: string, data: any): Promise<ApiResponse<any>> {
-    return await apiClient.put<any>(`/system/admins/${userHash}`, data);
-  }
-
-  async deleteAdminUser(userHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/system/admins/${userHash}`);
-  }
-
-  // Audit Logs
-  async getAuditLogs(params: PaginationParams = {}): Promise<ApiResponse<any[]>> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
-    });
-    
-    return await apiClient.get<any[]>('/system/audit-logs', cleanParams);
-  }
-
-  // System Settings
-  async getSystemSettings(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/settings');
-  }
-
-  async updateSystemSettings(settings: any): Promise<ApiResponse<any>> {
-    return await apiClient.put<any>('/system/settings', settings);
-  }
-
-  // System Maintenance
-  async performSystemBackup(): Promise<ApiResponse<{ backup_id: string; status: string }>> {
-    return await apiClient.post<{ backup_id: string; status: string }>('/system/backup');
-  }
-
-  async getSystemMetrics(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/metrics');
-  }
-
-  // Cache Management
+  // Clear the system cache (POST /system/cache/clear)
   async clearSystemCache(): Promise<ApiResponse<void>> {
     return await apiClient.post<void>('/system/cache/clear');
   }
 
-  async getCacheStatus(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/cache/stats');
-  }
-
-  // Session Management
-  async getActiveSessions(): Promise<ApiResponse<any[]>> {
-    return await apiClient.get<any[]>('/system/sessions');
-  }
-
-  async terminateSession(sessionId: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/system/sessions/${sessionId}`);
-  }
-
-  async terminateAllSessions(): Promise<ApiResponse<{ terminated_count: number }>> {
-    return await apiClient.post<{ terminated_count: number }>('/system/sessions/terminate-all');
-  }
-
-  // Simple ping endpoint
-  async pingSystem(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/ping');
-  }
-
-  // Group system health
-  async getGroupSystemHealth(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/groups/health');
-  }
-
-  // Group system statistics
-  async getGroupSystemStats(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/groups/stats');
-  }
-
-  // Performance metrics
-  async getPerformanceMetrics(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/performance');
-  }
-
-  // System diagnostics
-  async getSystemDiagnostics(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/diagnostics');
-  }
-
-  // Cache statistics
-  async getCacheStats(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/system/cache/stats');
-  }
-
-  // Invalidate user cache
+  // Invalidate a single user's cache (POST /system/cache/invalidate/user/{user_hash})
   async invalidateUserCache(userHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(`/system/cache/invalidate/user/${userHash}`);
+    return await apiClient.post<void>(
+      `/system/cache/invalidate/user/${encodeURIComponent(userHash)}`
+    );
   }
 
-  // Invalidate project cache
+  // Invalidate a project's cache (POST /system/cache/invalidate/project/{project_id})
   async invalidateProjectCache(projectId: number): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(`/system/cache/invalidate/project/${projectId}`);
+    return await apiClient.post<void>(
+      `/system/cache/invalidate/project/${projectId}`
+    );
   }
 }
 
 export const systemService = new SystemService();
-export default systemService; 
+export default systemService;

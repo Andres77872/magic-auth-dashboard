@@ -32,8 +32,13 @@ export function useSystemCacheStats(
 
     try {
       const response = await systemService.getCacheStats();
-      if (response.success && response.data) {
-        setCacheStats(response.data.cache_statistics || response.data);
+      // The endpoint returns either a flat stats object or one nested under
+      // `cache_statistics`; normalise both to CacheStats.
+      const data = response.data as
+        | (Partial<CacheStats> & { cache_statistics?: CacheStats })
+        | undefined;
+      if (response.success && data) {
+        setCacheStats((data.cache_statistics ?? data) as CacheStats);
       }
     } catch {
       // Optional dashboard data: preserve current behavior and fail silently.

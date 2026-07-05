@@ -251,7 +251,7 @@ describe('Navigation Route Integration - Flat URL Model (Gate G1)', () => {
       
       expect(screen.getByTestId('dashboard-layout')).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: /adminuser/i })).toBeInTheDocument();
-      expect(screen.getByText(/Welcome back to the Magic Auth Admin Dashboard/i)).toBeInTheDocument();
+      expect(screen.getByText(/Overview of your authentication system/i)).toBeInTheDocument();
     });
 
     it('renders DashboardOverview at root / for authenticated root', async () => {
@@ -264,7 +264,7 @@ describe('Navigation Route Integration - Flat URL Model (Gate G1)', () => {
       
       expect(screen.getByTestId('dashboard-layout')).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: /rootuser/i })).toBeInTheDocument();
-      expect(screen.getByText(/Welcome back to the Magic Auth Admin Dashboard/i)).toBeInTheDocument();
+      expect(screen.getByText(/Overview of your authentication system/i)).toBeInTheDocument();
     });
   });
 
@@ -376,7 +376,7 @@ describe('Navigation Route Integration - Flat URL Model (Gate G1)', () => {
       });
       
       expect(screen.getByTestId('dashboard-layout')).toBeInTheDocument();
-      expect(screen.getByText(/Welcome back to the Magic Auth Admin Dashboard/i)).toBeInTheDocument();
+      expect(screen.getByText(/Overview of your authentication system/i)).toBeInTheDocument();
     });
 
     it('redirects /dashboard/overview to /', async () => {
@@ -387,7 +387,7 @@ describe('Navigation Route Integration - Flat URL Model (Gate G1)', () => {
         expect(screen.getByTestId('pathname')).toHaveTextContent('/');
       });
       
-      expect(screen.getByText(/Welcome back to the Magic Auth Admin Dashboard/i)).toBeInTheDocument();
+      expect(screen.getByText(/Overview of your authentication system/i)).toBeInTheDocument();
     });
 
     it('redirects /dashboard/users to /users', async () => {

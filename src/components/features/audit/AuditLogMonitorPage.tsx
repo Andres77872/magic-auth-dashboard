@@ -99,7 +99,7 @@ export function AuditLogMonitorPage({
   return (
     <PageContainer className={className}>
       <PageHeader
-        title="Audit Log Monitor"
+        title="Audit logs"
         subtitle="Monitor system activities, security events, and audit statistics"
         icon={<Activity className="h-6 w-6" aria-hidden="true" />}
         actions={

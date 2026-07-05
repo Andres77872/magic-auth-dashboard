@@ -1,5 +1,4 @@
 import { apiClient } from './api.client';
-import { API_CONFIG } from '@/utils/constants';
 import type {
   ActivityLog,
   ActivityLogParams,
@@ -182,6 +181,9 @@ class AuditService {
       limit: params.limit || 100,
       days: params.days || 7,
     };
+    if (params.offset !== undefined) {
+      queryParams.offset = params.offset;
+    }
 
     // Call real backend endpoint
     const response = await apiClient.get<BackendSecurityEventsResponse>(
@@ -351,10 +353,10 @@ class AuditService {
   }
 
   /**
-   * Export activity logs via backend streaming endpoint
+   * Export activity logs via backend streaming endpoint.
+   * Routed through apiClient.postBlob so it inherits timeout + 401→refresh handling.
    */
   async exportActivityLogs(params: ExportParams): Promise<Blob> {
-    // Build request body for backend endpoint
     const requestBody = {
       source: 'activity_log',
       format: params.format,
@@ -365,39 +367,7 @@ class AuditService {
       },
     };
 
-    // Use direct fetch to handle streaming response
-    const url = `${API_CONFIG.BASE_URL}/admin/audit/export`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      let errorMessage = `Export failed with status ${response.status}`;
-
-      try {
-        const errorData: unknown = await response.json();
-        if (
-          typeof errorData === 'object' &&
-          errorData !== null &&
-          'message' in errorData &&
-          typeof errorData.message === 'string'
-        ) {
-          errorMessage = errorData.message;
-        }
-      } catch {
-        errorMessage = 'Export failed';
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    // Return blob for download handling
-    return response.blob();
+    return apiClient.postBlob('/admin/audit/export', requestBody);
   }
 }
 

@@ -95,11 +95,10 @@ export function useUserActions(): UseUserActionsReturn {
       const response = await userService.resetUserPassword(userHash);
       
       if (response.success) {
-        // Backend returns {success, message, user, reset_data: {expires_at, must_change_on_login}}
-        // NO password is returned - password is delivered out-of-band
+        // Backend enqueues a secure reset-link email; no password is returned.
         return {
           success: true,
-          message: 'Password reset successfully. User will be prompted to change on next login.',
+          message: 'A password reset link has been emailed to the user.',
           expiresAt: response.reset_data?.expires_at
         };
       } else {

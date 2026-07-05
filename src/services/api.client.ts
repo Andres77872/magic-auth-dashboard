@@ -263,7 +263,13 @@ class ApiClient {
     endpoint: string,
     config: RequestConfig
   ): Promise<Response> {
-    const maxRetries = config.retries ?? API_CONFIG.RETRY_ATTEMPTS;
+    // Only auto-retry idempotent methods. Retrying POST/PUT/PATCH/DELETE on a
+    // timeout risks executing a mutation the server already processed (e.g. a
+    // duplicate create/charge). An explicit config.retries still wins.
+    const isIdempotent =
+      config.method === HttpMethod.GET || config.method === HttpMethod.HEAD;
+    const maxRetries =
+      config.retries ?? (isIdempotent ? API_CONFIG.RETRY_ATTEMPTS : 0);
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -374,6 +380,45 @@ class ApiClient {
       skipAuth,
       isMultipart: true,
     });
+  }
+
+  // POST that returns a binary Blob (e.g. streamed CSV/JSON export downloads).
+  // Keeps the client's timeout + one-shot 401→refresh behaviour, but skips the
+  // JSON content-type handling in handleResponse so streamed bodies come through.
+  async postBlob(endpoint: string, data?: unknown): Promise<Blob> {
+    const config: RequestConfig = { method: HttpMethod.POST, body: data };
+
+    let response = await this.requestRawWithRetry(endpoint, config);
+
+    if (
+      response.status === HTTP_STATUS.UNAUTHORIZED &&
+      this.shouldAttemptRefresh(endpoint, config)
+    ) {
+      const refreshed = await this.refreshAuthSession();
+      if (refreshed) {
+        response = await this.requestRawWithRetry(endpoint, config);
+      }
+    }
+
+    if (response.status === HTTP_STATUS.UNAUTHORIZED) {
+      this.dispatchUnauthorized();
+      throw new Error(ERROR_MESSAGES.SESSION_EXPIRED);
+    }
+
+    if (!response.ok) {
+      let message = `Export failed with status ${response.status}`;
+      try {
+        const errorData = (await response.json()) as { message?: string };
+        if (errorData?.message) {
+          message = errorData.message;
+        }
+      } catch {
+        // non-JSON error body; keep the status-based message
+      }
+      throw new Error(message);
+    }
+
+    return response.blob();
   }
 
   async put<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {

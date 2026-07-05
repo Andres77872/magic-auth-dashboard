@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth, useUserType } from '@/hooks';
-import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, CopyableId } from '@/components/common';
+import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, CopyableId, ErrorState } from '@/components/common';
 import { UserAvatar } from '@/components/features/users/UserAvatar';
 import { User, Settings2, Shield, Clock } from 'lucide-react';
 import { getUserTypeBadgeVariant } from '@/utils/component-utils';
@@ -19,11 +19,11 @@ export function ProfilePage(): React.JSX.Element {
     return (
       <PageContainer maxWidth="lg" as="main">
         <PageHeader title="Profile" icon={<User size={24} aria-hidden="true" />} />
-        <Card padding="lg">
-          <div className="flex items-center justify-center py-8">
-            <p className="text-muted-foreground">Unable to load profile information.</p>
-          </div>
-        </Card>
+        <ErrorState
+          variant="card"
+          title="Couldn't load your profile"
+          message="Unable to load profile information."
+        />
       </PageContainer>
     );
   }

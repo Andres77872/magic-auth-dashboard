@@ -248,12 +248,6 @@ function AppRoutes(): React.JSX.Element {
         <Route path="dashboard/settings" element={<Navigate to="/settings" replace />} />
       </Route>
 
-      {/* Default redirect - unauthenticated users go to login */}
-      <Route path="/" element={<Navigate to={ROUTES.LOGIN} replace />} />
-
-      {/* Legacy login route redirect */}
-      <Route path="/login" element={<Navigate to={ROUTES.LOGIN} replace />} />
-
       {/* Catch-all route */}
       <Route
         path="*"
@@ -272,8 +266,11 @@ function AppContent(): React.JSX.Element {
   const { showSessionExpiryWarning, dismissSessionExpiryWarning, logout } = useAuth();
 
   const handleReLogin = (): void => {
-    void logout();
-    window.location.href = ROUTES.LOGIN;
+    // Await server-side logout before navigating away, otherwise the hard
+    // redirect aborts the in-flight /auth/logout request and the session lives on.
+    void logout().finally(() => {
+      window.location.href = ROUTES.LOGIN;
+    });
   };
 
   return (

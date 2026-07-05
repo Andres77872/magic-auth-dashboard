@@ -37,10 +37,8 @@ export type { ToastProps, ToastVariant, ToastAction } from './Toast';
 // Common components
 export { ErrorBoundary } from './ErrorBoundary';
 export { ErrorState } from './ErrorState';
-export { ComingSoon } from './ComingSoon';
 export { EmptyState } from './EmptyState';
 export { ToastContainer } from './ToastContainer';
-export { OptimisticContent } from './OptimisticContent';
 export { TableSkeleton } from './TableSkeleton';
 export { CopyableId } from './CopyableId';
 export { default as ConfirmDialog } from './ConfirmDialog';

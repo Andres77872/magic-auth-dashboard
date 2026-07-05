@@ -127,12 +127,13 @@ class ProjectService {
     return await apiClient.get<any>(`/projects/${projectHash}/stats`);
   }
 
-  // Transfer project ownership - uses PUT per API spec
+  // Transfer project ownership. Backend route is PATCH /projects/{hash}/owner
+  // with a form-encoded new_owner_hash field.
   async transferOwnership(
     projectHash: string,
     newOwnerHash: string
   ): Promise<ApiResponse<void>> {
-    return await apiClient.putForm<void>(`/projects/${projectHash}/owner`, {
+    return await apiClient.patchForm<void>(`/projects/${projectHash}/owner`, {
       new_owner_hash: newOwnerHash,
     });
   }

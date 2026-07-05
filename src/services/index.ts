@@ -7,7 +7,6 @@ export { groupService } from './group.service';
 export { projectGroupService } from './project-group.service';
 
 export { systemService } from './system.service';
-export { adminService } from './admin.service';
 export { analyticsService } from './analytics.service';
 export { globalRolesService } from './global-roles.service';
 export { permissionAssignmentsService } from './permission-assignments.service';
@@ -25,7 +24,6 @@ export { default as ProjectService } from './project.service';
 export { default as GroupService } from './group.service';
 export { default as ProjectGroupService } from './project-group.service';
 export { default as SystemService } from './system.service';
-export { default as AdminService } from './admin.service';
 export { default as GlobalRolesService } from './global-roles.service';
 export { default as PermissionAssignmentsService } from './permission-assignments.service';
 export { default as AuditService } from './audit.service';
