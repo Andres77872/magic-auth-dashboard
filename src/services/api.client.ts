@@ -1,6 +1,11 @@
 import { API_CONFIG, ERROR_MESSAGES, HTTP_STATUS } from '@/utils/constants';
 import type { ApiResponse } from '@/types/api.types';
 import { HttpMethod } from '@/types/api.types';
+import type { LoginResponse, ValidationResponse } from '@/types/auth.types';
+import {
+  sessionRefreshCoordinator,
+  type SessionRefreshResult,
+} from './session-refresh-coordinator';
 
 interface RequestConfig {
   method: HttpMethod;
@@ -12,9 +17,12 @@ interface RequestConfig {
   retries?: number;
   isFormData?: boolean;
   isMultipart?: boolean;
+  validationRechecks?: number;
 }
 
 type QueryParamValue = string | number;
+
+class AuthGenerationChangedError extends Error {}
 
 export function filterUndefinedValues(params: object): Record<string, QueryParamValue> {
   const cleanParams: Record<string, QueryParamValue> = {};
@@ -36,7 +44,6 @@ export function filterUndefinedValues(params: object): Record<string, QueryParam
 class ApiClient {
   private baseURL: string;
   private defaultHeaders: Record<string, string>;
-  private refreshPromise: Promise<boolean> | null = null;
 
   constructor(baseURL: string = API_CONFIG.BASE_URL) {
     this.baseURL = baseURL;
@@ -143,6 +150,31 @@ class ApiClient {
     return endpoint === '/auth/refresh';
   }
 
+  private isValidationEndpoint(endpoint: string): boolean {
+    return endpoint === '/auth/validate';
+  }
+
+  private isSessionMutationEndpoint(endpoint: string): boolean {
+    return (
+      this.isLoginEndpoint(endpoint) ||
+      endpoint === '/auth/register' ||
+      endpoint === '/auth/switch-project' ||
+      endpoint === '/auth/logout'
+    );
+  }
+
+  private isTokenPairPayload(payload: LoginResponse | undefined): payload is LoginResponse {
+    return (
+      payload?.success === true &&
+      typeof payload.expires_at === 'string' &&
+      typeof payload.remember_me === 'boolean'
+    );
+  }
+
+  private isTerminalRefreshStatus(status: number): boolean {
+    return status >= 400 && status < 500 && status !== 429;
+  }
+
   private shouldAttemptRefresh(endpoint: string, config: RequestConfig): boolean {
     return (
       !config.skipAuth &&
@@ -158,27 +190,135 @@ class ApiClient {
     }
   }
 
-  private async refreshAuthSession(): Promise<boolean> {
-    if (!this.refreshPromise) {
-      this.refreshPromise = this.requestRawWithRetry('/auth/refresh', {
-        method: HttpMethod.POST,
-        skipAuth: true,
-        skipRefresh: true,
-        retries: 0,
-      })
-        .then((response) => response.ok)
-        .catch(() => false)
-        .finally(() => {
-          this.refreshPromise = null;
+  async refreshAuthSession(
+    observedGeneration: string | null = sessionRefreshCoordinator.getGeneration()
+  ): Promise<SessionRefreshResult> {
+    return sessionRefreshCoordinator.refresh(
+      async () => {
+        const response = await this.requestRawWithRetry('/auth/refresh', {
+          method: HttpMethod.POST,
+          skipAuth: true,
+          skipRefresh: true,
+          retries: 0,
         });
+
+        let payload: LoginResponse | undefined;
+        try {
+          payload = (await response.json()) as LoginResponse;
+        } catch {
+          // A successful refresh must satisfy the documented token-pair contract.
+        }
+
+        const success = response.ok && this.isTokenPairPayload(payload);
+
+        return {
+          success,
+          terminal: !response.ok && this.isTerminalRefreshStatus(response.status),
+          response: success ? payload : undefined,
+        };
+      },
+      observedGeneration
+    );
+  }
+
+  private async requestRawCoordinated(
+    endpoint: string,
+    config: RequestConfig
+  ): Promise<Response> {
+    if (!this.isSessionMutationEndpoint(endpoint)) {
+      return this.requestRawWithRetry(endpoint, config);
     }
 
-    return this.refreshPromise;
+    return sessionRefreshCoordinator.runSessionMutation(
+      async () => {
+        const response = await this.requestRawWithRetry(endpoint, config);
+
+        if (!response.ok) {
+          return { value: response };
+        }
+
+        if (endpoint === '/auth/logout') {
+          return { value: response, signedOut: true };
+        }
+
+        let payload: LoginResponse | undefined;
+        try {
+          payload = (await response.clone().json()) as LoginResponse;
+        } catch {
+          // Registration may legitimately return no token pair.
+        }
+
+        return {
+          value: response,
+          completion: this.isTokenPairPayload(payload)
+            ? { success: true, response: payload }
+            : undefined,
+        };
+      },
+      { requiresCrossTabLock: endpoint === '/auth/switch-project' }
+    );
+  }
+
+  private async reconcileValidationResponse(
+    endpoint: string,
+    config: RequestConfig,
+    initialResponse: Response,
+    initialGeneration: string | null
+  ): Promise<{ response: Response; generation: string | null }> {
+    if (!this.isValidationEndpoint(endpoint)) {
+      return { response: initialResponse, generation: initialGeneration };
+    }
+
+    let response = initialResponse;
+    let generation = initialGeneration;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const currentGeneration = sessionRefreshCoordinator.getGeneration();
+      if (currentGeneration !== generation) {
+        generation = currentGeneration;
+        response = await this.requestRawWithRetry(endpoint, config);
+      }
+
+      if (!response.ok) {
+        return { response, generation };
+      }
+
+      let validation: ValidationResponse | undefined;
+      try {
+        validation = (await response.clone().json()) as ValidationResponse;
+      } catch {
+        return { response, generation };
+      }
+
+      const expiresAt = validation.session?.expires_at;
+      if (validation.valid !== true || typeof expiresAt !== 'string') {
+        return { response, generation };
+      }
+
+      const adopted = await sessionRefreshCoordinator.adoptValidatedSession(
+        {
+          expiresAt,
+          refreshExpiresAt: validation.session?.refresh_expires_at,
+          rememberMe: validation.session?.remember_me,
+        },
+        generation
+      );
+      if (adopted) {
+        return {
+          response,
+          generation: sessionRefreshCoordinator.getGeneration(),
+        };
+      }
+    }
+
+    throw new Error('Authentication session changed during validation');
   }
 
   private async handleResponse<T>(
     response: Response,
-    endpoint: string
+    endpoint: string,
+    requestGeneration: string | null,
+    allowUnauthorizedDispatch: boolean
   ): Promise<ApiResponse<T>> {
     const contentType = response.headers.get('content-type');
 
@@ -196,7 +336,19 @@ class ApiClient {
             // For login failures, return the error response to be handled by the login form
             throw new Error(data.message || 'Invalid username or password');
           } else {
-            this.dispatchUnauthorized();
+            const generationChanged =
+              sessionRefreshCoordinator.getGeneration() !== requestGeneration;
+            if (generationChanged && this.isValidationEndpoint(endpoint)) {
+              throw new AuthGenerationChangedError(
+                'Authentication session changed while the request was in flight'
+              );
+            }
+            if (
+              allowUnauthorizedDispatch &&
+              !generationChanged
+            ) {
+              this.dispatchUnauthorized();
+            }
             throw new Error(data.message || ERROR_MESSAGES.SESSION_EXPIRED);
           }
         case HTTP_STATUS.FORBIDDEN:
@@ -306,19 +458,78 @@ class ApiClient {
     endpoint: string,
     config: RequestConfig
   ): Promise<ApiResponse<T>> {
-    let response = await this.requestRawWithRetry(endpoint, config);
+    const observedRefreshGeneration = sessionRefreshCoordinator.getGeneration();
+    let requestGeneration = observedRefreshGeneration;
+    let allowUnauthorizedDispatch = true;
+    let response = await this.requestRawCoordinated(endpoint, config);
 
     if (
       response.status === HTTP_STATUS.UNAUTHORIZED &&
       this.shouldAttemptRefresh(endpoint, config)
     ) {
-      const refreshed = await this.refreshAuthSession();
-      if (refreshed) {
-        response = await this.requestRawWithRetry(endpoint, config);
+      const refreshed = await this.refreshAuthSession(observedRefreshGeneration);
+      if (refreshed.success) {
+        requestGeneration = sessionRefreshCoordinator.getGeneration();
+        response = await this.requestRawCoordinated(endpoint, config);
+      } else {
+        // Terminal failures are broadcast by the coordinator. Transient
+        // failures must not turn a temporary outage into a forced logout.
+        allowUnauthorizedDispatch = false;
       }
     }
 
-    return this.handleResponse<T>(response, endpoint);
+    const reconciledValidation = await this.reconcileValidationResponse(
+      endpoint,
+      config,
+      response,
+      requestGeneration
+    );
+    response = reconciledValidation.response;
+    requestGeneration = reconciledValidation.generation;
+
+    let data: ApiResponse<T>;
+    try {
+      data = await this.handleResponse<T>(
+        response,
+        endpoint,
+        requestGeneration,
+        allowUnauthorizedDispatch
+      );
+    } catch (error) {
+      if (
+        this.isValidationEndpoint(endpoint) &&
+        error instanceof AuthGenerationChangedError
+      ) {
+        return this.retryValidationAfterGenerationChange<T>(endpoint, config);
+      }
+      throw error;
+    }
+
+    if (
+      this.isValidationEndpoint(endpoint) &&
+      sessionRefreshCoordinator.getGeneration() !== requestGeneration
+    ) {
+      return this.retryValidationAfterGenerationChange<T>(endpoint, config);
+    }
+
+    return data;
+  }
+
+  private retryValidationAfterGenerationChange<T>(
+    endpoint: string,
+    config: RequestConfig
+  ): Promise<ApiResponse<T>> {
+    const validationRechecks = config.validationRechecks ?? 0;
+    if (validationRechecks >= 2) {
+      return Promise.reject(
+        new Error('Authentication session changed during validation')
+      );
+    }
+
+    return this.requestWithRetry<T>(endpoint, {
+      ...config,
+      validationRechecks: validationRechecks + 1,
+    });
   }
 
   // Public HTTP methods
@@ -388,20 +599,31 @@ class ApiClient {
   async postBlob(endpoint: string, data?: unknown): Promise<Blob> {
     const config: RequestConfig = { method: HttpMethod.POST, body: data };
 
+    const observedRefreshGeneration = sessionRefreshCoordinator.getGeneration();
+    let requestGeneration = observedRefreshGeneration;
+    let allowUnauthorizedDispatch = true;
     let response = await this.requestRawWithRetry(endpoint, config);
 
     if (
       response.status === HTTP_STATUS.UNAUTHORIZED &&
       this.shouldAttemptRefresh(endpoint, config)
     ) {
-      const refreshed = await this.refreshAuthSession();
-      if (refreshed) {
+      const refreshed = await this.refreshAuthSession(observedRefreshGeneration);
+      if (refreshed.success) {
+        requestGeneration = sessionRefreshCoordinator.getGeneration();
         response = await this.requestRawWithRetry(endpoint, config);
+      } else {
+        allowUnauthorizedDispatch = false;
       }
     }
 
     if (response.status === HTTP_STATUS.UNAUTHORIZED) {
-      this.dispatchUnauthorized();
+      if (
+        allowUnauthorizedDispatch &&
+        sessionRefreshCoordinator.getGeneration() === requestGeneration
+      ) {
+        this.dispatchUnauthorized();
+      }
       throw new Error(ERROR_MESSAGES.SESSION_EXPIRED);
     }
 

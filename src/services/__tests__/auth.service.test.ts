@@ -22,6 +22,7 @@ describe('authService remember-me contract', () => {
       success: true,
       message: 'ok',
       session_token: 'access-token',
+      remember_me: true,
       user: { user_hash: 'usr-1', username: 'admin', email: '', user_type: 'admin', created_at: '', is_active: true },
       accessible_projects: [],
       expires_at: '2026-06-13T12:15:00Z',

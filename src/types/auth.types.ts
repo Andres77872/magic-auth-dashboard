@@ -44,6 +44,7 @@ export interface LoginResponse {
   token_type?: string;
   expires_in?: number;
   refresh_expires_in?: number;
+  remember_me: boolean;
   user: User;
   project?: Project;
   accessible_projects: Project[];
@@ -64,6 +65,7 @@ export interface PlatformLoginResponse {
   token_type?: string;
   expires_in?: number;
   refresh_expires_in?: number;
+  remember_me: boolean;
   user: User;
   accessible_projects: Project[]; // Admin may have multiple projects to manage
   expires_at: string;

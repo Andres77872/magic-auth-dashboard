@@ -57,7 +57,7 @@ export function UserFormModal({
 }: UserFormModalProps): React.JSX.Element {
   const { canCreateAdmin, canCreateRoot } = usePermissions();
   const { userType: currentUserType } = useUserType();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, rememberMe } = useAuth();
   const {
     roles: globalRoles,
     loadingRoles: loadingGlobalRoles,
@@ -418,6 +418,7 @@ export function UserFormModal({
       const loginResponse = await authService.platformLogin({
         username: currentUser.username,
         password: password,
+        remember_me: rememberMe,
       });
 
       if (loginResponse.success) {

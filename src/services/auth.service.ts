@@ -1,4 +1,5 @@
 import { apiClient } from './api.client';
+import type { SessionRefreshResult } from './session-refresh-coordinator';
 import type {
   LoginRequest,
   LoginResponse,
@@ -79,10 +80,9 @@ class AuthService {
     }
   }
 
-  // Refresh token (if needed)
-  async refreshToken(): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/auth/refresh', undefined, true);
-    return response as LoginResponse;
+  // Refresh through the shared same-tab/cross-tab coordinator.
+  async refreshToken(): Promise<SessionRefreshResult> {
+    return apiClient.refreshAuthSession();
   }
 
   // Switch project for multi-project users - uses form data per API spec

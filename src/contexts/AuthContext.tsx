@@ -1,9 +1,13 @@
 import { createContext, useReducer, useEffect, useCallback, useRef, useState } from 'react';
 import type { ReactNode, JSX } from 'react';
-import type { AuthState, AuthAction, User, UserType, LoginResponse } from '@/types/auth.types';
+import type { AuthState, AuthAction, User, UserType } from '@/types/auth.types';
 import { AuthActionType } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
 import { permissionAssignmentsService } from '@/services/permission-assignments.service';
+import {
+  sessionRefreshCoordinator,
+  type SessionRefreshResult,
+} from '@/services/session-refresh-coordinator';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { handleApiError } from '@/utils/error-handler';
 import { hasPermission as checkPermission, canAccessRoute as checkRoute } from '@/utils/permissions';
@@ -13,7 +17,6 @@ const SESSION_EXPIRES_AT_KEY = 'session_expires_at';
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
 const REFRESH_RETRY_DELAY_MS = 30 * 1000;
 const MAX_REFRESH_RETRIES = 3;
-const REMEMBERED_REFRESH_MIN_SECONDS = 7 * 24 * 60 * 60;
 
 const getPermissionNames = (
   response: Awaited<ReturnType<typeof permissionAssignmentsService.getMyPermissions>>
@@ -26,10 +29,6 @@ const clearStoredAuthState = (): void => {
   localStorage.removeItem(STORAGE_KEYS.USER_DATA);
   localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
   localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
-};
-
-const isRememberedResponse = (payload: LoginResponse): boolean => {
-  return (payload.refresh_expires_in ?? 0) > REMEMBERED_REFRESH_MIN_SECONDS;
 };
 
 const initialAuthState: AuthState = {
@@ -68,7 +67,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         error: null,
         sessionExpiresAt: action.payload.expires_at || null,
         refreshExpiresAt: action.payload.refresh_expires_at || null,
-        rememberMe: isRememberedResponse(action.payload),
+        rememberMe: action.payload.remember_me === true,
       };
 
     case AuthActionType.LOGIN_FAILURE:
@@ -194,7 +193,8 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const permissionsLoadedRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRetryCountRef = useRef(0);
-  const refreshPromiseRef = useRef<Promise<boolean> | null>(null);
+  const lastHydratedRefreshGenerationRef = useRef<string | null>(null);
+  const lastRefreshTerminalRef = useRef(false);
   const [refreshRetryCount, setRefreshRetryCount] = useState(0);
   const [showSessionExpiryWarning, setShowSessionExpiryWarning] = useState(false);
 
@@ -223,45 +223,69 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     updateRefreshRetryCount(0);
   }, [updateRefreshRetryCount]);
 
-  const refreshSession = useCallback(async (): Promise<boolean> => {
-    if (!refreshPromiseRef.current) {
-      refreshPromiseRef.current = (async (): Promise<boolean> => {
-        try {
-          const response = await authService.refreshToken();
-
-          if (response.success && response.expires_at) {
-            clearStoredAuthState();
-            dispatch({
-              type: AuthActionType.LOGIN_SUCCESS,
-              payload: response,
-            });
-            setShowSessionExpiryWarning(false);
-            updateRefreshRetryCount(0);
-            return true;
-          }
-
-          return false;
-        } catch (error) {
-          console.warn('Session refresh failed:', error);
-          return false;
-        } finally {
-          refreshPromiseRef.current = null;
-        }
-      })();
+  const hydrateRefreshedSession = useCallback((result: SessionRefreshResult): void => {
+    if (lastHydratedRefreshGenerationRef.current === result.generation) {
+      return;
     }
 
-    return refreshPromiseRef.current;
-  }, [updateRefreshRetryCount]);
+    lastHydratedRefreshGenerationRef.current = result.generation;
+    lastRefreshTerminalRef.current = result.terminal;
+
+    if (result.terminal) {
+      stopRefreshTimer();
+      clearClientAuthState();
+      setShowSessionExpiryWarning(false);
+      dispatch({ type: AuthActionType.LOGOUT });
+      return;
+    }
+
+    if (!result.success) {
+      return;
+    }
+
+    if (result.metadata.expiresAt) {
+      dispatch({
+        type: AuthActionType.SESSION_EXPIRY_UPDATE,
+        payload: {
+          expires_at: result.metadata.expiresAt,
+          refresh_expires_at: result.metadata.refreshExpiresAt,
+          remember_me: result.metadata.rememberMe,
+        },
+      });
+    }
+
+    setShowSessionExpiryWarning(false);
+    updateRefreshRetryCount(0);
+  }, [clearClientAuthState, stopRefreshTimer, updateRefreshRetryCount]);
+
+  const refreshSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const result = await authService.refreshToken();
+      hydrateRefreshedSession(result);
+      return result.success;
+    } catch (error) {
+      console.warn('Session refresh failed:', error);
+      return false;
+    }
+  }, [hydrateRefreshedSession]);
+
+  useEffect(() => {
+    return sessionRefreshCoordinator.subscribe(hydrateRefreshedSession);
+  }, [hydrateRefreshedSession]);
 
   // Attempt a refresh and, on failure, keep retrying on a fixed delay until
   // MAX_REFRESH_RETRIES is exhausted, then surface the session-expiry warning.
   // Retries reuse refreshTimerRef so stopRefreshTimer() cancels a pending retry.
-  const attemptRefreshWithRetries = useCallback((): void => {
+  const attemptRefreshWithRetries = useCallback(function refreshWithRetries(): void {
     void (async (): Promise<void> => {
       const success = await refreshSession();
 
       if (success) {
         updateRefreshRetryCount(0);
+        return;
+      }
+
+      if (lastRefreshTerminalRef.current) {
         return;
       }
 
@@ -274,7 +298,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       }
 
       refreshTimerRef.current = setTimeout(() => {
-        attemptRefreshWithRetries();
+        refreshWithRetries();
       }, REFRESH_RETRY_DELAY_MS);
     })();
   }, [refreshSession, updateRefreshRetryCount]);
@@ -529,7 +553,11 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   };
 
   useEffect(() => {
-    void validateToken();
+    const timerId = window.setTimeout(() => {
+      void validateToken();
+    }, 0);
+
+    return (): void => window.clearTimeout(timerId);
   }, [validateToken]);
 
   useEffect(() => {
