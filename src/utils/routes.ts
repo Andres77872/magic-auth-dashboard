@@ -19,6 +19,10 @@ export const ROUTES = {
   BILLING: '/billing',
   BILLING_GROUP: '/billing',  // base path for /billing/:groupHash
 
+  // OAuth (connections, per-project bindings, write-only provider credentials)
+  OAUTH: '/oauth',
+  OAUTH_CONNECTION: '/oauth',  // base path for /oauth/:connectionHash
+
   // Group Management
   GROUPS: '/groups',
   GROUP: '/groups',  // base path for /groups/:hash
@@ -93,6 +97,13 @@ export const NAVIGATION_ITEMS: NavItem[] = [
     label: 'Billing',
     path: ROUTES.BILLING,
     icon: 'credit-card',
+    allowedUserTypes: ['root', 'admin'],
+  },
+  {
+    id: 'oauth',
+    label: 'OAuth',
+    path: ROUTES.OAUTH,
+    icon: 'key-round',
     allowedUserTypes: ['root', 'admin'],
   },
   {
@@ -262,6 +273,13 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'Billing',
         path: ROUTES.BILLING,
         icon: 'credit-card',
+        allowedUserTypes: ['root', 'admin'],
+      },
+      {
+        id: 'oauth',
+        label: 'OAuth',
+        path: ROUTES.OAUTH,
+        icon: 'key-round',
         allowedUserTypes: ['root', 'admin'],
       },
     ],

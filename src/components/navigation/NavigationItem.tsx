@@ -11,6 +11,7 @@ import {
   Settings,
   UserCog,
   Key,
+  KeyRound,
   FileText,
   HeartHandshake,
   Mail,
@@ -76,6 +77,8 @@ export function NavigationItem({
       shield: <ShieldCheck size={iconSize} aria-hidden="true" />,
       'user-badge': <UserCog size={iconSize} aria-hidden="true" />,
       key: <Key size={iconSize} aria-hidden="true" />,
+      // Distinct from `key` (API tokens) so OAuth connections read as a separate area.
+      'key-round': <KeyRound size={iconSize} aria-hidden="true" />,
       settings: <Settings size={iconSize} aria-hidden="true" />,
       document: <FileText size={iconSize} aria-hidden="true" />,
       'heart-handshake': <HeartHandshake size={iconSize} aria-hidden="true" />,

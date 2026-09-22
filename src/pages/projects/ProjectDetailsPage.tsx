@@ -17,6 +17,7 @@ import {
   ProjectGroupsTab,
   ProjectPermissionsTab,
 } from '@/components/features/projects';
+import { ProjectSignInTab } from '@/components/features/oauth';
 import {
   FolderKanban,
   LayoutDashboard,
@@ -24,13 +25,23 @@ import {
   Users,
   ShieldCheck,
   Settings,
+  KeyRound,
 } from 'lucide-react';
 import { useProjectDetails, useBackNavigation } from '@/hooks';
 import { useSetBreadcrumbLabel } from '@/contexts';
 import { ROUTES } from '@/utils/routes';
 import type { ProjectDetails } from '@/types/project.types';
 
-type TabType = 'overview' | 'members' | 'groups' | 'permissions' | 'settings';
+type TabType = 'overview' | 'members' | 'groups' | 'sign-in' | 'permissions' | 'settings';
+
+const TAB_IDS: TabType[] = [
+  'overview',
+  'members',
+  'groups',
+  'sign-in',
+  'permissions',
+  'settings',
+];
 
 export const ProjectDetailsPage: React.FC = () => {
   const { projectHash } = useParams<{ projectHash: string }>();
@@ -56,12 +67,7 @@ export const ProjectDetailsPage: React.FC = () => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get('tab') as TabType;
-    if (
-      tabParam &&
-      ['overview', 'members', 'groups', 'permissions', 'settings'].includes(
-        tabParam
-      )
-    ) {
+    if (tabParam && TAB_IDS.includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
@@ -135,6 +141,11 @@ export const ProjectDetailsPage: React.FC = () => {
       count: project.group_count,
     },
     {
+      id: 'sign-in',
+      label: 'Sign-in',
+      icon: <KeyRound size={16} />,
+    },
+    {
       id: 'permissions',
       label: 'Permissions',
       icon: <ShieldCheck size={16} />,
@@ -195,6 +206,12 @@ export const ProjectDetailsPage: React.FC = () => {
             project={project}
             projectGroups={projectGroups}
             onProjectGroupsChange={handleProjectGroupsChange}
+          />
+        )}
+        {activeTab === 'sign-in' && (
+          <ProjectSignInTab
+            projectHash={project.project_hash}
+            projectName={project.project_name}
           />
         )}
         {activeTab === 'permissions' && (

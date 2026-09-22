@@ -15,6 +15,7 @@ export { apiKeyService } from './api-key.service';
 export { emailTemplatesService } from './email-templates.service';
 export { patreonService } from './patreon.service';
 export { billingService } from './billing.service';
+export { oauthService } from './oauth.service';
 
 // Also export defaults for convenience
 export { default as ApiClient } from './api.client';
@@ -31,3 +32,4 @@ export { default as ApiKeyService } from './api-key.service';
 export { default as EmailTemplatesService } from './email-templates.service';
 export { default as PatreonService } from './patreon.service';
 export { default as BillingService } from './billing.service';
+export { default as OAuthService } from './oauth.service';

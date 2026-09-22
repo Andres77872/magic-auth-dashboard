@@ -13,6 +13,7 @@ export * from './api-key.types';
 export * from './email-templates.types';
 export * from './patreon.types';
 export * from './billing.types';
+export * from './oauth.types';
 
 // Export analytics types but exclude ActivityFilters to avoid duplicate with audit.types
 export {

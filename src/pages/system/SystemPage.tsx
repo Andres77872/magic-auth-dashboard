@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard, Mail, HeartHandshake, Settings, ShieldCheck } from 'lucide-react';
+import { CreditCard, KeyRound, Mail, HeartHandshake, Settings, ShieldCheck } from 'lucide-react';
 import {
   Card,
   IconContainer,
@@ -17,6 +17,7 @@ import {
   type IconContainerVariant,
 } from '@/components/common';
 import { BillingSummaryPanel } from '@/components/features/billing';
+import { OAuthProviderCatalogPanel } from '@/components/features/oauth';
 import { ROUTES } from '@/utils/routes';
 
 interface SystemTile {
@@ -35,6 +36,14 @@ const SYSTEM_TILES: SystemTile[] = [
     title: 'Billing & plans',
     description:
       'Manage billing groups, the catalog of plans & packages, and per-account Stripe credentials.',
+  },
+  {
+    to: ROUTES.OAUTH,
+    icon: <KeyRound className="h-5 w-5" />,
+    iconVariant: 'info',
+    title: 'OAuth connections',
+    description:
+      'Register OAuth clients, store their credentials, and bind them to the projects that sign in through them.',
   },
   {
     to: ROUTES.EMAIL_TEMPLATES,
@@ -79,6 +88,8 @@ export function SystemPage(): React.JSX.Element {
         </Card>
 
         <BillingSummaryPanel />
+
+        <OAuthProviderCatalogPanel />
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {SYSTEM_TILES.map((tile) => (

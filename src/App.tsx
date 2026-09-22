@@ -107,7 +107,7 @@ function LegacyProjectsRedirect(): React.JSX.Element {
 }
 
 // Import pages
-import { LandingPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage, SettingsPage, EmailTemplatesPage, EmailTemplateEditorPage, PatreonPage, SystemPage, BillingGroupsPage, BillingGroupDetailsPage } from '@/pages';
+import { LandingPage, UnauthorizedPage, DashboardOverview, ProfilePage, UserListPage, ProjectListPage, ProjectDetailsPage, SettingsPage, EmailTemplatesPage, EmailTemplateEditorPage, PatreonPage, SystemPage, BillingGroupsPage, BillingGroupDetailsPage, OAuthConnectionsPage, OAuthConnectionDetailsPage } from '@/pages';
 import { UserProfilePage } from '@/pages/users/UserProfilePage';
 import {
   GroupListPage,
@@ -164,7 +164,11 @@ function AppRoutes(): React.JSX.Element {
         {/* Billing — groups, catalog, per-account Stripe credentials (admin; creds root-gated) */}
         <Route path="billing" element={<BillingGroupsPage />} />
         <Route path="billing/:groupHash" element={<BillingGroupDetailsPage />} />
-        
+
+        {/* OAuth — connections, per-project bindings (admin; creds + writes root-gated) */}
+        <Route path="oauth" element={<OAuthConnectionsPage />} />
+        <Route path="oauth/:connectionHash" element={<OAuthConnectionDetailsPage />} />
+
         {/* Group Management */}
         <Route path="groups" element={<GroupListPage />} />
         <Route path="groups/:groupHash" element={<GroupDetailsPage />} />

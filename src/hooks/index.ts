@@ -8,6 +8,7 @@ export { useGroups } from './useGroups';
 export { useProjectGroups } from './useProjectGroups';
 export { useToast } from './useToast';
 export { useApiKeys } from './useApiKeys';
+export { useOAuthConnections } from './useOAuthConnections';
 export { useEmailTemplates, useEmailTemplate } from './useEmailTemplates';
 export { usePatreonStatus } from './usePatreonStatus';
 export { usePatreonEntitlements } from './usePatreonEntitlements';
