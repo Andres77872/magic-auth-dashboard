@@ -1,4 +1,4 @@
-import React, { lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -27,6 +27,10 @@ function lazyPage<K extends string, M extends Record<K, React.ComponentType>>(
 ): React.LazyExoticComponent<React.ComponentType> {
   return lazy(() => load().then((module) => ({ default: module[name] })));
 }
+
+const AssistantPanel = lazy(
+  () => import('@/components/features/assistant/AssistantPanel')
+);
 
 const DashboardOverview = lazyPage(
   () => import('@/pages/dashboard'),
@@ -288,8 +292,13 @@ export function AppRoutes(): React.JSX.Element {
 }
 
 function AppContent(): React.JSX.Element {
-  const { showSessionExpiryWarning, dismissSessionExpiryWarning, logout } =
-    useAuth();
+  const {
+    showSessionExpiryWarning,
+    dismissSessionExpiryWarning,
+    logout,
+    userType,
+    isAuthenticated,
+  } = useAuth();
 
   const handleReLogin = (): void => {
     // Await server-side logout before navigating away, otherwise the hard
@@ -304,6 +313,22 @@ function AppContent(): React.JSX.Element {
       <div className="min-h-screen bg-background text-foreground">
         <AppRoutes />
       </div>
+      {isAuthenticated && userType === 'root' && (
+        <ErrorBoundary
+          fallback={
+            <div
+              role="alert"
+              className="fixed bottom-4 right-4 z-40 rounded border border-destructive bg-card p-3 text-sm"
+            >
+              The assistant could not load. Refresh to retry.
+            </div>
+          }
+        >
+          <Suspense fallback={null}>
+            <AssistantPanel />
+          </Suspense>
+        </ErrorBoundary>
+      )}
       <SessionExpiryWarningModal
         isOpen={showSessionExpiryWarning}
         onClose={dismissSessionExpiryWarning}

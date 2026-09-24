@@ -27,6 +27,34 @@ pnpm dev                 # http://localhost:5780
 Point `VITE_API_BASE_URL` (see `.env.development`) at the running api.auth instance. The API must list
 `http://localhost:5780` in `ALLOWED_ORIGINS`, because every request sends cookies.
 
+## Root AI assistant
+
+Root accounts have a floating **AI assistant** button. Open its settings to enable the assistant,
+choose an Ollama, OpenAI-compatible, or Anthropic-compatible connection, and select a model that
+supports tool calling. Several saved connections can be enabled together, with a default and a
+per-conversation choice. Provider keys remain on the backend; blank replacement keys preserve the
+saved credential.
+
+All read tools and domain skills start enabled. Write access starts disabled and requires both the
+master write switch and individual change tools. The panel and closed launcher warn while write
+access is active, and proposed changes require approval. Settings group tools under users, groups,
+projects, security, audit, analytics, billing, Patreon, email, and system skills. Planning, memory,
+and clarification are configurable; subagents remain available.
+
+Conversations, activity logs, task progress, provider usage, and interrupted questions are stored by
+the API. Closing the panel, switching conversations, or restarting the browser does not stop a run.
+The client reconnects using an atomic snapshot and durable event cursor. An interrupted connection
+never automatically resends a command. Stop requests cancel a run explicitly. Server process failures
+are surfaced for review rather than replaying potentially completed changes.
+
+The assistant uses the cookie-authenticated `/admin/assistant/ws` endpoint derived from
+`VITE_API_BASE_URL`. The deployment must forward WebSocket upgrades, allow the dashboard's exact
+origin, and install the backend's `requirements-assistant.txt`. Local Ollama must be reachable from
+the API server; custom provider hosts must be allowed in backend `ASSISTANT_PROVIDER_HOSTS`.
+General FAQs do not require loading application skills. Markdown is rendered as React nodes;
+Mermaid flowcharts, sequences and pies and validated chart fences render as SVG/DOM with data-table
+fallbacks. Model HTML and executable diagram directives are never injected.
+
 ## Scripts
 
 | Command             | Description                                 |

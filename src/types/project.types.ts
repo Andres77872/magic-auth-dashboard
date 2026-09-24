@@ -81,8 +81,8 @@ export interface ProjectGroupInfo {
 }
 
 /**
- * `GET /projects/{hash}` without its `statistics` object, which api.auth
- * documents as unreliable (result-set parsing does not match the procedure).
+ * The project detail view uses access and group data; statistics are not
+ * displayed or normalized by this client surface.
  */
 export interface ProjectDetailsData {
   project: ProjectInfo;
