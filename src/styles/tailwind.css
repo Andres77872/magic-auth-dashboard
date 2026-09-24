@@ -135,6 +135,9 @@
   --color-primary-subtle: oklch(0.56 0.165 258 / 0.09);
   --color-primary-subtle-foreground: oklch(0.56 0.165 258);
 
+  /* Violet — root user tier accent (solid) */
+  --color-violet: var(--violet-500);
+
   /* Purple/violet subtle (groups / permission-groups branding) */
   --color-purple-subtle: oklch(0.64 0.165 295 / 0.1);
   --color-purple-subtle-foreground: oklch(0.56 0.15 295);
@@ -156,9 +159,12 @@
   /* Shadows — light. Borders do the work at rest; shadows for overlays. */
   --shadow-xs: 0 1px 2px oklch(0.4 0.02 256 / 0.05);
   --shadow-sm: 0 1px 2px oklch(0.4 0.02 256 / 0.08);
-  --shadow-md: 0 2px 6px oklch(0.4 0.02 256 / 0.1), 0 1px 2px oklch(0.4 0.02 256 / 0.06);
-  --shadow-lg: 0 12px 28px oklch(0.4 0.02 256 / 0.14), 0 2px 6px oklch(0.4 0.02 256 / 0.08);
-  --shadow-xl: 0 16px 40px oklch(0.4 0.02 256 / 0.18), 0 0 0 1px oklch(0.4 0.02 256 / 0.06);
+  --shadow-md:
+    0 2px 6px oklch(0.4 0.02 256 / 0.1), 0 1px 2px oklch(0.4 0.02 256 / 0.06);
+  --shadow-lg:
+    0 12px 28px oklch(0.4 0.02 256 / 0.14), 0 2px 6px oklch(0.4 0.02 256 / 0.08);
+  --shadow-xl:
+    0 16px 40px oklch(0.4 0.02 256 / 0.18), 0 0 0 1px oklch(0.4 0.02 256 / 0.06);
 
   /* Font Family — Geist (UI) + Geist Mono (code/IDs) */
   --font-sans:
@@ -206,7 +212,8 @@
   --animate-spin: spin 1s linear infinite;
   --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-bounce: bounce 1s infinite;
-  --animate-progress-indeterminate: progress-indeterminate 1.2s ease-in-out infinite;
+  --animate-progress-indeterminate: progress-indeterminate 1.2s ease-in-out
+    infinite;
 }
 
 /* ============================================
@@ -513,7 +520,11 @@
 
   .status-error {
     background-color: var(--color-destructive-subtle);
-    border-color: color-mix(in oklab, var(--color-destructive) 40%, transparent);
+    border-color: color-mix(
+      in oklab,
+      var(--color-destructive) 40%,
+      transparent
+    );
   }
 
   .status-error-text {

@@ -1,71 +1,96 @@
 /**
- * API Key Types
+ * Admin-managed API keys (api.auth `src/routes/api_keys.py`, prefix `/api-keys`).
  *
- * Types for admin-managed API key operations.
- * Admins create/list/revoke project-scoped machine-to-machine credentials
- * for user or service-account owners.
+ * Keys are project-scoped machine credentials owned by a user. The full token
+ * (`sk_{public_id}.{secret}`) is returned once, by the create call; every other
+ * response carries metadata only. `project_id` and `owner_user_id` are internal
+ * ids — link with `project_hash` / `owner_user_hash`, never with the ids.
  */
 
-/**
- * API Key entity (returned from list/get operations — no secret)
- */
+/** Key metadata (`_format_key_response`, api_keys.py:227). */
 export interface ApiKey {
+  /** Equal to `public_id`; the `{key_id}` path parameter. */
   id: string;
   public_id: string;
   name: string;
-  description?: string;
-  fingerprint: string;        // 12-char human-readable ID
-  secret_last4: string;       // Last 4 chars for confirmation
+  description: string | null;
+  /** Internal id — not a route parameter. */
   project_id: string;
+  /** Internal id — not a route parameter. */
   owner_user_id: string;
-  expires_at: string;         // ISO 8601 UTC
-  last_used_at?: string | null;
   is_active: boolean;
+  /** UTC ISO timestamp, or null for a key that never expires. */
+  expires_at: string | null;
+  last_used_at: string | null;
   created_at: string;
-  updated_at?: string | null;
-  revoked_at?: string | null;
-  revoke_reason?: string | null;
-  hash_algorithm?: string;
-  // Enrichment fields joined in by the list/detail endpoints (optional —
-  // not present on the one-time create response).
-  project_name?: string;
-  project_hash?: string;
-  owner_username?: string;
-  owner_user_hash?: string;
-  owner_user_type?: string;
+  updated_at: string | null;
+  revoked_at: string | null;
+  revoke_reason: string | null;
+  fingerprint: string;
+  secret_last4: string;
+  hash_algorithm: string | null;
+  /** Joined by list/detail procedures (both listings and the detail call). */
+  project_name?: string | null;
+  project_hash?: string | null;
+  /** Joined by the project listing and the detail call; absent in user listings. */
+  owner_username?: string | null;
+  owner_user_hash?: string | null;
+  /** Detail call only. */
+  owner_user_type?: string | null;
 }
 
-/**
- * Create request (FormData per backend spec)
- * Admin creates a key for a user on a specific project.
- */
+/** The create response: metadata plus the one-time secret token. */
+export interface CreatedApiKey extends ApiKey {
+  /** Full `sk_{public_id}.{secret}` token. Shown once; never store or log it. */
+  api_key: string;
+}
+
+/** `data` of `GET /api-keys` (and the per-user / per-project listings). */
+export interface ApiKeyPage {
+  keys: ApiKey[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface ApiKeyListParams {
+  userHash?: string;
+  projectHash?: string;
+  /** Honoured by the backend for project listings only (not with `userHash`). */
+  activeOnly?: boolean;
+  /** 1–200. */
+  limit?: number;
+  offset?: number;
+}
+
+/** `POST /api-keys` form fields. */
 export interface CreateApiKeyRequest {
-  user_hash: string;          // Required — target owner user
-  project_hash: string;       // Required
+  user_hash: string;
+  project_hash: string;
+  /** Defaults to `API Key - <owner username>` on the server. */
   name?: string;
   description?: string;
-  expires_at?: string;        // ISO 8601, optional
+  /** ISO 8601, in the future. Omit for a key that never expires. */
+  expires_at?: string;
+}
+
+/** `PUT /api-keys/{key_id}` form fields. Empty values count as absent server-side. */
+export interface UpdateApiKeyRequest {
+  name?: string;
+  description?: string;
+  expires_at?: string;
+}
+
+/** `data` of `DELETE /api-keys/{key_id}`. */
+export interface RevokedApiKey {
+  key_id: string;
+  revoked_at: string;
 }
 
 /**
- * Create response (includes one-time token)
- * CRITICAL: api_key field is returned ONLY at creation.
- * Frontend must display and allow immediate copy.
- */
-export interface CreateApiKeyResponse {
-  success: boolean;
-  message: string;
-  data: ApiKey & {
-    api_key: string;          // Full token sk_{public_id}.{secret} — ONLY at creation
-  };
-}
-
-/**
- * UI-only metadata for delegated-auth service tokens.
- *
- * These values are not persisted by api.auth. They are used after creation to
- * render the env snippets required by the caller service and the target LLM
- * service.
+ * UI-only metadata for delegated-auth service keys. Not persisted by api.auth;
+ * used after creation to render the env snippets for the caller service and
+ * the target service.
  */
 export interface DelegatedAuthRevealConfig {
   sourceProjectHash: string;
@@ -75,70 +100,22 @@ export interface DelegatedAuthRevealConfig {
   ownerUserHash: string;
 }
 
-/**
- * List response
- */
-export interface ApiKeyListResponse {
-  success: boolean;
-  message: string;
-  data: {
-    keys: ApiKey[];
-    total: number;
-    limit: number;
-    offset: number;
-  };
-}
+export type ApiKeyStatus = 'active' | 'expired' | 'revoked';
 
 /**
- * Update request
+ * Display status. A key with `revoked_at` is revoked. An inactive key without
+ * it was deactivated after expiring. An active key past `expires_at` has
+ * expired but not been swept yet.
  */
-export interface UpdateApiKeyRequest {
-  name?: string;
-  description?: string;
-  expires_at?: string;
-}
-
-/**
- * Single key response
- */
-export interface ApiKeyResponse {
-  success: boolean;
-  message: string;
-  data: ApiKey;
-}
-
-/**
- * Revoke response
- */
-export interface RevokeApiKeyResponse {
-  success: boolean;
-  message: string;
-}
-
-/**
- * API Key status type for UI display
- */
-export type ApiKeyStatus = 'active' | 'expired' | 'revoked' | 'revoking';
-
-/**
- * Compute API key status from key data
- */
-export function computeApiKeyStatus(key: ApiKey): ApiKeyStatus {
-  if (!key.is_active) {
-    // Could be revoked or just inactive
-    if (key.revoked_at) {
-      return 'revoked';
-    }
-    return 'revoked';
-  }
-  
-  // Check if expired
+export function computeApiKeyStatus(
+  key: Pick<ApiKey, 'is_active' | 'revoked_at' | 'expires_at'>,
+  now = Date.now()
+): ApiKeyStatus {
+  if (key.revoked_at) return 'revoked';
+  if (!key.is_active) return 'expired';
   if (key.expires_at) {
-    const expiryDate = new Date(key.expires_at);
-    if (expiryDate < new Date()) {
-      return 'expired';
-    }
+    const expiry = new Date(key.expires_at).getTime();
+    if (!Number.isNaN(expiry) && expiry <= now) return 'expired';
   }
-  
   return 'active';
 }

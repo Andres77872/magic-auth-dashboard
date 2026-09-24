@@ -58,7 +58,7 @@ export function CopyButton({
           <Button
             variant={variant}
             size={buttonSize}
-            onClick={handleCopy}
+            onClick={() => void handleCopy()}
             className={cn('h-8 w-8 p-0', className)}
             aria-label={tooltip}
           >

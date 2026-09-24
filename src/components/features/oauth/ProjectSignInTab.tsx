@@ -1,34 +1,29 @@
 /**
  * Project-first view of OAuth: "how do people sign in to this project, and why is
- * the button broken?".
+ * the button not working?". Rendered inside the project details page, which owns the
+ * tab bar — so this uses stacked panels, with a segmented control per provider.
  *
- * Mirror image of the connection detail's Projects tab. Per binding it shows the
- * policy editor, the two URL allow-lists and the server's readiness roll-up, plus a
- * link back to the connection. The primary action is a SINGLE-select dialog of
- * connections available to this project, grouped by provider type and showing each
- * connection's credential status, so nobody binds a connection whose secret was
- * never stored.
- *
- * Creating a connection is deliberately NOT possible from here: that is a root-only
- * action and this is an admin-level screen (doc 11, open question 3).
+ * Per binding: the server's readiness checks, the two URL allow-lists and the sign-in
+ * policy. The primary action adds one connection available to this project; creating
+ * connections is root-only and lives in the OAuth area.
  */
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ExternalLink, KeyRound, Plus, Trash2 } from 'lucide-react';
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  ConfirmDialog,
-  CopyableId,
-  EmptyState,
-  ErrorState,
-  LoadingSpinner,
-} from '@/components/common';
+  AlertTriangle,
+  ExternalLink,
+  KeyRound,
+  Plus,
+  Trash2,
+} from 'lucide-react';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
+import { Panel } from '@/components/common/Panel';
+import { TabNavigation } from '@/components/common/TabNavigation';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -39,25 +34,33 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks';
-import { oauthService } from '@/services/oauth.service';
-import { projectService } from '@/services';
-import { ROUTES } from '@/utils/routes';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  useOAuthConnections,
+  useOAuthDefaultGroupOptions,
+  useProjectOAuthBindings,
+  type UseProjectOAuthBindingsReturn,
+} from '@/hooks/useOAuthConnections';
+import { useToast } from '@/hooks/useToast';
+import { useUserType } from '@/hooks/useUserType';
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/utils/routes';
 import type {
   OAuthBindingInfo,
   OAuthConnectionListItem,
-  OAuthProjectReadinessEntry,
 } from '@/types/oauth.types';
 import type { UserGroup } from '@/types/group.types';
 import { OAuthAllowedUrlList } from './OAuthAllowedUrlList';
 import { OAuthBindingEditor } from './OAuthBindingEditor';
 import { OAuthReadinessPanel } from './OAuthReadinessPanel';
 import {
-  connectionStatusVariant,
-  credentialStatusVariant,
+  allowListSummary,
   bindingEffectiveState,
+  connectionStatusPresentation,
+  credentialStatusPresentation,
+  isBindingConflict,
   providerTypeLabel,
+  validateConnectionKey,
 } from './oauth-status';
 
 export interface ProjectSignInTabProps {
@@ -66,7 +69,115 @@ export interface ProjectSignInTabProps {
 }
 
 function errorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error ? err.message : fallback;
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
+type BindingView = 'readiness' | 'urls' | 'policy';
+
+interface BindingPanelProps {
+  binding: OAuthBindingInfo;
+  groups: UserGroup[];
+  groupsLoading: boolean;
+  actions: Pick<
+    UseProjectOAuthBindingsReturn,
+    'saveBinding' | 'addUrl' | 'removeUrl'
+  >;
+  onRemove: (binding: OAuthBindingInfo) => void;
+}
+
+function BindingPanel({
+  binding,
+  groups,
+  groupsLoading,
+  actions,
+  onRemove,
+}: BindingPanelProps): React.JSX.Element {
+  const [view, setView] = React.useState<BindingView>('readiness');
+  const effective = bindingEffectiveState(binding);
+  const key = binding.connection_key;
+
+  return (
+    <Panel
+      title={
+        <span className="flex flex-wrap items-center gap-2">
+          {binding.connection_display_name}
+          <Badge variant="secondary" size="sm">
+            {providerTypeLabel(binding.provider_type)}
+          </Badge>
+          <Badge variant={effective.variant} size="sm">
+            {effective.label}
+          </Badge>
+        </span>
+      }
+      description={
+        <>
+          Key <span className="font-mono text-foreground">{key}</span> ·{' '}
+          {allowListSummary(binding)}
+          {effective.blockedBy && <> · First blocker: {effective.blockedBy}</>}
+        </>
+      }
+      actions={
+        <>
+          <TabNavigation
+            variant="segmented"
+            size="sm"
+            ariaLabel={`${binding.connection_display_name} settings`}
+            activeTab={view}
+            onChange={(next) =>
+              setView(next === 'urls' || next === 'policy' ? next : 'readiness')
+            }
+            tabs={[
+              { id: 'readiness', label: 'Readiness' },
+              { id: 'urls', label: 'URLs', count: binding.urls.length },
+              { id: 'policy', label: 'Policy' },
+            ]}
+          />
+          <Button asChild variant="ghost" size="sm">
+            <Link
+              to={`${ROUTES.OAUTH_CONNECTION}/${encodeURIComponent(binding.connection_hash)}`}
+            >
+              Open connection
+              <ExternalLink aria-hidden="true" />
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemove(binding)}
+            aria-label={`Remove ${binding.connection_display_name} from this project`}
+          >
+            <Trash2 aria-hidden="true" />
+          </Button>
+        </>
+      }
+    >
+      <div>
+        {view === 'readiness' && (
+          <OAuthReadinessPanel
+            checks={binding.readiness}
+            ready={binding.ready}
+            title="Readiness checks"
+          />
+        )}
+        {view === 'urls' && (
+          <OAuthAllowedUrlList
+            connectionKey={key}
+            urls={binding.urls}
+            onAdd={(request) => actions.addUrl(key, request)}
+            onRemove={(urlId) => actions.removeUrl(key, urlId)}
+          />
+        )}
+        {view === 'policy' && (
+          <OAuthBindingEditor
+            binding={binding}
+            availableGroups={groups}
+            groupsLoading={groupsLoading}
+            onSave={(request) => actions.saveBinding(key, request)}
+          />
+        )}
+      </div>
+    </Panel>
+  );
 }
 
 export function ProjectSignInTab({
@@ -74,456 +185,450 @@ export function ProjectSignInTab({
   projectName,
 }: ProjectSignInTabProps): React.JSX.Element {
   const { showToast } = useToast();
-  const [bindings, setBindings] = React.useState<OAuthBindingInfo[]>([]);
-  const [readiness, setReadiness] = React.useState<OAuthProjectReadinessEntry[]>([]);
-  const [oauthEnabled, setOauthEnabled] = React.useState(true);
-  const [groups, setGroups] = React.useState<UserGroup[]>([]);
-  const [groupsLoading, setGroupsLoading] = React.useState(true);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [version, setVersion] = React.useState(0);
-
+  const oauth = useProjectOAuthBindings(projectHash);
+  const { groups, isLoading: groupsLoading } =
+    useOAuthDefaultGroupOptions(projectHash);
   const [showEnable, setShowEnable] = React.useState(false);
-  const [pendingRemove, setPendingRemove] = React.useState<OAuthBindingInfo | null>(null);
+  const [pendingRemove, setPendingRemove] =
+    React.useState<OAuthBindingInfo | null>(null);
   const [removing, setRemoving] = React.useState(false);
 
-  const reload = React.useCallback((): void => setVersion((value) => value + 1), []);
+  const {
+    bindings,
+    oauthEnabled,
+    isLoading,
+    isRefreshing,
+    error,
+    refetch,
+    removeBinding,
+  } = oauth;
 
-  React.useEffect(() => {
-    if (!projectHash) return undefined;
-    let active = true;
-    void (async (): Promise<void> => {
-      try {
-        const [bindingsResponse, readinessResponse] = await Promise.all([
-          oauthService.listProjectBindings(projectHash),
-          oauthService.getProjectReadiness(projectHash),
-        ]);
-        if (active) {
-          setBindings(bindingsResponse.bindings || []);
-          setReadiness(readinessResponse.providers || []);
-          setOauthEnabled(readinessResponse.oauth_enabled !== false);
-          setError(null);
-        }
-      } catch (err) {
-        if (active) setError(errorMessage(err, 'Failed to load sign-in providers'));
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return (): void => {
-      active = false;
-    };
-  }, [projectHash, version]);
-
-  // Default-group options come from the existing project groups endpoint, so the
-  // selector can only offer groups that already reach this project.
-  React.useEffect(() => {
-    if (!projectHash) return undefined;
-    let active = true;
-    void (async (): Promise<void> => {
-      try {
-        const response = await projectService.getProjectGroups(projectHash, { limit: 200 });
-        if (active) setGroups(response.user_groups || []);
-      } catch {
-        if (active) setGroups([]);
-      } finally {
-        if (active) setGroupsLoading(false);
-      }
-    })();
-    return (): void => {
-      active = false;
-    };
-  }, [projectHash]);
-
-  const removeBinding = async (): Promise<void> => {
+  const confirmRemove = async (): Promise<void> => {
     if (!pendingRemove) return;
     setRemoving(true);
     try {
-      await oauthService.deleteBinding(projectHash, pendingRemove.connection_key);
-      showToast('Provider removed from this project', 'success');
-      reload();
+      await removeBinding(pendingRemove.connection_key);
+      showToast(
+        `${pendingRemove.connection_display_name} removed from this project`,
+        'success'
+      );
+      setPendingRemove(null);
     } catch (err) {
-      showToast(errorMessage(err, 'Failed to remove provider'), 'error');
+      showToast(
+        errorMessage(err, 'The provider could not be removed.'),
+        'error'
+      );
     } finally {
       setRemoving(false);
-      setPendingRemove(null);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex justify-center py-12">
-        <LoadingSpinner />
+      <div
+        className="space-y-4"
+        aria-busy="true"
+        aria-label="Loading sign-in providers"
+      >
+        <Skeleton className="h-6 w-48" />
+        <Skeleton className="h-40 w-full" />
       </div>
     );
   }
 
-  if (error) {
-    return <ErrorState title="Couldn’t load sign-in providers" message={error} onRetry={reload} />;
+  if (error && bindings.length === 0) {
+    return (
+      <ErrorState
+        title="Sign-in providers could not be loaded"
+        message={error}
+        onRetry={() => void refetch()}
+        isRetrying={isRefreshing}
+      />
+    );
   }
 
+  const addButton = (
+    <Button onClick={() => setShowEnable(true)}>
+      <Plus aria-hidden="true" />
+      Add provider
+    </Button>
+  );
+
   return (
-    <div className="space-y-4">
-      {!oauthEnabled && (
+    <div
+      className={cn(
+        'space-y-5 transition-opacity',
+        isRefreshing && 'opacity-80'
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="m-0 text-[15px] font-semibold text-foreground">
+            Sign-in providers
+          </h2>
+          <p className="m-0 mt-0.5 text-xs text-muted-foreground">
+            OAuth connections people can use to sign in to{' '}
+            {projectName || 'this project'}, and what each still needs.
+          </p>
+        </div>
+        {bindings.length > 0 && addButton}
+      </div>
+
+      {oauthEnabled === false && (
         <div
           role="alert"
-          className="rounded-md border border-warning/30 bg-warning/5 p-3 text-sm text-warning"
+          className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2.5 text-xs text-warning"
         >
-          OAuth is disabled for the whole deployment. No provider will work until it is switched
-          on in the system settings.
+          <AlertTriangle
+            className="mt-0.5 h-4 w-4 shrink-0"
+            aria-hidden="true"
+          />
+          <span>
+            OAuth is switched off for this deployment (OAUTH_ENABLED), so no
+            provider works until it is turned on.
+          </span>
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h3 className="text-base font-semibold">Sign-in providers</h3>
-          <p className="text-sm text-muted-foreground">
-            Which OAuth connections this project uses, and what is still missing.
-          </p>
-        </div>
-        <Button onClick={() => setShowEnable(true)}>
-          <Plus size={16} className="mr-1" /> Enable a provider for this project
-        </Button>
-      </div>
-
       {bindings.length === 0 ? (
-        <EmptyState
-          icon={<KeyRound />}
-          title="No sign-in providers"
-          description="Enable an OAuth connection for this project, then add its redirect URI and return origin."
-          action={
-            <Button onClick={() => setShowEnable(true)}>
-              <Plus size={16} className="mr-1" /> Enable a provider for this project
-            </Button>
-          }
-        />
+        <div className="rounded-lg border border-dashed border-border">
+          <EmptyState
+            icon={<KeyRound />}
+            title="No sign-in providers yet"
+            description="Add an OAuth connection, then give it a redirect URI and a return origin."
+            action={addButton}
+            size="sm"
+          />
+        </div>
       ) : (
-        bindings.map((binding) => {
-          const effective = bindingEffectiveState(binding);
-          const rollUp = readiness.find(
-            (entry) => entry.connection_key === binding.connection_key,
-          );
-          return (
-            <Card key={binding.connection_key}>
-              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <CardTitle>{binding.connection_display_name}</CardTitle>
-                  <Badge variant="secondary">{providerTypeLabel(binding.provider_type)}</Badge>
-                  <Badge variant={effective.variant}>{effective.label}</Badge>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {binding.connection_key}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link
-                    to={`${ROUTES.OAUTH}/${binding.connection_hash}`}
-                    className="inline-flex items-center gap-1 text-sm text-primary no-underline hover:underline"
-                  >
-                    Open connection <ExternalLink size={14} aria-hidden="true" />
-                  </Link>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPendingRemove(binding)}
-                    aria-label={`Remove ${binding.connection_display_name} from this project`}
-                  >
-                    <Trash2 size={14} className="mr-1" /> Remove
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <OAuthReadinessPanel
-                  checks={rollUp?.checks ?? binding.readiness}
-                  ready={rollUp?.ready ?? binding.ready}
-                  title="Why sign-in is or is not working"
-                />
-                <OAuthBindingEditor
-                  binding={binding}
-                  availableGroups={groups}
-                  groupsLoading={groupsLoading}
-                  onChanged={reload}
-                />
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">Allowed URLs</div>
-                  <OAuthAllowedUrlList
-                    projectHash={projectHash}
-                    connectionKey={binding.connection_key}
-                    urls={binding.urls}
-                    onChanged={reload}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })
+        bindings.map((binding) => (
+          <BindingPanel
+            key={binding.connection_key}
+            binding={binding}
+            groups={groups}
+            groupsLoading={groupsLoading}
+            actions={oauth}
+            onRemove={setPendingRemove}
+          />
+        ))
       )}
 
       <EnableProviderDialog
         isOpen={showEnable}
         onClose={() => setShowEnable(false)}
-        onSuccess={reload}
         projectHash={projectHash}
         projectName={projectName}
-        boundConnectionHashes={bindings.map((binding) => binding.connection_hash)}
-        usedConnectionKeys={bindings.map((binding) => binding.connection_key)}
+        bindings={bindings}
+        onEnable={oauth.enableConnection}
       />
 
       <ConfirmDialog
         isOpen={pendingRemove !== null}
         onClose={() => setPendingRemove(null)}
-        onConfirm={() => void removeBinding()}
-        title="Remove sign-in provider"
-        message="Remove this provider from the project? Users who sign in through it will lose access to this project immediately."
-        confirmText="Remove"
-        variant="danger"
+        onConfirm={() => void confirmRemove()}
+        title={`Remove ${pendingRemove?.connection_display_name ?? 'provider'}?`}
+        message={
+          <>
+            People can no longer sign in to {projectName || 'this project'} with
+            it, and its allowed URLs are deleted. The connection itself is kept.
+          </>
+        }
+        confirmText="Remove provider"
         isLoading={removing}
       />
     </div>
   );
 }
 
+interface EnableProviderDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  projectHash: string;
+  projectName?: string;
+  bindings: OAuthBindingInfo[];
+  onEnable: (connectionHash: string, connectionKey: string) => Promise<void>;
+}
+
+/** Suggests the provider type as the key, or a numbered variant when it is taken. */
+function suggestKey(providerType: string, used: Set<string>): string {
+  let candidate = providerType;
+  let suffix = 2;
+  while (used.has(candidate)) {
+    candidate = `${providerType}-${suffix}`;
+    suffix += 1;
+  }
+  return candidate;
+}
+
 /**
- * Single-select dialog of connections available to this project (platform-owned plus
- * project-owned), grouped by provider type and showing each one's credential status.
+ * Single-select dialog of connections this project can use: shared ones, the project's
+ * own, and (root only) other projects' connections. Archived connections can't be bound.
  */
 function EnableProviderDialog({
   isOpen,
   onClose,
-  onSuccess,
   projectHash,
   projectName,
-  boundConnectionHashes,
-  usedConnectionKeys,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  projectHash: string;
-  projectName?: string;
-  boundConnectionHashes: string[];
-  usedConnectionKeys: string[];
-}): React.JSX.Element {
+  bindings,
+  onEnable,
+}: EnableProviderDialogProps): React.JSX.Element {
   const { showToast } = useToast();
-  const [connections, setConnections] = React.useState<OAuthConnectionListItem[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const { isRoot } = useUserType();
+  const list = useOAuthConnections({ limit: 200, enabled: isOpen });
   const [selected, setSelected] = React.useState<string | null>(null);
   const [connectionKey, setConnectionKey] = React.useState('');
   const [keyError, setKeyError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
-  const boundSet = React.useMemo(() => new Set(boundConnectionHashes), [boundConnectionHashes]);
-  const usedKeys = React.useMemo(() => new Set(usedConnectionKeys), [usedConnectionKeys]);
+  const usedKeys = React.useMemo(
+    () => new Set(bindings.map((binding) => binding.connection_key)),
+    [bindings]
+  );
+  const boundConnections = React.useMemo(
+    () => new Set(bindings.map((binding) => binding.connection_hash)),
+    [bindings]
+  );
 
-  // Reset the choice when the dialog opens, using "adjust state during render" so the
-  // reset does not cascade an extra render pass.
-  const [openedOnce, setOpenedOnce] = React.useState(false);
-  if (isOpen !== openedOnce) {
-    setOpenedOnce(isOpen);
+  // Reset the choice each time the dialog opens (adjust state during render).
+  const [wasOpen, setWasOpen] = React.useState(false);
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
     if (isOpen) {
       setSelected(null);
       setConnectionKey('');
       setKeyError(null);
-      setLoading(true);
     }
   }
 
-  React.useEffect(() => {
-    if (!isOpen) return undefined;
-    let active = true;
-    void (async (): Promise<void> => {
-      try {
-        const response = await oauthService.listConnections({ limit: 200 });
-        if (!active) return;
-        setConnections(
-          (response.connections || []).filter(
-            (item) =>
-              !boundSet.has(item.connection_hash) &&
-              (!item.owner_project_hash || item.owner_project_hash === projectHash),
-          ),
-        );
-      } catch {
-        if (!active) return;
-        showToast('Failed to load OAuth connections', 'error');
-        setConnections([]);
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return (): void => {
-      active = false;
-    };
-  }, [isOpen, boundSet, projectHash, showToast]);
+  const available = React.useMemo(
+    () =>
+      list.connections.filter(
+        (item) =>
+          item.status !== 'archived' &&
+          !boundConnections.has(item.connection_hash) &&
+          // Admins may only bind shared connections or this project's own.
+          (isRoot ||
+            !item.owner_project_hash ||
+            item.owner_project_hash === projectHash)
+      ),
+    [list.connections, boundConnections, isRoot, projectHash]
+  );
 
   const grouped = React.useMemo(() => {
     const byType = new Map<string, OAuthConnectionListItem[]>();
-    connections.forEach((item) => {
-      const list = byType.get(item.provider_type) ?? [];
-      list.push(item);
-      byType.set(item.provider_type, list);
+    available.forEach((item) => {
+      byType.set(item.provider_type, [
+        ...(byType.get(item.provider_type) ?? []),
+        item,
+      ]);
     });
     return Array.from(byType.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [connections]);
+  }, [available]);
 
-  const selectedConnection = connections.find((item) => item.connection_hash === selected);
-
-  const chooseConnection = (item: OAuthConnectionListItem): void => {
+  const choose = (item: OAuthConnectionListItem): void => {
     setSelected(item.connection_hash);
-    // Default the slug to the provider type, or a numbered variant when it is taken.
-    let candidate = item.provider_type;
-    let suffix = 2;
-    while (usedKeys.has(candidate)) {
-      candidate = `${item.provider_type}-${suffix}`;
-      suffix += 1;
-    }
-    setConnectionKey(candidate);
+    setConnectionKey(suggestKey(item.provider_type, usedKeys));
     setKeyError(null);
   };
 
-  const validateForm = (): boolean => {
-    const key = connectionKey.trim().toLowerCase();
-    if (!key) {
-      setKeyError('A connection key is required');
-      return false;
-    }
-    if (!/^[a-z0-9][a-z0-9_-]*$/.test(key)) {
-      setKeyError('Use lowercase letters, digits, hyphens and underscores');
-      return false;
-    }
-    if (usedKeys.has(key)) {
-      setKeyError('This project already uses that connection key');
-      return false;
-    }
-    setKeyError(null);
-    return true;
-  };
-
-  const enable = async (): Promise<void> => {
+  const submit = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault();
     if (!selected) return;
-    if (!validateForm()) return;
+    const key = connectionKey.trim().toLowerCase();
+    const problem =
+      validateConnectionKey(key) ??
+      (usedKeys.has(key) ? 'This project already uses that key' : null);
+    if (problem) {
+      setKeyError(problem);
+      return;
+    }
     setSaving(true);
     try {
-      await oauthService.upsertBinding(projectHash, connectionKey.trim().toLowerCase(), {
-        connection_hash: selected,
-        enabled: false,
-        login_enabled: true,
-        link_enabled: true,
-        provisioning_mode: 'disabled',
-        existing_user_policy: 'deny',
-      });
+      await onEnable(selected, key);
       showToast(
-        'Provider added — it stays disabled until a redirect URI and a return origin are set',
-        'success',
+        'Provider added. It stays off until it has a redirect URI and a return origin and is enabled.',
+        'success'
       );
-      onSuccess();
       onClose();
     } catch (err) {
-      showToast(errorMessage(err, 'Failed to enable provider'), 'error');
+      if (isBindingConflict(err))
+        setKeyError(
+          errorMessage(err, 'This key or connection is already in use.')
+        );
+      else
+        showToast(
+          errorMessage(err, 'The provider could not be added.'),
+          'error'
+        );
     } finally {
       setSaving(false);
     }
   };
 
+  const hasMore = Boolean(list.pagination?.has_more);
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !saving && !open && onClose()}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !saving && !open && onClose()}
+    >
       <DialogContent size="lg">
-        <DialogHeader>
-          <DialogTitle>Enable a provider{projectName ? ` for ${projectName}` : ''}</DialogTitle>
-          <DialogDescription>
-            Choose one connection. A connection whose secret was never stored cannot complete a
-            sign-in, so its credential status is shown here.
-          </DialogDescription>
-        </DialogHeader>
+        <form
+          onSubmit={(event) => void submit(event)}
+          noValidate
+          className="contents"
+        >
+          <DialogHeader>
+            <DialogTitle>
+              Add a sign-in provider{projectName ? ` to ${projectName}` : ''}
+            </DialogTitle>
+            <DialogDescription>
+              Choose one connection. A connection without stored credentials
+              can&apos;t complete a sign-in until a root administrator stores
+              them.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="max-h-[420px] space-y-4 overflow-y-auto pr-1">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <LoadingSpinner size="md" message="Loading connections…" />
-            </div>
-          ) : grouped.length === 0 ? (
-            <EmptyState
-              icon={<KeyRound />}
-              title="No connection available"
-              description="No OAuth connection is available to this project yet. A root administrator creates connections in the OAuth area."
-              size="sm"
-              action={
-                <Link to={ROUTES.OAUTH} className="text-sm text-primary no-underline hover:underline">
-                  Go to OAuth connections
-                </Link>
-              }
-            />
-          ) : (
-            grouped.map(([providerType, items]) => (
-              <div key={providerType} className="space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">
-                  {providerTypeLabel(providerType)}
-                </div>
-                <div className="divide-y rounded-md border border-border">
-                  {items.map((item) => (
-                    <label
-                      key={item.connection_hash}
-                      htmlFor={`enable-${item.connection_hash}`}
-                      className={cn(
-                        'flex cursor-pointer items-center gap-3 p-3 text-sm transition-colors',
-                        selected === item.connection_hash ? 'bg-primary/5' : 'hover:bg-accent/50',
-                      )}
-                    >
-                      <input
-                        id={`enable-${item.connection_hash}`}
-                        type="radio"
-                        name="oauth-enable-connection"
-                        value={item.connection_hash}
-                        checked={selected === item.connection_hash}
-                        onChange={() => chooseConnection(item)}
-                        disabled={saving}
-                        className="h-4 w-4 accent-primary"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium">{item.display_name}</div>
-                        <div className="truncate text-xs text-muted-foreground">
-                          {item.owner_project_hash ? 'project-owned' : 'platform'} ·{' '}
-                          {item.scopes || 'catalog default scopes'}
-                        </div>
-                      </div>
-                      <Badge variant={connectionStatusVariant(item.status)}>{item.status}</Badge>
-                      <Badge variant={credentialStatusVariant(item.credential_status)}>
-                        {item.credential_status}
-                      </Badge>
-                    </label>
-                  ))}
-                </div>
+          <div className="max-h-[420px] space-y-4 overflow-y-auto px-0.5">
+            {list.isLoading ? (
+              <div
+                className="space-y-2"
+                aria-busy="true"
+                aria-label="Loading connections"
+              >
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Skeleton key={index} className="h-12 w-full" />
+                ))}
               </div>
-            ))
-          )}
-
-          {selectedConnection && (
-            <div className="space-y-1.5">
-              <Label htmlFor="enable-connection-key">Connection key</Label>
-              <Input
-                id="enable-connection-key"
-                value={connectionKey}
-                onChange={(event) => {
-                  setConnectionKey(event.target.value);
-                  if (keyError) setKeyError(null);
-                }}
-                error={keyError || undefined}
-                helperText="The slug that appears in this project's sign-in URLs."
-                fullWidth
+            ) : list.error && list.connections.length === 0 ? (
+              <ErrorState
+                variant="inline"
+                size="sm"
+                title="Connections could not be loaded"
+                message={list.error}
+                onRetry={() => void list.refetch()}
+                isRetrying={list.isRefreshing}
               />
-              <p className="text-xs text-muted-foreground">
-                Connection hash: <CopyableId id={selectedConnection.connection_hash} />
-              </p>
-            </div>
-          )}
-        </div>
+            ) : grouped.length === 0 ? (
+              <EmptyState
+                icon={<KeyRound />}
+                title="No connection available"
+                description="Every connection this project can use is already added, or none exists yet. Root administrators create connections in the OAuth area."
+                size="sm"
+                action={
+                  <Button asChild variant="secondary" size="sm">
+                    <Link to={ROUTES.OAUTH}>Go to OAuth</Link>
+                  </Button>
+                }
+              />
+            ) : (
+              <div
+                role="radiogroup"
+                aria-label="Connection"
+                className="space-y-4"
+              >
+                {grouped.map(([providerType, items]) => (
+                  <div key={providerType} className="space-y-1.5">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      {providerTypeLabel(providerType)}
+                    </div>
+                    <ul className="m-0 list-none divide-y divide-border rounded-md border border-border p-0">
+                      {items.map((item) => {
+                        const status = connectionStatusPresentation(
+                          item.status
+                        );
+                        const credentials = credentialStatusPresentation(
+                          item.credential_status
+                        );
+                        const inputId = `enable-${item.connection_hash}`;
+                        return (
+                          <li key={item.connection_hash}>
+                            <label
+                              htmlFor={inputId}
+                              className={cn(
+                                'flex cursor-pointer items-center gap-3 px-3 py-2.5 text-[13px] transition-colors',
+                                selected === item.connection_hash
+                                  ? 'bg-primary/5'
+                                  : 'hover:bg-accent/50'
+                              )}
+                            >
+                              <input
+                                id={inputId}
+                                type="radio"
+                                name="oauth-enable-connection"
+                                value={item.connection_hash}
+                                checked={selected === item.connection_hash}
+                                onChange={() => choose(item)}
+                                disabled={saving}
+                                className="h-4 w-4 accent-primary"
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate font-medium">
+                                  {item.display_name}
+                                </span>
+                                <span className="block truncate text-xs text-muted-foreground">
+                                  {item.owner_project_hash
+                                    ? `Owned by ${item.owner_project_name || 'another project'}`
+                                    : 'Shared'}
+                                  {item.scopes ? ` · ${item.scopes}` : ''}
+                                </span>
+                              </span>
+                              <Badge variant={status.variant} size="sm">
+                                {status.label}
+                              </Badge>
+                              <Badge variant={credentials.variant} size="sm">
+                                {`Credentials ${credentials.label.toLowerCase()}`}
+                              </Badge>
+                            </label>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+                {hasMore && (
+                  <p className="m-0 text-xs text-muted-foreground">
+                    Showing the first 200 connections.
+                  </p>
+                )}
+              </div>
+            )}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button onClick={() => void enable()} disabled={!selected || saving} loading={saving}>
-            Enable provider
-          </Button>
-        </DialogFooter>
+            {selected && (
+              <div className="space-y-1.5">
+                <Label htmlFor="enable-connection-key">Connection key</Label>
+                <Input
+                  id="enable-connection-key"
+                  value={connectionKey}
+                  onChange={(event) => {
+                    setConnectionKey(event.target.value);
+                    if (keyError) setKeyError(null);
+                  }}
+                  error={keyError ?? undefined}
+                  helperText="The name sign-in clients send as the connection for this project."
+                  spellCheck={false}
+                  autoComplete="off"
+                  disabled={saving}
+                  fullWidth
+                />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!selected} loading={saving}>
+              Add provider
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

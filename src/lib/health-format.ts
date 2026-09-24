@@ -85,7 +85,8 @@ export function formatHealthValue(key: string, value: unknown): string {
 function safeString(value: unknown): string {
   if (typeof value === 'object' && value !== null) return JSON.stringify(value);
   if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
   return '';
 }
 
@@ -97,7 +98,9 @@ export function asRecord(value: unknown): Record<string, unknown> | undefined {
 }
 
 export function asNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
 export function asString(value: unknown): string | undefined {

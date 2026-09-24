@@ -1,42 +1,56 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiKeyRevealModal } from '../ApiKeyRevealModal';
-import type { CreateApiKeyResponse } from '@/types/api-key.types';
+import type { CreatedApiKey } from '@/types/api-key.types';
 
-vi.mock('@/components/ui/dialog', () => ({
-  Dialog: ({ children, open }: any) => (open ? <div>{children}</div> : null),
-  DialogContent: ({ children }: any) => <div>{children}</div>,
-  DialogDescription: ({ children }: any) => <p>{children}</p>,
-  DialogFooter: ({ children }: any) => <div>{children}</div>,
-  DialogHeader: ({ children }: any) => <div>{children}</div>,
-  DialogTitle: ({ children }: any) => <h2>{children}</h2>,
-}));
-
-const createdKey: CreateApiKeyResponse = {
-  success: true,
-  message: 'Created',
-  data: {
-    id: 'public123',
-    public_id: 'public123',
-    name: 'Magic LLM delegation token',
-    fingerprint: 'FP1234567890',
-    secret_last4: 'abcd',
-    project_id: 'target-prj',
-    owner_user_id: 'usr-service',
-    expires_at: '',
-    is_active: true,
-    created_at: '2026-01-01',
-    api_key: 'sk_public123.secret',
-  },
+const createdKey: CreatedApiKey = {
+  id: 'public123',
+  public_id: 'public123',
+  name: 'Magic LLM delegation key',
+  description: null,
+  fingerprint: 'FP1234567890',
+  secret_last4: 'cret',
+  project_id: 'proj-internal',
+  owner_user_id: 'usr-internal',
+  expires_at: null,
+  last_used_at: null,
+  is_active: true,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: null,
+  revoked_at: null,
+  revoke_reason: null,
+  hash_algorithm: 'hmac-sha256-v1',
+  api_key: 'sk_public123.secret',
 };
 
-describe('ApiKeyRevealModal delegated auth snippets', () => {
-  it('renders caller and target service env values for delegated tokens', () => {
+describe('ApiKeyRevealModal', () => {
+  it('shows the one-time key and keeps the dialog open until it is copied or confirmed', () => {
+    const onClose = vi.fn();
+    render(<ApiKeyRevealModal created={createdKey} onClose={onClose} />);
+
+    expect(
+      screen.getByRole('heading', { name: 'API key created' })
+    ).toBeInTheDocument();
+    expect(screen.getByDisplayValue('sk_public123.secret')).toBeInTheDocument();
+
+    const done = screen.getByRole('button', { name: 'Done' });
+    expect(done).toBeDisabled();
+
+    fireEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'I have stored this key somewhere safe',
+      })
+    );
+    expect(done).toBeEnabled();
+    fireEvent.click(done);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders caller and target service env values for delegation keys', () => {
     render(
       <ApiKeyRevealModal
-        isOpen
+        created={createdKey}
         onClose={vi.fn()}
-        keyData={createdKey}
         delegatedAuthConfig={{
           ownerUserHash: 'usr-service',
           targetProjectHash: 'target-prj',
@@ -47,14 +61,27 @@ describe('ApiKeyRevealModal delegated auth snippets', () => {
       />
     );
 
-    expect(screen.getByRole('heading', { name: 'Delegation Token Created' })).toBeInTheDocument();
     expect(
-      screen.getByDisplayValue('MAGIC_LLM_DELEGATION_API_KEY=sk_public123.secret')
+      screen.getByRole('heading', { name: 'Delegation key created' })
     ).toBeInTheDocument();
     expect(
-      screen.getByDisplayValue('DELEGATED_AUTH_TRUSTED_CLIENTS=source-prj:public123')
+      screen.getByDisplayValue(
+        'MAGIC_LLM_DELEGATION_API_KEY=sk_public123.secret'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByDisplayValue(
+        'DELEGATED_AUTH_TRUSTED_CLIENTS=source-prj:public123'
+      )
     ).toBeInTheDocument();
     expect(screen.getByText('Target project: Magic LLM')).toBeInTheDocument();
-    expect(screen.getByText('Source project: Magic Worlds')).toBeInTheDocument();
+    expect(
+      screen.getByText('Source project: Magic Worlds')
+    ).toBeInTheDocument();
+  });
+
+  it('renders nothing when there is no created key', () => {
+    render(<ApiKeyRevealModal created={null} onClose={vi.fn()} />);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

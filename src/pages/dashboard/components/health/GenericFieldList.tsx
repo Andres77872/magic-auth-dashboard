@@ -91,7 +91,10 @@ function ArrayField({
   // Array of objects → nested cards (e.g. email_worker.workers).
   if (items.some((item) => isPlainObject(item))) {
     return (
-      <NestedGroup title={`${humanizeKey(fieldKey)} (${items.length})`} defaultOpen={depth < 1}>
+      <NestedGroup
+        title={`${humanizeKey(fieldKey)} (${items.length})`}
+        defaultOpen={depth < 1}
+      >
         <div className="space-y-2">
           {items.map((item, index) => {
             const obj = isPlainObject(item) ? item : { value: item };
@@ -146,11 +149,20 @@ export function GenericFieldList({
   return (
     <div className="space-y-1.5 text-sm">
       {scalars.map(([key, value]) => (
-        <FieldRow key={key} label={humanizeKey(key)} value={formatHealthValue(key, value)} />
+        <FieldRow
+          key={key}
+          label={humanizeKey(key)}
+          value={formatHealthValue(key, value)}
+        />
       ))}
 
       {arrays.map(([key, value]) => (
-        <ArrayField key={key} fieldKey={key} items={value as unknown[]} depth={depth} />
+        <ArrayField
+          key={key}
+          fieldKey={key}
+          items={value as unknown[]}
+          depth={depth}
+        />
       ))}
 
       {objects.map(([key, value]) => {

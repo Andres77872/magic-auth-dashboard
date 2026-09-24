@@ -1,225 +1,295 @@
 /**
  * OAuth admin service — provider catalog (kill switch), connections (write-only
  * encrypted credentials), per-project bindings, exact-match URL allow-lists and
- * readiness, via api.auth ``/admin/oauth``.
+ * readiness, via api.auth ``/admin/oauth`` (``src/routes/admin_oauth.py``).
  *
- * Conventions mirror ``billing.service.ts`` with one deliberate difference: EVERY
- * OAuth admin endpoint takes a JSON body (api.auth declares them all as
- * ``Body(...)``), so the ``*Form`` client variants are never used here — that also
- * keeps secrets out of URL-encoded request logs.
+ * Every OAuth admin endpoint takes a JSON body (api.auth declares them all as
+ * ``Body(...)``), which also keeps secrets out of URL-encoded request logs. Methods
+ * return payloads, not envelopes; a response without its payload key is reported as an
+ * error rather than papered over with a default.
  *
- * ``admin`` may read status and manage bindings of projects they administer; every
- * route that accepts a secret, creates a connection or flips the catalog is root-only
- * server-side. The UI guards those too, but the server remains authoritative.
+ * Reads are admin-level; every route that accepts a secret, creates or changes a
+ * connection or flips the catalog is root-only server-side. Project bindings, their
+ * URLs and readiness are scoped to projects the caller administers.
  */
 
-import { apiClient } from './api.client';
-import type { ApiResponse } from '@/types/api.types';
+import { deleteJson, getJson, postJson, putJson, seg } from './request';
+import type { PaginationResponse } from '@/types/api.types';
 import type {
-  OAuthAllowedUrlResponse,
-  OAuthBindingListResponse,
-  OAuthBindingResponse,
+  OAuthAllowedUrl,
+  OAuthBindingInfo,
   OAuthBindingUpsertRequest,
   OAuthBindingUrlCreateRequest,
   OAuthConnectionCreateRequest,
-  OAuthConnectionDeleteResponse,
+  OAuthConnectionDeleteOutcome,
+  OAuthConnectionInfo,
+  OAuthConnectionListItem,
   OAuthConnectionListParams,
-  OAuthConnectionListResponse,
-  OAuthConnectionResponse,
+  OAuthConnectionPage,
   OAuthConnectionUpdateRequest,
-  OAuthCredentialProbeResponse,
+  OAuthCredentialProbeRequest,
+  OAuthCredentialProbeResult,
   OAuthCredentialsRequest,
-  OAuthCredentialsStatusResponse,
-  OAuthProjectReadinessResponse,
+  OAuthCredentialsStatus,
+  OAuthProjectReadiness,
+  OAuthProjectReadinessEntry,
+  OAuthProviderCatalog,
+  OAuthProviderCatalogEntry,
   OAuthProviderCatalogUpdateRequest,
-  OAuthProviderUpdateResponse,
-  OAuthProvidersResponse,
 } from '@/types/oauth.types';
 
 const BASE = '/admin/oauth';
 
-function cleanParams<T extends object>(params?: T): Record<string, string | number> {
-  const out: Record<string, string | number> = {};
-  Object.entries(params ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-      out[key] = value as string | number;
-    }
-  });
-  return out;
+function unexpected(what: string): Error {
+  return new Error(`The ${what} response was not in the expected format.`);
 }
 
-/** ``connection_key`` and allow-list ids are free-form slugs, so they are encoded. */
-function segment(value: string): string {
-  return encodeURIComponent(value);
+function requireValue<T>(value: T | null | undefined, what: string): T {
+  if (value === null || value === undefined) throw unexpected(what);
+  return value;
 }
+
+function requireList<T>(value: T[] | null | undefined, what: string): T[] {
+  if (!Array.isArray(value)) throw unexpected(what);
+  return value;
+}
+
+function requireFlag(value: boolean | null | undefined, what: string): boolean {
+  if (typeof value !== 'boolean') throw unexpected(what);
+  return value;
+}
+
+const connectionPath = (connectionHash: string): string =>
+  `${BASE}/connections/${seg(connectionHash)}`;
+const bindingPath = (projectHash: string, connectionKey: string): string =>
+  `${BASE}/projects/${seg(projectHash)}/bindings/${seg(connectionKey)}`;
 
 class OAuthService {
   // --- provider catalog (root writes; the global kill switch) --------------------------
-  async listProviders(): Promise<OAuthProvidersResponse> {
-    const res = await apiClient.get<OAuthProvidersResponse>(`${BASE}/providers`);
-    return res as unknown as OAuthProvidersResponse;
+
+  /** ``GET /providers`` (admin). */
+  async listProviders(): Promise<OAuthProviderCatalog> {
+    const res = await getJson<{
+      oauth_enabled?: boolean;
+      providers?: OAuthProviderCatalogEntry[];
+    }>(`${BASE}/providers`);
+    return {
+      oauth_enabled: requireFlag(res.oauth_enabled, 'OAuth provider catalog'),
+      providers: requireList(res.providers, 'OAuth provider catalog'),
+    };
   }
 
+  /**
+   * ``PUT /providers/{type}`` (root). The response echoes the raw catalog row rather
+   * than the catalog DTO, so callers refetch the catalog instead of reading it.
+   */
   async updateProvider(
     providerType: string,
-    data: OAuthProviderCatalogUpdateRequest,
-  ): Promise<OAuthProviderUpdateResponse> {
-    // `provider` is optional here, so the envelope is already assignable — no cast.
-    return apiClient.put<OAuthProviderUpdateResponse>(
-      `${BASE}/providers/${segment(providerType)}`,
-      data,
-    );
+    data: OAuthProviderCatalogUpdateRequest
+  ): Promise<void> {
+    await putJson(`${BASE}/providers/${seg(providerType)}`, data);
   }
 
   // --- connections ---------------------------------------------------------------------
-  async listConnections(params: OAuthConnectionListParams = {}): Promise<OAuthConnectionListResponse> {
-    const res = await apiClient.get<OAuthConnectionListResponse>(
+
+  /** ``GET /connections`` (admin; admins only see shared connections and their projects'). */
+  async listConnections(
+    params: OAuthConnectionListParams = {}
+  ): Promise<OAuthConnectionPage> {
+    const res = await getJson<{
+      connections?: OAuthConnectionListItem[];
+      pagination?: PaginationResponse;
+    }>(`${BASE}/connections`, {
+      provider_type: params.provider_type,
+      status: params.status,
+      search: params.search?.trim(),
+      limit: params.limit,
+      offset: params.offset,
+    });
+    return {
+      connections: requireList(res.connections, 'OAuth connections'),
+      pagination: requireValue(res.pagination, 'OAuth connections'),
+    };
+  }
+
+  /** ``POST /connections`` (root). The connection is created as ``draft`` — credentials come next. */
+  async createConnection(
+    data: OAuthConnectionCreateRequest
+  ): Promise<OAuthConnectionInfo> {
+    const res = await postJson<{ connection?: OAuthConnectionInfo }>(
       `${BASE}/connections`,
-      cleanParams(params),
+      data
     );
-    return res as unknown as OAuthConnectionListResponse;
+    return requireValue(res.connection, 'OAuth connection');
   }
 
-  /** Root only. The connection is created as ``draft`` — credentials come next. */
-  async createConnection(data: OAuthConnectionCreateRequest): Promise<OAuthConnectionResponse> {
-    const res = await apiClient.post<OAuthConnectionResponse>(`${BASE}/connections`, data);
-    return res as unknown as OAuthConnectionResponse;
+  /** ``GET /connections/{hash}`` (admin). ``403`` for another project's connection. */
+  async getConnection(connectionHash: string): Promise<OAuthConnectionInfo> {
+    const res = await getJson<{ connection?: OAuthConnectionInfo }>(
+      connectionPath(connectionHash)
+    );
+    return requireValue(res.connection, 'OAuth connection');
   }
 
-  async getConnection(connectionHash: string): Promise<OAuthConnectionResponse> {
-    const res = await apiClient.get<OAuthConnectionResponse>(`${BASE}/connections/${connectionHash}`);
-    return res as unknown as OAuthConnectionResponse;
-  }
-
-  /** Root only. Namespace-affecting fields are rejected once identities are linked. */
+  /** ``PUT /connections/{hash}`` (root). ``409`` when a locked identity namespace would move. */
   async updateConnection(
     connectionHash: string,
-    data: OAuthConnectionUpdateRequest,
-  ): Promise<OAuthConnectionResponse> {
-    const res = await apiClient.put<OAuthConnectionResponse>(
-      `${BASE}/connections/${connectionHash}`,
-      data,
+    data: OAuthConnectionUpdateRequest
+  ): Promise<OAuthConnectionInfo> {
+    const res = await putJson<{ connection?: OAuthConnectionInfo }>(
+      connectionPath(connectionHash),
+      data
     );
-    return res as unknown as OAuthConnectionResponse;
+    return requireValue(res.connection, 'OAuth connection');
   }
 
-  async activateConnection(connectionHash: string): Promise<OAuthConnectionResponse> {
-    const res = await apiClient.post<OAuthConnectionResponse>(
-      `${BASE}/connections/${connectionHash}/activate`,
-      {},
+  /** ``POST /connections/{hash}/activate`` (root, no body). ``400`` until credentials are active. */
+  async activateConnection(
+    connectionHash: string
+  ): Promise<OAuthConnectionInfo> {
+    const res = await postJson<{ connection?: OAuthConnectionInfo }>(
+      `${connectionPath(connectionHash)}/activate`
     );
-    return res as unknown as OAuthConnectionResponse;
+    return requireValue(res.connection, 'OAuth connection');
   }
 
-  async disableConnection(connectionHash: string): Promise<OAuthConnectionResponse> {
-    const res = await apiClient.post<OAuthConnectionResponse>(
-      `${BASE}/connections/${connectionHash}/disable`,
-      {},
+  /** ``POST /connections/{hash}/disable`` (root, no body). Credentials and bindings are kept. */
+  async disableConnection(
+    connectionHash: string
+  ): Promise<OAuthConnectionInfo> {
+    const res = await postJson<{ connection?: OAuthConnectionInfo }>(
+      `${connectionPath(connectionHash)}/disable`
     );
-    return res as unknown as OAuthConnectionResponse;
+    return requireValue(res.connection, 'OAuth connection');
   }
 
-  async deleteConnection(connectionHash: string): Promise<OAuthConnectionDeleteResponse> {
-    const res = await apiClient.delete<OAuthConnectionDeleteResponse>(
-      `${BASE}/connections/${connectionHash}`,
+  /**
+   * ``DELETE /connections/{hash}`` (root). ``409`` while any project binding uses it.
+   * The backend itself defaults the outcome to ``deleted``.
+   */
+  async deleteConnection(
+    connectionHash: string
+  ): Promise<OAuthConnectionDeleteOutcome> {
+    const res = await deleteJson<{ outcome?: string }>(
+      connectionPath(connectionHash)
     );
-    return res as unknown as OAuthConnectionDeleteResponse;
+    return res.outcome === 'archived' ? 'archived' : 'deleted';
   }
 
-  // --- credentials (root-gated, write-only; JSON so secrets stay out of form logs) -----
-  async getCredentials(connectionHash: string): Promise<OAuthCredentialsStatusResponse> {
-    const res = await apiClient.get<OAuthCredentialsStatusResponse>(
-      `${BASE}/connections/${connectionHash}/credentials`,
-    );
-    return res as unknown as OAuthCredentialsStatusResponse;
-  }
+  // --- credentials (root, write-only; JSON so secrets stay out of form logs) -----------
 
-  /** Set or rotate. The server never echoes the value back — only a fingerprint. */
+  /** ``PUT /connections/{hash}/credentials``. The server never echoes the value — only a fingerprint. */
   async setCredentials(
     connectionHash: string,
-    data: OAuthCredentialsRequest,
-  ): Promise<OAuthCredentialsStatusResponse> {
-    const res = await apiClient.put<OAuthCredentialsStatusResponse>(
-      `${BASE}/connections/${connectionHash}/credentials`,
-      data,
+    data: OAuthCredentialsRequest
+  ): Promise<OAuthCredentialsStatus> {
+    const res = await putJson<{ credentials?: OAuthCredentialsStatus }>(
+      `${connectionPath(connectionHash)}/credentials`,
+      data
     );
-    return res as unknown as OAuthCredentialsStatusResponse;
+    return requireValue(res.credentials, 'OAuth credentials');
   }
 
-  /** Non-persisting probe: adapter validation plus, for OIDC, a discovery fetch. */
+  /**
+   * ``POST /connections/{hash}/credentials/test``: validates the STORED configuration and
+   * fingerprints a candidate secret without saving anything. The body is required, so an
+   * empty probe still sends ``{}``.
+   */
   async testCredentials(
     connectionHash: string,
-    data: OAuthCredentialsRequest,
-  ): Promise<OAuthCredentialProbeResponse> {
-    const res = await apiClient.post<OAuthCredentialProbeResponse>(
-      `${BASE}/connections/${connectionHash}/credentials/test`,
-      data,
+    data: OAuthCredentialProbeRequest = {}
+  ): Promise<OAuthCredentialProbeResult> {
+    const res = await postJson<{ result?: OAuthCredentialProbeResult }>(
+      `${connectionPath(connectionHash)}/credentials/test`,
+      { client_secret: data.client_secret }
     );
-    return res as unknown as OAuthCredentialProbeResponse;
+    return requireValue(res.result, 'OAuth credential test');
   }
 
   // --- bindings ------------------------------------------------------------------------
-  async listConnectionBindings(connectionHash: string): Promise<OAuthBindingListResponse> {
-    const res = await apiClient.get<OAuthBindingListResponse>(
-      `${BASE}/connections/${connectionHash}/bindings`,
+
+  /** ``GET /connections/{hash}/bindings`` (admin; admins only see their projects' bindings). */
+  async listConnectionBindings(
+    connectionHash: string
+  ): Promise<OAuthBindingInfo[]> {
+    const res = await getJson<{ bindings?: OAuthBindingInfo[] }>(
+      `${connectionPath(connectionHash)}/bindings`
     );
-    return res as unknown as OAuthBindingListResponse;
+    return requireList(res.bindings, 'OAuth bindings');
   }
 
-  async listProjectBindings(projectHash: string): Promise<OAuthBindingListResponse> {
-    const res = await apiClient.get<OAuthBindingListResponse>(`${BASE}/projects/${projectHash}/bindings`);
-    return res as unknown as OAuthBindingListResponse;
+  /** ``GET /projects/{hash}/bindings`` (root or an admin of the project). */
+  async listProjectBindings(projectHash: string): Promise<OAuthBindingInfo[]> {
+    const res = await getJson<{ bindings?: OAuthBindingInfo[] }>(
+      `${BASE}/projects/${seg(projectHash)}/bindings`
+    );
+    return requireList(res.bindings, 'OAuth bindings');
   }
 
-  /** Creates or updates the binding stored under ``connection_key`` for this project. */
+  /**
+   * ``PUT /projects/{hash}/bindings/{key}``: creates the binding, or UPDATES the one already
+   * stored under that key (re-pointing it at ``connection_hash``). ``409`` when the
+   * connection is already bound to the project under another key.
+   */
   async upsertBinding(
     projectHash: string,
     connectionKey: string,
-    data: OAuthBindingUpsertRequest,
-  ): Promise<OAuthBindingResponse> {
-    const res = await apiClient.put<OAuthBindingResponse>(
-      `${BASE}/projects/${projectHash}/bindings/${segment(connectionKey)}`,
-      data,
+    data: OAuthBindingUpsertRequest
+  ): Promise<OAuthBindingInfo> {
+    const res = await putJson<{ binding?: OAuthBindingInfo }>(
+      bindingPath(projectHash, connectionKey),
+      data
     );
-    return res as unknown as OAuthBindingResponse;
+    return requireValue(res.binding, 'OAuth binding');
   }
 
-  async deleteBinding(projectHash: string, connectionKey: string): Promise<ApiResponse<void>> {
-    return apiClient.delete<void>(
-      `${BASE}/projects/${projectHash}/bindings/${segment(connectionKey)}`,
-    );
+  /** ``DELETE /projects/{hash}/bindings/{key}``: removes the binding and its URLs; the connection stays. */
+  async deleteBinding(
+    projectHash: string,
+    connectionKey: string
+  ): Promise<void> {
+    await deleteJson(bindingPath(projectHash, connectionKey));
   }
 
   // --- allow-listed URLs (one row per URL; matching is exact string equality) ----------
+
+  /** ``POST .../urls``. Adding a URL that is already listed returns the existing row. */
   async addBindingUrl(
     projectHash: string,
     connectionKey: string,
-    data: OAuthBindingUrlCreateRequest,
-  ): Promise<OAuthAllowedUrlResponse> {
-    const res = await apiClient.post<OAuthAllowedUrlResponse>(
-      `${BASE}/projects/${projectHash}/bindings/${segment(connectionKey)}/urls`,
-      data,
+    data: OAuthBindingUrlCreateRequest
+  ): Promise<OAuthAllowedUrl> {
+    const res = await postJson<{ url?: OAuthAllowedUrl }>(
+      `${bindingPath(projectHash, connectionKey)}/urls`,
+      data
     );
-    return res as unknown as OAuthAllowedUrlResponse;
+    return requireValue(res.url, 'OAuth allowed URL');
   }
 
   async removeBindingUrl(
     projectHash: string,
     connectionKey: string,
-    urlId: string,
-  ): Promise<ApiResponse<void>> {
-    return apiClient.delete<void>(
-      `${BASE}/projects/${projectHash}/bindings/${segment(connectionKey)}/urls/${segment(urlId)}`,
+    urlId: string
+  ): Promise<void> {
+    await deleteJson(
+      `${bindingPath(projectHash, connectionKey)}/urls/${seg(urlId)}`
     );
   }
 
   // --- readiness -----------------------------------------------------------------------
-  /** Single answer to "why is the sign-in button not working?" for one project. */
-  async getProjectReadiness(projectHash: string): Promise<OAuthProjectReadinessResponse> {
-    const res = await apiClient.get<OAuthProjectReadinessResponse>(
-      `${BASE}/projects/${projectHash}/readiness`,
-    );
-    return res as unknown as OAuthProjectReadinessResponse;
+
+  /** ``GET /projects/{hash}/readiness``: per-binding checks plus the deployment switch. */
+  async getProjectReadiness(
+    projectHash: string
+  ): Promise<OAuthProjectReadiness> {
+    const res = await getJson<{
+      oauth_enabled?: boolean;
+      providers?: OAuthProjectReadinessEntry[];
+    }>(`${BASE}/projects/${seg(projectHash)}/readiness`);
+    return {
+      oauth_enabled: requireFlag(res.oauth_enabled, 'OAuth readiness'),
+      providers: requireList(res.providers, 'OAuth readiness'),
+    };
   }
 }
 

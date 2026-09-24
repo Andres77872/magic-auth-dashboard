@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   isDefaultUserGroup,
+  isDefaultProjectGroup,
+  isProjectAdminGroupName,
   getDefaultGroupRole,
   getDefaultGroupsForProject,
   DEFAULT_GROUP_ROLES,
@@ -43,6 +45,37 @@ describe('isDefaultUserGroup', () => {
   it('with projectId: rejects partial matches', () => {
     expect(isDefaultUserGroup('admin_1234', '123')).toBe(false);
     expect(isDefaultUserGroup('admin_12', '123')).toBe(false);
+  });
+
+  it('with projectId: treats regex characters in the id literally', () => {
+    expect(isDefaultUserGroup('admin_a.c', 'a.c')).toBe(true);
+    expect(isDefaultUserGroup('admin_abc', 'a.c')).toBe(false);
+  });
+});
+
+describe('isDefaultProjectGroup', () => {
+  it('matches the auto-created default_<project id> project group', () => {
+    expect(isDefaultProjectGroup('default_7f3c')).toBe(true);
+  });
+
+  it('rejects other names', () => {
+    expect(isDefaultProjectGroup('default_')).toBe(false);
+    expect(isDefaultProjectGroup('mobile-apps')).toBe(false);
+    expect(isDefaultProjectGroup('my_default_x')).toBe(false);
+  });
+});
+
+describe('isProjectAdminGroupName', () => {
+  it('matches admin_ names the way the backend collation compares them', () => {
+    expect(isProjectAdminGroupName('admin_123')).toBe(true);
+    expect(isProjectAdminGroupName('Admin_ops')).toBe(true);
+    expect(isProjectAdminGroupName('  ÁDMIN_ops')).toBe(true);
+  });
+
+  it('rejects names that merely contain admin', () => {
+    expect(isProjectAdminGroupName('admins')).toBe(false);
+    expect(isProjectAdminGroupName('site_admin_x')).toBe(false);
+    expect(isProjectAdminGroupName(null)).toBe(false);
   });
 });
 

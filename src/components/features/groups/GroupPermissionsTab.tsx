@@ -1,203 +1,96 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useMemo, useState } from 'react';
+import { Lock, Plus, Trash2 } from 'lucide-react';
+import { DataView, type DataViewColumn } from '@/components/common/DataView';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  useGroupPermissionGroups,
+  usePermissionGroupCatalog,
+} from '@/hooks/useGroupDetails';
+import { useToast } from '@/hooks/useToast';
+import { formatCount, formatNumber, pluralize } from '@/utils/formatters';
+import type { AssignedPermissionGroup } from '@/types/permission-assignments.types';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ConfirmDialog, EmptyState, DataView, CopyableId } from '@/components/common';
-import type { DataViewColumn } from '@/components/common';
-import { Lock, Plus, Trash2, Info, MoreHorizontal } from 'lucide-react';
-import { permissionAssignmentsService, globalRolesService } from '@/services';
-import type { PermissionGroupAssignment } from '@/types/permission-assignments.types';
-import type { GlobalPermissionGroup } from '@/types/global-roles.types';
-import { useToast } from '@/hooks';
+  GroupPickerDialog,
+  type PickerFailure,
+  type PickerItem,
+} from './GroupPickerDialog';
+import { GroupSectionHeader } from './GroupSectionHeader';
+import { TimeCell } from './GroupCells';
 
-interface GroupPermissionsTabProps {
+export interface GroupPermissionsTabProps {
   groupHash: string;
   groupName: string;
 }
 
-export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupHash, groupName }) => {
-  const [assignedGroups, setAssignedGroups] = useState<PermissionGroupAssignment[]>([]);
-  const [availableGroups, setAvailableGroups] = useState<GlobalPermissionGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState<PermissionGroupAssignment | null>(null);
-  const [isRemoving, setIsRemoving] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
-  const [searchTerm, setSearchTerm] = useState('');
+/**
+ * Permission groups assigned to a user group. These assignments appear in
+ * members' permission sources but are not part of their access tokens (only
+ * the global role is), which the copy states plainly.
+ */
+export function GroupPermissionsTab({
+  groupHash,
+  groupName,
+}: GroupPermissionsTabProps): React.JSX.Element {
   const { showToast } = useToast();
+  const { assigned, isLoading, isRefreshing, error, refetch, assign, remove } =
+    useGroupPermissionGroups(groupHash);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [toRemove, setToRemove] = useState<AssignedPermissionGroup | null>(
+    null
+  );
+  const [isRemoving, setIsRemoving] = useState(false);
 
-  // Fetch assigned permission groups
-  // GET /permissions/admin/user-groups/{group_hash}/permission-groups
-  const fetchAssignedGroups = async () => {
+  const handleRemove = async (
+    target: AssignedPermissionGroup
+  ): Promise<void> => {
+    setIsRemoving(true);
     try {
-      setLoading(true);
-      const response: any = await permissionAssignmentsService.getUserGroupPermissionGroups(groupHash);
-      
-      // API returns permission_groups array directly in response
-      if (response.permission_groups) {
-        setAssignedGroups(response.permission_groups);
-      } else if (response.success === false) {
-        throw new Error(response.message || 'Failed to fetch permission groups');
-      } else {
-        setAssignedGroups([]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch assigned permission groups:', error);
-      showToast('Failed to load permission groups', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch all available permission groups
-  // GET /roles/permission-groups
-  const fetchAvailableGroups = async () => {
-    try {
-      const response: any = await globalRolesService.getPermissionGroups();
-      
-      // API returns permission_groups array directly in response
-      const permissionGroupsData = response.permission_groups || [];
-      
-      if (response.success !== false) {
-        // Filter out already assigned groups
-        const assignedHashes = new Set(assignedGroups.map((g: PermissionGroupAssignment) => g.group_hash));
-        const available = permissionGroupsData.filter((g: GlobalPermissionGroup) => !assignedHashes.has(g.group_hash));
-        setAvailableGroups(available);
-      }
-    } catch (error) {
-      console.error('Failed to fetch available permission groups:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchAssignedGroups();
-  }, [groupHash]);
-
-  useEffect(() => {
-    if (showAddModal) {
-      fetchAvailableGroups();
-    }
-  }, [showAddModal, assignedGroups]);
-
-  // Handle bulk assignment
-  const handleBulkAssign = async () => {
-    if (selectedGroups.length === 0) {
-      showToast('Please select at least one permission group', 'warning');
-      return;
-    }
-
-    try {
-      setIsAssigning(true);
-      const response = await permissionAssignmentsService.bulkAssignPermissionGroupsToUserGroup(
-        groupHash,
-        selectedGroups
+      await remove(target.group_hash);
+      showToast(
+        `Removed ${target.group_display_name || target.group_name} from ${groupName}.`,
+        'success'
       );
-
-      if (response.success) {
-        showToast(`Successfully assigned ${selectedGroups.length} permission group(s)`, 'success');
-        setShowAddModal(false);
-        setSelectedGroups([]);
-        await fetchAssignedGroups();
-      }
-    } catch (error) {
-      console.error('Failed to assign permission groups:', error);
-      showToast('Failed to assign permission groups', 'error');
-    } finally {
-      setIsAssigning(false);
-    }
-  };
-
-  // Handle remove permission group
-  const handleRemove = async () => {
-    if (!confirmRemove) return;
-
-    try {
-      setIsRemoving(true);
-      const response = await permissionAssignmentsService.removePermissionGroupFromUserGroup(
-        groupHash,
-        confirmRemove.group_hash
+      setToRemove(null);
+      void refetch();
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : 'The permission group could not be removed.',
+        'error'
       );
-
-      if (response.success) {
-        showToast('Permission group removed successfully', 'success');
-        setConfirmRemove(null);
-        await fetchAssignedGroups();
-      }
-    } catch (error) {
-      console.error('Failed to remove permission group:', error);
-      showToast('Failed to remove permission group', 'error');
     } finally {
       setIsRemoving(false);
     }
   };
 
-  // Toggle permission group selection
-  const toggleGroupSelection = (groupHash: string) => {
-    setSelectedGroups(prev =>
-      prev.includes(groupHash)
-        ? prev.filter(h => h !== groupHash)
-        : [...prev, groupHash]
-    );
-  };
-
-  // Group permission groups by category
-  const groupedByCategory = availableGroups.reduce((acc, group) => {
-    const category = group.group_category || 'Other';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(group);
-    return acc;
-  }, {} as Record<string, GlobalPermissionGroup[]>);
-
-  // Filter assigned groups based on search term
-  const filteredAssignedGroups = assignedGroups.filter(assignment => {
-    if (!searchTerm.trim()) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      (assignment.group_display_name || '').toLowerCase().includes(search) ||
-      (assignment.group_name || '').toLowerCase().includes(search)
-    );
-  });
-
-  // DataView columns for table view
-  const columns: DataViewColumn<PermissionGroupAssignment>[] = [
+  const columns: DataViewColumn<AssignedPermissionGroup>[] = [
     {
       key: 'group_display_name',
-      header: 'Permission Group',
-      sortable: true,
-      render: (_, assignment) => (
-        <div className="flex items-center gap-2">
-          <Lock className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">
-            {assignment.group_display_name || assignment.group_name}
+      header: 'Permission group',
+      render: (_value, pg) => (
+        <div className="min-w-0">
+          <span className="block truncate text-[13px] font-medium text-foreground">
+            {pg.group_display_name || pg.group_name}
+          </span>
+          <span className="block truncate font-mono text-xs text-muted-foreground">
+            {pg.group_name}
           </span>
         </div>
       ),
     },
     {
-      key: 'group_hash',
-      header: 'Hash',
-      width: '150px',
+      key: 'group_category',
+      header: 'Category',
+      width: '160px',
       hideOnMobile: true,
-      render: (value) => (
-        <CopyableId id={String(value)} />
+      render: (_value, pg) => (
+        <Badge variant="secondary" size="sm">
+          {pg.group_category || 'Uncategorised'}
+        </Badge>
       ),
     },
     {
@@ -205,234 +98,195 @@ export const GroupPermissionsTab: React.FC<GroupPermissionsTabProps> = ({ groupH
       header: 'Assigned',
       width: '140px',
       hideOnMobile: true,
-      render: (value) => (
-        <span className="text-sm text-muted-foreground">
-          {value ? new Date(value as string).toLocaleDateString() : '—'}
-        </span>
-      ),
+      render: (_value, pg) => <TimeCell value={pg.assigned_at} />,
     },
     {
-      key: 'assigned_by',
-      header: 'Assigned By',
-      width: '120px',
-      hideOnMobile: true,
-      render: (value) => (
-        <span className="text-sm text-muted-foreground">{value || '—'}</span>
-      ),
-    },
-    {
-      key: 'group_name',
-      header: '',
-      width: '60px',
-      align: 'center',
-      render: (_, assignment) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">Actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmRemove(assignment);
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Remove
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      key: 'group_hash',
+      header: 'Actions',
+      width: '72px',
+      align: 'right',
+      render: (_value, pg) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => setToRemove(pg)}
+          aria-label={`Remove ${pg.group_display_name || pg.group_name} from ${groupName}`}
+          title="Remove from group"
+        >
+          <Trash2 aria-hidden="true" />
+        </Button>
       ),
     },
   ];
 
-  // Card renderer for grid view
-  const renderAssignmentCard = (assignment: PermissionGroupAssignment) => (
-    <Card>
-      <CardContent className="pt-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <Lock className="h-5 w-5 text-primary mt-0.5" aria-hidden="true" />
-            <div className="space-y-1">
-              <h4 className="font-medium">{assignment.group_display_name || assignment.group_name}</h4>
-              <CopyableId id={assignment.group_hash} />
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              setConfirmRemove(assignment);
-            }}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            aria-label="Remove permission group"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </div>
-        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-          <p>Assigned: {new Date(assignment.assigned_at).toLocaleDateString()}</p>
-          {assignment.assigned_by && (
-            <p>By: {assignment.assigned_by}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+  const assignButton = (
+    variant: 'primary' | 'secondary'
+  ): React.JSX.Element => (
+    <Button
+      variant={variant}
+      size="md"
+      leftIcon={<Plus aria-hidden="true" />}
+      onClick={() => setIsAssigning(true)}
+    >
+      Assign permission groups
+    </Button>
   );
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle>Permission Groups</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Manage permission groups assigned to <strong>{groupName}</strong>
-            </p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DataView<PermissionGroupAssignment>
-            data={filteredAssignedGroups}
-            columns={columns}
-            keyExtractor={(item) => item.group_hash}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            showViewToggle={true}
-            defaultViewMode="grid"
-            renderCard={renderAssignmentCard}
-            gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
-            showSearch={true}
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search permission groups..."
-            toolbarActions={
-              <Button onClick={() => setShowAddModal(true)}>
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Assign Permission Groups
-              </Button>
-            }
-            isLoading={loading}
-            emptyMessage="No Permission Groups Assigned"
-            emptyDescription="This user group doesn't have any permission groups assigned. Click 'Assign Permission Groups' to add some."
-            emptyIcon={<Lock className="h-10 w-10" />}
-            emptyAction={
-              <Button onClick={() => setShowAddModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Assign Permission Groups
-              </Button>
-            }
-          />
-        </CardContent>
-      </Card>
+    <section aria-label="Permission groups">
+      <GroupSectionHeader
+        title="Permission groups"
+        description="Listed in members’ permission sources. Access tokens only carry the permissions of each user’s global role."
+        actions={assignButton('primary')}
+      />
 
-      {/* Add Permission Groups Modal */}
-      <Dialog open={showAddModal} onOpenChange={(open) => !isAssigning && !open && setShowAddModal(false)}>
-        <DialogContent size="lg">
-          <DialogHeader>
-            <DialogTitle>Assign Permission Groups</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {availableGroups.length === 0 ? (
-              <EmptyState
-                icon={<Info className="h-10 w-10" aria-hidden="true" />}
-                title="No Available Permission Groups"
-                description="All permission groups have been assigned to this user group."
-              />
-            ) : (
-              <>
-                <div className="flex items-center justify-between">
-                  <Badge variant="info">
-                    {selectedGroups.length} selected
-                  </Badge>
-                </div>
-
-                <div className="max-h-[400px] overflow-y-auto space-y-4">
-                  {Object.entries(groupedByCategory).map(([category, groups]) => (
-                    <div key={category} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{category}</h3>
-                        <Badge variant="secondary">{groups.length}</Badge>
-                      </div>
-                      <div className="space-y-2">
-                        {groups.map(group => (
-                          <div
-                            key={group.group_hash}
-                            className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
-                              selectedGroups.includes(group.group_hash)
-                                ? 'border-primary bg-primary/5'
-                                : 'hover:bg-accent/50'
-                            }`}
-                            onClick={() => toggleGroupSelection(group.group_hash)}
-                          >
-                            <Checkbox
-                              checked={selectedGroups.includes(group.group_hash)}
-                              onCheckedChange={() => toggleGroupSelection(group.group_hash)}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium">{group.group_display_name}</h4>
-                              <p className="text-sm text-muted-foreground">{group.group_name}</p>
-                              {group.group_description && (
-                                <p className="text-sm text-muted-foreground mt-1 truncate">
-                                  {group.group_description}
-                                </p>
-                              )}
-                            </div>
-                            <Badge variant="secondary">{group.group_category}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowAddModal(false)}
-              disabled={isAssigning}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleBulkAssign}
-              disabled={selectedGroups.length === 0 || isAssigning}
-              loading={isAssigning}
-            >
-              Assign {selectedGroups.length > 0 ? `(${selectedGroups.length})` : ''}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Remove Confirmation Dialog */}
-      {confirmRemove && (
-        <ConfirmDialog
-          isOpen={true}
-          title="Remove Permission Group"
-          message={`Are you sure you want to remove the permission group "${confirmRemove.group_display_name || confirmRemove.group_name}" from this user group?`}
-          confirmText="Remove"
-          cancelText="Cancel"
-          onConfirm={handleRemove}
-          onClose={() => setConfirmRemove(null)}
-          isLoading={isRemoving}
+      {error && assigned.length === 0 && !isLoading ? (
+        <ErrorState
+          retryLabel="Try again"
+          title="Permission groups couldn't be loaded"
+          message={error}
+          onRetry={() => void refetch()}
+          isRetrying={isRefreshing}
+          variant="inline"
+          size="sm"
+        />
+      ) : (
+        <DataView<AssignedPermissionGroup>
+          data={assigned}
+          columns={columns}
+          keyExtractor={(pg) => pg.group_hash}
+          isLoading={isLoading}
+          skeletonRows={3}
+          emptyIcon={<Lock className="h-8 w-8" />}
+          emptyMessage="No permission groups assigned"
+          emptyDescription="Assigned permission groups are listed as a source for every member."
+          emptyAction={assignButton('secondary')}
+          caption={`Permission groups assigned to ${groupName}`}
         />
       )}
-    </div>
+
+      {isAssigning && (
+        <AssignPermissionGroupsDialog
+          groupName={groupName}
+          assignedHashes={assigned.map((pg) => pg.group_hash)}
+          onClose={() => setIsAssigning(false)}
+          onAssign={async (hashes) => {
+            const result = await assign(hashes);
+            const failures = result.results.filter((row) => !row.success);
+            if (result.success_count > 0) {
+              showToast(
+                failures.length > 0
+                  ? `Assigned ${formatNumber(result.success_count)} of ${formatCount(result.total_count, 'permission group')}.`
+                  : `Assigned ${formatCount(result.success_count, 'permission group')} to ${groupName}.`,
+                failures.length > 0 ? 'warning' : 'success'
+              );
+              void refetch();
+            }
+            return failures.map((row) => ({
+              id: row.permission_group_hash,
+              label: row.permission_group_name ?? row.permission_group_hash,
+              message: row.error ?? 'Not assigned.',
+            }));
+          }}
+        />
+      )}
+
+      <ConfirmDialog
+        isOpen={toRemove !== null}
+        onClose={() => setToRemove(null)}
+        onConfirm={() => {
+          if (toRemove) void handleRemove(toRemove);
+        }}
+        title="Remove permission group"
+        message={
+          toRemove ? (
+            <>
+              <strong className="text-foreground">
+                {toRemove.group_display_name || toRemove.group_name}
+              </strong>{' '}
+              will no longer be listed as a permission source for members of{' '}
+              {groupName}.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmText="Remove"
+        variant="danger"
+        isLoading={isRemoving}
+      />
+    </section>
   );
-};
+}
+
+interface AssignPermissionGroupsDialogProps {
+  groupName: string;
+  assignedHashes: string[];
+  onClose: () => void;
+  onAssign: (hashes: string[]) => Promise<PickerFailure[]>;
+}
+
+function AssignPermissionGroupsDialog({
+  groupName,
+  assignedHashes,
+  onClose,
+  onAssign,
+}: AssignPermissionGroupsDialogProps): React.JSX.Element {
+  const catalog = usePermissionGroupCatalog(true);
+  const [search, setSearch] = useState('');
+  const assigned = useMemo(() => new Set(assignedHashes), [assignedHashes]);
+
+  const term = search.trim().toLowerCase();
+  const items: PickerItem[] = catalog.permissionGroups
+    .filter(
+      (pg) =>
+        !term ||
+        pg.group_name.toLowerCase().includes(term) ||
+        (pg.group_display_name || '').toLowerCase().includes(term) ||
+        (pg.group_category || '').toLowerCase().includes(term)
+    )
+    .sort(
+      (a, b) =>
+        (a.group_category || '').localeCompare(b.group_category || '') ||
+        (a.group_display_name || a.group_name).localeCompare(
+          b.group_display_name || b.group_name
+        )
+    )
+    .map((pg) => ({
+      id: pg.group_hash,
+      label: pg.group_display_name || pg.group_name,
+      description: pg.group_description || pg.group_name,
+      meta: (
+        <Badge variant="secondary" size="sm">
+          {pg.group_category || 'Uncategorised'}
+        </Badge>
+      ),
+      disabledReason: assigned.has(pg.group_hash) ? 'Assigned' : undefined,
+    }));
+
+  return (
+    <GroupPickerDialog
+      onClose={onClose}
+      title={`Assign permission groups to ${groupName}`}
+      description="Assigned permission groups show up in members’ permission sources. They don’t change access tokens."
+      items={items}
+      isLoading={catalog.isLoading}
+      error={catalog.error}
+      onRetry={() => void catalog.refetch()}
+      searchValue={search}
+      onSearchChange={setSearch}
+      searchPlaceholder="Filter by name or category"
+      emptyMessage="No permission groups exist yet."
+      noun={['permission group', 'permission groups']}
+      confirmLabel={(count) =>
+        count === 0
+          ? 'Assign'
+          : `Assign ${formatNumber(count)} ${pluralize(count, 'permission group')}`
+      }
+      onConfirm={onAssign}
+    />
+  );
+}
 
 export default GroupPermissionsTab;
-

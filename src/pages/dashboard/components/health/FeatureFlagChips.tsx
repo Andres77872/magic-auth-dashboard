@@ -28,7 +28,9 @@ export function FeatureFlagChips({
           key={key}
           variant="outline"
           size="sm"
-          className={cn(enabled ? toneClasses('success') : toneClasses('muted'))}
+          className={cn(
+            enabled ? toneClasses('success') : toneClasses('muted')
+          )}
         >
           {enabled ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
           {humanizeKey(key)}

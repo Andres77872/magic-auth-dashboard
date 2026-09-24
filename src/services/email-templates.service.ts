@@ -1,30 +1,41 @@
 /**
- * Email Templates service
+ * Email templates service
  *
- * ROOT-only admin API for DB-managed transactional email templates. Endpoint
- * paths/verbs are centralized here so a backend contract change is a one-file
- * fix. Admin endpoints return plain objects (cast directly), matching the rest
- * of the admin surface.
+ * ROOT-only admin API for DB-managed transactional email templates
+ * (api.auth `src/routes/email_templates.py`, prefix `/admin/email-templates`).
+ * Every route takes and returns flat JSON. The list, detail and preview
+ * responses have no `success` key; a resolved promise means success and the
+ * transport throws `ApiError` for non-2xx responses. Methods return payloads.
  */
 
-import { apiClient } from './api.client';
+import { deleteJson, getJson, postJson, putJson, seg } from './request';
 import type {
+  EmailTemplateCreateInput,
+  EmailTemplateCreateResult,
   EmailTemplateDetail,
   EmailTemplateDraft,
   EmailTemplatePreview,
   EmailTemplateSummary,
   EmailTemplateVersion,
+  RawCreateEmailTemplateResponse,
+  RawDisableEmailTemplateResponse,
   RawEmailTemplateDetail,
+  RawEmailTemplateParts,
   RawEmailTemplatePreviewResponse,
   RawEmailTemplateSummary,
   RawEmailTemplateVersion,
   RawEmailTemplatesListResponse,
+  RawRollbackEmailTemplateResponse,
   RawSendTestResponse,
   RawUpdateEmailTemplateResponse,
   SendTestResult,
 } from '@/types/email-templates.types';
 
 const BASE = '/admin/email-templates';
+
+function templatePath(templateCode: string, suffix = ''): string {
+  return `${BASE}/${seg(templateCode)}${suffix}`;
+}
 
 function mapSummary(raw: RawEmailTemplateSummary): EmailTemplateSummary {
   return {
@@ -34,8 +45,13 @@ function mapSummary(raw: RawEmailTemplateSummary): EmailTemplateSummary {
     source: raw.source,
     version: raw.version,
     isCustomized: raw.is_customized,
-    requiredVariables: raw.required_variables ?? [],
-    allowedVariables: raw.allowed_variables ?? [],
+    isEnabled: raw.is_enabled,
+    isDynamic: raw.is_dynamic,
+    revision: raw.revision,
+    disabledAt: raw.disabled_at,
+    disabledBy: raw.disabled_by,
+    requiredVariables: raw.required_variables,
+    allowedVariables: raw.allowed_variables,
   };
 }
 
@@ -48,25 +64,25 @@ function mapVersion(raw: RawEmailTemplateVersion): EmailTemplateVersion {
   };
 }
 
+function mapParts(raw: RawEmailTemplateParts): EmailTemplateDraft {
+  return {
+    subjectTemplate: raw.subject_template,
+    htmlTemplate: raw.html_template,
+    textTemplate: raw.text_template,
+  };
+}
+
 function mapDetail(raw: RawEmailTemplateDetail): EmailTemplateDetail {
   return {
     ...mapSummary(raw),
     htmlTemplate: raw.html_template,
     textTemplate: raw.text_template,
-    default: {
-      subjectTemplate: raw.default?.subject_template ?? '',
-      htmlTemplate: raw.default?.html_template ?? '',
-      textTemplate: raw.default?.text_template ?? '',
-    },
-    versions: (raw.versions ?? []).map(mapVersion),
+    builtInDefault: raw.default ? mapParts(raw.default) : null,
+    versions: raw.versions.map(mapVersion),
   };
 }
 
-function draftToBody(draft: EmailTemplateDraft): {
-  subject_template: string;
-  html_template: string;
-  text_template: string;
-} {
+function draftToBody(draft: EmailTemplateDraft): RawEmailTemplateParts {
   return {
     subject_template: draft.subjectTemplate,
     html_template: draft.htmlTemplate,
@@ -75,52 +91,105 @@ function draftToBody(draft: EmailTemplateDraft): {
 }
 
 class EmailTemplatesService {
+  /** GET /admin/email-templates — every built-in and dynamic code, sorted by code. */
   async list(): Promise<EmailTemplateSummary[]> {
-    const res = await apiClient.get<RawEmailTemplatesListResponse>(BASE);
-    const data = res as unknown as RawEmailTemplatesListResponse;
-    return (data.templates ?? []).map(mapSummary);
+    const data = await getJson<RawEmailTemplatesListResponse>(BASE);
+    if (!Array.isArray(data?.templates)) {
+      throw new Error(
+        'The email templates response was not in the expected format.'
+      );
+    }
+    return data.templates.map(mapSummary);
   }
 
+  /** GET /admin/email-templates/{code} — active parts, default, variables and version history. */
   async get(templateCode: string): Promise<EmailTemplateDetail> {
-    const res = await apiClient.get<RawEmailTemplateDetail>(`${BASE}/${templateCode}`);
-    return mapDetail(res as unknown as RawEmailTemplateDetail);
+    const data = await getJson<RawEmailTemplateDetail>(
+      templatePath(templateCode)
+    );
+    if (
+      typeof data?.template_code !== 'string' ||
+      !Array.isArray(data.versions)
+    ) {
+      throw new Error(
+        'The email template response was not in the expected format.'
+      );
+    }
+    return mapDetail(data);
   }
 
-  /** Save a new active version. Returns the new version number. */
-  async update(templateCode: string, draft: EmailTemplateDraft): Promise<number | null> {
-    const res = await apiClient.put<RawUpdateEmailTemplateResponse>(
-      `${BASE}/${templateCode}`,
+  /** POST /admin/email-templates — create a dynamic template and activate its version 1. */
+  async create(
+    input: EmailTemplateCreateInput
+  ): Promise<EmailTemplateCreateResult> {
+    const data = await postJson<RawCreateEmailTemplateResponse>(BASE, {
+      template_code: input.templateCode,
+      purpose: input.purpose,
+      allowed_variables: input.allowedVariables,
+      required_variables: input.requiredVariables,
+      ...draftToBody(input),
+    });
+    return { templateCode: data.template_code, version: data.version };
+  }
+
+  /** PUT /admin/email-templates/{code} — save and activate a new version (re-enables). Returns it. */
+  async update(
+    templateCode: string,
+    draft: EmailTemplateDraft
+  ): Promise<number | null> {
+    const data = await putJson<RawUpdateEmailTemplateResponse>(
+      templatePath(templateCode),
       draftToBody(draft)
     );
-    return (res as unknown as RawUpdateEmailTemplateResponse).version ?? null;
+    return data.version;
+  }
+
+  /** DELETE /admin/email-templates/{code} — disable; the catalog entry and history are kept. */
+  async disable(templateCode: string): Promise<void> {
+    await deleteJson<RawDisableEmailTemplateResponse>(
+      templatePath(templateCode)
+    );
   }
 
   /**
-   * Render a draft (or, when `draft` is omitted, the active version) with sample
-   * data. The returned HTML is what the worker would actually send.
+   * POST /admin/email-templates/{code}/preview — render a complete draft (or,
+   * without one, the active version) with server-side sample data. The HTML is
+   * exactly what the worker would send.
    */
-  async preview(templateCode: string, draft?: EmailTemplateDraft): Promise<EmailTemplatePreview> {
-    const res = await apiClient.post<RawEmailTemplatePreviewResponse>(
-      `${BASE}/${templateCode}/preview`,
+  async preview(
+    templateCode: string,
+    draft?: EmailTemplateDraft
+  ): Promise<EmailTemplatePreview> {
+    const data = await postJson<RawEmailTemplatePreviewResponse>(
+      templatePath(templateCode, '/preview'),
       draft ? draftToBody(draft) : {}
     );
-    const data = res as unknown as RawEmailTemplatePreviewResponse;
-    return { subject: data.subject, html: data.html, text: data.text };
+    return {
+      subject: data.subject,
+      html: data.html,
+      text: data.text,
+      sampleVariables: data.sample_variables,
+    };
   }
 
-  /** Send a rendered test to the ROOT user's own verified address. */
-  async sendTest(templateCode: string, draft?: EmailTemplateDraft): Promise<SendTestResult> {
-    const res = await apiClient.post<RawSendTestResponse>(
-      `${BASE}/${templateCode}/send-test`,
+  /** POST /admin/email-templates/{code}/send-test — to the caller's own verified address only. */
+  async sendTest(
+    templateCode: string,
+    draft?: EmailTemplateDraft
+  ): Promise<SendTestResult> {
+    const data = await postJson<RawSendTestResponse>(
+      templatePath(templateCode, '/send-test'),
       draft ? draftToBody(draft) : {}
     );
-    const data = res as unknown as RawSendTestResponse;
     return { recipientMasked: data.recipient_masked, provider: data.provider };
   }
 
-  /** Re-activate a prior version. */
+  /** POST /admin/email-templates/{code}/rollback — re-activate a stored version (re-enables). */
   async rollback(templateCode: string, version: number): Promise<void> {
-    await apiClient.post(`${BASE}/${templateCode}/rollback`, { version });
+    await postJson<RawRollbackEmailTemplateResponse>(
+      templatePath(templateCode, '/rollback'),
+      { version }
+    );
   }
 }
 

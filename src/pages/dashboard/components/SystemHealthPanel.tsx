@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  RefreshCw,
-  XCircle,
-  Clock,
-  Activity,
-  Database,
-  HardDrive,
-  Gauge,
-} from 'lucide-react';
+import { RefreshCw, XCircle, Clock, Activity, HardDrive } from 'lucide-react';
 import { HealthIndicator } from './HealthIndicator';
 import {
   Card,
@@ -20,10 +12,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { statusTone, toneClasses, type StatusTone } from '@/lib/status-tone';
 import { useSystemCacheStats, useUserType } from '@/hooks';
+import type { CacheStats } from '@/hooks/dashboard/useSystemCacheStats';
 import type { SystemHealthData } from '@/types/dashboard.types';
 import {
   EmailPipelineSection,
@@ -49,11 +41,27 @@ const TONE_DOT: Record<StatusTone, string> = {
   muted: 'bg-muted-foreground',
 };
 
+const CACHE_CATEGORIES: {
+  key: keyof Omit<CacheStats, 'total_keys'>;
+  label: string;
+}[] = [
+  { key: 'sessions', label: 'Sessions' },
+  { key: 'access_checks', label: 'Access checks' },
+  { key: 'permission_checks', label: 'Permission checks' },
+  { key: 'user_types', label: 'User types' },
+  { key: 'role_checks', label: 'Role checks' },
+  { key: 'api_keys', label: 'API keys' },
+];
+
 // Core infra checks keep the existing compact HealthIndicator cards.
 const CORE_KEYS = ['database', 'redis', 'group_system'];
 // The API duplicates billing's children at the top level; hide the duplicates
 // since the same data already appears nested under `billing`.
-const IGNORED_DUPLICATE_KEYS = ['billing_provider_stripe', 'billing_webhooks', 'billing_sync'];
+const IGNORED_DUPLICATE_KEYS = [
+  'billing_provider_stripe',
+  'billing_webhooks',
+  'billing_sync',
+];
 // Keys already surfaced by a curated section (so UnknownComponentsSection skips them).
 const HANDLED_KEYS = [
   ...CORE_KEYS,
@@ -78,7 +86,7 @@ export function SystemHealthPanel({
     return <></>;
   }
 
-  const formatTimestamp = (timestamp?: string) => {
+  const formatTimestamp = (timestamp?: string): string => {
     if (!timestamp) return 'Unknown';
     try {
       return new Date(timestamp).toLocaleString();
@@ -178,7 +186,7 @@ export function SystemHealthPanel({
         {/* Component Health Indicators */}
         {isLoading && !health ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[...Array(3)].map((_, index) => (
+            {Array.from({ length: 3 }, (_, index) => index).map((index) => (
               <div key={index} className="p-4 rounded-lg border border-border">
                 <div className="flex items-center justify-between mb-3">
                   <Skeleton className="h-5 w-24" />
@@ -214,112 +222,43 @@ export function SystemHealthPanel({
           </div>
         ) : null}
 
-        {/* Cache Statistics Panel */}
+        {/* Cache contents (GET /system/cache/stats reports key counts per category) */}
         {(cacheStats || cacheLoading) && (
           <div className="pt-4 border-t border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Database className="h-4 w-4 text-info" />
-              <h4 className="text-sm font-semibold text-foreground">
-                Cache Performance
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <h4 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <HardDrive
+                  className="h-4 w-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                Cache contents
               </h4>
+              {cacheStats && (
+                <span className="font-mono text-xs text-muted-foreground">
+                  {cacheStats.total_keys.toLocaleString()} keys
+                </span>
+              )}
             </div>
-
             {cacheLoading && !cacheStats ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <Skeleton key={i} className="h-20 rounded-lg" />
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+                {Array.from({ length: 6 }, (_, i) => i).map((i) => (
+                  <Skeleton key={i} className="h-14 rounded-lg" />
                 ))}
               </div>
             ) : cacheStats ? (
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Total Keys */}
-                <div className="p-4 rounded-lg border border-border bg-muted/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <HardDrive className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      Cached Keys
-                    </span>
+              <dl className="m-0 grid grid-cols-2 gap-3 lg:grid-cols-3">
+                {CACHE_CATEGORIES.map(({ key, label }) => (
+                  <div
+                    key={key}
+                    className="rounded-lg border border-border bg-muted/30 px-3 py-2.5"
+                  >
+                    <dt className="text-xs text-muted-foreground">{label}</dt>
+                    <dd className="m-0 mt-1 text-lg font-semibold tabular-nums text-foreground">
+                      {(cacheStats[key] ?? 0).toLocaleString()}
+                    </dd>
                   </div>
-                  <p className="text-xl font-bold text-foreground">
-                    {cacheStats.total_keys?.toLocaleString() || 0}
-                  </p>
-                </div>
-
-                {/* Memory Usage */}
-                <div className="p-4 rounded-lg border border-border bg-muted/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Database className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      Memory Used
-                    </span>
-                  </div>
-                  <p className="text-xl font-bold text-foreground">
-                    {cacheStats.memory_used_mb?.toFixed(1) || 0} MB
-                  </p>
-                </div>
-
-                {/* Hit Rate */}
-                <div className="p-4 rounded-lg border border-border bg-muted/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Gauge className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">
-                        Hit Rate
-                      </span>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'text-[10px]',
-                        (cacheStats.hit_rate || 0) >= 0.8 &&
-                          'bg-success/10 text-success border-success/30',
-                        (cacheStats.hit_rate || 0) >= 0.5 &&
-                          (cacheStats.hit_rate || 0) < 0.8 &&
-                          'bg-warning/10 text-warning border-warning/30',
-                        (cacheStats.hit_rate || 0) < 0.5 &&
-                          'bg-destructive/10 text-destructive border-destructive/30'
-                      )}
-                    >
-                      {((cacheStats.hit_rate || 0) * 100).toFixed(0)}%
-                    </Badge>
-                  </div>
-                  <Progress
-                    value={(cacheStats.hit_rate || 0) * 100}
-                    className="h-2"
-                  />
-                </div>
-
-                {/* Miss Rate */}
-                <div className="p-4 rounded-lg border border-border bg-muted/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Gauge className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">
-                        Miss Rate
-                      </span>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'text-[10px]',
-                        (cacheStats.miss_rate || 0) <= 0.2 &&
-                          'bg-success/10 text-success border-success/30',
-                        (cacheStats.miss_rate || 0) > 0.2 &&
-                          (cacheStats.miss_rate || 0) <= 0.5 &&
-                          'bg-warning/10 text-warning border-warning/30',
-                        (cacheStats.miss_rate || 0) > 0.5 &&
-                          'bg-destructive/10 text-destructive border-destructive/30'
-                      )}
-                    >
-                      {((cacheStats.miss_rate || 0) * 100).toFixed(0)}%
-                    </Badge>
-                  </div>
-                  <Progress
-                    value={(cacheStats.miss_rate || 0) * 100}
-                    className="h-2"
-                  />
-                </div>
-              </div>
+                ))}
+              </dl>
             ) : null}
           </div>
         )}

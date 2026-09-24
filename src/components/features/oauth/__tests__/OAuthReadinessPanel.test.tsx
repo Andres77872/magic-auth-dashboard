@@ -1,16 +1,28 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { OAuthReadinessPanel } from '../OAuthReadinessPanel';
 import { READINESS_CHECK_LABELS } from '../oauth-status';
 import type { OAuthReadinessCheck } from '@/types/oauth.types';
 
-/** The full check set api.auth returns, in its own order. */
+/** The full check set api.auth returns, in its own order (admin_oauth.py `_READINESS_MESSAGES`). */
 const ALL_CHECKS: Array<[string, string]> = [
-  ['oauth_globally_disabled', 'OAuth is disabled for the whole deployment (OAUTH_ENABLED).'],
-  ['provider_type_disabled', 'The provider type is disabled in the provider catalog.'],
-  ['adapter_not_registered', 'The running backend has no adapter for this provider type.'],
+  [
+    'oauth_globally_disabled',
+    'OAuth is disabled for the whole deployment (OAUTH_ENABLED).',
+  ],
+  [
+    'provider_type_disabled',
+    'The provider type is disabled in the provider catalog.',
+  ],
+  [
+    'adapter_not_registered',
+    'The running backend has no adapter for this provider type.',
+  ],
   ['connection_not_active', 'The connection is draft, disabled or archived.'],
-  ['credentials_not_active', 'No client secret is stored, or the credentials were revoked.'],
+  [
+    'credentials_not_active',
+    'No client secret is stored, or the credentials were revoked.',
+  ],
   ['binding_disabled', 'The provider is not enabled for this project.'],
   ['project_inactive', 'The project is inactive or archived.'],
   ['no_redirect_uri', 'No redirect URI is configured.'],
@@ -34,51 +46,93 @@ function checks(failing: string[]): OAuthReadinessCheck[] {
 }
 
 describe('OAuthReadinessPanel', () => {
-  it('renders every layer with a readable label when nothing fails', () => {
+  it('summarises a ready binding and reveals every passing check on request', () => {
     render(<OAuthReadinessPanel checks={checks([])} ready />);
 
-    expect(screen.getByText('ready')).toBeInTheDocument();
+    expect(screen.getByText('Ready')).toBeInTheDocument();
+    expect(
+      screen.getByText(`All ${ALL_CHECKS.length} checks pass`)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(READINESS_CHECK_LABELS.no_redirect_uri)
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show all checks' }));
     ALL_CHECKS.forEach(([check]) => {
-      expect(screen.getByText(READINESS_CHECK_LABELS[check])).toBeInTheDocument();
+      expect(
+        screen.getByText(READINESS_CHECK_LABELS[check])
+      ).toBeInTheDocument();
     });
-    expect(screen.getAllByText('OK')).toHaveLength(ALL_CHECKS.length);
+    expect(screen.getAllByText('Passes')).toHaveLength(ALL_CHECKS.length);
   });
 
-  it('surfaces each failing layer with the server message for that layer', () => {
-    const failing = ['credentials_not_active', 'no_redirect_uri', 'no_return_origin'];
+  it('lists only the failing layers first, each with the server message', () => {
+    const failing = [
+      'credentials_not_active',
+      'no_redirect_uri',
+      'no_return_origin',
+    ];
     render(<OAuthReadinessPanel checks={checks(failing)} ready={false} />);
 
-    expect(screen.getByText('not ready')).toBeInTheDocument();
-    expect(screen.getByText('3 checks failing')).toBeInTheDocument();
+    expect(screen.getByText('Not ready')).toBeInTheDocument();
     expect(
-      screen.getByText('No client secret is stored, or the credentials were revoked.'),
+      screen.getByText(`3 of ${ALL_CHECKS.length} checks failing`)
     ).toBeInTheDocument();
-    expect(screen.getByText('No redirect URI is configured.')).toBeInTheDocument();
-    expect(screen.getByText('No return origin is configured.')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'No client secret is stored, or the credentials were revoked.'
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('No redirect URI is configured.')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('No return origin is configured.')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(READINESS_CHECK_LABELS.project_inactive)
+    ).not.toBeInTheDocument();
   });
 
   it('computes readiness as the AND across layers when the server roll-up is omitted', () => {
     const { unmount } = render(<OAuthReadinessPanel checks={checks([])} />);
-    expect(screen.getByText('ready')).toBeInTheDocument();
+    expect(screen.getByText('Ready')).toBeInTheDocument();
     unmount();
 
     render(<OAuthReadinessPanel checks={checks(['binding_disabled'])} />);
-    expect(screen.getByText('not ready')).toBeInTheDocument();
-    expect(screen.getByText('1 check failing')).toBeInTheDocument();
+    expect(screen.getByText('Not ready')).toBeInTheDocument();
   });
 
-  it('can show only the blocking layers', () => {
-    render(<OAuthReadinessPanel checks={checks(['adapter_not_registered'])} failuresOnly />);
+  it('can start expanded', () => {
+    render(
+      <OAuthReadinessPanel
+        checks={checks(['adapter_not_registered'])}
+        defaultExpanded
+      />
+    );
 
-    expect(screen.getByText(READINESS_CHECK_LABELS.adapter_not_registered)).toBeInTheDocument();
-    expect(screen.queryByText(READINESS_CHECK_LABELS.no_redirect_uri)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(READINESS_CHECK_LABELS.adapter_not_registered)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(READINESS_CHECK_LABELS.no_redirect_uri)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Show failing checks only' })
+    ).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('falls back to the raw check name for a check the frontend does not know yet', () => {
     render(
       <OAuthReadinessPanel
-        checks={[{ check: 'some_future_check', ok: false, message: 'A new layer failed.' }]}
-      />,
+        checks={[
+          {
+            check: 'some_future_check',
+            ok: false,
+            message: 'A new layer failed.',
+          },
+        ]}
+      />
     );
 
     expect(screen.getByText('some_future_check')).toBeInTheDocument();

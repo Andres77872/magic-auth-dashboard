@@ -1,225 +1,177 @@
 /**
- * Breadcrumbs Component
+ * Breadcrumb trail derived from the current URL.
  *
- * Navigation breadcrumbs showing current location in the app hierarchy.
- * Automatically generates breadcrumbs from the current route path and query params.
+ * - `/` → "Overview"
+ * - `/users` → "Users"; `/users/:hash` → "Users › <username>"
+ * - `/groups?tab=project-groups` and `/groups/project-groups/...` → "Project groups ..."
+ * - a `?tab=` value on any page is appended as the last crumb
  *
- * Per spec.md requirements for flat URLs (lines 427-490):
- * - `/` → "Overview" (single item, no prefix)
- * - `/users` → "Users" (single item, no Home prefix)
- * - `/users/:hash` → "Users > :hash" (parent-child)
- * - `/projects/:hash` → "Projects > :hash"
- * - `/groups?tab=project-groups` → "Groups > Project Groups" (query param reflected)
- * - `/profile` → "Profile" (single, no prefix — personal route)
- * - `/settings` → "Settings" (single, no prefix — personal route)
- *
- * @see .dev/sdd/changes/navigation-url-flattening/spec.md (lines 427-490)
+ * Detail pages publish a friendly leaf label (username, project name) through
+ * BreadcrumbLabelContext; until then the opaque id is shown truncated.
  */
 import React from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 import { ROUTES } from '@/utils/routes';
 import { useBreadcrumbLabel } from '@/contexts';
+import { truncateHash } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 
-interface BreadcrumbItem {
+interface Crumb {
   label: string;
   path?: string;
-  isActive: boolean;
 }
 
-// Personal routes without prefix per spec (lines 427-430)
-const PERSONAL_ROUTES: readonly string[] = ['/profile', '/settings'];
+const SECTION_LABELS: Record<string, string> = {
+  users: 'Users',
+  projects: 'Projects',
+  groups: 'User groups',
+  permissions: 'Roles & permissions',
+  roles: 'Roles & permissions',
+  tokens: 'API keys',
+  audit: 'Audit log',
+  billing: 'Billing',
+  oauth: 'OAuth',
+  system: 'System',
+  'email-templates': 'Email templates',
+  profile: 'Your profile',
+  settings: 'Settings',
+};
 
-// Section routes that get direct labels per spec (lines 441-474)
-const SECTION_ROUTES: readonly string[] = [
-  '/users',
-  '/projects',
-  '/groups',
-  '/permissions',
-  '/roles',
-  '/tokens',
-  '/audit',
-  '/system',
-] as const;
+const WORD_LABELS: Record<string, string> = {
+  create: 'New',
+  edit: 'Edit',
+  patreon: 'Patreon',
+  'global-roles': 'Global roles',
+  'permission-groups': 'Permission groups',
+  'project-groups': 'Project groups',
+  'user-groups': 'User groups',
+  'sign-in': 'Sign-in',
+  'api-keys': 'API keys',
+  oauth: 'OAuth',
+  sso: 'SSO',
+};
+
+/** kebab-case → Sentence case, with a few product terms kept intact. */
+function humanizeSegment(segment: string): string {
+  if (WORD_LABELS[segment]) return WORD_LABELS[segment];
+  const words = decodeURIComponent(segment).replace(/[-_]+/g, ' ').trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+const PROJECT_GROUPS_LIST = `${ROUTES.GROUPS}?tab=project-groups`;
+
+function buildCrumbs(
+  pathname: string,
+  tab: string | null,
+  entityLabel: string | null
+): Crumb[] {
+  if (pathname === '/') return [{ label: 'Overview' }];
+
+  const segments = pathname.split('/').filter(Boolean);
+  const [section, ...rest] = segments;
+  const crumbs: Crumb[] = [];
+
+  // Project groups live under /groups but are their own area in the UI.
+  if (
+    section === 'groups' &&
+    (rest[0] === 'project-groups' || tab === 'project-groups')
+  ) {
+    crumbs.push({ label: 'Project groups', path: PROJECT_GROUPS_LIST });
+    const [, action, id] = rest;
+    if (action === 'create') crumbs.push({ label: 'New project group' });
+    else if (action === 'edit' && id)
+      crumbs.push({ label: entityLabel ? `Edit ${entityLabel}` : 'Edit' });
+    else if (action)
+      crumbs.push({
+        label:
+          entityLabel ?? truncateHash(action, { startChars: 10, endChars: 4 }),
+      });
+    return markLast(crumbs);
+  }
+
+  crumbs.push({
+    label: SECTION_LABELS[section] ?? humanizeSegment(section),
+    path: `/${section}`,
+  });
+
+  rest.forEach((segment, index) => {
+    const isLast = index === rest.length - 1;
+    const isKeyword = Boolean(WORD_LABELS[segment]);
+    const label =
+      isLast && entityLabel
+        ? entityLabel
+        : isKeyword
+          ? humanizeSegment(segment)
+          : truncateHash(decodeURIComponent(segment), {
+              startChars: 10,
+              endChars: 4,
+            });
+    crumbs.push({ label, path: `/${segments.slice(0, index + 2).join('/')}` });
+  });
+
+  if (tab && humanizeSegment(tab) !== crumbs[crumbs.length - 1]?.label) {
+    crumbs.push({ label: humanizeSegment(tab) });
+  }
+
+  return markLast(crumbs);
+}
+
+/** The last crumb is the current page and never a link. */
+function markLast(crumbs: Crumb[]): Crumb[] {
+  return crumbs.map((crumb, index) =>
+    index === crumbs.length - 1 ? { label: crumb.label } : crumb
+  );
+}
 
 export function Breadcrumbs(): React.JSX.Element {
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  // Human-friendly label published by the current detail page (e.g. a
-  // username). Used as the source of truth for the leaf crumb so we show
-  // "Users › John Doe" instead of "Users › 12345678…".
   const { label: entityLabel } = useBreadcrumbLabel();
+  const crumbs = buildCrumbs(
+    location.pathname,
+    searchParams.get('tab'),
+    entityLabel
+  );
 
-  // Generate breadcrumbs from current path and query params
-  const generateBreadcrumbs = (): BreadcrumbItem[] => {
-    const pathname = location.pathname;
-
-    // Handle personal routes (/profile, /settings) — single breadcrumb per spec
-    if (PERSONAL_ROUTES.includes(pathname)) {
-      const label = pathname === '/profile' ? 'Profile' : 'Settings';
-      return [{ label, isActive: true }];
-    }
-
-    // Handle root path — "Overview" per spec line 437
-    if (pathname === '/') {
-      return [{ label: 'Overview', path: ROUTES.HOME, isActive: true }];
-    }
-
-    // Handle section routes (top-level flat routes) — direct label per spec lines 441-474
-    if (SECTION_ROUTES.includes(pathname)) {
-      const tabParam = searchParams.get('tab');
-      const sectionLabel = formatSegmentLabel(pathname.slice(1)); // Remove leading /
-
-      // If there's a tab query param, add it as child breadcrumb
-      if (tabParam) {
-        const tabLabel = formatTabLabel(tabParam);
-        return [
-          { label: sectionLabel, path: pathname, isActive: false },
-          { label: tabLabel, isActive: true },
-        ];
-      }
-
-      return [{ label: sectionLabel, isActive: true }];
-    }
-
-    // Handle nested routes (entity detail pages) — parent-child pattern per spec
-    const pathSegments = pathname.split('/').filter(Boolean);
-    const breadcrumbs: BreadcrumbItem[] = [];
-
-    // Build breadcrumbs from path segments
-    let currentPath = '';
-    pathSegments.forEach((segment, index) => {
-      currentPath += `/${segment}`;
-      const isLast = index === pathSegments.length - 1;
-      const segmentLabel = formatSegmentLabel(segment);
-
-      // For entity hashes (last segment that looks like a hash), show truncated version
-      const isEntityHash = isLast && segment.length > 8 && !isNaN(Number(segment.charAt(0)));
-
-      // The page-supplied entity label is the source of truth for the leaf
-      // crumb; fall back to the truncated hash / formatted segment while the
-      // entity name is still loading or unavailable.
-      const displayLabel =
-        isLast && entityLabel
-          ? entityLabel
-          : isEntityHash
-            ? truncateHash(segment)
-            : segmentLabel;
-
-      breadcrumbs.push({
-        label: displayLabel,
-        path: isLast ? undefined : currentPath,
-        isActive: isLast && !searchParams.get('tab'),
-      });
-    });
-
-    // Handle tab query param for nested routes
-    const tabParam = searchParams.get('tab');
-    if (tabParam) {
-      breadcrumbs.push({
-        label: formatTabLabel(tabParam),
-        isActive: true,
-      });
-    }
-
-    return breadcrumbs;
-  };
-
-  const formatSegmentLabel = (segment: string): string => {
-    // Convert URL segment to display label
-    const labelMap: Record<string, string> = {
-      'users': 'Users',
-      'projects': 'Projects',
-      'groups': 'Groups',
-      'permissions': 'Permissions',
-      'roles': 'Roles',
-      'tokens': 'API Tokens',
-      'audit': 'Audit Logs',
-      'system': 'System',
-      'profile': 'Profile',
-      'settings': 'Settings',
-      'create': 'Create',
-      'edit': 'Edit',
-      'project-groups': 'Project Groups',
-      'global-roles': 'Global Roles',
-      'management': 'Management',
-    };
-
-    return labelMap[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
-  };
-
-  const formatTabLabel = (tabParam: string): string => {
-    // Convert tab query param to display label
-    const tabLabelMap: Record<string, string> = {
-      'project-groups': 'Project Groups',
-      'global-roles': 'Global Roles',
-      'assignments': 'Assignments',
-      'analytics': 'Analytics',
-      'security': 'Security',
-      'admins': 'Admins',
-      'members': 'Members',
-      'groups': 'Groups',
-      'activity': 'Activity',
-      'details': 'Details',
-    };
-
-    return tabLabelMap[tabParam] || formatSegmentLabel(tabParam);
-  };
-
-  const truncateHash = (hash: string): string => {
-    // Truncate entity hash for display (8 chars visible)
-    if (hash.length <= 8) return hash;
-    return `${hash.slice(0, 8)}...`;
-  };
-
-  const breadcrumbs = generateBreadcrumbs();
-
-  // Render breadcrumbs
   return (
-    <nav
-      className="flex items-center"
-      aria-label="Breadcrumb navigation"
-      role="navigation"
-    >
-      <ol className="flex items-center list-none m-0 p-0 gap-1 flex-wrap">
-        {breadcrumbs.map((item, index) => (
-          <li key={index} className="flex items-center">
-            {item.path && !item.isActive ? (
-              <Link
-                to={item.path}
-                className={cn(
-                  'flex items-center gap-1.5 px-2 py-1 rounded-md text-sm',
-                  'text-muted-foreground no-underline',
-                  'transition-all duration-200',
-                  'hover:text-foreground hover:bg-muted',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2'
-                )}
-                aria-current={item.isActive ? 'page' : undefined}
-              >
-                <span>{item.label}</span>
-              </Link>
-            ) : (
-              <span
-                className={cn(
-                  'flex items-center gap-1.5 px-2 py-1 rounded-md text-sm',
-                  'font-medium text-foreground'
-                )}
-                aria-current={item.isActive ? 'page' : undefined}
-              >
-                <span>{item.label}</span>
-              </span>
-            )}
-
-            {index < breadcrumbs.length - 1 && (
-              <ChevronRight
-                size={14}
-                className="text-muted-foreground/50 shrink-0 mx-0.5"
-                aria-hidden="true"
-              />
-            )}
-          </li>
-        ))}
+    <nav aria-label="Breadcrumb" className="min-w-0">
+      <ol className="m-0 flex min-w-0 list-none items-center gap-1 p-0">
+        {crumbs.map((crumb, index) => {
+          const isLast = index === crumbs.length - 1;
+          return (
+            <li
+              key={`${index}-${crumb.label}`}
+              className={cn(
+                'flex min-w-0 items-center gap-1',
+                !isLast && 'hidden sm:flex'
+              )}
+            >
+              {crumb.path ? (
+                <Link
+                  to={crumb.path}
+                  className="truncate rounded px-1 py-0.5 text-[13px] text-muted-foreground no-underline transition-colors hover:text-foreground"
+                >
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span
+                  className="truncate px-1 py-0.5 text-[13px] font-medium text-foreground"
+                  aria-current="page"
+                >
+                  {crumb.label}
+                </span>
+              )}
+              {!isLast && (
+                <ChevronRight
+                  size={14}
+                  className="shrink-0 text-muted-foreground/60"
+                  aria-hidden="true"
+                />
+              )}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );

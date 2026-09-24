@@ -1,109 +1,158 @@
-import { useCallback, useEffect, useState } from 'react';
-import { groupService } from '@/services';
+import { useCallback } from 'react';
+import { groupService, runGroupBatch } from '@/services/group.service';
+import { permissionAssignmentsService } from '@/services/permission-assignments.service';
+import { globalRolesService } from '@/services/global-roles.service';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import type {
-  GroupDetailsResponse,
-  GroupFormData,
-  UserGroup,
+  GroupBatchResult,
+  ProjectGroupGrant,
+  UserGroupDetails,
 } from '@/types/group.types';
+import type {
+  AssignedPermissionGroup,
+  BulkPermissionGroupAssignResult,
+} from '@/types/permission-assignments.types';
+import type { GlobalPermissionGroup } from '@/types/global-roles.types';
 
-interface GroupStatistics {
-  total_members: number;
-  total_projects: number;
-}
-
-interface UseGroupDetailsReturn {
-  group: UserGroup | null;
-  statistics: GroupStatistics | null;
+export interface UseGroupDetailsReturn {
+  details: UserGroupDetails | null;
   isLoading: boolean;
+  isRefreshing: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  updateGroup: (data: GroupFormData) => Promise<UserGroup>;
 }
 
-function mapGroupResponse(response: GroupDetailsResponse): {
-  group: UserGroup;
-  statistics: GroupStatistics | null;
-} {
-  return {
-    group: response.user_group,
-    statistics: response.statistics
-      ? {
-          total_members: response.statistics.total_members,
-          total_projects: response.statistics.total_projects,
-        }
-      : null,
-  };
-}
-
-export function useGroupDetails(groupHash?: string): UseGroupDetailsReturn {
-  const [group, setGroup] = useState<UserGroup | null>(null);
-  const [statistics, setStatistics] = useState<GroupStatistics | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchGroup = useCallback(async () => {
-    if (!groupHash) {
-      setGroup(null);
-      setStatistics(null);
-      setError('Group ID is required');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await groupService.getGroup(groupHash);
-
-      if (response.success && response.user_group) {
-        const mapped = mapGroupResponse(response);
-        setGroup(mapped.group);
-        setStatistics(mapped.statistics);
-      } else {
-        setGroup(null);
-        setStatistics(null);
-        setError(response.message || 'Failed to fetch group');
-      }
-    } catch (err) {
-      setGroup(null);
-      setStatistics(null);
-      setError(err instanceof Error ? err.message : 'Failed to fetch group');
-    } finally {
-      setIsLoading(false);
-    }
+/** `GET /admin/user-groups/{hash}`: the group, its counts and the projects it reaches. */
+export function useGroupDetails(
+  groupHash: string | undefined
+): UseGroupDetailsReturn {
+  const fetcher = useCallback((): Promise<UserGroupDetails> => {
+    if (!groupHash) return Promise.reject(new Error('Missing user group id.'));
+    return groupService.getGroup(groupHash);
   }, [groupHash]);
+  const { data, error, isLoading, isRefreshing, refetch } = useAsyncData(
+    fetcher,
+    { enabled: Boolean(groupHash) }
+  );
+  return { details: data, isLoading, isRefreshing, error, refetch };
+}
 
-  const updateGroup = useCallback(
-    async (data: GroupFormData): Promise<UserGroup> => {
-      if (!groupHash) {
-        throw new Error('Group ID is required');
-      }
+export interface UseGroupProjectGroupGrantsReturn {
+  grants: ProjectGroupGrant[];
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  /** One request per project group; every one is attempted. */
+  grant: (projectGroupHashes: string[]) => Promise<GroupBatchResult>;
+  revoke: (projectGroupHash: string) => Promise<void>;
+}
 
-      const response = await groupService.updateGroup(groupHash, data);
+/** Project groups granted to a user group, with grant/revoke. */
+export function useGroupProjectGroupGrants(
+  groupHash: string
+): UseGroupProjectGroupGrantsReturn {
+  const fetcher = useCallback(
+    () => groupService.listProjectGroupGrants(groupHash),
+    [groupHash]
+  );
+  const { data, error, isLoading, isRefreshing, refetch } =
+    useAsyncData(fetcher);
 
-      if (response.success && response.user_group) {
-        setGroup(response.user_group);
-        return response.user_group;
-      }
-
-      throw new Error(response.message || 'Failed to update group');
-    },
+  const grant = useCallback(
+    (projectGroupHashes: string[]) =>
+      runGroupBatch(projectGroupHashes, (pgHash) =>
+        groupService.grantProjectGroupAccess(groupHash, pgHash)
+      ),
+    [groupHash]
+  );
+  const revoke = useCallback(
+    (projectGroupHash: string) =>
+      groupService.revokeProjectGroupAccess(groupHash, projectGroupHash),
     [groupHash]
   );
 
-  useEffect(() => {
-    void fetchGroup();
-  }, [fetchGroup]);
+  return {
+    grants: data ?? [],
+    isLoading,
+    isRefreshing,
+    error,
+    refetch,
+    grant,
+    revoke,
+  };
+}
+
+export interface UseGroupPermissionGroupsReturn {
+  assigned: AssignedPermissionGroup[];
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  assign: (
+    permissionGroupHashes: string[]
+  ) => Promise<BulkPermissionGroupAssignResult>;
+  remove: (permissionGroupHash: string) => Promise<void>;
+}
+
+/** Permission groups assigned to a user group (`/permissions/admin/user-groups/{hash}/permission-groups`). */
+export function useGroupPermissionGroups(
+  groupHash: string
+): UseGroupPermissionGroupsReturn {
+  const fetcher = useCallback(
+    () => permissionAssignmentsService.getUserGroupPermissionGroups(groupHash),
+    [groupHash]
+  );
+  const { data, error, isLoading, isRefreshing, refetch } =
+    useAsyncData(fetcher);
+
+  const assign = useCallback(
+    (hashes: string[]) =>
+      permissionAssignmentsService.bulkAssignPermissionGroupsToUserGroup(
+        groupHash,
+        hashes
+      ),
+    [groupHash]
+  );
+  const remove = useCallback(
+    (hash: string) =>
+      permissionAssignmentsService.removePermissionGroupFromUserGroup(
+        groupHash,
+        hash
+      ),
+    [groupHash]
+  );
 
   return {
-    group,
-    statistics,
+    assigned: data ?? [],
     isLoading,
+    isRefreshing,
     error,
-    refetch: fetchGroup,
-    updateGroup,
+    refetch,
+    assign,
+    remove,
   };
+}
+
+export interface UsePermissionGroupCatalogReturn {
+  permissionGroups: GlobalPermissionGroup[];
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+/** The global permission-group catalogue (`GET /roles/permission-groups`, max 100). */
+export function usePermissionGroupCatalog(
+  enabled: boolean
+): UsePermissionGroupCatalogReturn {
+  const fetcher = useCallback(
+    () => globalRolesService.getPermissionGroups(),
+    []
+  );
+  const { data, error, isLoading, refetch } = useAsyncData(fetcher, {
+    enabled,
+  });
+  return { permissionGroups: data ?? [], isLoading, error, refetch };
 }
 
 export default useGroupDetails;

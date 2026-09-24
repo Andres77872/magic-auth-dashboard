@@ -1,4 +1,10 @@
 export { EmailTemplatesList } from './EmailTemplatesList';
 export { EmailTemplateEditor } from './EmailTemplateEditor';
+export type { EmailTemplateEditorProps } from './EmailTemplateEditor';
 export { EmailTemplatePreview } from './EmailTemplatePreview';
 export { VariableInsertMenu } from './VariableInsertMenu';
+export { CreateEmailTemplateDialog } from './CreateEmailTemplateDialog';
+export type { CreateEmailTemplateDialogProps } from './CreateEmailTemplateDialog';
+export { emailTemplateEditorPath } from './paths';
+export { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
+export type { UnsavedChangesGuard } from './useUnsavedChangesGuard';

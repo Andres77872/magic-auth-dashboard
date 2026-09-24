@@ -10,7 +10,7 @@ interface CacheEntry<T> {
 }
 
 class CacheManager {
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
   private defaultTTL = 5 * 60 * 1000; // 5 minutes default
 
   /**
@@ -86,9 +86,7 @@ class CacheManager {
    * Invalidate cache entries matching pattern
    */
   invalidatePattern(pattern: string | RegExp): void {
-    const regex = typeof pattern === 'string' 
-      ? new RegExp(pattern) 
-      : pattern;
+    const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
 
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
@@ -100,35 +98,3 @@ class CacheManager {
 
 // Export singleton instance
 export const cache = new CacheManager();
-
-/**
- * Generate cache key from parameters
- */
-export function generateCacheKey(namespace: string, params: Record<string, any>): string {
-  const sortedParams = Object.keys(params)
-    .sort()
-    .map(key => `${key}:${JSON.stringify(params[key])}`)
-    .join('|');
-  return `${namespace}:${sortedParams}`;
-}
-
-/**
- * Cache decorator for async functions
- */
-export function withCache<T>(
-  key: string,
-  fetchFn: () => Promise<T>,
-  ttl?: number
-): Promise<T> {
-  // Check cache first
-  const cached = cache.get<T>(key);
-  if (cached !== null) {
-    return Promise.resolve(cached);
-  }
-
-  // Fetch and cache
-  return fetchFn().then(data => {
-    cache.set(key, data, ttl);
-    return data;
-  });
-}

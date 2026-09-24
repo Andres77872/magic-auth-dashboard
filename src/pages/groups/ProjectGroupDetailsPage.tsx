@@ -1,468 +1,259 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
-  PageContainer,
-  PageHeader,
-  Card,
-  CardContent,
-  Badge,
-  Button,
-  LoadingSpinner,
-  ConfirmDialog,
-  EmptyState,
-  DataView,
-  CopyableId,
-  StatsGrid,
-} from '@/components/common';
-import type { DataViewColumn } from '@/components/common';
-import { projectGroupService } from '@/services';
-import type { ProjectGroupDetailsResponse, AssignedProject } from '@/services/project-group.service';
-import { ROUTES } from '@/utils/routes';
-import { useToast, useBackNavigation } from '@/hooks';
+  Copy,
+  FolderKanban,
+  FolderTree,
+  Pencil,
+  Trash2,
+  UsersRound,
+} from 'lucide-react';
+import { ActionsMenu } from '@/components/common/ActionsMenu';
+import { ErrorState } from '@/components/common/ErrorState';
+import { PageContainer } from '@/components/common/PageContainer';
+import { PageHeader } from '@/components/common/PageHeader';
+import { StatCard } from '@/components/common/StatCard';
+import { TabNavigation, type Tab } from '@/components/common/TabNavigation';
+import { Button } from '@/components/ui/button';
+import {
+  DefaultGroupBadge,
+  DeleteGroupDialog,
+  GroupFormModal,
+  ProjectGroupProjectsTab,
+  ProjectGroupUserGroupsTab,
+  groupRoutes,
+} from '@/components/features/groups';
 import { useSetBreadcrumbLabel } from '@/contexts';
-import { useUserGroupsWithAccess } from '@/hooks/useUserGroupsWithAccess';
-import { isDefaultUserGroup } from '@/utils/default-groups';
-import { formatDate } from '@/utils/component-utils';
-import { FolderOpen, Plus, Trash2, ExternalLink, Users, Info } from 'lucide-react';
-import { AddProjectsToGroupModal } from '@/components/features/groups/AddProjectsToGroupModal';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  useProjectGroupDetails,
+  useProjectGroupMutations,
+} from '@/hooks/useProjectGroups';
+import { useUserGroupsWithAccess } from '@/hooks/useUserGroupsWithAccess';
+import { useTabParam } from '@/hooks/useTabParam';
+import { useToast } from '@/hooks/useToast';
+import { useUserType } from '@/hooks/useUserType';
+import { formatNumber } from '@/utils/formatters';
+import type { GroupFormData } from '@/types/group.types';
+import {
+  GroupDetailsSkeleton,
+  GroupFacts,
+  GroupIconTile,
+} from './components/GroupDetailParts';
 
-export function ProjectGroupDetailsPage(): React.JSX.Element {
+const TABS = ['projects', 'user-groups'] as const;
+type ProjectGroupTab = (typeof TABS)[number];
+
+export interface ProjectGroupDetailsPageProps {
+  /** Open the edit dialog once the group has loaded (used by `/groups/project-groups/edit/:groupHash`). */
+  startEditing?: boolean;
+  /** Called when the dialog opened by `startEditing` closes. */
+  onEditDismiss?: () => void;
+}
+
+/** `/groups/project-groups/:groupHash` — a project group, its projects and the user groups granted it. */
+export function ProjectGroupDetailsPage({
+  startEditing = false,
+  onEditDismiss,
+}: ProjectGroupDetailsPageProps = {}): React.JSX.Element {
   const { groupHash } = useParams<{ groupHash: string }>();
   const navigate = useNavigate();
-  const handleGoBack = useBackNavigation(ROUTES.PROJECT_GROUPS);
   const { showToast } = useToast();
+  const { isRoot } = useUserType();
+  const [activeTab, setActiveTab] = useTabParam<ProjectGroupTab>(
+    TABS,
+    'projects'
+  );
+  const { details, isLoading, isRefreshing, error, refetch } =
+    useProjectGroupDetails(groupHash);
+  const access = useUserGroupsWithAccess(groupHash);
+  const { updateProjectGroup, deleteProjectGroup } = useProjectGroupMutations();
+  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(
+    startEditing ? 'edit' : null
+  );
 
-  const [groupDetails, setGroupDetails] = useState<ProjectGroupDetailsResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  useSetBreadcrumbLabel(details?.projectGroup.group_name);
 
-  // Add projects modal state
-  const [isAddProjectsModalOpen, setIsAddProjectsModalOpen] = useState(false);
-
-  // Remove project confirmation
-  const [confirmRemove, setConfirmRemove] = useState<AssignedProject | null>(null);
-  const [isRemoving, setIsRemoving] = useState(false);
-
-  // User groups with access (bidirectional visibility)
-  const {
-    userGroups: userGroupsWithAccess,
-    isLoading: isLoadingUserGroups,
-    error: userGroupsError,
-    refetch: refetchUserGroupsAccess,
-  } = useUserGroupsWithAccess(groupHash);
-
-  // Show the project group name in the breadcrumb leaf once details load.
-  useSetBreadcrumbLabel(groupDetails?.project_group?.group_name);
-
-  const fetchGroupDetails = useCallback(async () => {
-    if (!groupHash) {
-      setError('Group hash is required');
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const response = await projectGroupService.getProjectGroup(groupHash);
-      if (response.success) {
-        setGroupDetails(response);
-      } else {
-        setError(response.message || 'Failed to load project group');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load project group');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [groupHash]);
-
-  useEffect(() => {
-    fetchGroupDetails();
-  }, [fetchGroupDetails]);
-
-  const handleOpenAddModal = () => {
-    setIsAddProjectsModalOpen(true);
-  };
-
-  const handleRemoveProject = async () => {
-    if (!groupHash || !confirmRemove) return;
-
-    setIsRemoving(true);
-    try {
-      const response = await projectGroupService.removeProjectFromGroup(
-        groupHash,
-        confirmRemove.project_hash
-      );
-      if (response.success) {
-        showToast(`Removed "${confirmRemove.project_name}" from the group`, 'success');
-        await fetchGroupDetails();
-        setConfirmRemove(null);
-      } else {
-        throw new Error(response.message || 'Failed to remove project');
-      }
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to remove project', 'error');
-    } finally {
-      setIsRemoving(false);
-    }
-  };
-
-  const projectColumns: DataViewColumn<AssignedProject>[] = [
-    {
-      key: 'project_name',
-      header: 'Project Name',
-      sortable: true,
-      render: (_value, project) => (
-        <div className="space-y-0.5">
-          <button
-            onClick={() => navigate(`${ROUTES.PROJECT}/${project.project_hash}`)}
-            className="font-medium text-primary hover:underline text-left flex items-center gap-1"
-          >
-            {project.project_name}
-            <ExternalLink size={14} />
-          </button>
-          {project.project_description && (
-            <p className="text-sm text-muted-foreground truncate max-w-xs">
-              {project.project_description}
-            </p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'project_hash',
-      header: 'Actions',
-      width: '100px',
-      align: 'center',
-      render: (_value, project) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setConfirmRemove(project)}
-          className="text-destructive hover:text-destructive hover:bg-destructive/10"
-          aria-label={`Remove ${project.project_name} from group`}
-        >
-          <Trash2 size={16} aria-hidden="true" />
-        </Button>
-      ),
-    },
-  ];
-
-  const userGroupColumns: DataViewColumn<(typeof userGroupsWithAccess)[number]>[] = [
-    {
-      key: 'group_name',
-      header: 'User Group',
-      sortable: true,
-      render: (_value, group) => {
-        const isDefault = isDefaultUserGroup(group.group_name);
-        return (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate(`${ROUTES.GROUPS}/${group.group_hash}`)}
-              className="font-medium text-primary hover:underline text-left flex items-center gap-1"
-            >
-              {group.group_name}
-              <ExternalLink size={14} />
-            </button>
-            {isDefault && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="subtleInfo" size="sm" className="cursor-help">
-                      Default
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Auto-created when the project was created. Can be deleted like any other group.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      key: 'description',
-      header: 'Description',
-      sortable: false,
-      render: (_value, group) => (
-        <span className="text-muted-foreground">
-          {group.description || 'No description'}
-        </span>
-      ),
-    },
-    {
-      key: 'member_count',
-      header: 'Members',
-      sortable: true,
-      align: 'center',
-      render: (_value, group) => (
-        <Badge variant="secondary">
-          {group.member_count ?? 0} member{(group.member_count ?? 0) !== 1 ? 's' : ''}
-        </Badge>
-      ),
-    },
-    {
-      key: 'group_hash',
-      header: 'Actions',
-      width: '120px',
-      align: 'center',
-      render: (_value, group) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(`${ROUTES.GROUPS}/${group.group_hash}`)}
-        >
-          <ExternalLink size={14} className="mr-1" />
-          Manage
-        </Button>
-      ),
-    },
-  ];
-
-  if (isLoading) {
+  if (!details) {
     return (
       <PageContainer>
-        <div className="flex items-center justify-center py-16">
-          <LoadingSpinner size="lg" message="Loading project group..." />
-        </div>
+        {isLoading || !error ? (
+          <GroupDetailsSkeleton statCount={2} />
+        ) : (
+          <ErrorState
+            retryLabel="Try again"
+            title="This project group couldn't be loaded"
+            message={error}
+            onRetry={() => void refetch()}
+            isRetrying={isRefreshing}
+          />
+        )}
       </PageContainer>
     );
   }
 
-  if (error || !groupDetails?.project_group) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
-          <FolderOpen size={48} className="text-muted-foreground" />
-          <p className="text-muted-foreground">{error || 'Project group not found'}</p>
-          <Button variant="primary" onClick={handleGoBack}>
-            Back to Project Groups
-          </Button>
-        </div>
-      </PageContainer>
-    );
-  }
+  const { projectGroup, projects } = details;
 
-  const { project_group, assigned_projects, statistics } = groupDetails;
+  const closeDialog = (): void => {
+    const wasStartEdit = startEditing && dialog === 'edit';
+    setDialog(null);
+    if (wasStartEdit) onEditDismiss?.();
+  };
+
+  const handleEdit = async (data: GroupFormData): Promise<void> => {
+    const updated = await updateProjectGroup(projectGroup.group_hash, data);
+    showToast(`Saved ${updated.group_name}.`, 'success');
+    void refetch();
+  };
+
+  const handleDelete = async (): Promise<void> => {
+    await deleteProjectGroup(projectGroup.group_hash);
+    showToast(`Deleted project group ${projectGroup.group_name}.`, 'success');
+    void navigate(groupRoutes.projectGroupList, { replace: true });
+  };
+
+  const copyId = async (): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(projectGroup.group_hash);
+      showToast('Group ID copied.', 'success');
+    } catch {
+      showToast('The group ID could not be copied.', 'error');
+    }
+  };
+
+  const tabs: Tab[] = [
+    { id: 'projects', label: 'Projects', count: projects.length },
+    {
+      id: 'user-groups',
+      label: 'User groups',
+      count: access.isLoading ? undefined : access.userGroups.length,
+    },
+  ];
 
   return (
     <PageContainer>
       <PageHeader
-        title={project_group.group_name}
-        subtitle={project_group.description || undefined}
-        icon={<FolderOpen size={28} />}
-        badge={<Badge variant="secondary">Project Group</Badge>}
+        title={projectGroup.group_name}
+        icon={
+          <GroupIconTile>
+            <FolderTree />
+          </GroupIconTile>
+        }
+        badge={
+          <DefaultGroupBadge kind="project" name={projectGroup.group_name} />
+        }
+        subtitle={projectGroup.description || 'No description'}
         actions={
           <>
             <Button
-              variant="outline"
+              variant="secondary"
               size="md"
-              onClick={handleGoBack}
+              leftIcon={<Pencil aria-hidden="true" />}
+              onClick={() => setDialog('edit')}
             >
-              Back to Project Groups
+              Edit
             </Button>
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => navigate(`${ROUTES.PROJECT_GROUPS_EDIT}/${groupHash}`)}
-            >
-              Edit Group
-            </Button>
+            <ActionsMenu
+              ariaLabel="More actions"
+              triggerClassName="h-[34px] w-[34px] border border-input bg-card"
+              items={[
+                {
+                  key: 'copy',
+                  label: 'Copy group ID',
+                  icon: <Copy />,
+                  onClick: () => void copyId(),
+                },
+                {
+                  key: 'delete',
+                  label: 'Delete project group',
+                  icon: <Trash2 />,
+                  onClick: () => setDialog('delete'),
+                  destructive: true,
+                },
+              ]}
+            />
           </>
         }
-/>
-
-      {/* Statistics Grid */}
-      <div className="mb-6">
-        <StatsGrid
-          stats={[
-            {
-              title: 'Assigned Projects',
-              value: statistics?.total_projects ?? project_group.project_count ?? 0,
-              icon: <FolderOpen size={16} />,
-              variant: 'info',
-              gradient: true,
-            },
-          ]}
-          columns={1}
-          loading={isLoading}
+      >
+        <GroupFacts
+          groupHash={projectGroup.group_hash}
+          createdAt={projectGroup.created_at}
         />
-      </div>
+      </PageHeader>
 
-      {/* Group Information Card */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold mb-4">Group Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Group Name</span>
-              <p className="font-medium">{project_group.group_name}</p>
-            </div>
+      <section
+        aria-label="Summary"
+        className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <StatCard
+          title="Projects"
+          value={formatNumber(projects.length)}
+          icon={<FolderKanban />}
+          subValue="Active projects in this group"
+          onClick={() => setActiveTab('projects')}
+        />
+        <StatCard
+          title="User groups with access"
+          value={
+            access.error && access.userGroups.length === 0
+              ? '—'
+              : formatNumber(access.userGroups.length)
+          }
+          icon={<UsersRound />}
+          loading={access.isLoading}
+          subValue={
+            access.uncheckedCount > 0
+              ? 'Some user groups couldn’t be checked'
+              : 'Their members can sign in to these projects'
+          }
+          onClick={() => setActiveTab('user-groups')}
+        />
+      </section>
 
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Description</span>
-              <p className="font-medium">{project_group.description || 'No description'}</p>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Group Hash</span>
-              <CopyableId id={project_group.group_hash} />
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Projects</span>
-              <div>
-                <Badge variant="info">
-                  {statistics?.total_projects ?? project_group.project_count ?? 0} project
-                  {(statistics?.total_projects ?? project_group.project_count ?? 0) !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Created</span>
-              <p className="font-medium">{formatDate(project_group.created_at)}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Assigned Projects Section */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">
-              Assigned Projects ({assigned_projects?.length || 0})
-            </h3>
-            <Button
-              variant="primary"
-              size="md"
-              leftIcon={<Plus size={16} />}
-              onClick={handleOpenAddModal}
-            >
-              Add Projects
-            </Button>
-          </div>
-
-          {!assigned_projects || assigned_projects.length === 0 ? (
-            <EmptyState
-              icon={<FolderOpen size={40} />}
-              title="No Projects Assigned"
-              description="This project group doesn't have any projects assigned yet. Click 'Add Projects' to assign some."
-            />
-          ) : (
-            <DataView<AssignedProject>
-              data={assigned_projects}
-              columns={projectColumns}
-              viewMode="table"
-              showViewToggle={false}
-              emptyMessage="No projects assigned"
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* User Groups with Access Section */}
-      <Card className="mt-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="space-y-1">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Users size={20} />
-                User Groups with Access
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                User groups that have been granted access to this project group.
-              </p>
-            </div>
-          </div>
-
-          {userGroupsError ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-muted-foreground mb-3">{userGroupsError}</p>
-              <Button variant="outline" size="sm" onClick={() => refetchUserGroupsAccess()}>
-                Retry
-              </Button>
-            </div>
-          ) : isLoadingUserGroups ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <LoadingSpinner size="md" />
-              <p className="text-sm text-muted-foreground mt-2">Loading user groups...</p>
-            </div>
-          ) : userGroupsWithAccess.length === 0 ? (
-            <EmptyState
-              icon={<Users size={40} />}
-              title="No User Groups Have Access"
-              description="Grant user groups access to this project group so they can access its projects."
-              action={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(ROUTES.GROUPS)}
-                >
-                  Go to User Groups
-                </Button>
-              }
-            />
-          ) : (
-            <>
-              {userGroupsWithAccess.length > 0 && (
-                <div className="flex items-start gap-2 rounded-md border border-muted bg-muted/30 p-3 mb-4 text-sm text-muted-foreground">
-                  <Info size={16} className="mt-0.5 flex-shrink-0 text-primary" />
-                  <span>
-                    To grant a user group access to this project group, go to the{' '}
-                    <button
-                      className="text-primary hover:underline font-medium"
-                      onClick={() => navigate(ROUTES.GROUPS)}
-                    >
-                      User Groups
-                    </button>{' '}
-                    page, open a user group, and use the <strong>Project Groups</strong> tab.
-                  </span>
-                </div>
-              )}
-              <DataView
-                data={userGroupsWithAccess}
-                columns={userGroupColumns}
-                viewMode="table"
-                showViewToggle={false}
-                emptyMessage="No user groups found"
-              />
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Add Projects Modal */}
-      <AddProjectsToGroupModal
-        isOpen={isAddProjectsModalOpen}
-        onClose={() => setIsAddProjectsModalOpen(false)}
-        onSuccess={fetchGroupDetails}
-        groupHash={groupHash || ''}
-        groupName={project_group.group_name}
-        assignedProjectHashes={assigned_projects?.map(p => p.project_hash) || []}
+      <TabNavigation
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        ariaLabel="Project group sections"
+        className="mb-5"
       />
 
-      {/* Remove Project Confirmation */}
-      {confirmRemove && (
-        <ConfirmDialog
-          isOpen={true}
-          title="Remove Project"
-          message={`Are you sure you want to remove "${confirmRemove.project_name}" from this project group?`}
-          confirmText="Remove"
-          cancelText="Cancel"
-          variant="danger"
-          onConfirm={handleRemoveProject}
-          onClose={() => setConfirmRemove(null)}
-          isLoading={isRemoving}
+      <div
+        role="tabpanel"
+        aria-label={tabs.find((tab) => tab.id === activeTab)?.label}
+      >
+        {activeTab === 'projects' && (
+          <ProjectGroupProjectsTab
+            groupHash={projectGroup.group_hash}
+            groupName={projectGroup.group_name}
+            projects={projects}
+            onChange={() => void refetch()}
+          />
+        )}
+        {activeTab === 'user-groups' && (
+          <ProjectGroupUserGroupsTab
+            projectGroupName={projectGroup.group_name}
+            access={access}
+            canManageAdminGroups={isRoot}
+          />
+        )}
+      </div>
+
+      <GroupFormModal
+        isOpen={dialog === 'edit'}
+        mode="edit"
+        kind="project"
+        group={projectGroup}
+        onClose={closeDialog}
+        onSubmit={handleEdit}
+      />
+
+      {dialog === 'delete' && (
+        <DeleteGroupDialog
+          kind="project"
+          groupName={projectGroup.group_name}
+          count={projects.length}
+          onClose={() => setDialog(null)}
+          onDelete={handleDelete}
         />
       )}
     </PageContainer>
@@ -470,4 +261,3 @@ export function ProjectGroupDetailsPage(): React.JSX.Element {
 }
 
 export default ProjectGroupDetailsPage;
-

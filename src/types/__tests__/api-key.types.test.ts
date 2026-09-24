@@ -1,86 +1,82 @@
 import { describe, it, expect } from 'vitest';
 import { computeApiKeyStatus } from '../api-key.types';
-import type { ApiKey, CreateApiKeyRequest } from '../api-key.types';
+import type { ApiKey } from '../api-key.types';
 
-const createMockKey = (overrides: Partial<ApiKey> = {}): ApiKey => ({
-  id: 'key-1',
-  public_id: 'pub-abc123',
-  name: 'Test Key',
-  fingerprint: 'ABC123DEF456',
-  secret_last4: 'xyz0',
-  project_id: 'proj-1',
-  owner_user_id: 'user-1',
-  expires_at: '2026-12-31',
-  is_active: true,
-  created_at: '2025-01-01',
-  ...overrides,
-});
+const NOW = Date.parse('2026-06-01T00:00:00Z');
 
-describe('CreateApiKeyRequest type', () => {
-  it('requires user_hash for admin-managed token creation', () => {
-    const request: CreateApiKeyRequest = {
-      user_hash: 'usr_consumer1',
-      project_hash: 'prj_abc',
-      name: 'CI Token',
-    };
-    expect(request.user_hash).toBe('usr_consumer1');
-    expect(request.project_hash).toBe('prj_abc');
-  });
-});
+function makeKey(overrides: Partial<ApiKey> = {}): ApiKey {
+  return {
+    id: 'pub-abc123',
+    public_id: 'pub-abc123',
+    name: 'Test key',
+    description: null,
+    project_id: 'proj-internal-1',
+    owner_user_id: 'usr-internal-1',
+    is_active: true,
+    expires_at: null,
+    last_used_at: null,
+    created_at: '2025-01-01T00:00:00Z',
+    updated_at: null,
+    revoked_at: null,
+    revoke_reason: null,
+    fingerprint: 'ABC123DEF456',
+    secret_last4: 'xyz0',
+    hash_algorithm: null,
+    ...overrides,
+  };
+}
 
 describe('computeApiKeyStatus', () => {
-  it('returns "active" for active key with future expiry', () => {
-    const key = createMockKey({
-      is_active: true,
-      expires_at: '2027-12-31',
-    });
-    
-    expect(computeApiKeyStatus(key)).toBe('active');
+  it('is active for an active key with a future expiry', () => {
+    expect(
+      computeApiKeyStatus(makeKey({ expires_at: '2027-12-31T00:00:00Z' }), NOW)
+    ).toBe('active');
   });
 
-  it('returns "active" for active key with no expiry', () => {
-    const key = createMockKey({
-      is_active: true,
-      expires_at: '',
-    });
-    
-    expect(computeApiKeyStatus(key)).toBe('active');
+  it('is active for an active key that never expires', () => {
+    expect(computeApiKeyStatus(makeKey({ expires_at: null }), NOW)).toBe(
+      'active'
+    );
   });
 
-  it('returns "expired" for active key with past expiry', () => {
-    const key = createMockKey({
-      is_active: true,
-      expires_at: '2024-01-01',
-    });
-    
-    expect(computeApiKeyStatus(key)).toBe('expired');
+  it('is expired for an active key past its expiry that has not been swept yet', () => {
+    expect(
+      computeApiKeyStatus(makeKey({ expires_at: '2026-01-01T00:00:00Z' }), NOW)
+    ).toBe('expired');
   });
 
-  it('returns "revoked" for inactive key with revoked_at', () => {
-    const key = createMockKey({
-      is_active: false,
-      revoked_at: '2025-06-01',
-    });
-    
-    expect(computeApiKeyStatus(key)).toBe('revoked');
+  it('is revoked whenever revoked_at is set', () => {
+    expect(
+      computeApiKeyStatus(
+        makeKey({ is_active: false, revoked_at: '2026-05-01T00:00:00Z' }),
+        NOW
+      )
+    ).toBe('revoked');
   });
 
-  it('returns "revoked" for inactive key without revoked_at', () => {
-    const key = createMockKey({
-      is_active: false,
-      revoked_at: undefined,
-    });
-    
-    expect(computeApiKeyStatus(key)).toBe('revoked');
+  it('is expired for an inactive key without revoked_at (deactivated after expiring)', () => {
+    expect(
+      computeApiKeyStatus(
+        makeKey({
+          is_active: false,
+          revoked_at: null,
+          expires_at: '2026-01-01T00:00:00Z',
+        }),
+        NOW
+      )
+    ).toBe('expired');
   });
 
-  it('prioritizes revoked status over expired', () => {
-    const key = createMockKey({
-      is_active: false,
-      revoked_at: '2025-06-01',
-      expires_at: '2024-01-01',
-    });
-    
-    expect(computeApiKeyStatus(key)).toBe('revoked');
+  it('prefers revoked over expired', () => {
+    expect(
+      computeApiKeyStatus(
+        makeKey({
+          is_active: false,
+          revoked_at: '2026-05-01T00:00:00Z',
+          expires_at: '2026-01-01T00:00:00Z',
+        }),
+        NOW
+      )
+    ).toBe('revoked');
   });
 });

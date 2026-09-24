@@ -1,211 +1,213 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { FolderKanban, Pencil, RefreshCw, Trash2 } from 'lucide-react';
 import {
+  ErrorState,
   PageContainer,
   PageHeader,
-  LoadingSpinner,
-  Button,
-  Badge,
   TabNavigation,
-  ErrorState,
+  type Tab,
 } from '@/components/common';
-import type { Tab } from '@/components/common';
-import {
-  ProjectOverviewTab,
-  ProjectMembersTab,
-  ProjectSettingsTab,
-  ProjectGroupsTab,
-  ProjectPermissionsTab,
-} from '@/components/features/projects';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ProjectAccessBadge } from '@/components/features/projects/ProjectAccessBadge';
+import { ProjectOverviewTab } from '@/components/features/projects/ProjectOverviewTab';
+import { ProjectMembersTab } from '@/components/features/projects/ProjectMembersTab';
+import { ProjectGroupsTab } from '@/components/features/projects/ProjectGroupsTab';
+import { ProjectCatalogPanel } from '@/components/features/projects/ProjectCatalogPanel';
+import { ProjectSettingsTab } from '@/components/features/projects/ProjectSettingsTab';
+import { ProjectFormModal } from '@/components/features/projects/ProjectFormModal';
+import { DeleteProjectDialog } from '@/components/features/projects/DeleteProjectDialog';
 import { ProjectSignInTab } from '@/components/features/oauth';
-import {
-  FolderKanban,
-  LayoutDashboard,
-  User,
-  Users,
-  ShieldCheck,
-  Settings,
-  KeyRound,
-} from 'lucide-react';
-import { useProjectDetails, useBackNavigation } from '@/hooks';
 import { useSetBreadcrumbLabel } from '@/contexts';
+import { useProjectDetails } from '@/hooks/useProjectDetails';
+import { useTabParam } from '@/hooks/useTabParam';
+import { useUserType } from '@/hooks/useUserType';
 import { ROUTES } from '@/utils/routes';
-import type { ProjectDetails } from '@/types/project.types';
+import { cn } from '@/lib/utils';
 
-type TabType = 'overview' | 'members' | 'groups' | 'sign-in' | 'permissions' | 'settings';
-
-const TAB_IDS: TabType[] = [
+const PROJECT_TABS = [
   'overview',
   'members',
   'groups',
   'sign-in',
-  'permissions',
+  'catalog',
+  'settings',
+] as const;
+type ProjectTab = (typeof PROJECT_TABS)[number];
+/** `?tab=permissions` is the old name of the catalog tab; keep old links working. */
+const TAB_PARAM_VALUES = [...PROJECT_TABS, 'permissions'] as const;
+/** Tabs backed by routes that only root and the project's assigned admins may call. */
+const MANAGE_ONLY_TABS: readonly ProjectTab[] = [
+  'members',
+  'groups',
+  'sign-in',
   'settings',
 ];
 
-export const ProjectDetailsPage: React.FC = () => {
-  const { projectHash } = useParams<{ projectHash: string }>();
+const TAB_LABELS: Record<ProjectTab, string> = {
+  overview: 'Overview',
+  members: 'Members',
+  groups: 'Groups',
+  'sign-in': 'Sign-in',
+  catalog: 'Catalog',
+  settings: 'Settings',
+};
+
+function ProjectDetailsSkeleton(): React.JSX.Element {
+  return (
+    <div aria-busy="true" aria-label="Loading project">
+      <div className="mb-6 flex items-start gap-3">
+        <Skeleton className="h-10 w-10 rounded-md" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-6 w-64" />
+          <Skeleton className="h-4 w-96 max-w-full" />
+        </div>
+      </div>
+      <Skeleton className="mb-6 h-8 w-full max-w-xl" />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <Skeleton className="h-48 w-full rounded-lg" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+function ProjectDetailsView({
+  projectHash,
+}: {
+  projectHash: string;
+}): React.JSX.Element {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const handleGoBack = useBackNavigation(ROUTES.PROJECTS);
+  const { isRoot } = useUserType();
   const {
     project,
     userAccess,
-    statistics,
     projectGroups,
+    canManage,
     isLoading,
+    isRefreshing,
     error,
     refetch,
-    updateProjectState,
   } = useProjectDetails(projectHash);
-
-  // Show the project name in the breadcrumb leaf once details load.
   useSetBreadcrumbLabel(project?.project_name);
 
-  // Check for tab query parameter
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const tabParam = searchParams.get('tab') as TabType;
-    if (tabParam && TAB_IDS.includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
-  }, [location.search]);
-
-  useEffect(() => {
-    if (!projectHash) {
-      navigate(ROUTES.PROJECTS);
-    }
-  }, [navigate, projectHash]);
-
-  const handleProjectUpdate = (updatedProject: ProjectDetails) => {
-    updateProjectState(updatedProject);
-  };
-
-  const handleProjectDeleted = () => {
-    navigate(ROUTES.PROJECTS, {
-      state: { message: 'Project deleted successfully' },
-    });
-  };
-
-  // Refetch project data when project groups change
-  const handleProjectGroupsChange = async () => {
-    await refetch();
-  };
+  const [rawTab, setTab] = useTabParam(TAB_PARAM_VALUES, 'overview');
+  const requestedTab: ProjectTab =
+    rawTab === 'permissions' ? 'catalog' : rawTab;
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   if (isLoading) {
     return (
       <PageContainer>
-        <div className="flex flex-col items-center justify-center py-16 gap-4" role="main" aria-busy="true">
-          <LoadingSpinner aria-label="Loading project details" />
-          <p className="text-sm text-muted-foreground" aria-live="polite">Loading project details...</p>
-        </div>
+        <ProjectDetailsSkeleton />
       </PageContainer>
     );
   }
 
-  if (error || !project) {
+  if (!project || !userAccess) {
     return (
       <PageContainer>
         <ErrorState
           variant="fullpage"
-          title="Couldn't load project"
-          message={error || 'This project could not be found.'}
-          onRetry={projectHash ? () => void refetch() : undefined}
-          isRetrying={isLoading}
-        >
-          <Button variant="outline" onClick={handleGoBack}>
-            Back to Projects
-          </Button>
-        </ErrorState>
+          title="This project could not be loaded"
+          message={error ?? 'The project was not found.'}
+          onRetry={() => void refetch()}
+          isRetrying={isRefreshing}
+        />
       </PageContainer>
     );
   }
 
-  const tabs: Tab[] = [
-    {
-      id: 'overview',
-      label: 'Overview',
-      icon: <LayoutDashboard size={16} />,
-    },
-    {
-      id: 'members',
-      label: 'Members',
-      icon: <User size={16} />,
-      count: project.member_count,
-    },
-    {
-      id: 'groups',
-      label: 'Groups',
-      icon: <Users size={16} />,
-      count: project.group_count,
-    },
-    {
-      id: 'sign-in',
-      label: 'Sign-in',
-      icon: <KeyRound size={16} />,
-    },
-    {
-      id: 'permissions',
-      label: 'Permissions',
-      icon: <ShieldCheck size={16} />,
-    },
-    {
-      id: 'settings',
-      label: 'Settings',
-      icon: <Settings size={16} />,
-    },
-  ];
+  // Viewers who only reach the project through their groups can't call the
+  // admin-scoped routes; fall back to the overview deterministically.
+  const activeTab: ProjectTab =
+    !canManage && MANAGE_ONLY_TABS.includes(requestedTab)
+      ? 'overview'
+      : requestedTab;
+  const tabs: Tab[] = PROJECT_TABS.map((id) => ({
+    id,
+    label: TAB_LABELS[id],
+    disabled: !canManage && MANAGE_ONLY_TABS.includes(id),
+  }));
+  const refresh = (): Promise<void> => refetch();
 
   return (
     <PageContainer>
       <PageHeader
         title={project.project_name}
-        subtitle={project.project_description || 'No description provided'}
-        icon={<FolderKanban size={28} />}
-        badge={
-          project.is_active !== false ? (
-            <Badge variant="success" aria-label="Status: Active">
-              Active
-            </Badge>
-          ) : (
-            <Badge variant="warning" aria-label="Status: Inactive">
-              Inactive
-            </Badge>
-          )
+        subtitle={project.project_description || 'No description'}
+        icon={
+          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary-subtle text-primary-subtle-foreground">
+            <FolderKanban className="h-5 w-5" />
+          </span>
         }
+        badge={<ProjectAccessBadge accessLevel={userAccess.access_level} />}
         actions={
-          <Button
-            variant="outline"
-            size="md"
-            onClick={handleGoBack}
-            aria-label="Return to projects list"
-          >
-            Back to Projects
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => void refetch()}
+              disabled={isRefreshing}
+              aria-label="Refresh project"
+            >
+              <RefreshCw
+                className={cn(isRefreshing && 'animate-spin')}
+                aria-hidden="true"
+              />
+            </Button>
+            {canManage && (
+              <>
+                <Button variant="secondary" onClick={() => setEditOpen(true)}>
+                  <Pencil aria-hidden="true" />
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 aria-hidden="true" />
+                  Delete
+                </Button>
+              </>
+            )}
+          </>
         }
-      />
-
-      <TabNavigation
-        tabs={tabs}
-        activeTab={activeTab}
-        onChange={(tabId) => setActiveTab(tabId as TabType)}
-        contained
       >
+        <TabNavigation
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={setTab}
+          ariaLabel="Project sections"
+        />
+      </PageHeader>
+
+      {error && (
+        <p className="mb-4 text-xs text-destructive" role="alert">
+          The project could not be refreshed: {error}
+        </p>
+      )}
+
+      <div role="tabpanel" aria-label={TAB_LABELS[activeTab]}>
         {activeTab === 'overview' && (
           <ProjectOverviewTab
             project={project}
             userAccess={userAccess}
-            statistics={statistics}
             projectGroups={projectGroups}
+            canManage={canManage}
+            isRoot={isRoot}
           />
         )}
-        {activeTab === 'members' && <ProjectMembersTab project={project} />}
+        {activeTab === 'members' && (
+          <ProjectMembersTab projectHash={project.project_hash} />
+        )}
         {activeTab === 'groups' && (
           <ProjectGroupsTab
-            project={project}
+            projectHash={project.project_hash}
+            projectName={project.project_name}
             projectGroups={projectGroups}
-            onProjectGroupsChange={handleProjectGroupsChange}
+            onProjectGroupsChange={refresh}
           />
         )}
         {activeTab === 'sign-in' && (
@@ -214,17 +216,50 @@ export const ProjectDetailsPage: React.FC = () => {
             projectName={project.project_name}
           />
         )}
-        {activeTab === 'permissions' && (
-          <ProjectPermissionsTab project={project} />
+        {activeTab === 'catalog' && (
+          <ProjectCatalogPanel
+            projectHash={project.project_hash}
+            projectName={project.project_name}
+          />
         )}
         {activeTab === 'settings' && (
           <ProjectSettingsTab
             project={project}
-            onProjectUpdate={handleProjectUpdate}
-            onProjectDeleted={handleProjectDeleted}
+            onUpdated={refresh}
+            onDeleteRequest={() => setDeleteOpen(true)}
           />
         )}
-      </TabNavigation>
+      </div>
+
+      {canManage && (
+        <>
+          <ProjectFormModal
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            mode="edit"
+            project={project}
+            onSaved={() => void refetch()}
+          />
+          <DeleteProjectDialog
+            project={project}
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+            onDeleted={() => void navigate(ROUTES.PROJECTS, { replace: true })}
+          />
+        </>
+      )}
     </PageContainer>
   );
-};
+}
+
+/**
+ * Project details. The view is keyed by the hash so switching projects never
+ * shows the previous project's data while the next one loads.
+ */
+export function ProjectDetailsPage(): React.JSX.Element {
+  const { projectHash } = useParams<{ projectHash: string }>();
+  if (!projectHash) return <Navigate to={ROUTES.PROJECTS} replace />;
+  return <ProjectDetailsView key={projectHash} projectHash={projectHash} />;
+}
+
+export default ProjectDetailsPage;

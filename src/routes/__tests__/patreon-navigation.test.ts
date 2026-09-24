@@ -13,17 +13,21 @@ vi.mock('@/hooks', () => ({
 }));
 
 function visibleItemsFor(userType: string): NavItem[] {
-  return NAVIGATION_SECTIONS
-    .filter((section) => section.allowedUserTypes.includes(userType))
-    .flatMap((section) =>
-      section.items.filter((item) => item.allowedUserTypes.includes(userType))
-    );
+  return NAVIGATION_SECTIONS.filter((section) =>
+    section.allowedUserTypes.includes(userType)
+  ).flatMap((section) =>
+    section.items.filter((item) => item.allowedUserTypes.includes(userType))
+  );
 }
 
 describe('Patreon system navigation', () => {
   it('adds Patreon as a ROOT-only System item', () => {
-    const systemSection = NAVIGATION_SECTIONS.find((section) => section.id === 'system');
-    const patreonItem = systemSection?.items.find((item) => item.id === 'patreon');
+    const systemSection = NAVIGATION_SECTIONS.find(
+      (section) => section.id === 'system'
+    );
+    const patreonItem = systemSection?.items.find(
+      (item) => item.id === 'patreon'
+    );
 
     expect(patreonItem).toMatchObject({
       label: 'Patreon',
@@ -34,8 +38,12 @@ describe('Patreon system navigation', () => {
   });
 
   it('is visible for root users and hidden from non-root admins', () => {
-    expect(visibleItemsFor('root').some((item) => item.id === 'patreon')).toBe(true);
-    expect(visibleItemsFor('admin').some((item) => item.id === 'patreon')).toBe(false);
+    expect(visibleItemsFor('root').some((item) => item.id === 'patreon')).toBe(
+      true
+    );
+    expect(visibleItemsFor('admin').some((item) => item.id === 'patreon')).toBe(
+      false
+    );
   });
 
   it('marks only Patreon active on the Patreon system route', () => {

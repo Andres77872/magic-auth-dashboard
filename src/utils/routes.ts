@@ -9,23 +9,23 @@ export const ROUTES = {
 
   // User Management
   USERS: '/users',
-  USER: '/users',  // base path for /users/:hash
+  USER: '/users', // base path for /users/:hash
 
   // Project Management
   PROJECTS: '/projects',
-  PROJECT: '/projects',  // base path for /projects/:hash
+  PROJECT: '/projects', // base path for /projects/:hash
 
   // Billing (groups, catalog, per-account Stripe credentials)
   BILLING: '/billing',
-  BILLING_GROUP: '/billing',  // base path for /billing/:groupHash
+  BILLING_GROUP: '/billing', // base path for /billing/:groupHash
 
   // OAuth (connections, per-project bindings, write-only provider credentials)
   OAUTH: '/oauth',
-  OAUTH_CONNECTION: '/oauth',  // base path for /oauth/:connectionHash
+  OAUTH_CONNECTION: '/oauth', // base path for /oauth/:connectionHash
 
   // Group Management
   GROUPS: '/groups',
-  GROUP: '/groups',  // base path for /groups/:hash
+  GROUP: '/groups', // base path for /groups/:hash
 
   // Project Group Management (route-based, under groups)
   PROJECT_GROUPS: '/groups/project-groups',
@@ -60,99 +60,24 @@ export const ROUTES = {
   SETTINGS: '/settings',
 } as const;
 
-// Navigation Items
+// Navigation
 export interface NavItem {
   id: string;
   label: string;
   path: string;
+  /** Icon key resolved by NavigationItem. */
   icon: string;
   allowedUserTypes: string[];
+  /** Short description used by the command palette. */
+  description?: string;
+  /**
+   * Custom active-state matcher. Without it an item is active on its path and
+   * any nested path, with the most specific sibling winning.
+   */
+  isActive?: (pathname: string, searchParams: URLSearchParams) => boolean;
   children?: NavItem[];
 }
 
-export const NAVIGATION_ITEMS: NavItem[] = [
-  {
-    id: 'home',
-    label: 'Home',
-    path: ROUTES.HOME,
-    icon: 'dashboard',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'users',
-    label: 'Users',
-    path: ROUTES.USERS,
-    icon: 'users',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'projects',
-    label: 'Projects',
-    path: ROUTES.PROJECTS,
-    icon: 'folder',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'billing',
-    label: 'Billing',
-    path: ROUTES.BILLING,
-    icon: 'credit-card',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'oauth',
-    label: 'OAuth',
-    path: ROUTES.OAUTH,
-    icon: 'key-round',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'groups',
-    label: 'Groups',
-    path: ROUTES.GROUPS,
-    icon: 'users-group',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'permissions',
-    label: 'Permissions',
-    path: ROUTES.PERMISSIONS,
-    icon: 'shield',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'roles',
-    label: 'Roles',
-    path: ROUTES.ROLES,
-    icon: 'user-badge',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'tokens',
-    label: 'API tokens',
-    path: ROUTES.TOKENS,
-    icon: 'key',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'audit',
-    label: 'Audit logs',
-    path: ROUTES.AUDIT,
-    icon: 'document',
-    allowedUserTypes: ['root', 'admin'],
-  },
-  {
-    id: 'system',
-    label: 'System',
-    path: ROUTES.SYSTEM,
-    icon: 'settings',
-    allowedUserTypes: ['root'],
-  },
-];
-
-// Grouped navigation (sidebar sections with optional nested sub-items).
-// NAVIGATION_ITEMS above is kept as a flat reference; the sidebar renders
-// from NAVIGATION_SECTIONS so related views nest under a parent.
 export interface NavSection {
   id: string;
   label: string;
@@ -160,24 +85,38 @@ export interface NavSection {
   items: NavItem[];
 }
 
+const isProjectGroupsLocation = (
+  pathname: string,
+  searchParams: URLSearchParams
+): boolean =>
+  (pathname === ROUTES.GROUPS &&
+    searchParams.get('tab') === 'project-groups') ||
+  pathname === ROUTES.PROJECT_GROUPS ||
+  pathname.startsWith(`${ROUTES.PROJECT_GROUPS}/`);
+
+/**
+ * Sidebar information architecture. Every page is one click away; there is no
+ * nested navigation. Item ids and icon keys are stable identifiers used by tests.
+ */
 export const NAVIGATION_SECTIONS: NavSection[] = [
   {
     id: 'overview',
-    label: 'Overview',
+    label: 'Workspace',
     allowedUserTypes: ['root', 'admin'],
     items: [
       {
         id: 'home',
-        label: 'Home',
+        label: 'Overview',
         path: ROUTES.HOME,
         icon: 'dashboard',
+        description: 'Platform totals, activity and health',
         allowedUserTypes: ['root', 'admin'],
       },
     ],
   },
   {
     id: 'access-management',
-    label: 'Access Management',
+    label: 'Access management',
     allowedUserTypes: ['root', 'admin'],
     items: [
       {
@@ -185,67 +124,49 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'Users',
         path: ROUTES.USERS,
         icon: 'users',
+        description: 'Accounts, user types and status',
         allowedUserTypes: ['root', 'admin'],
+      },
+      {
+        id: 'user-groups',
+        label: 'User groups',
+        path: ROUTES.GROUPS,
+        icon: 'users-group',
+        description: 'Collections of users that receive access',
+        allowedUserTypes: ['root', 'admin'],
+        isActive: (pathname, searchParams) =>
+          !isProjectGroupsLocation(pathname, searchParams) &&
+          (pathname === ROUTES.GROUPS ||
+            pathname.startsWith(`${ROUTES.GROUPS}/`)),
       },
       {
         id: 'projects',
         label: 'Projects',
         path: ROUTES.PROJECTS,
         icon: 'folder',
+        description: 'Tenants that users sign in to',
         allowedUserTypes: ['root', 'admin'],
       },
       {
-        id: 'groups',
-        label: 'Groups',
-        path: ROUTES.GROUPS,
-        icon: 'users-group',
+        id: 'project-groups',
+        label: 'Project groups',
+        path: `${ROUTES.GROUPS}?tab=project-groups`,
+        icon: 'layers',
+        description: 'Bundles of projects granted to user groups',
         allowedUserTypes: ['root', 'admin'],
-        children: [
-          {
-            id: 'user-groups',
-            label: 'User Groups',
-            path: ROUTES.GROUPS,
-            icon: 'users-group',
-            allowedUserTypes: ['root', 'admin'],
-          },
-          {
-            id: 'project-groups',
-            label: 'Project Groups',
-            path: `${ROUTES.GROUPS}?tab=project-groups`,
-            icon: 'folder',
-            allowedUserTypes: ['root', 'admin'],
-          },
-        ],
+        isActive: isProjectGroupsLocation,
       },
       {
         id: 'permissions',
-        label: 'Permissions',
+        label: 'Roles & permissions',
         path: ROUTES.PERMISSIONS,
         icon: 'shield',
+        description: 'Global roles, permission groups and assignments',
         allowedUserTypes: ['root', 'admin'],
-        children: [
-          {
-            id: 'permissions-management',
-            label: 'Permissions',
-            path: ROUTES.PERMISSIONS,
-            icon: 'shield',
-            allowedUserTypes: ['root', 'admin'],
-          },
-          {
-            id: 'global-roles',
-            label: 'Global Roles',
-            path: ROUTES.PERMISSIONS_GLOBAL_ROLES,
-            icon: 'user-badge',
-            allowedUserTypes: ['root', 'admin'],
-          },
-        ],
-      },
-      {
-        id: 'roles',
-        label: 'Roles',
-        path: ROUTES.ROLES,
-        icon: 'user-badge',
-        allowedUserTypes: ['root', 'admin'],
+        isActive: (pathname) =>
+          pathname === ROUTES.PERMISSIONS ||
+          pathname.startsWith(`${ROUTES.PERMISSIONS}/`) ||
+          pathname === ROUTES.ROLES,
       },
     ],
   },
@@ -256,16 +177,18 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
     items: [
       {
         id: 'tokens',
-        label: 'API tokens',
+        label: 'API keys',
         path: ROUTES.TOKENS,
         icon: 'key',
+        description: 'Project-scoped keys for server-to-server access',
         allowedUserTypes: ['root', 'admin'],
       },
       {
         id: 'audit',
-        label: 'Audit logs',
+        label: 'Audit log',
         path: ROUTES.AUDIT,
         icon: 'document',
+        description: 'Activity, security events and request statistics',
         allowedUserTypes: ['root', 'admin'],
       },
       {
@@ -273,6 +196,7 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'Billing',
         path: ROUTES.BILLING,
         icon: 'credit-card',
+        description: 'Billing groups, catalog and Stripe accounts',
         allowedUserTypes: ['root', 'admin'],
       },
       {
@@ -280,6 +204,7 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'OAuth',
         path: ROUTES.OAUTH,
         icon: 'key-round',
+        description: 'Sign-in providers and project bindings',
         allowedUserTypes: ['root', 'admin'],
       },
     ],
@@ -294,6 +219,7 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'System',
         path: ROUTES.SYSTEM,
         icon: 'settings',
+        description: 'Service health, cache and integrations',
         allowedUserTypes: ['root'],
       },
       {
@@ -301,6 +227,7 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'Email templates',
         path: ROUTES.EMAIL_TEMPLATES,
         icon: 'mail',
+        description: 'Transactional email content',
         allowedUserTypes: ['root'],
       },
       {
@@ -308,8 +235,14 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         label: 'Patreon',
         path: ROUTES.PATREON,
         icon: 'heart-handshake',
+        description: 'Patreon entitlements and sync',
         allowedUserTypes: ['root'],
       },
     ],
   },
 ];
+
+/** Flat list of every navigation item, in sidebar order. */
+export const NAVIGATION_ITEMS: NavItem[] = NAVIGATION_SECTIONS.flatMap(
+  (section) => section.items
+);

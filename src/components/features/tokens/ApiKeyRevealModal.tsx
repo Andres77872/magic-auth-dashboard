@@ -1,19 +1,13 @@
 /**
- * API Key Reveal Modal
+ * One-time reveal of a newly created API key.
  *
- * One-time reveal modal for displaying the full API key token after creation.
- * CRITICAL: Token is displayed exactly once and must be copied before closing.
- * 
- * Features:
- * - Token display in monospace, copyable field
- * - Copy-to-clipboard button with success indicator
- * - Forced confirmation checkbox requirement
- * - Prevents dismissal without confirmation
- * - Clear token from memory on close
+ * The secret only lives in the parent's state while this dialog is open; it
+ * is never logged, persisted or rendered anywhere else. The dialog can't be
+ * dismissed until the operator copied the key or confirmed they saved it.
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Key, Copy, Check, AlertTriangle, Loader2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { AlertTriangle, Check, Copy } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -24,331 +18,262 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import type {
-  CreateApiKeyResponse,
+  CreatedApiKey,
   DelegatedAuthRevealConfig,
 } from '@/types/api-key.types';
 
-interface ApiKeyRevealModalProps {
-  isOpen: boolean;
+export interface ApiKeyRevealModalProps {
+  created: CreatedApiKey | null;
+  delegatedAuthConfig?: DelegatedAuthRevealConfig | null;
   onClose: () => void;
-  keyData: CreateApiKeyResponse;
-  delegatedAuthConfig?: DelegatedAuthRevealConfig;
+}
+
+function SecretField({
+  id,
+  label,
+  value,
+  multiline = false,
+  copied,
+  onCopy,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  multiline?: boolean;
+  copied: boolean;
+  onCopy: () => void;
+}): React.JSX.Element {
+  const fieldClass =
+    'w-full resize-none rounded-md border border-input bg-muted/60 py-2 pl-3 pr-11 font-mono text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+  return (
+    <div className="space-y-1.5">
+      <label
+        htmlFor={id}
+        className="block text-[13px] font-medium text-foreground"
+      >
+        {label}
+      </label>
+      <div className="relative">
+        {multiline ? (
+          <textarea
+            id={id}
+            value={value}
+            readOnly
+            rows={2}
+            spellCheck={false}
+            className={fieldClass}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        ) : (
+          <input
+            id={id}
+            type="text"
+            value={value}
+            readOnly
+            spellCheck={false}
+            autoComplete="off"
+            className={fieldClass}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute right-1 top-1 h-7 w-7"
+          onClick={onCopy}
+          aria-label={
+            copied ? `${label} copied` : `Copy ${label.toLowerCase()}`
+          }
+        >
+          {copied ? (
+            <Check className="text-success" aria-hidden="true" />
+          ) : (
+            <Copy aria-hidden="true" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export function ApiKeyRevealModal({
-  isOpen,
-  onClose,
-  keyData,
+  created,
   delegatedAuthConfig,
+  onClose,
 }: ApiKeyRevealModalProps): React.JSX.Element {
-  // State
-  const [hasCopied, setHasCopied] = useState(false);
-  const [isCopying, setIsCopying] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [hasConfirmed, setHasConfirmed] = useState(false);
-  const [showConfirmWarning, setShowConfirmWarning] = useState(false);
+  const [secretCopied, setSecretCopied] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [blockedClose, setBlockedClose] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
+  const resetTimer = useRef<number | undefined>(undefined);
 
-  // Ref to hold token (cleared on close)
-  const tokenRef = useRef<string | null>(null);
+  // Reset per revealed key.
+  const [shownFor, setShownFor] = useState<string | null>(null);
+  if ((created?.public_id ?? null) !== shownFor) {
+    setShownFor(created?.public_id ?? null);
+    setCopiedField(null);
+    setSecretCopied(false);
+    setConfirmed(false);
+    setBlockedClose(false);
+    setCopyFailed(false);
+  }
 
-  // Store token from response
-  useEffect(() => {
-    if (isOpen && keyData?.data?.api_key) {
-      tokenRef.current = keyData.data.api_key;
-    }
-  }, [isOpen, keyData]);
+  const canClose = secretCopied || confirmed;
 
-  // Clear token on close
-  useEffect(() => {
-    if (!isOpen) {
-      tokenRef.current = null;
-      setHasCopied(false);
-      setCopiedField(null);
-      setHasConfirmed(false);
-      setShowConfirmWarning(false);
-    }
-  }, [isOpen]);
-
-  // Copy to clipboard
-  const handleCopy = useCallback(async (
-    value?: string,
-    field: string = 'token',
-    fallbackElementId: string = 'api-key-token',
-    countsAsSecretSaved: boolean = true
-  ) => {
-    const textToCopy = value || tokenRef.current;
-    if (!textToCopy) return;
-
-    setIsCopying(true);
+  const copy = async (
+    field: string,
+    value: string,
+    containsSecret: boolean
+  ): Promise<void> => {
     try {
-      await navigator.clipboard.writeText(textToCopy);
-      if (countsAsSecretSaved) setHasCopied(true);
+      await navigator.clipboard.writeText(value);
+      setCopyFailed(false);
       setCopiedField(field);
-
-      setTimeout(() => setCopiedField(null), 2000);
+      if (containsSecret) setSecretCopied(true);
+      window.clearTimeout(resetTimer.current);
+      resetTimer.current = window.setTimeout(() => setCopiedField(null), 2000);
     } catch {
-      const tokenField = document.getElementById(fallbackElementId);
-      if (tokenField instanceof HTMLInputElement || tokenField instanceof HTMLTextAreaElement) {
-        tokenField.select();
-        try {
-          document.execCommand('copy');
-          if (countsAsSecretSaved) setHasCopied(true);
-          setCopiedField(field);
-          setTimeout(() => setCopiedField(null), 2000);
-        } catch {
-          console.error('Copy failed: fallback execCommand also failed');
-        }
-      }
-    } finally {
-      setIsCopying(false);
+      setCopyFailed(true);
     }
-  }, []);
+  };
 
-  // Confirm handler - allows proceeding even without copying
-  const handleConfirm = useCallback(() => {
-    if (!hasCopied && !hasConfirmed) {
-      setShowConfirmWarning(true);
+  const requestClose = (): void => {
+    if (!canClose) {
+      setBlockedClose(true);
       return;
     }
-    
+    window.clearTimeout(resetTimer.current);
     onClose();
-  }, [hasCopied, hasConfirmed, onClose]);
+  };
 
-  // Prevent escape key dismissal
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent): void => {
-      if (isOpen && e.key === 'Escape' && !hasConfirmed) {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return (): void => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, hasConfirmed]);
-
-  // Get key details
-  const key = keyData?.data;
-  const token = key?.api_key || '';
-  const callerEnvSnippet = delegatedAuthConfig
+  const token = created?.api_key ?? '';
+  const callerEnv = delegatedAuthConfig
     ? `MAGIC_LLM_DELEGATION_API_KEY=${token}`
     : '';
-  const targetEnvSnippet = delegatedAuthConfig
-    ? `DELEGATED_AUTH_TRUSTED_CLIENTS=${delegatedAuthConfig.sourceProjectHash}:${key?.public_id || ''}`
-    : '';
-
-  if (!key) return <></>;
+  const targetEnv =
+    delegatedAuthConfig && created
+      ? `DELEGATED_AUTH_TRUSTED_CLIENTS=${delegatedAuthConfig.sourceProjectHash}:${created.public_id}`
+      : '';
 
   return (
-    <Dialog 
-      open={isOpen} 
-      onOpenChange={(open) => {
-        // Prevent closing without confirmation
-        if (!open && !hasConfirmed) {
-          return;
-        }
-        if (!open) {
-          onClose();
-        }
-      }}
+    <Dialog
+      open={created !== null}
+      onOpenChange={(open) => !open && requestClose()}
     >
       <DialogContent
         size="lg"
-        // Hide close button by overlaying style
-        onPointerDownOutside={(e) => {
-          // Prevent backdrop click closing
-          if (!hasConfirmed) {
-            e.preventDefault();
+        onEscapeKeyDown={(event) => {
+          if (!canClose) {
+            event.preventDefault();
+            setBlockedClose(true);
           }
+        }}
+        onPointerDownOutside={(event) => {
+          if (!canClose) event.preventDefault();
         }}
       >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5 text-success" />
-            {delegatedAuthConfig ? 'Delegation Token Created' : 'API Key Created'}
+          <DialogTitle>
+            {delegatedAuthConfig ? 'Delegation key created' : 'API key created'}
           </DialogTitle>
           <DialogDescription>
-            Your new API key has been created. Save this token now — it will not be shown again.
+            {created ? (
+              <>
+                <span className="font-medium text-foreground">
+                  {created.name}
+                </span>{' '}
+                · fingerprint{' '}
+                <span className="font-mono">{created.fingerprint}</span>
+              </>
+            ) : null}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Critical warning */}
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
-            <div>
-              <h4 className="font-semibold text-foreground mb-1">Save This Token Now</h4>
-              <p className="text-sm text-muted-foreground">
-                This is the only time you will see the full API key token. 
-                After closing this dialog, the token cannot be retrieved again.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Key identification */}
-        <div className="flex items-center gap-3 py-2">
-          <Badge variant="subtlePrimary" size="md">
-            Fingerprint: {key.fingerprint}
-          </Badge>
-          <span className="font-mono text-xs text-muted-foreground">
-            Key ending in ...{key.secret_last4}
-          </span>
-        </div>
-
-        {/* Token display */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium">API Key Token</label>
-          <div className="relative">
-            <input
-              id="api-key-token"
-              type="text"
-              value={token}
-              readOnly
-              className="flex w-full rounded-md border border-input bg-muted px-3 py-2 pr-10 font-mono text-sm shadow-sm"
-              onClick={(e) => e.currentTarget.select()}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7"
-              onClick={() => void handleCopy()}
-              disabled={isCopying}
-            >
-              {isCopying ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : hasCopied ? (
-                <Check className="h-4 w-4 text-success" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-          {copiedField === 'token' && (
-            <p className="text-sm text-success">Copied to clipboard!</p>
-          )}
-        </div>
-
-        {delegatedAuthConfig && (
-          <div className="space-y-4 rounded-sm border border-primary/20 bg-primary/5 p-4">
-            <div>
-              <h4 className="font-semibold text-foreground">Delegated Auth Configuration</h4>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Target project: {delegatedAuthConfig.targetProjectName || delegatedAuthConfig.targetProjectHash}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Source project: {delegatedAuthConfig.sourceProjectName || delegatedAuthConfig.sourceProjectHash}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Caller service env</label>
-              <div className="relative">
-                <textarea
-                  id="delegated-caller-env"
-                  value={callerEnvSnippet}
-                  readOnly
-                  rows={2}
-                  className="flex w-full resize-none rounded-md border border-input bg-muted px-3 py-2 pr-10 font-mono text-sm shadow-sm"
-                  onClick={(e) => e.currentTarget.select()}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-2 h-7"
-                  onClick={() => void handleCopy(callerEnvSnippet, 'caller-env', 'delegated-caller-env', true)}
-                  disabled={isCopying}
-                >
-                  {copiedField === 'caller-env' ? (
-                    <Check className="h-4 w-4 text-success" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Target service env</label>
-              <div className="relative">
-                <textarea
-                  id="delegated-target-env"
-                  value={targetEnvSnippet}
-                  readOnly
-                  rows={2}
-                  className="flex w-full resize-none rounded-md border border-input bg-muted px-3 py-2 pr-10 font-mono text-sm shadow-sm"
-                  onClick={(e) => e.currentTarget.select()}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-2 h-7"
-                  onClick={() => void handleCopy(targetEnvSnippet, 'target-env', 'delegated-target-env', false)}
-                  disabled={isCopying}
-                >
-                  {copiedField === 'target-env' ? (
-                    <Check className="h-4 w-4 text-success" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Confirmation checkbox */}
-        <div className="flex items-start gap-3 py-4">
-          <Checkbox
-            id="confirm-saved"
-            checked={hasConfirmed}
-            onCheckedChange={(checked) => {
-              setHasConfirmed(checked === true);
-              if (checked) {
-                setShowConfirmWarning(false);
-              }
-            }}
-            label="I have saved this token securely"
+        <div className="flex items-start gap-2.5 rounded-md border border-warning/30 bg-warning/10 px-3 py-2.5 text-[13px] text-foreground">
+          <AlertTriangle
+            className="mt-0.5 h-4 w-4 shrink-0 text-warning"
+            aria-hidden="true"
           />
+          <p className="m-0">
+            Copy the key now. It won&apos;t be shown again; if it&apos;s lost,
+            revoke it and create a new one.
+          </p>
         </div>
 
-        {/* Confirm warning */}
-        {showConfirmWarning && (
-          <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
-            <p className="text-sm text-warning mb-3">
-              You haven't copied the token yet. Are you sure? You won't be able to see this token again.
-            </p>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowConfirmWarning(false)}
-              >
-                Go Back to Copy
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-warning text-warning hover:bg-warning/10"
-                onClick={onClose}
-              >
-                Confirm Without Copy
-              </Button>
-            </div>
+        {created && (
+          <div className="space-y-4">
+            <SecretField
+              id="api-key-token"
+              label="API key"
+              value={token}
+              copied={copiedField === 'token'}
+              onCopy={() => void copy('token', token, true)}
+            />
+
+            {delegatedAuthConfig && (
+              <div className="space-y-3 rounded-md border border-border p-3">
+                <div className="text-xs text-muted-foreground">
+                  <p className="m-0">
+                    Target project:{' '}
+                    {delegatedAuthConfig.targetProjectName ||
+                      delegatedAuthConfig.targetProjectHash}
+                  </p>
+                  <p className="m-0">
+                    Source project:{' '}
+                    {delegatedAuthConfig.sourceProjectName ||
+                      delegatedAuthConfig.sourceProjectHash}
+                  </p>
+                </div>
+                <SecretField
+                  id="delegated-caller-env"
+                  label="Caller service environment"
+                  value={callerEnv}
+                  multiline
+                  copied={copiedField === 'caller-env'}
+                  onCopy={() => void copy('caller-env', callerEnv, true)}
+                />
+                <SecretField
+                  id="delegated-target-env"
+                  label="Target service environment"
+                  value={targetEnv}
+                  multiline
+                  copied={copiedField === 'target-env'}
+                  onCopy={() => void copy('target-env', targetEnv, false)}
+                />
+              </div>
+            )}
+
+            {copyFailed && (
+              <p role="alert" className="m-0 text-xs text-destructive">
+                The clipboard isn&apos;t available here. Select the key and copy
+                it manually.
+              </p>
+            )}
+
+            <Checkbox
+              id="api-key-saved"
+              checked={confirmed}
+              onCheckedChange={(checked) => {
+                setConfirmed(checked === true);
+                if (checked === true) setBlockedClose(false);
+              }}
+              label="I have stored this key somewhere safe"
+            />
+
+            {blockedClose && !canClose && (
+              <p role="alert" className="m-0 text-xs text-warning">
+                Copy the key or confirm you&apos;ve stored it before closing.
+              </p>
+            )}
           </div>
         )}
 
         <DialogFooter>
-          <Button
-            onClick={handleConfirm}
-            disabled={showConfirmWarning}
-            variant={hasCopied ? 'primary' : 'outline'}
-          >
-            {hasCopied ? 'Confirm' : 'Confirm Without Copying'}
+          <Button onClick={requestClose} disabled={!canClose}>
+            Done
           </Button>
         </DialogFooter>
       </DialogContent>

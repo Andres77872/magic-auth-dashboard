@@ -1,15 +1,23 @@
-// ⚠️ DEPRECATED: Use DataView from @/components/common instead
-// These components are kept for backward compatibility but should not be used in new code
-export { GroupTable } from './GroupTable';
-export { GroupCard } from './GroupCard';
-export { GroupFilter } from './GroupFilter';
-export { GroupForm } from './GroupForm';
 export { GroupFormModal } from './GroupFormModal';
-export { GroupActionsMenu } from './GroupActionsMenu';
-export { GroupMembersTable } from './GroupMembersTable';
-export { GroupPermissionsTab } from './GroupPermissionsTab';
+export type { GroupFormModalProps } from './GroupFormModal';
+export { DeleteGroupDialog } from './DeleteGroupDialog';
+export { GroupMembersTab } from './GroupMembersTab';
 export { GroupProjectGroupsTab } from './GroupProjectGroupsTab';
-export { BulkMemberAssignmentModal } from './BulkMemberAssignmentModal';
-export { ProjectGroupTable } from './ProjectGroupTable';
-export { ProjectGroupActionsMenu } from './ProjectGroupActionsMenu';
-export { ProjectGroupForm } from './ProjectGroupForm';
+export { GroupPermissionsTab } from './GroupPermissionsTab';
+export { ProjectGroupProjectsTab } from './ProjectGroupProjectsTab';
+export { ProjectGroupUserGroupsTab } from './ProjectGroupUserGroupsTab';
+export { AddMembersModal } from './AddMembersModal';
+export { AddProjectsToGroupModal } from './AddProjectsToGroupModal';
+export { GrantProjectGroupsModal } from './GrantProjectGroupsModal';
+export { GrantUserGroupsModal } from './GrantUserGroupsModal';
+export { GroupPickerDialog } from './GroupPickerDialog';
+export type { PickerItem, PickerFailure } from './GroupPickerDialog';
+export {
+  DefaultGroupBadge,
+  AdminGroupBadge,
+  RootOnlyNotice,
+} from './GroupBadges';
+export type { GroupKind } from './GroupBadges';
+export { NameCell, TimeCell } from './GroupCells';
+export { GroupSectionHeader } from './GroupSectionHeader';
+export { groupRoutes } from './group-routes';

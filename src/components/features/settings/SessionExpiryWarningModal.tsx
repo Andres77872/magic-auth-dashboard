@@ -38,35 +38,26 @@ export function SessionExpiryWarningModal({
       <DialogContent size="sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-warning">
-            <AlertTriangle className="h-5 w-5" />
-            Session Expiring Soon
+            <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+            Your session is ending
           </DialogTitle>
           <DialogDescription>
-            Your session auto-refresh has failed multiple times.
+            The console couldn&apos;t renew your sign-in after several tries.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
-          <p className="text-sm text-foreground mb-3">
-            Your dashboard session is about to expire. Please save any work in progress.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            After expiry, you will need to log in again to continue using the dashboard.
-          </p>
-        </div>
+        <p className="m-0 rounded-md bg-warning-subtle px-3 py-2.5 text-[13px] text-foreground">
+          Finish or copy any unsaved changes, then sign in again to keep
+          working.
+        </p>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-          >
-            Dismiss
+          <Button variant="secondary" onClick={onClose}>
+            Not now
           </Button>
-          <Button
-            onClick={handleReLogin}
-          >
-            <LogIn className="h-4 w-4 mr-2" />
-            Re-login Now
+          <Button onClick={handleReLogin}>
+            <LogIn aria-hidden="true" />
+            Sign in again
           </Button>
         </DialogFooter>
       </DialogContent>

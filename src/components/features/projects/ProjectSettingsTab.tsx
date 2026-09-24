@@ -1,214 +1,83 @@
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import React from 'react';
+import { Trash2 } from 'lucide-react';
+import { Panel } from '@/components/common/Panel';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-
+import { useProjectMutations } from '@/hooks/useProjects';
+import { useToast } from '@/hooks/useToast';
+import type { ProjectFormData, ProjectInfo } from '@/types/project.types';
 import { ProjectForm } from './ProjectForm';
-import { projectService } from '@/services';
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '@/utils/routes';
-import type { ProjectDetails, ProjectFormData } from '@/types/project.types';
-import { AlertTriangle, X } from 'lucide-react';
 
 interface ProjectSettingsTabProps {
-  project: ProjectDetails;
-  onProjectUpdate: (updatedProject: ProjectDetails) => void;
-  onProjectDeleted: () => void;
+  project: ProjectInfo;
+  /** Reload the project after the API confirms an update. */
+  onUpdated: () => Promise<void>;
+  onDeleteRequest: () => void;
 }
 
-export const ProjectSettingsTab: React.FC<ProjectSettingsTabProps> = ({
+/** Edit the project's name and description; delete it from the danger zone. */
+export function ProjectSettingsTab({
   project,
-  onProjectUpdate,
-  onProjectDeleted,
-}) => {
-  const navigate = useNavigate();
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  onUpdated,
+  onDeleteRequest,
+}: ProjectSettingsTabProps): React.JSX.Element {
+  const { showToast } = useToast();
+  const { pending, updateProject } = useProjectMutations();
 
-  const handleUpdate = async (formData: ProjectFormData) => {
+  const save = async (values: ProjectFormData): Promise<void> => {
     try {
-      setIsUpdating(true);
-      setError(null);
-      const response = await projectService.updateProject(
-        project.project_hash,
-        formData
+      await updateProject(project.project_hash, values);
+      showToast('Project updated.', 'success');
+      await onUpdated();
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : 'The project could not be updated.',
+        'error'
       );
-
-      if (response.success && response.project) {
-        // Map the response to our expected format
-        const updatedProject: ProjectDetails = {
-          ...project,
-          project_name: response.project.project_name,
-          project_description: response.project.project_description,
-          updated_at: new Date().toISOString(), // Set current time as updated
-        };
-        onProjectUpdate(updatedProject);
-      } else {
-        setError('Failed to update project. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error updating project:', err);
-      setError('Failed to update project. Please try again.');
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    try {
-      setIsDeleting(true);
-      const response = await projectService.deleteProject(project.project_hash);
-
-      if (response.success) {
-        onProjectDeleted();
-        setShowDeleteConfirm(false);
-      } else {
-        setError('Failed to delete project. Please try again.');
-      }
-    } catch (err) {
-      console.error('Error deleting project:', err);
-      setError('Failed to delete project. Please try again.');
-    } finally {
-      setIsDeleting(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="flex items-center justify-between p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <span>{error}</span>
+    <div className="max-w-3xl space-y-6">
+      <Panel
+        title="General"
+        description="Shown to operators across the console and in project pickers."
+      >
+        {/* Remount when the saved values change so the form starts from them. */}
+        <ProjectForm
+          key={`${project.project_name}\u0000${project.project_description ?? ''}`}
+          mode="edit"
+          idPrefix="project-settings"
+          initialValues={{
+            project_name: project.project_name,
+            project_description: project.project_description ?? '',
+          }}
+          onSubmit={(values) => void save(values)}
+          submitLabel="Save changes"
+          isSubmitting={pending === 'update'}
+        />
+      </Panel>
+
+      <Panel title="Danger zone" className="border-destructive/40">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="m-0 text-[13px] font-medium text-foreground">
+              Delete this project
+            </p>
+            <p className="m-0 text-xs text-muted-foreground">
+              Removes it from every project group and ends its sessions. The API
+              cannot restore it.
+            </p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setError(null)}
-            className="h-6 w-6"
-          >
-            <X className="h-4 w-4" />
+          <Button variant="destructive" onClick={onDeleteRequest}>
+            <Trash2 aria-hidden="true" />
+            Delete project
           </Button>
         </div>
-      )}
-
-      {/* Project Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Project Information</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Update the basic information about your project.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <ProjectForm
-            mode="edit"
-            initialData={{
-              project_name: project.project_name,
-              project_description: project.project_description,
-            }}
-            onSubmit={handleUpdate}
-            onCancel={() => navigate(ROUTES.PROJECTS)}
-            isSubmitting={isUpdating}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Danger Zone */}
-      <Card className="border-destructive/50">
-        <CardHeader>
-          <div className="flex items-center gap-2 text-destructive">
-            <AlertTriangle className="h-5 w-5" />
-            <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Irreversible and destructive actions. Please be cautious.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <Button
-            variant="destructive"
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            Delete Project
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Delete Confirmation */}
-      <Dialog
-        open={showDeleteConfirm}
-        onOpenChange={(open) => {
-          if (!open) {
-            setShowDeleteConfirm(false);
-            setDeleteConfirmation('');
-          }
-        }}
-      >
-        <DialogContent size="md">
-          <DialogHeader>
-            <DialogTitle>Delete Project</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 space-y-2">
-              <p className="text-sm font-semibold text-destructive flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                This action cannot be undone!
-              </p>
-              <p className="text-sm text-muted-foreground">
-                This will permanently delete the project "{project.project_name}
-                " and all associated data.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>
-                Please type <strong>{project.project_name}</strong> to confirm:
-              </Label>
-              <Input
-                placeholder="Enter project name"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                fullWidth
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteConfirm(false);
-                setDeleteConfirmation('');
-              }}
-              disabled={isDeleting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={
-                deleteConfirmation !== project.project_name || isDeleting
-              }
-              loading={isDeleting}
-            >
-              Delete Project
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </Panel>
     </div>
   );
-};
+}
+
+export default ProjectSettingsTab;

@@ -7,7 +7,6 @@ export { groupService } from './group.service';
 export { projectGroupService } from './project-group.service';
 
 export { systemService } from './system.service';
-export { analyticsService } from './analytics.service';
 export { globalRolesService } from './global-roles.service';
 export { permissionAssignmentsService } from './permission-assignments.service';
 export { auditService } from './audit.service';

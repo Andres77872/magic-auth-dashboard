@@ -5,6 +5,8 @@ export class ApiError extends Error {
   public status: number;
   public code?: string;
   public details?: unknown;
+  /** Seconds from the `Retry-After` header on throttled (429) responses. */
+  public retryAfterSeconds?: number;
 
   constructor(message: string, status = 500, code?: string, details?: unknown) {
     super(message);
@@ -35,7 +37,9 @@ export function handleApiError(error: unknown): string {
   return ERROR_MESSAGES.INTERNAL_ERROR;
 }
 
-export function isApiResponse<T>(response: unknown): response is ApiResponse<T> {
+export function isApiResponse<T>(
+  response: unknown
+): response is ApiResponse<T> {
   return (
     typeof response === 'object' &&
     response !== null &&
@@ -54,9 +58,9 @@ export function extractErrorMessage(response: ApiResponse<unknown>): string {
   // Handle validation errors
   if (response.detail && Array.isArray(response.detail)) {
     return response.detail
-      .map(err => `${err.loc.join('.')}: ${err.msg}`)
+      .map((err) => `${err.loc.join('.')}: ${err.msg}`)
       .join(', ');
   }
 
   return response.message || ERROR_MESSAGES.INTERNAL_ERROR;
-} 
+}

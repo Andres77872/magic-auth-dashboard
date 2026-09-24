@@ -1,438 +1,206 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { FolderTree, Link2Off, Plus } from 'lucide-react';
+import { DataView, type DataViewColumn } from '@/components/common/DataView';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ConfirmDialog, EmptyState, DataView } from '@/components/common';
-import type { DataViewColumn } from '@/components/common';
-import { FolderOpen, Plus, Trash2, ExternalLink, MoreHorizontal } from 'lucide-react';
-import { groupService, projectGroupService } from '@/services';
-import type { ProjectGroup } from '@/services/project-group.service';
-import { useToast } from '@/hooks';
-import { ROUTES } from '@/utils/routes';
+import { useGroupProjectGroupGrants } from '@/hooks/useGroupDetails';
+import { useToast } from '@/hooks/useToast';
+import { formatCount, formatNumber } from '@/utils/formatters';
+import type { GroupBatchResult, ProjectGroupGrant } from '@/types/group.types';
+import { DefaultGroupBadge } from './GroupBadges';
+import { GrantProjectGroupsModal } from './GrantProjectGroupsModal';
+import { GroupSectionHeader } from './GroupSectionHeader';
+import { NameCell, TimeCell } from './GroupCells';
+import { groupRoutes } from './group-routes';
 
-interface ProjectGroupAccess {
-  group_hash: string;
-  group_name: string;
-  project_count: number;
-}
-
-interface GroupProjectGroupsTabProps {
+export interface GroupProjectGroupsTabProps {
   groupHash: string;
   groupName: string;
+  /** False for non-root operators on `admin_…` groups (the backend would answer 403). */
+  canManage: boolean;
+  /** Called after grants changed, so the page can refresh its counts. */
+  onAccessChange?: () => void;
 }
 
-export const GroupProjectGroupsTab: React.FC<GroupProjectGroupsTabProps> = ({
+/** Project groups granted to a user group, with grant and revoke. */
+export function GroupProjectGroupsTab({
   groupHash,
-  groupName
-}) => {
-  const [accessibleProjectGroups, setAccessibleProjectGroups] = useState<ProjectGroupAccess[]>([]);
-  const [availableProjectGroups, setAvailableProjectGroups] = useState<ProjectGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState<ProjectGroupAccess | null>(null);
-  const [isRemoving, setIsRemoving] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('grid');
-  const [searchTerm, setSearchTerm] = useState('');
-  const { showToast } = useToast();
+  groupName,
+  canManage,
+  onAccessChange,
+}: GroupProjectGroupsTabProps): React.JSX.Element {
   const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { grants, isLoading, isRefreshing, error, refetch, grant, revoke } =
+    useGroupProjectGroupGrants(groupHash);
+  const [isGranting, setIsGranting] = useState(false);
+  const [toRevoke, setToRevoke] = useState<ProjectGroupGrant | null>(null);
+  const [isRevoking, setIsRevoking] = useState(false);
 
-  // Fetch project groups accessible by this user group
-  // GET /admin/user-groups/{group_hash}/project-groups
-  const fetchAccessibleProjectGroups = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response: any = await groupService.getGroupProjectGroups(groupHash);
-      
-      // API returns project_groups array directly in response
-      if (response.project_groups) {
-        setAccessibleProjectGroups(response.project_groups);
-      } else if (response.success === false) {
-        throw new Error(response.message || 'Failed to fetch project groups');
-      } else {
-        setAccessibleProjectGroups([]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch accessible project groups:', error);
-      showToast('Failed to load project groups', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [groupHash, showToast]);
-
-  const fetchAvailableProjectGroups = async () => {
-    try {
-      const response = await projectGroupService.getProjectGroups({ limit: 500 });
-      if (response.success && response.project_groups) {
-        const accessibleHashes = new Set(
-          accessibleProjectGroups.map(pg => pg.group_hash)
-        );
-        const available = response.project_groups.filter(
-          pg => !accessibleHashes.has(pg.group_hash)
-        );
-        setAvailableProjectGroups(available);
-      }
-    } catch (error) {
-      console.error('Failed to fetch available project groups:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchAccessibleProjectGroups();
-  }, [fetchAccessibleProjectGroups]);
-
-  useEffect(() => {
-    if (showAddModal) {
-      fetchAvailableProjectGroups();
-    }
-  }, [showAddModal, accessibleProjectGroups]);
-
-  const handleGrantAccess = async () => {
-    if (selectedGroups.length === 0) {
-      showToast('Please select at least one project group', 'warning');
-      return;
-    }
-
-    setIsAssigning(true);
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (const projectGroupHash of selectedGroups) {
-      try {
-        const response = await groupService.grantProjectGroupAccess(groupHash, projectGroupHash);
-        if (response.success) {
-          successCount++;
-        } else {
-          errorCount++;
-        }
-      } catch {
-        errorCount++;
-      }
-    }
-
-    if (successCount > 0) {
-      showToast(`Successfully granted access to ${successCount} project group(s)`, 'success');
-      await fetchAccessibleProjectGroups();
-    }
-    if (errorCount > 0) {
-      showToast(`Failed to grant access to ${errorCount} project group(s)`, 'error');
-    }
-
-    setShowAddModal(false);
-    setSelectedGroups([]);
-    setIsAssigning(false);
-  };
-
-  const handleRevokeAccess = async () => {
-    if (!confirmRemove) return;
-
-    setIsRemoving(true);
-    try {
-      const response = await groupService.revokeProjectGroupAccess(
-        groupHash,
-        confirmRemove.group_hash
-      );
-
-      if (response.success) {
-        showToast('Project group access revoked successfully', 'success');
-        setConfirmRemove(null);
-        await fetchAccessibleProjectGroups();
-      } else {
-        throw new Error(response.message || 'Failed to revoke access');
-      }
-    } catch (error) {
-      console.error('Failed to revoke project group access:', error);
-      showToast('Failed to revoke project group access', 'error');
-    } finally {
-      setIsRemoving(false);
-    }
-  };
-
-  const toggleGroupSelection = (projectGroupHash: string) => {
-    setSelectedGroups(prev =>
-      prev.includes(projectGroupHash)
-        ? prev.filter(h => h !== projectGroupHash)
-        : [...prev, projectGroupHash]
+  const handleGranted = (result: GroupBatchResult): void => {
+    const granted = result.succeeded.length;
+    showToast(
+      result.failures.length > 0
+        ? `Granted ${formatNumber(granted)} of ${formatCount(granted + result.failures.length, 'project group')}; ${formatNumber(result.failures.length)} failed.`
+        : `Granted ${formatCount(granted, 'project group')} to ${groupName}.`,
+      result.failures.length > 0 ? 'warning' : 'success'
     );
+    void refetch();
+    onAccessChange?.();
   };
 
-  // Filter project groups based on search term
-  const filteredProjectGroups = accessibleProjectGroups.filter(pg => {
-    if (!searchTerm.trim()) return true;
-    const search = searchTerm.toLowerCase();
-    return pg.group_name.toLowerCase().includes(search);
-  });
+  const handleRevoke = async (target: ProjectGroupGrant): Promise<void> => {
+    setIsRevoking(true);
+    try {
+      await revoke(target.group_hash);
+      showToast(`Revoked ${target.group_name} from ${groupName}.`, 'success');
+      setToRevoke(null);
+      void refetch();
+      onAccessChange?.();
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Access could not be revoked.',
+        'error'
+      );
+    } finally {
+      setIsRevoking(false);
+    }
+  };
 
-  // DataView columns for table view
-  const columns: DataViewColumn<ProjectGroupAccess>[] = [
+  const columns: DataViewColumn<ProjectGroupGrant>[] = [
     {
       key: 'group_name',
-      header: 'Project Group',
-      sortable: true,
-      render: (_, pg) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`);
-          }}
-          className="font-medium text-primary hover:underline text-left flex items-center gap-1"
-        >
-          <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          {pg.group_name}
-          <ExternalLink size={14} />
-        </button>
+      header: 'Project group',
+      render: (_value, pg) => (
+        <NameCell
+          to={groupRoutes.projectGroup(pg.group_hash)}
+          name={pg.group_name}
+          description={pg.group_description}
+          badges={<DefaultGroupBadge kind="project" name={pg.group_name} />}
+        />
       ),
     },
     {
-      key: 'project_count',
-      header: 'Projects',
-      width: '120px',
-      render: (value) => (
-        <Badge variant="info">
-          {value} project{value !== 1 ? 's' : ''}
-        </Badge>
-      ),
+      key: 'granted_at',
+      header: 'Granted',
+      width: '140px',
+      hideOnMobile: true,
+      render: (_value, pg) => <TimeCell value={pg.granted_at} />,
     },
     {
       key: 'group_hash',
-      header: '',
-      width: '60px',
-      align: 'center',
-      render: (_, pg) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreHorizontal className="h-4 w-4" />
-              <span className="sr-only">Actions</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`);
-              }}
-            >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                setConfirmRemove(pg);
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Revoke Access
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      header: 'Actions',
+      width: '72px',
+      align: 'right',
+      render: (_value, pg) => (
+        <span data-no-row-click>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setToRevoke(pg)}
+            disabled={!canManage}
+            aria-label={`Revoke ${pg.group_name} from ${groupName}`}
+            title={
+              canManage
+                ? 'Revoke access'
+                : 'Only root users can change this group'
+            }
+          >
+            <Link2Off aria-hidden="true" />
+          </Button>
+        </span>
       ),
     },
   ];
 
-  // Card renderer for grid view
-  const renderProjectGroupCard = (pg: ProjectGroupAccess) => (
-    <Card>
-      <CardContent className="pt-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <FolderOpen className="h-5 w-5 text-primary mt-0.5" aria-hidden="true" />
-            <div className="space-y-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`);
-                }}
-                className="font-medium hover:underline text-left flex items-center gap-1"
-              >
-                {pg.group_name}
-                <ExternalLink size={14} />
-              </button>
-              <Badge variant="info">
-                {pg.project_count} project{pg.project_count !== 1 ? 's' : ''}
-              </Badge>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              setConfirmRemove(pg);
-            }}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-            aria-label="Revoke access"
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+  const grantButton = (variant: 'primary' | 'secondary'): React.JSX.Element => (
+    <Button
+      variant={variant}
+      size="md"
+      leftIcon={<Plus aria-hidden="true" />}
+      onClick={() => setIsGranting(true)}
+      disabled={!canManage}
+    >
+      Grant project groups
+    </Button>
   );
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle>Project Group Access</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Manage which project groups <strong>{groupName}</strong> can access.
-              Users in this group will have access to all projects within these project groups.
-            </p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <DataView<ProjectGroupAccess>
-            data={filteredProjectGroups}
-            columns={columns}
-            keyExtractor={(item) => item.group_hash}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            showViewToggle={true}
-            defaultViewMode="grid"
-            renderCard={renderProjectGroupCard}
-            gridColumns={{ mobile: 1, tablet: 2, desktop: 3 }}
-            showSearch={true}
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search project groups..."
-            toolbarActions={
-              <Button onClick={() => setShowAddModal(true)}>
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Grant Access
-              </Button>
-            }
-            isLoading={loading}
-            emptyMessage="No Project Group Access"
-            emptyDescription="This user group doesn't have access to any project groups. Click 'Grant Access' to add some."
-            emptyIcon={<FolderOpen className="h-10 w-10" />}
-            emptyAction={
-              <Button onClick={() => setShowAddModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Grant Access
-              </Button>
-            }
-          />
-        </CardContent>
-      </Card>
+    <section aria-label="Project groups">
+      <GroupSectionHeader
+        title="Project groups"
+        description="Members of this group can sign in to every project in these project groups."
+        actions={grantButton('primary')}
+      />
 
-      {/* Grant Access Modal */}
-      <Dialog open={showAddModal} onOpenChange={(open) => !isAssigning && !open && setShowAddModal(false)}>
-        <DialogContent size="lg">
-          <DialogHeader>
-            <DialogTitle>Grant Project Group Access</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Select project groups to grant access to. Users in "{groupName}" will be able to access
-              all projects within the selected project groups.
-            </p>
-
-            {availableProjectGroups.length === 0 ? (
-              <EmptyState
-                icon={<FolderOpen className="h-10 w-10" aria-hidden="true" />}
-                title="No Available Project Groups"
-                description="This user group already has access to all project groups, or no project groups exist."
-              />
-            ) : (
-              <>
-                <div className="flex items-center justify-between">
-                  <Badge variant="info">
-                    {selectedGroups.length} selected
-                  </Badge>
-                </div>
-
-                <div className="max-h-[400px] overflow-y-auto border rounded-md divide-y">
-                  {availableProjectGroups.map(pg => (
-                    <div
-                      key={pg.group_hash}
-                      className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
-                        selectedGroups.includes(pg.group_hash)
-                          ? 'bg-primary/5'
-                          : 'hover:bg-accent/50'
-                      }`}
-                      onClick={() => toggleGroupSelection(pg.group_hash)}
-                    >
-                      <Checkbox
-                        checked={selectedGroups.includes(pg.group_hash)}
-                        onCheckedChange={() => toggleGroupSelection(pg.group_hash)}
-                      />
-                      <FolderOpen className="h-5 w-5 text-muted-foreground" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium">{pg.group_name}</h4>
-                        {pg.description && (
-                          <p className="text-sm text-muted-foreground truncate">
-                            {pg.description}
-                          </p>
-                        )}
-                      </div>
-                      <Badge variant="secondary">
-                        {pg.project_count} project{pg.project_count !== 1 ? 's' : ''}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowAddModal(false)}
-              disabled={isAssigning}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleGrantAccess}
-              disabled={selectedGroups.length === 0 || isAssigning}
-              loading={isAssigning}
-            >
-              Grant Access {selectedGroups.length > 0 ? `(${selectedGroups.length})` : ''}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Revoke Access Confirmation Dialog */}
-      {confirmRemove && (
-        <ConfirmDialog
-          isOpen={true}
-          title="Revoke Project Group Access"
-          message={`Are you sure you want to revoke access to "${confirmRemove.group_name}" from this user group? Users in this group will no longer be able to access projects in this project group.`}
-          confirmText="Revoke Access"
-          cancelText="Cancel"
-          onConfirm={handleRevokeAccess}
-          onClose={() => setConfirmRemove(null)}
-          isLoading={isRemoving}
+      {error && grants.length === 0 && !isLoading ? (
+        <ErrorState
+          retryLabel="Try again"
+          title="Project groups couldn't be loaded"
+          message={error}
+          onRetry={() => void refetch()}
+          isRetrying={isRefreshing}
+          variant="inline"
+          size="sm"
+        />
+      ) : (
+        <DataView<ProjectGroupGrant>
+          data={grants}
+          columns={columns}
+          keyExtractor={(pg) => pg.group_hash}
+          onRowClick={(pg) =>
+            void navigate(groupRoutes.projectGroup(pg.group_hash))
+          }
+          isLoading={isLoading}
+          skeletonRows={3}
+          emptyIcon={<FolderTree className="h-8 w-8" />}
+          emptyMessage="No project groups granted"
+          emptyDescription="Members can't reach any project through this group yet."
+          emptyAction={canManage ? grantButton('secondary') : undefined}
+          caption={`Project groups granted to ${groupName}`}
         />
       )}
-    </div>
+
+      {isGranting && (
+        <GrantProjectGroupsModal
+          groupName={groupName}
+          grantedHashes={grants.map((pg) => pg.group_hash)}
+          onClose={() => setIsGranting(false)}
+          onGrant={grant}
+          onGranted={handleGranted}
+        />
+      )}
+
+      <ConfirmDialog
+        isOpen={toRevoke !== null}
+        onClose={() => setToRevoke(null)}
+        onConfirm={() => {
+          if (toRevoke) void handleRevoke(toRevoke);
+        }}
+        title="Revoke project group"
+        message={
+          toRevoke ? (
+            <>
+              Members of{' '}
+              <strong className="text-foreground">{groupName}</strong> lose
+              access to the projects in{' '}
+              <strong className="text-foreground">{toRevoke.group_name}</strong>{' '}
+              unless another grant covers them. Their sessions for those
+              projects are signed out.
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmText="Revoke access"
+        variant="danger"
+        isLoading={isRevoking}
+      />
+    </section>
   );
-};
+}
 
 export default GroupProjectGroupsTab;

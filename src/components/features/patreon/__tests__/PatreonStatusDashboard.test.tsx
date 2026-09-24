@@ -1,138 +1,93 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { PatreonStatusDashboard } from '../PatreonStatusDashboard';
-import { usePatreonStatus } from '@/hooks/usePatreonStatus';
-import type { PatreonAdminStatus } from '@/types/patreon.types';
+import { disabledReadiness, makeStatus } from './fixtures';
 
-vi.mock('@/hooks/usePatreonStatus', () => ({
-  usePatreonStatus: vi.fn(),
-}));
-
-const mockUsePatreonStatus = vi.mocked(usePatreonStatus);
-
-type PatreonStatusOverrides = Partial<Omit<PatreonAdminStatus, 'readiness'>> & {
-  readiness?: Partial<Omit<PatreonAdminStatus['readiness'], 'featureFlags'>> & {
-    featureFlags?: Partial<PatreonAdminStatus['readiness']['featureFlags']>;
-  };
-};
-
-function makeStatus(overrides: PatreonStatusOverrides = {}): PatreonAdminStatus {
-  const base: PatreonAdminStatus = {
-    success: true,
-    status: 'disabled',
-    generatedAt: '2026-06-18T12:00:00Z',
-    readiness: {
-      status: 'disabled',
-      ready: false,
-      disabled: true,
-      missing: [],
-      degraded: [],
-      featureFlags: {
-        linking: false,
-        webhooks: false,
-        sync: false,
-        s2sEntitlement: false,
-        creatorTokenRefresh: false,
-        rawPayloadCapture: false,
-      },
-      configuredCampaignCount: 0,
-      configuredTierMapEntries: 0,
-      retention: {},
-    },
-    creatorToken: { status: 'disabled', configured: false, degraded: false, details: {} },
-    webhooks: { status: 'disabled', enabled: false, details: {} },
-    snapshots: { status: 'disabled', details: {} },
-    tierMap: { status: 'disabled', details: {} },
-    proofDelivery: { status: 'disabled', details: {} },
-    s2s: { status: 'disabled', enabled: false, ready: false, details: {} },
-    worker: { status: 'disabled', details: {} },
-    syncQueue: { status: 'disabled', details: {} },
-    metrics: {},
-  };
-
-  return {
-    ...base,
-    ...overrides,
-    readiness: {
-      ...base.readiness,
-      ...overrides.readiness,
-      featureFlags: {
-        ...base.readiness.featureFlags,
-        ...overrides.readiness?.featureFlags,
-      },
-    },
-  };
-}
-
-function renderWithStatus(status: PatreonAdminStatus): void {
-  mockUsePatreonStatus.mockReturnValue({
-    status,
-    isLoading: false,
-    error: null,
-    refetch: vi.fn(),
-  });
-  render(<PatreonStatusDashboard />);
+function renderDashboard(
+  status = makeStatus(),
+  extra: Partial<{ isLoading: boolean; error: string | null }> = {}
+): { onRetry: ReturnType<typeof vi.fn> } {
+  const onRetry = vi.fn();
+  render(
+    <PatreonStatusDashboard
+      status={status}
+      isLoading={extra.isLoading ?? false}
+      error={extra.error ?? null}
+      onRetry={onRetry}
+    />
+  );
+  return { onRetry };
 }
 
 describe('PatreonStatusDashboard', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('renders the disabled state and safety note', () => {
-    renderWithStatus(makeStatus());
-
-    expect(screen.getByText('Patreon operations')).toBeInTheDocument();
-    expect(screen.getByText('All primary Patreon surfaces are disabled')).toBeInTheDocument();
-    expect(screen.getByText('Linking')).toBeInTheDocument();
-    expect(screen.getByText('S2S entitlement')).toBeInTheDocument();
-    expect(screen.getByText(/Patreon is entitlement\/link only/i)).toBeInTheDocument();
-  });
-
-  it('renders the ready rollout state', () => {
-    renderWithStatus(
-      makeStatus({
-        status: 'ready',
-        readiness: {
-          status: 'ready',
-          ready: true,
-          disabled: false,
-          configuredCampaignCount: 1,
-          configuredTierMapEntries: 3,
-          featureFlags: {
-            linking: true,
-            webhooks: true,
-            sync: true,
-            s2sEntitlement: true,
-            creatorTokenRefresh: true,
-            rawPayloadCapture: false,
-          },
-        },
-      })
+  it('says the integration is off when every feature is disabled', () => {
+    renderDashboard(
+      makeStatus({ status: 'disabled', readiness: disabledReadiness })
     );
-
-    expect(screen.getByText('Ready for enabled Patreon surfaces')).toBeInTheDocument();
-    expect(screen.getByText('Creator token refresh')).toBeInTheDocument();
-    expect(screen.getByText('Raw payload capture')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText(/integration is off/i)).toBeInTheDocument();
+    expect(screen.queryByText(/need attention/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/never signs anyone in/i)).toBeInTheDocument();
   });
 
-  it('renders degraded and missing-env readiness details', () => {
-    renderWithStatus(
+  it('shows headline numbers and no open issues when healthy', () => {
+    renderDashboard();
+    expect(
+      screen.getByText('Everything that is enabled is working.')
+    ).toBeInTheDocument();
+    expect(screen.getByText('No open issues.')).toBeInTheDocument();
+    expect(screen.getByText('Linked users')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(
+      screen.getByText('Static token from server settings')
+    ).toBeInTheDocument();
+  });
+
+  it('turns unhealthy signals into actionable attention items', () => {
+    renderDashboard(
       makeStatus({
         status: 'degraded',
-        readiness: {
-          status: 'not_ready',
-          ready: false,
-          disabled: false,
-          missing: ['PATREON_WEBHOOK_SECRET'],
-          degraded: ['Creator token missing campaigns.members scope'],
-          configuredCampaignCount: 0,
-          configuredTierMapEntries: 0,
+        readiness: { missing: ['PATREON_WEBHOOK_SECRET'] },
+        creatorToken: {
+          status: 'revoked',
+          configured: true,
+          degraded: true,
+          details: {},
+        },
+        worker: { status: 'unknown', details: {} },
+        syncQueue: {
+          status: 'degraded',
+          details: { failed_jobs: 2, failed_jobs_window_hours: 24 },
+        },
+        tierMap: {
+          status: 'degraded',
+          details: { misses_24h: 1, configured_entries: 3 },
         },
       })
     );
+    expect(screen.getByText(/5 things need attention/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Missing configuration: PATREON_WEBHOOK_SECRET/)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Patreon rejected the creator token/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/sync worker has no recent heartbeat/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/2 sync jobs failed in the last 24h/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/1 tier-map miss in 24h/i)).toBeInTheDocument();
+  });
 
-    expect(screen.getByText('Configuration needs attention before activation')).toBeInTheDocument();
-    expect(screen.getByText('PATREON_WEBHOOK_SECRET')).toBeInTheDocument();
-    expect(screen.getByText('Creator token missing campaigns.members scope')).toBeInTheDocument();
+  it('shows an error state with retry when status cannot be loaded', () => {
+    const { onRetry } = renderDashboard(null as never, {
+      error: 'Access denied',
+    });
+    expect(
+      screen.getByText('Couldn’t load Patreon status')
+    ).toBeInTheDocument();
+    screen.getByRole('button', { name: /retry|try again/i }).click();
+    expect(onRetry).toHaveBeenCalled();
   });
 });

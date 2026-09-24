@@ -1,250 +1,225 @@
-import { apiClient } from './api.client';
+import {
+  deleteJson,
+  getJson,
+  patchFormJson,
+  postFormJson,
+  putFormJson,
+  putJson,
+  seg,
+} from './request';
 import type {
-  CreateRootUserRequest,
+  AdminProjectsResponse,
+  BulkUserOperationResponse,
+  ChangeUserTypeResponse,
   CreateAdminUserRequest,
-  CreateRootUserResponse,
   CreateAdminUserResponse,
-  UpdateProfileRequest,
-  UpdateProfileResponse,
-  UserListParams,
-  UserListResponse,
-  AdminUserListResponse,
-  UserSearchParams,
-  UserSearchResponse,
-  UpdateUserStatusResponse,
-  ResetPasswordResponse,
+  CreateRootUserRequest,
+  CreateRootUserResponse,
   DeleteUserResponse,
   HardDeleteUserResponse,
-  AdminProjectsResponse
+  ResetPasswordResponse,
+  UpdateUserRequest,
+  UpdateUserResponse,
+  UpdateUserStatusResponse,
+  UserEmailsResponse,
+  UserListParams,
+  UserListResponse,
+  UserSearchParams,
+  UserSearchResponse,
 } from '@/types/user.types';
-import type { User, UserProfileResponse } from '@/types/auth.types';
+import type { User, UserProfileResponse, UserType } from '@/types/auth.types';
 import type { ApiResponse } from '@/types/api.types';
-import type { RegisterRequest, RegisterResponse } from '@/types/auth.types';
 
+/**
+ * User management (`/users/*`, `/user-types/*`, `/admin/users/*`). All writes
+ * are Form encoded except where noted.
+ *
+ * There is intentionally no "create consumer" method: the only consumer
+ * sign-up route is the public `POST /auth/register`, which signs the new user
+ * in and would replace the operator's session cookies.
+ */
 class UserService {
-  // Get current user profile
-  async getProfile(): Promise<ApiResponse<User>> {
-    return await apiClient.get<User>('/users/profile');
-  }
+  // Directory ---------------------------------------------------------------
 
-  // Update current user profile
-  async updateProfile(data: UpdateProfileRequest): Promise<UpdateProfileResponse> {
-    const response = await apiClient.put<UpdateProfileResponse>('/users/profile', data);
-    return response as UpdateProfileResponse;
-  }
-
-  // Get user access summary
-  async getUserAccessSummary(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/users/access-summary');
-  }
-
-  // Create ROOT user (ROOT only).
-  // Backend declares username/password/email as Form(...) fields, so this must
-  // be sent as application/x-www-form-urlencoded (postForm), not JSON.
-  async createRootUser(userData: CreateRootUserRequest): Promise<CreateRootUserResponse> {
-    const response = await apiClient.postForm<CreateRootUserResponse>('/user-types/root', userData);
-    return response as CreateRootUserResponse;
-  }
-
-  // Create ADMIN user (ROOT only).
-  // Backend expects Form(...) fields (username/password/email/assigned_project_ids),
-  // so send as form-encoded; the ids array is emitted as repeated fields.
-  async createAdminUser(userData: CreateAdminUserRequest): Promise<CreateAdminUserResponse> {
-    const response = await apiClient.postForm<CreateAdminUserResponse>('/user-types/admin', userData);
-    return response as CreateAdminUserResponse;
-  }
-
-  // Create CONSUMER user (via registration)
-  async createConsumerUser(userData: RegisterRequest): Promise<RegisterResponse> {
-    const response = await apiClient.postForm<RegisterResponse>('/auth/register', userData, true);
-    return response as RegisterResponse;
-  }
-
-  // List users with filtering
   async getUsers(params: UserListParams = {}): Promise<UserListResponse> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
-    });
-    
-    const response = await apiClient.get<UserListResponse>('/users/list', cleanParams);
-    return response as UserListResponse;
+    return await getJson<UserListResponse>('/users/list', { ...params });
   }
 
-  // List admin users (ROOT only)
-  async getAdminUsers(params: { limit?: number; offset?: number } = {}): Promise<AdminUserListResponse> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
+  async searchUsers(params: UserSearchParams): Promise<UserSearchResponse> {
+    return await getJson<UserSearchResponse>('/users/search/query', {
+      ...params,
     });
-    
-    const response = await apiClient.get<AdminUserListResponse>('/user-types/users/admin', cleanParams);
-    return response as AdminUserListResponse;
   }
 
-  // Get user by hash - Updated to handle new API response structure
-  // Options: include_group_hierarchy adds projects_count to groups
-  //          include_permission_details adds effective_permissions and access_groups to projects
+  /**
+   * `GET /users/{hash}`. Group hierarchy adds `projects_count` to groups;
+   * permission details add `effective_permissions`/`access_groups` to projects.
+   */
   async getUserByHash(
     userHash: string,
-    options?: {
+    options: {
       include_group_hierarchy?: boolean;
       include_permission_details?: boolean;
-    }
+    } = {}
   ): Promise<UserProfileResponse> {
-    const queryParams: Record<string, string> = {};
-    if (options?.include_group_hierarchy) {
-      queryParams.include_group_hierarchy = 'true';
-    }
-    if (options?.include_permission_details) {
-      queryParams.include_permission_details = 'true';
-    }
-    const response = await apiClient.get<UserProfileResponse>(
-      `/users/${userHash}`,
-      queryParams
+    return await getJson<UserProfileResponse>(
+      `/users/${seg(userHash)}`,
+      options
     );
-    return response as UserProfileResponse;
   }
 
-  // Update user details (Admin/Root) - uses form data per API spec
-  // Note: user_type changes should use changeUserType method instead
-  async updateUser(userHash: string, data: { username?: string; email?: string }): Promise<ApiResponse<User>> {
-    return await apiClient.putForm<User>(`/users/${userHash}`, data);
+  /**
+   * `GET /users/profile` — the caller's own account. The response is flat
+   * (account fields at the top level, not under `user`).
+   */
+  async getMyProfile(): Promise<User> {
+    const res = await getJson<Partial<User> & { success?: boolean }>(
+      '/users/profile'
+    );
+    if (!res.user_hash || !res.username || !res.user_type) {
+      throw new Error('Your profile could not be read from the response.');
+    }
+    return {
+      user_hash: res.user_hash,
+      username: res.username,
+      email: res.email ?? '',
+      user_type: res.user_type,
+      user_type_info: res.user_type_info,
+      created_at: res.created_at ?? '',
+      updated_at: res.updated_at ?? null,
+      last_login: res.last_login ?? null,
+      is_active: res.is_active ?? true,
+      groups: res.groups ?? [],
+      projects: res.projects ?? [],
+    };
   }
 
-  // Delete user (soft-delete)
-  async deleteUser(userHash: string): Promise<DeleteUserResponse> {
-    const response = await apiClient.delete<DeleteUserResponse>(`/users/${userHash}`);
-    return response as DeleteUserResponse;
+  async getUserEmails(userHash: string): Promise<UserEmailsResponse> {
+    return await getJson<UserEmailsResponse>(`/users/${seg(userHash)}/emails`);
   }
 
-  // Hard delete user (ROOT only) - permanent & irreversible.
-  // Removes the account, all owned content, and unlinks all emails/identities.
-  async hardDeleteUser(userHash: string): Promise<HardDeleteUserResponse> {
-    const response = await apiClient.delete<HardDeleteUserResponse>(`/users/${userHash}/hard`);
-    return response as HardDeleteUserResponse;
-  }
+  // Creation (root only) ----------------------------------------------------
 
-  // Search users by username or email
-  async searchUsers(params: UserSearchParams): Promise<UserSearchResponse> {
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
+  async createRootUser(
+    data: CreateRootUserRequest
+  ): Promise<CreateRootUserResponse> {
+    return await postFormJson<CreateRootUserResponse>('/user-types/root', {
+      ...data,
+      email: data.email?.trim() || undefined,
     });
-    
-    const response = await apiClient.get<UserSearchResponse>('/users/search/query', cleanParams);
-    return response as UserSearchResponse;
   }
 
-  // Activate/Deactivate user - uses query param per API spec
-  async toggleUserStatus(userHash: string, isActive: boolean): Promise<UpdateUserStatusResponse> {
-    const response = await apiClient.put<UpdateUserStatusResponse>(
-      `/users/${userHash}/status?is_active=${isActive}`
-    );
-    return response as UpdateUserStatusResponse;
+  /** Requires internal project ids, which no list endpoint exposes yet. */
+  async createAdminUser(
+    data: CreateAdminUserRequest
+  ): Promise<CreateAdminUserResponse> {
+    return await postFormJson<CreateAdminUserResponse>('/user-types/admin', {
+      ...data,
+      email: data.email?.trim() || undefined,
+    });
   }
 
-  // Reset user password (Admin) - returns temporary password
-  async resetUserPassword(userHash: string): Promise<ResetPasswordResponse> {
-    const response = await apiClient.post<ResetPasswordResponse>(`/users/${userHash}/reset-password`);
-    return response as ResetPasswordResponse;
-  }
+  // Account changes ---------------------------------------------------------
 
-  // Change user type (ROOT only) - uses form data per API spec
-  async changeUserType(userHash: string, newType: string): Promise<ApiResponse<User>> {
-    return await apiClient.patchForm<User>(`/users/${userHash}/type`, { user_type: newType });
-  }
-
-  // Get user type information
-  async getUserTypeInfo(userHash: string): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>(`/user-types/${userHash}/info`);
-  }
-
-  // Update user type with project assignment - uses form data per API spec
-  async updateUserType(
+  async updateUser(
     userHash: string,
-    userType: string,
-    assignedProjectId?: number
-  ): Promise<ApiResponse<any>> {
-    const data: Record<string, any> = { user_type: userType };
-    if (assignedProjectId !== undefined) {
-      data.assigned_project_id = assignedProjectId;
-    }
-    return await apiClient.putForm<any>(
-      `/user-types/${userHash}/type`,
+    data: UpdateUserRequest
+  ): Promise<UpdateUserResponse> {
+    return await putFormJson<UpdateUserResponse>(
+      `/users/${seg(userHash)}`,
       data
     );
   }
 
-  // Get admin user's assigned projects
+  /** Root only. Promoting to admin assigns no project — add them to a project's admins separately. */
+  async changeUserType(
+    userHash: string,
+    userType: UserType
+  ): Promise<ChangeUserTypeResponse> {
+    return await patchFormJson<ChangeUserTypeResponse>(
+      `/users/${seg(userHash)}/type`,
+      { user_type: userType }
+    );
+  }
+
+  /**
+   * `PUT /users/{hash}/status?is_active=` (query only, no body). Deactivation
+   * signs the user out everywhere. The backend cannot reactivate yet: inactive
+   * users are "not found" by this route.
+   */
+  async setUserActive(
+    userHash: string,
+    isActive: boolean
+  ): Promise<UpdateUserStatusResponse> {
+    return await putJson<UpdateUserStatusResponse>(
+      `/users/${seg(userHash)}/status?is_active=${isActive ? 'true' : 'false'}`
+    );
+  }
+
+  /** Emails the user a reset link; never returns a password. */
+  async resetUserPassword(userHash: string): Promise<ResetPasswordResponse> {
+    return await postFormJson<ResetPasswordResponse>(
+      `/users/${seg(userHash)}/reset-password`
+    );
+  }
+
+  /** Soft delete: deactivates the account and its group memberships. */
+  async deleteUser(userHash: string): Promise<DeleteUserResponse> {
+    return await deleteJson<DeleteUserResponse>(`/users/${seg(userHash)}`);
+  }
+
+  /** Root only. Permanent and irreversible. */
+  async hardDeleteUser(userHash: string): Promise<HardDeleteUserResponse> {
+    return await deleteJson<HardDeleteUserResponse>(
+      `/users/${seg(userHash)}/hard`
+    );
+  }
+
+  // Bulk operations ---------------------------------------------------------
+
+  /** Deactivate up to 100 users at once. */
+  async bulkDeactivateUsers(
+    userHashes: string[]
+  ): Promise<BulkUserOperationResponse> {
+    return await postFormJson<BulkUserOperationResponse>(
+      '/admin/users/bulk-update',
+      {
+        user_hashes: userHashes,
+        is_active: false,
+      }
+    );
+  }
+
+  /** Soft-delete up to 50 users at once. */
+  async bulkDeleteUsers(
+    userHashes: string[]
+  ): Promise<BulkUserOperationResponse> {
+    return await postFormJson<BulkUserOperationResponse>(
+      '/admin/users/bulk-delete',
+      {
+        user_hashes: userHashes,
+        confirm_deletion: true,
+      }
+    );
+  }
+
+  // Admin project assignment (keyed by internal project id) -----------------
+
   async getAdminProjects(userHash: string): Promise<AdminProjectsResponse> {
-    const response = await apiClient.get<AdminProjectsResponse>(`/user-types/admin/${userHash}/projects`);
-    return response as AdminProjectsResponse;
-  }
-
-  // Update admin user's projects (multi-project assignment) - uses form data per API spec
-  async updateAdminProjects(
-    userHash: string,
-    projectIds: number[]
-  ): Promise<ApiResponse<any>> {
-    return await apiClient.putForm<any>(
-      `/user-types/admin/${userHash}/projects`,
-      { assigned_project_ids: projectIds }
+    return await getJson<AdminProjectsResponse>(
+      `/user-types/admin/${seg(userHash)}/projects`
     );
   }
 
-  // Add admin to a project - uses form data per API spec
-  async addAdminToProject(
-    userHash: string,
-    projectId: number
-  ): Promise<ApiResponse<any>> {
-    return await apiClient.postForm<any>(
-      `/user-types/admin/${userHash}/projects/add`,
-      { project_id: projectId }
-    );
-  }
-
-  // Remove admin from a project
   async removeAdminFromProject(
     userHash: string,
-    projectId: number
+    projectId: string
   ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(
-      `/user-types/admin/${userHash}/projects/${projectId}`
-    );
-  }
-
-  // Get user type statistics
-  async getUserTypeStats(): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>('/user-types/stats');
-  }
-
-  // List users by type (ROOT, ADMIN, CONSUMER)
-  async getUsersByType(
-    userType: 'root' | 'admin' | 'consumer',
-    params: { limit?: number; offset?: number } = {}
-  ): Promise<ApiResponse<any[]>> {
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
-    });
-    
-    return await apiClient.get<any[]>(
-      `/user-types/users/${userType}`,
-      cleanParams
+    return await deleteJson<ApiResponse<void>>(
+      `/user-types/admin/${seg(userHash)}/projects/${seg(projectId)}`
     );
   }
 }
 
 export const userService = new UserService();
-export default userService; 
+export default userService;

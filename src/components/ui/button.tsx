@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Slot } from '@radix-ui/react-slot';
+import { Slot, Slottable } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
@@ -9,9 +9,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Meridian accent button
-        primary: 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
+        primary:
+          'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/80',
         // Bordered neutral (Meridian secondary)
-        secondary: 'border border-input bg-card text-foreground hover:bg-accent',
+        secondary:
+          'border border-input bg-card text-foreground hover:bg-accent',
         // Quiet-tint danger (Meridian doesn't use solid red fills)
         destructive:
           'border border-destructive/35 bg-destructive/10 text-destructive hover:bg-destructive/20',
@@ -37,7 +39,8 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   loading?: boolean;
@@ -99,7 +102,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         )}
         {!loading && leftIcon}
-        {children}
+        <Slottable>{children}</Slottable>
         {!loading && rightIcon}
       </Comp>
     );

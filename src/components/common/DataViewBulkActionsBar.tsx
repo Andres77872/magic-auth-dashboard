@@ -47,7 +47,7 @@ export function DataViewBulkActionsBar<T extends object>({
                 action.variant === 'destructive' ? 'destructive' : 'secondary'
               }
               size="sm"
-              onClick={() => action.onExecute(selectedItems)}
+              onClick={() => void action.onExecute(selectedItems)}
               disabled={action.isDisabled?.(selectedItems)}
               className="h-7"
             >

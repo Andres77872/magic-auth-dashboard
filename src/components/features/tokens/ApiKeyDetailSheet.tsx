@@ -1,196 +1,185 @@
 /**
- * API Key Detail Sheet
- *
- * Right-side drawer showing the full metadata for a single API token, with
- * copy actions for its identifiers and quick Edit / Revoke actions.
+ * Side sheet with one API key's metadata. Loads `GET /api-keys/{key_id}` for
+ * owner and project details, showing the listing row until it arrives.
  */
+
 import React from 'react';
-import type { ReactNode } from 'react';
-import { Key, Edit, Trash2, FolderKanban } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Pencil, Trash2 } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetDescription,
   SheetFooter,
+  SheetHeader,
+  SheetTitle,
 } from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Avatar } from '@/components/ui/avatar';
-import { CopyableId } from '@/components/common';
-import { computeApiKeyStatus } from '@/types/api-key.types';
-import type { ApiKey, ApiKeyStatus } from '@/types/api-key.types';
-import { formatDateTime } from '@/utils/component-utils';
+import { CopyableId } from '@/components/common/CopyableId';
+import { UserTypeBadge } from '@/components/common/UserTypeBadge';
+import { useApiKeyDetails } from '@/hooks/useApiKeys';
+import { computeApiKeyStatus, type ApiKey } from '@/types/api-key.types';
+import { formatDateTime, formatRelativeTime } from '@/utils/formatters';
+import { ROUTES } from '@/utils/routes';
+import { ApiKeyStatusBadge } from './ApiKeyStatusBadge';
+import { apiKeyHint, canRevoke } from './api-key-format';
 
-const statusBadgeConfig: Record<
-  ApiKeyStatus,
-  { variant: 'subtleSuccess' | 'subtle' | 'subtleDestructive' | 'subtleWarning'; label: string }
-> = {
-  active: { variant: 'subtleSuccess', label: 'Active' },
-  expired: { variant: 'subtleWarning', label: 'Expired' },
-  revoked: { variant: 'subtleDestructive', label: 'Revoked' },
-  revoking: { variant: 'subtleWarning', label: 'Revoking…' },
-};
-
-interface ApiKeyDetailSheetProps {
-  isOpen: boolean;
+export interface ApiKeyDetailSheetProps {
+  apiKey: ApiKey | null;
   onClose: () => void;
-  keyData: ApiKey | null;
-  onEdit?: (key: ApiKey) => void;
-  onRevoke?: (key: ApiKey) => void;
+  onEdit: (key: ApiKey) => void;
+  onRevoke: (key: ApiKey) => void;
 }
 
-function DetailRow({
+function Row({
   label,
   children,
 }: {
   label: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }): React.JSX.Element {
   return (
-    <div className="space-y-1">
-      <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        {label}
-      </dt>
-      <dd className="text-sm text-foreground">{children}</dd>
+    <div className="grid grid-cols-[120px_minmax(0,1fr)] gap-3 py-2 text-[13px]">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="m-0 min-w-0 text-foreground">{children}</dd>
     </div>
   );
 }
 
+function When({
+  value,
+  empty,
+}: {
+  value: string | null | undefined;
+  empty: string;
+}): React.JSX.Element {
+  if (!value) return <span className="text-muted-foreground">{empty}</span>;
+  return (
+    <time dateTime={value} title={formatDateTime(value)}>
+      {formatDateTime(value)}
+    </time>
+  );
+}
+
 export function ApiKeyDetailSheet({
-  isOpen,
+  apiKey,
   onClose,
-  keyData,
   onEdit,
   onRevoke,
-}: ApiKeyDetailSheetProps): React.JSX.Element | null {
-  if (!keyData) return null;
-
-  const status = computeApiKeyStatus(keyData);
-  const statusConfig = statusBadgeConfig[status];
-  const canEdit = status === 'active' || status === 'expired';
-  const canRevoke = canEdit;
-
-  const formatTimestamp = (value?: string | null): string =>
-    value ? formatDateTime(value) : '—';
+}: ApiKeyDetailSheetProps): React.JSX.Element {
+  const details = useApiKeyDetails(apiKey?.public_id ?? null);
+  const key = details.apiKey ?? apiKey;
+  const status = key ? computeApiKeyStatus(key) : null;
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Sheet open={apiKey !== null} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
-        <SheetHeader>
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Key size={18} aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1 text-left">
-              <SheetTitle className="truncate">
-                {keyData.name || 'Unnamed token'}
-              </SheetTitle>
-              <SheetDescription className="font-mono">
-                {keyData.fingerprint}
+        {key && (
+          <>
+            <SheetHeader>
+              <div className="flex items-center gap-2 pr-6">
+                <SheetTitle className="truncate text-[17px]">
+                  {key.name}
+                </SheetTitle>
+                <ApiKeyStatusBadge apiKey={key} />
+              </div>
+              <SheetDescription className="font-mono text-xs">
+                {apiKeyHint(key)}
               </SheetDescription>
-            </div>
-            <Badge variant={statusConfig.variant} size="sm">
-              {statusConfig.label}
-            </Badge>
-          </div>
-        </SheetHeader>
+            </SheetHeader>
 
-        <dl className="mt-6 grid grid-cols-1 gap-5">
-          {keyData.description && (
-            <DetailRow label="Description">
-              <p className="leading-relaxed text-muted-foreground">
-                {keyData.description}
+            {details.error && (
+              <p className="mt-4 text-xs text-muted-foreground">
+                Some details couldn&apos;t be loaded. {details.error}
               </p>
-            </DetailRow>
-          )}
-
-          <DetailRow label="Project">
-            <span className="inline-flex items-center gap-1.5">
-              <FolderKanban size={14} className="text-muted-foreground" aria-hidden="true" />
-              {keyData.project_name || keyData.project_id}
-            </span>
-          </DetailRow>
-
-          <DetailRow label="Owner">
-            <span className="inline-flex items-center gap-2">
-              <Avatar
-                name={keyData.owner_username || keyData.owner_user_id}
-                size="xs"
-              />
-              {keyData.owner_username || keyData.owner_user_id}
-            </span>
-          </DetailRow>
-
-          <DetailRow label="Fingerprint">
-            <CopyableId id={keyData.fingerprint} showFull />
-          </DetailRow>
-
-          <DetailRow label="Public ID">
-            <CopyableId id={keyData.public_id} showFull />
-          </DetailRow>
-
-          <DetailRow label="Secret">
-            <span className="font-mono text-muted-foreground">
-              …{keyData.secret_last4}
-            </span>
-          </DetailRow>
-
-          <div className="grid grid-cols-2 gap-5">
-            <DetailRow label="Created">{formatTimestamp(keyData.created_at)}</DetailRow>
-            <DetailRow label="Last used">
-              {keyData.last_used_at ? formatTimestamp(keyData.last_used_at) : 'Never'}
-            </DetailRow>
-            <DetailRow label="Expires">
-              {keyData.expires_at ? formatTimestamp(keyData.expires_at) : 'Never'}
-            </DetailRow>
-            <DetailRow label="Updated">{formatTimestamp(keyData.updated_at)}</DetailRow>
-          </div>
-
-          {status === 'revoked' && (
-            <div className="grid grid-cols-2 gap-5">
-              <DetailRow label="Revoked at">
-                {formatTimestamp(keyData.revoked_at)}
-              </DetailRow>
-              <DetailRow label="Revoke reason">
-                {keyData.revoke_reason || '—'}
-              </DetailRow>
-            </div>
-          )}
-
-          {keyData.hash_algorithm && (
-            <DetailRow label="Hash algorithm">
-              <span className="font-mono text-muted-foreground">
-                {keyData.hash_algorithm}
-              </span>
-            </DetailRow>
-          )}
-        </dl>
-
-        {(onEdit || onRevoke) && (
-          <SheetFooter className="mt-8">
-            {onEdit && (
-              <Button
-                variant="outline"
-                onClick={() => onEdit(keyData)}
-                disabled={!canEdit}
-                leftIcon={<Edit size={16} />}
-              >
-                Edit
-              </Button>
             )}
-            {onRevoke && (
-              <Button
-                variant="destructive"
-                onClick={() => onRevoke(keyData)}
-                disabled={!canRevoke}
-                leftIcon={<Trash2 size={16} />}
-              >
-                Revoke
-              </Button>
+
+            <dl className="mt-5 divide-y divide-border border-y border-border">
+              {key.description && (
+                <Row label="Description">{key.description}</Row>
+              )}
+              <Row label="Project">
+                {key.project_hash ? (
+                  <Link
+                    to={`${ROUTES.PROJECTS}/${encodeURIComponent(key.project_hash)}`}
+                    className="text-foreground no-underline hover:underline"
+                  >
+                    {key.project_name || key.project_hash}
+                  </Link>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {details.isLoading ? 'Loading…' : 'Unknown'}
+                  </span>
+                )}
+              </Row>
+              <Row label="Owner">
+                {key.owner_user_hash ? (
+                  <span className="flex flex-wrap items-center gap-2">
+                    <Link
+                      to={`${ROUTES.USERS}/${encodeURIComponent(key.owner_user_hash)}`}
+                      className="text-foreground no-underline hover:underline"
+                    >
+                      {key.owner_username || key.owner_user_hash}
+                    </Link>
+                    <UserTypeBadge userType={key.owner_user_type} />
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">
+                    {details.isLoading ? 'Loading…' : 'Unknown'}
+                  </span>
+                )}
+              </Row>
+              <Row label="Fingerprint">
+                <CopyableId id={key.fingerprint} showFull label="Fingerprint" />
+              </Row>
+              <Row label="Key ID">
+                <CopyableId id={key.public_id} showFull label="Key ID" />
+              </Row>
+              <Row label="Created">
+                <When value={key.created_at} empty="—" />
+              </Row>
+              <Row label="Last used">
+                {key.last_used_at ? (
+                  <time
+                    dateTime={key.last_used_at}
+                    title={formatDateTime(key.last_used_at)}
+                  >
+                    {formatRelativeTime(key.last_used_at)}
+                  </time>
+                ) : (
+                  <span className="text-muted-foreground">Never</span>
+                )}
+              </Row>
+              <Row label="Expires">
+                <When value={key.expires_at} empty="Never" />
+              </Row>
+              {status === 'revoked' && (
+                <>
+                  <Row label="Revoked">
+                    <When value={key.revoked_at} empty="—" />
+                  </Row>
+                  {key.revoke_reason && (
+                    <Row label="Reason">{key.revoke_reason}</Row>
+                  )}
+                </>
+              )}
+            </dl>
+
+            {status !== 'revoked' && (
+              <SheetFooter className="mt-6 gap-2 sm:justify-start">
+                <Button variant="secondary" onClick={() => onEdit(key)}>
+                  <Pencil aria-hidden="true" />
+                  Edit
+                </Button>
+                {canRevoke(key) && (
+                  <Button variant="destructive" onClick={() => onRevoke(key)}>
+                    <Trash2 aria-hidden="true" />
+                    Revoke key
+                  </Button>
+                )}
+              </SheetFooter>
             )}
-          </SheetFooter>
+          </>
         )}
       </SheetContent>
     </Sheet>

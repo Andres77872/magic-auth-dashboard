@@ -1,103 +1,76 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, useUserType } from '@/hooks';
-import { ROUTES } from '@/utils/routes';
+import { ArrowLeft, LogOut, ShieldX } from 'lucide-react';
+import { useAuth } from '@/hooks';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { XCircle, ArrowLeft, Home, LogOut } from 'lucide-react';
+import { UserTypeBadge } from '@/components/common/UserTypeBadge';
+import { ROUTES } from '@/utils/routes';
 
+/**
+ * Shown when a signed-in account may not open a page — consumers trying to
+ * use the console, or admins opening a root-only area.
+ */
 export function UnauthorizedPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
-  const { userType, getUserTypeLabel } = useUserType();
+  const { isAuthenticated, user, logout } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+  const isConsumer = user?.user_type === 'consumer';
 
-  const handleGoBack = (): void => {
-    navigate(-1);
-  };
-
-  const handleGoHome = (): void => {
-    if (isAuthenticated) {
-      navigate(ROUTES.HOME);
-    } else {
-      navigate(ROUTES.LOGIN);
+  const signOut = async (): Promise<void> => {
+    setSigningOut(true);
+    try {
+      await logout();
+    } finally {
+      void navigate(ROUTES.LOGIN, { replace: true });
     }
-  };
-
-  const handleLogout = async (): Promise<void> => {
-    await logout();
-    navigate(ROUTES.LOGIN);
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
-      <Card className="w-full max-w-lg">
-        <CardContent className="p-8 text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-            <XCircle size={32} />
-          </div>
-
-          <h1 className="mb-2 text-2xl font-bold text-foreground">Access Denied</h1>
-
-          <p className="mb-6 text-muted-foreground">
-            You don't have permission to access this resource.
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 text-center">
+        <span className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-destructive-subtle text-destructive-subtle-foreground">
+          <ShieldX className="h-6 w-6" aria-hidden="true" />
+        </span>
+        <h1 className="m-0 text-xl font-semibold text-foreground">
+          You don&apos;t have access to this page
+        </h1>
+        <p className="m-0 mt-2 text-[13px] text-muted-foreground">
+          {isConsumer
+            ? 'This console is for root and admin accounts. Sign in to your project’s app instead.'
+            : 'This area is limited to root accounts. Ask a root administrator if you need it.'}
+        </p>
+        {isAuthenticated && user && (
+          <p className="m-0 mt-4 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            Signed in as{' '}
+            <span className="font-medium text-foreground">{user.username}</span>
+            <UserTypeBadge userType={user.user_type} />
           </p>
-
-          {isAuthenticated && (
-            <div className="mb-6">
-              <p className="text-sm text-muted-foreground">
-                Logged in as:{' '}
-                <Badge variant="secondary" className="ml-1">
-                  {userType}
-                </Badge>{' '}
-                <span className="text-xs">({getUserTypeLabel()})</span>
-              </p>
-            </div>
+        )}
+        <div className="mt-6 flex flex-col justify-center gap-2 sm:flex-row">
+          {isAuthenticated && !isConsumer ? (
+            <Button onClick={() => void navigate(ROUTES.HOME)}>
+              <ArrowLeft aria-hidden="true" />
+              Back to overview
+            </Button>
+          ) : (
+            <Button onClick={() => void navigate(ROUTES.LOGIN)}>
+              Go to sign in
+            </Button>
           )}
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button onClick={handleGoBack} variant="secondary" size="md">
-              <ArrowLeft size={16} />
-              Go Back
+          {isAuthenticated && (
+            <Button
+              variant="secondary"
+              onClick={() => void signOut()}
+              loading={signingOut}
+            >
+              <LogOut aria-hidden="true" />
+              Sign out
             </Button>
-
-            <Button onClick={handleGoHome} variant="primary" size="md">
-              <Home size={16} />
-              {isAuthenticated ? 'Go to Dashboard' : 'Go to Login'}
-            </Button>
-
-            {isAuthenticated && (
-              <Button onClick={() => void handleLogout()} variant="outline" size="md">
-                <LogOut size={16} />
-                Logout
-              </Button>
-            )}
-          </div>
-
-          <div className="mt-8 rounded-lg border border-border bg-muted/50 p-4 text-left">
-            <h3 className="mb-2 font-semibold text-foreground">Need Access?</h3>
-            <p className="mb-3 text-sm text-muted-foreground">
-              If you believe you should have access to this resource, please contact your administrator.
-            </p>
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                ROOT users have access to all system features
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                ADMIN users can manage projects and users
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                Regular users have limited dashboard access
-              </li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-export default UnauthorizedPage; 
+export default UnauthorizedPage;

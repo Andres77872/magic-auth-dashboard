@@ -1,4 +1,11 @@
-import { createContext, useReducer, useEffect, useCallback, useRef, useState } from 'react';
+import {
+  createContext,
+  useReducer,
+  useEffect,
+  useCallback,
+  useRef,
+  useState,
+} from 'react';
 import type { ReactNode, JSX } from 'react';
 import type { AuthState, AuthAction, User, UserType } from '@/types/auth.types';
 import { AuthActionType } from '@/types/auth.types';
@@ -10,19 +17,16 @@ import {
 } from '@/services/session-refresh-coordinator';
 import { STORAGE_KEYS } from '@/utils/constants';
 import { handleApiError } from '@/utils/error-handler';
-import { hasPermission as checkPermission, canAccessRoute as checkRoute } from '@/utils/permissions';
+import {
+  hasPermission as checkPermission,
+  canAccessRoute as checkRoute,
+} from '@/utils/permissions';
 import { cache } from '@/utils/cache';
 
 const SESSION_EXPIRES_AT_KEY = 'session_expires_at';
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
 const REFRESH_RETRY_DELAY_MS = 30 * 1000;
 const MAX_REFRESH_RETRIES = 3;
-
-const getPermissionNames = (
-  response: Awaited<ReturnType<typeof permissionAssignmentsService.getMyPermissions>>
-): string[] => {
-  return Array.isArray(response.data) ? response.data : [];
-};
 
 const clearStoredAuthState = (): void => {
   localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
@@ -106,7 +110,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
           isLoading: false,
           error: null,
           sessionExpiresAt: action.payload.expires_at || state.sessionExpiresAt,
-          refreshExpiresAt: action.payload.refresh_expires_at || state.refreshExpiresAt,
+          refreshExpiresAt:
+            action.payload.refresh_expires_at || state.refreshExpiresAt,
           rememberMe: action.payload.remember_me ?? state.rememberMe,
         };
       }
@@ -146,7 +151,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         sessionExpiresAt: action.payload.expires_at,
-        refreshExpiresAt: action.payload.refresh_expires_at || state.refreshExpiresAt,
+        refreshExpiresAt:
+          action.payload.refresh_expires_at || state.refreshExpiresAt,
         rememberMe: action.payload.remember_me ?? state.rememberMe,
       };
 
@@ -157,8 +163,17 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 
 interface AuthContextType {
   state: AuthState;
-  login: (username: string, password: string, projectHash?: string, rememberMe?: boolean) => Promise<boolean>;
-  platformLogin: (username: string, password: string, rememberMe?: boolean) => Promise<boolean>;
+  login: (
+    username: string,
+    password: string,
+    projectHash?: string,
+    rememberMe?: boolean
+  ) => Promise<boolean>;
+  platformLogin: (
+    username: string,
+    password: string,
+    rememberMe?: boolean
+  ) => Promise<boolean>;
   logout: () => Promise<void>;
   validateToken: () => Promise<void>;
   clearError: () => void;
@@ -196,7 +211,8 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const lastHydratedRefreshGenerationRef = useRef<string | null>(null);
   const lastRefreshTerminalRef = useRef(false);
   const [refreshRetryCount, setRefreshRetryCount] = useState(0);
-  const [showSessionExpiryWarning, setShowSessionExpiryWarning] = useState(false);
+  const [showSessionExpiryWarning, setShowSessionExpiryWarning] =
+    useState(false);
 
   const dismissSessionExpiryWarning = useCallback(() => {
     setShowSessionExpiryWarning(false);
@@ -223,40 +239,43 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     updateRefreshRetryCount(0);
   }, [updateRefreshRetryCount]);
 
-  const hydrateRefreshedSession = useCallback((result: SessionRefreshResult): void => {
-    if (lastHydratedRefreshGenerationRef.current === result.generation) {
-      return;
-    }
+  const hydrateRefreshedSession = useCallback(
+    (result: SessionRefreshResult): void => {
+      if (lastHydratedRefreshGenerationRef.current === result.generation) {
+        return;
+      }
 
-    lastHydratedRefreshGenerationRef.current = result.generation;
-    lastRefreshTerminalRef.current = result.terminal;
+      lastHydratedRefreshGenerationRef.current = result.generation;
+      lastRefreshTerminalRef.current = result.terminal;
 
-    if (result.terminal) {
-      stopRefreshTimer();
-      clearClientAuthState();
+      if (result.terminal) {
+        stopRefreshTimer();
+        clearClientAuthState();
+        setShowSessionExpiryWarning(false);
+        dispatch({ type: AuthActionType.LOGOUT });
+        return;
+      }
+
+      if (!result.success) {
+        return;
+      }
+
+      if (result.metadata.expiresAt) {
+        dispatch({
+          type: AuthActionType.SESSION_EXPIRY_UPDATE,
+          payload: {
+            expires_at: result.metadata.expiresAt,
+            refresh_expires_at: result.metadata.refreshExpiresAt,
+            remember_me: result.metadata.rememberMe,
+          },
+        });
+      }
+
       setShowSessionExpiryWarning(false);
-      dispatch({ type: AuthActionType.LOGOUT });
-      return;
-    }
-
-    if (!result.success) {
-      return;
-    }
-
-    if (result.metadata.expiresAt) {
-      dispatch({
-        type: AuthActionType.SESSION_EXPIRY_UPDATE,
-        payload: {
-          expires_at: result.metadata.expiresAt,
-          refresh_expires_at: result.metadata.refreshExpiresAt,
-          remember_me: result.metadata.rememberMe,
-        },
-      });
-    }
-
-    setShowSessionExpiryWarning(false);
-    updateRefreshRetryCount(0);
-  }, [clearClientAuthState, stopRefreshTimer, updateRefreshRetryCount]);
+      updateRefreshRetryCount(0);
+    },
+    [clearClientAuthState, stopRefreshTimer, updateRefreshRetryCount]
+  );
 
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
@@ -276,48 +295,54 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   // Attempt a refresh and, on failure, keep retrying on a fixed delay until
   // MAX_REFRESH_RETRIES is exhausted, then surface the session-expiry warning.
   // Retries reuse refreshTimerRef so stopRefreshTimer() cancels a pending retry.
-  const attemptRefreshWithRetries = useCallback(function refreshWithRetries(): void {
-    void (async (): Promise<void> => {
-      const success = await refreshSession();
+  const attemptRefreshWithRetries = useCallback(
+    function refreshWithRetries(): void {
+      void (async (): Promise<void> => {
+        const success = await refreshSession();
 
-      if (success) {
-        updateRefreshRetryCount(0);
-        return;
-      }
+        if (success) {
+          updateRefreshRetryCount(0);
+          return;
+        }
 
-      if (lastRefreshTerminalRef.current) {
-        return;
-      }
+        if (lastRefreshTerminalRef.current) {
+          return;
+        }
 
-      const nextCount = refreshRetryCountRef.current + 1;
-      updateRefreshRetryCount(nextCount);
+        const nextCount = refreshRetryCountRef.current + 1;
+        updateRefreshRetryCount(nextCount);
 
-      if (nextCount > MAX_REFRESH_RETRIES) {
-        setShowSessionExpiryWarning(true);
+        if (nextCount > MAX_REFRESH_RETRIES) {
+          setShowSessionExpiryWarning(true);
+          return;
+        }
+
+        refreshTimerRef.current = setTimeout(() => {
+          refreshWithRetries();
+        }, REFRESH_RETRY_DELAY_MS);
+      })();
+    },
+    [refreshSession, updateRefreshRetryCount]
+  );
+
+  const startRefreshTimer = useCallback(
+    (expiresAt: string) => {
+      stopRefreshTimer();
+
+      const diffMs = new Date(expiresAt).getTime() - Date.now();
+      const refreshDelay = diffMs - REFRESH_THRESHOLD_MS;
+
+      if (refreshDelay <= 0) {
+        attemptRefreshWithRetries();
         return;
       }
 
       refreshTimerRef.current = setTimeout(() => {
-        refreshWithRetries();
-      }, REFRESH_RETRY_DELAY_MS);
-    })();
-  }, [refreshSession, updateRefreshRetryCount]);
-
-  const startRefreshTimer = useCallback((expiresAt: string) => {
-    stopRefreshTimer();
-
-    const diffMs = new Date(expiresAt).getTime() - Date.now();
-    const refreshDelay = diffMs - REFRESH_THRESHOLD_MS;
-
-    if (refreshDelay <= 0) {
-      attemptRefreshWithRetries();
-      return;
-    }
-
-    refreshTimerRef.current = setTimeout(() => {
-      attemptRefreshWithRetries();
-    }, refreshDelay);
-  }, [stopRefreshTimer, attemptRefreshWithRetries]);
+        attemptRefreshWithRetries();
+      }, refreshDelay);
+    },
+    [stopRefreshTimer, attemptRefreshWithRetries]
+  );
 
   useEffect(() => {
     const handleVisibilityChange = (): void => {
@@ -333,7 +358,8 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return (): void => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return (): void =>
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [state.sessionExpiresAt, refreshSession]);
 
   useEffect(() => {
@@ -349,7 +375,12 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       window.clearTimeout(timerId);
       stopRefreshTimer();
     };
-  }, [state.isAuthenticated, state.sessionExpiresAt, startRefreshTimer, stopRefreshTimer]);
+  }, [
+    state.isAuthenticated,
+    state.sessionExpiresAt,
+    startRefreshTimer,
+    stopRefreshTimer,
+  ]);
   const login = async (
     username: string,
     password: string,
@@ -506,22 +537,13 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     dispatch({ type: AuthActionType.LOAD_PERMISSIONS_START });
 
     try {
-      const response = await permissionAssignmentsService.getMyPermissions();
-      const permissionNames = getPermissionNames(response);
-
-      if (response.success !== false && Array.isArray(permissionNames)) {
-        cache.set(cacheKey, permissionNames, 5 * 60 * 1000);
-
-        dispatch({
-          type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
-          payload: { permissions: permissionNames },
-        });
-      } else {
-        dispatch({
-          type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
-          payload: { permissions: [] },
-        });
-      }
+      const permissionNames =
+        await permissionAssignmentsService.getMyPermissions();
+      cache.set(cacheKey, permissionNames, 5 * 60 * 1000);
+      dispatch({
+        type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
+        payload: { permissions: permissionNames },
+      });
     } catch (error) {
       console.warn('Failed to load user permissions:', error);
       dispatch({
@@ -568,14 +590,20 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     };
 
     window.addEventListener('magic-auth-unauthorized', handleUnauthorized);
-    return (): void => window.removeEventListener('magic-auth-unauthorized', handleUnauthorized);
+    return (): void =>
+      window.removeEventListener('magic-auth-unauthorized', handleUnauthorized);
   }, [clearClientAuthState, stopRefreshTimer]);
 
   useEffect(() => {
     if (state.isAuthenticated && state.user && state.currentProject) {
       void loadUserPermissions();
     }
-  }, [state.isAuthenticated, state.user, state.currentProject, loadUserPermissions]);
+  }, [
+    state.isAuthenticated,
+    state.user,
+    state.currentProject,
+    loadUserPermissions,
+  ]);
 
   const contextValue: AuthContextType = {
     state,
@@ -604,9 +632,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 }
 

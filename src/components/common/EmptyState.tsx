@@ -49,12 +49,20 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         className
       )}
     >
-      <div className={cn('mb-4 text-muted-foreground', sizes.icon)} aria-hidden="true">
+      <div
+        className={cn('mb-4 text-muted-foreground', sizes.icon)}
+        aria-hidden="true"
+      >
         {icon}
       </div>
       <h3 className={cn('font-semibold', sizes.title)}>{title}</h3>
       {description && (
-        <p className={cn('mt-1 text-muted-foreground max-w-sm', sizes.description)}>
+        <p
+          className={cn(
+            'mt-1 text-muted-foreground max-w-sm',
+            sizes.description
+          )}
+        >
           {description}
         </p>
       )}

@@ -1,154 +1,142 @@
 import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import type { ProjectFormData, ProjectFormErrors } from '@/types/project.types';
-import { 
-  validateRequired, 
-  validateLengthRange, 
-  validateMaxLength, 
-  composeValidators 
-} from '@/utils/validators';
+import {
+  PROJECT_DESCRIPTION_MAX,
+  PROJECT_NAME_MAX,
+  hasErrors,
+  validateProjectForm,
+} from './project-form';
 
-interface ProjectFormProps {
-  initialData?: Partial<ProjectFormData>;
-  onSubmit: (data: ProjectFormData) => void;
-  onCancel: () => void;
-  isSubmitting?: boolean;
+export interface ProjectFormProps {
   mode: 'create' | 'edit';
+  initialValues?: Partial<ProjectFormData>;
+  /** Called with trimmed values. The caller reports API errors. */
+  onSubmit: (values: ProjectFormData) => void;
+  onCancel?: () => void;
+  submitLabel: string;
+  isSubmitting?: boolean;
+  /** Prefix for field ids when more than one form can be on screen. */
+  idPrefix?: string;
+  footerClassName?: string;
 }
 
 /**
- * ProjectForm component using consolidated validation utilities
- * Follows Design System guidelines for forms and validation
+ * Name and description fields shared by the create/edit dialog and the
+ * settings tab. In edit mode Save stays disabled until something changes.
  */
-export const ProjectForm: React.FC<ProjectFormProps> = ({
-  initialData = {},
+export function ProjectForm({
+  mode,
+  initialValues,
   onSubmit,
   onCancel,
+  submitLabel,
   isSubmitting = false,
-  mode,
-}) => {
-  const [formData, setFormData] = useState<ProjectFormData>({
-    project_name: initialData.project_name || '',
-    project_description: initialData.project_description || '',
+  idPrefix = 'project',
+  footerClassName,
+}: ProjectFormProps): React.JSX.Element {
+  const initialName = initialValues?.project_name ?? '';
+  const initialDescription = initialValues?.project_description ?? '';
+  const [values, setValues] = useState<ProjectFormData>({
+    project_name: initialName,
+    project_description: initialDescription,
   });
-
   const [errors, setErrors] = useState<ProjectFormErrors>({});
 
-  const validateForm = (): boolean => {
-    const newErrors: ProjectFormErrors = {};
+  const trimmedName = values.project_name.trim();
+  const trimmedDescription = values.project_description.trim();
+  // PUT /projects/{hash} treats an empty description as "keep the current one",
+  // so clearing it alone is not a change.
+  const clearsDescription =
+    mode === 'edit' &&
+    Boolean(initialDescription.trim()) &&
+    !trimmedDescription;
+  const effectiveDescription = clearsDescription
+    ? initialDescription.trim()
+    : trimmedDescription;
+  const isDirty =
+    trimmedName !== initialName.trim() ||
+    effectiveDescription !== initialDescription.trim();
 
-    // Project name validation using shared validators
-    const nameValidation = composeValidators(
-      () => validateRequired(formData.project_name.trim(), 'Project name'),
-      () => validateLengthRange(formData.project_name.trim(), 3, 100, 'Project name')
-    );
-
-    if (!nameValidation.isValid) {
-      newErrors.project_name = nameValidation.error!;
-    }
-
-    // Project description validation (optional)
-    if (formData.project_description) {
-      const descValidation = validateMaxLength(
-        formData.project_description, 
-        500, 
-        'Project description'
-      );
-      if (!descValidation.isValid) {
-        newErrors.project_description = descValidation.error!;
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (field: keyof ProjectFormData) => 
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setFormData(prev => ({
-        ...prev,
-        [field]: e.target.value,
-      }));
-
-      // Clear error when user starts typing
-      if (errors[field]) {
-        setErrors(prev => ({
-          ...prev,
-          [field]: undefined,
-        }));
-      }
+  const update =
+    (field: keyof ProjectFormData) =>
+    (
+      event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ): void => {
+      const { value } = event.target;
+      setValues((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (validateForm()) {
-      onSubmit({
-        project_name: formData.project_name.trim(),
-        project_description: formData.project_description.trim() || '',
-      });
-    }
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    const nextErrors = validateProjectForm(values);
+    setErrors(nextErrors);
+    if (hasErrors(nextErrors)) return;
+    onSubmit({
+      project_name: trimmedName,
+      project_description: trimmedDescription,
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">
-          {mode === 'create' ? 'Project Information' : 'Edit Project'}
-        </h3>
-        
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="project_name">
-              Project Name <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="project_name"
-              type="text"
-              value={formData.project_name}
-              onChange={handleInputChange('project_name')}
-              placeholder="Enter project name"
-              disabled={isSubmitting}
-              error={errors.project_name}
-              fullWidth
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="project_description">Project Description</Label>
-            <Textarea
-              id="project_description"
-              value={formData.project_description}
-              onChange={handleInputChange('project_description')}
-              placeholder="Enter project description (optional)"
-              disabled={isSubmitting}
-              error={errors.project_description}
-              rows={4}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-3 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isSubmitting}
-        >
-          Cancel
-        </Button>
+    <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      <Input
+        id={`${idPrefix}-name`}
+        label="Name"
+        required
+        value={values.project_name}
+        onChange={update('project_name')}
+        error={errors.project_name}
+        maxLength={PROJECT_NAME_MAX}
+        disabled={isSubmitting}
+        autoComplete="off"
+        fullWidth
+      />
+      <Textarea
+        id={`${idPrefix}-description`}
+        label="Description"
+        value={values.project_description}
+        onChange={update('project_description')}
+        error={errors.project_description}
+        helperText={
+          clearsDescription
+            ? 'An empty description keeps the current one; the API cannot clear descriptions.'
+            : 'Optional. Shown in project lists and pickers.'
+        }
+        maxLength={PROJECT_DESCRIPTION_MAX}
+        rows={3}
+        disabled={isSubmitting}
+      />
+      <div
+        className={cn(
+          'flex flex-wrap items-center justify-end gap-2 pt-1',
+          footerClassName
+        )}
+      >
+        {onCancel && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+        )}
         <Button
           type="submit"
-          variant="primary"
           loading={isSubmitting}
+          disabled={mode === 'edit' && !isDirty}
         >
-          {mode === 'create' ? 'Create Project' : 'Update Project'}
+          {submitLabel}
         </Button>
       </div>
     </form>
   );
-}; 
+}
+
+export default ProjectForm;

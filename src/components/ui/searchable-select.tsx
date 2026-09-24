@@ -35,7 +35,7 @@ export function SearchableSelect({
   clearable = false,
   className,
   popoverClassName,
-}: SearchableSelectProps) {
+}: SearchableSelectProps): React.JSX.Element {
   const [open, setOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [highlightedIndex, setHighlightedIndex] = React.useState(-1);
@@ -56,22 +56,20 @@ export function SearchableSelect({
     }
   }, [open]);
 
-  React.useEffect(() => {
-    if (open) {
-      setHighlightedIndex(
-        filteredOptions.findIndex((opt) => opt.value === value)
-      );
-    }
-  }, [open, filteredOptions, value]);
+  // Start keyboard navigation from the current value whenever the list opens.
+  const openList = (): void => {
+    setOpen(true);
+    setHighlightedIndex(options.findIndex((opt) => opt.value === value));
+  };
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
+  const handleKeyDown = (event: React.KeyboardEvent): void => {
     if (disabled) return;
 
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
         if (!open) {
-          setOpen(true);
+          openList();
         } else {
           setHighlightedIndex((prev) =>
             prev < filteredOptions.length - 1 ? prev + 1 : 0
@@ -100,7 +98,7 @@ export function SearchableSelect({
             setSearchTerm('');
           }
         } else if (!open) {
-          setOpen(true);
+          openList();
         }
         break;
       case 'Escape':
@@ -110,7 +108,7 @@ export function SearchableSelect({
     }
   };
 
-  const handleSelect = (option: SearchableSelectOption) => {
+  const handleSelect = (option: SearchableSelectOption): void => {
     if (!option.disabled) {
       onValueChange(option.value);
       setOpen(false);
@@ -118,7 +116,7 @@ export function SearchableSelect({
     }
   };
 
-  const handleClear = (event: React.MouseEvent) => {
+  const handleClear = (event: React.MouseEvent): void => {
     event.stopPropagation();
     onValueChange('');
   };
@@ -132,7 +130,8 @@ export function SearchableSelect({
       <Popover
         open={open}
         onOpenChange={(isOpen) => {
-          setOpen(isOpen);
+          if (isOpen) openList();
+          else setOpen(false);
           if (!isOpen) setSearchTerm('');
         }}
       >
@@ -183,7 +182,10 @@ export function SearchableSelect({
               ref={inputRef}
               placeholder="Search..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setHighlightedIndex(0);
+              }}
               className="h-8"
             />
           </div>

@@ -36,15 +36,15 @@ export function DataViewToolbar({
   filters,
   className = '',
 }: DataViewToolbarProps): React.JSX.Element {
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     onSearchChange?.(e.target.value);
   };
 
-  const handleClearSearch = () => {
+  const handleClearSearch = (): void => {
     onSearchChange?.('');
   };
 
-  const handleViewModeChange = (mode: 'table' | 'grid') => {
+  const handleViewModeChange = (mode: 'table' | 'grid'): void => {
     onViewModeChange?.(mode);
   };
 
@@ -53,37 +53,40 @@ export function DataViewToolbar({
   }
 
   return (
-    <div className={cn('space-y-3 pb-4', className)}>
-      {/* Main toolbar row */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {/* Search input */}
-        {showSearch && (
-          <div className="relative w-full sm:max-w-xs lg:max-w-sm">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              type="search"
-              placeholder={searchPlaceholder}
-              value={searchValue}
-              onChange={handleSearchChange}
-              className="pl-9 pr-9"
-              aria-label={searchPlaceholder}
-            />
-            {searchValue && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearSearch}
-                className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0 hover:bg-transparent"
-                aria-label="Clear search"
-              >
-                <X className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            )}
-          </div>
-        )}
+    <div className={cn('pb-3', className)}>
+      <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:justify-between">
+        <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          {showSearch && (
+            <div className="relative w-full sm:w-72 lg:w-80">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                placeholder={searchPlaceholder}
+                value={searchValue}
+                onChange={handleSearchChange}
+                className="h-8 pl-9 pr-9 text-[13px]"
+                aria-label={searchPlaceholder}
+              />
+              {searchValue && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearSearch}
+                  className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0 hover:bg-transparent"
+                  aria-label="Clear search"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              )}
+            </div>
+          )}
+          {filters && (
+            <div className="flex flex-wrap items-center gap-2">{filters}</div>
+          )}
+        </div>
 
         {/* Actions and view toggle */}
         <div className="flex items-center justify-between gap-2 sm:justify-end">
@@ -113,7 +116,9 @@ export function DataViewToolbar({
                       )}
                     >
                       <Table2 className="h-4 w-4" aria-hidden="true" />
-                      <span className="hidden text-[13px] sm:inline">Table</span>
+                      <span className="hidden text-[13px] sm:inline">
+                        Table
+                      </span>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="sm:hidden">
@@ -150,12 +155,8 @@ export function DataViewToolbar({
           )}
         </div>
       </div>
-
-      {/* Filters row */}
-      {filters && <div className="flex flex-wrap items-center gap-2">{filters}</div>}
     </div>
   );
 }
 
 export default DataViewToolbar;
-

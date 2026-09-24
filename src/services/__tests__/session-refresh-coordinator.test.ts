@@ -481,9 +481,7 @@ describe('SessionRefreshCoordinator', () => {
     expect(result).toMatchObject({ success: false, terminal: true });
     expect(executor).not.toHaveBeenCalled();
 
-    const switchExecutor = vi.fn(() =>
-      Promise.resolve({ value: 'switched' })
-    );
+    const switchExecutor = vi.fn(() => Promise.resolve({ value: 'switched' }));
     await expect(
       coordinator.runSessionMutation(switchExecutor, {
         requiresCrossTabLock: true,

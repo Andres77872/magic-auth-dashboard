@@ -3,125 +3,121 @@ import type { ProjectGroupInfo } from '@/types/project.types';
 import type { UserGroup } from '@/types/group.types';
 import { ROUTES } from '@/utils/routes';
 
+export type WorkflowStepStatus = 'complete' | 'incomplete' | 'unknown';
+
 export interface WorkflowStep {
-  id: string;
+  id: 'project-group' | 'user-group-access' | 'members';
   label: string;
   description: string;
-  isComplete: boolean;
-  /** When a fetch error prevented evaluation, this is true and the step shows an unknown/error state */
-  isUnknown?: boolean;
-  cta?: {
-    label: string;
-    action: 'open-modal' | 'navigate';
-    target?: string;
-  };
+  status: WorkflowStepStatus;
+  /** Next action for an incomplete step. */
+  cta?:
+    | { label: string; action: 'add-to-project-group' }
+    | { label: string; action: 'navigate'; target: string };
 }
 
 export interface UseProjectWorkflowReturn {
   steps: WorkflowStep[];
   completedCount: number;
-  totalCount: number;
-  completionPercentage: number;
   isComplete: boolean;
 }
 
 interface UseProjectWorkflowParams {
-  projectHash: string;
   projectGroups: ProjectGroupInfo[];
   userGroups: UserGroup[];
-  /** Whether fetching user groups failed — marks step 2 as unknown */
-  userGroupsFetchError?: boolean;
-  /** Hash of the first user group, used for the "Add Users" CTA target */
-  firstUserGroupHash?: string;
-  onOpenAddToGroupModal?: () => void;
+  /** User groups could not be loaded, so steps 2 and 3 can't be evaluated. */
+  userGroupsUnavailable?: boolean;
 }
 
 /**
- * Computes workflow progress for the USER → USER_GROUP → PROJECT_GROUP → PROJECT chain
- * for a specific project.
+ * Progress along USER → USER_GROUP → PROJECT_GROUP → PROJECT for one project:
+ * is it in a project group, is a user group granted one of those project
+ * groups, and does any of those user groups have members.
  */
 export function useProjectWorkflow({
-  projectHash: _projectHash,
   projectGroups,
   userGroups,
-  userGroupsFetchError = false,
-  firstUserGroupHash,
-  onOpenAddToGroupModal: _onOpenAddToGroupModal,
+  userGroupsUnavailable = false,
 }: UseProjectWorkflowParams): UseProjectWorkflowReturn {
   const steps = useMemo<WorkflowStep[]>(() => {
     const hasProjectGroups = projectGroups.length > 0;
     const hasUserGroups = userGroups.length > 0;
-    const hasUsersAssigned = userGroups.some((g) => (g.member_count ?? 0) > 0);
+    const groupWithMembers = userGroups.find(
+      (group) => (group.member_count ?? 0) > 0
+    );
+    const firstUserGroup = userGroups[0];
 
-    // Build the "Add Users" target from the first available user group
-    const addUserGroupTarget = firstUserGroupHash
-      ? `${ROUTES.GROUPS}/${firstUserGroupHash}`
-      : undefined;
+    const projectGroupStep: WorkflowStep = {
+      id: 'project-group',
+      label: 'In a project group',
+      description: hasProjectGroups
+        ? `The project belongs to ${projectGroups.length} project group${projectGroups.length === 1 ? '' : 's'}.`
+        : 'Add the project to a project group so user groups can be granted access.',
+      status: hasProjectGroups ? 'complete' : 'incomplete',
+      cta: hasProjectGroups
+        ? undefined
+        : { label: 'Add to project group', action: 'add-to-project-group' },
+    };
+
+    if (userGroupsUnavailable) {
+      return [
+        projectGroupStep,
+        {
+          id: 'user-group-access',
+          label: 'Granted to a user group',
+          description: 'User groups with access could not be loaded.',
+          status: 'unknown',
+        },
+        {
+          id: 'members',
+          label: 'Users in those groups',
+          description: 'User groups with access could not be loaded.',
+          status: 'unknown',
+        },
+      ];
+    }
 
     return [
-      {
-        id: 'project-group-membership',
-        label: 'Project Group Membership',
-        description: hasProjectGroups
-          ? `This project is in ${projectGroups.length} project group(s).`
-          : 'This project is not assigned to any project group yet.',
-        isComplete: hasProjectGroups,
-        cta: !hasProjectGroups
-          ? {
-              label: 'Add to Project Group',
-              action: 'open-modal',
-              target: 'add-to-project-group',
-            }
-          : undefined,
-      },
+      projectGroupStep,
       {
         id: 'user-group-access',
-        label: 'User Group Access',
-        description: userGroupsFetchError
-          ? 'Unable to determine which user groups have access.'
-          : hasUserGroups
-            ? `${userGroups.length} user group(s) can access this project.`
-            : 'No user groups have been granted access to the project groups above.',
-        isComplete: hasUserGroups,
-        isUnknown: userGroupsFetchError,
+        label: 'Granted to a user group',
+        description: hasUserGroups
+          ? `${userGroups.length} user group${userGroups.length === 1 ? '' : 's'} can reach the project.`
+          : 'Grant a user group one of the project groups above.',
+        status: hasUserGroups ? 'complete' : 'incomplete',
         cta:
-          hasProjectGroups && !hasUserGroups && !userGroupsFetchError
+          hasProjectGroups && !hasUserGroups
             ? {
-                label: 'Grant User Group Access',
+                label: 'Open user groups',
                 action: 'navigate',
                 target: ROUTES.GROUPS,
               }
             : undefined,
       },
       {
-        id: 'user-assignment',
-        label: 'User Assignment',
-        description: hasUsersAssigned
-          ? 'Consumer users are assigned to user groups with access.'
-          : 'No consumer users are assigned to the user groups that have access.',
-        isComplete: hasUsersAssigned,
+        id: 'members',
+        label: 'Users in those groups',
+        description: groupWithMembers
+          ? 'At least one user group with access has members.'
+          : 'None of the user groups with access has members yet.',
+        status: groupWithMembers ? 'complete' : 'incomplete',
         cta:
-          hasUserGroups && !hasUsersAssigned && addUserGroupTarget
+          !groupWithMembers && firstUserGroup
             ? {
-                label: 'Add Users',
+                label: 'Add users',
                 action: 'navigate',
-                target: addUserGroupTarget,
+                target: `${ROUTES.GROUPS}/${encodeURIComponent(firstUserGroup.group_hash)}`,
               }
             : undefined,
       },
     ];
-  }, [projectGroups, userGroups, userGroupsFetchError, firstUserGroupHash]);
+  }, [projectGroups, userGroups, userGroupsUnavailable]);
 
-  const completedCount = steps.filter((s) => s.isComplete).length;
-  const totalCount = steps.length;
-  const completionPercentage = Math.round((completedCount / totalCount) * 100);
-  const isComplete = completedCount === totalCount;
-
-  return {
-    steps,
-    completedCount,
-    totalCount,
-    completionPercentage,
-    isComplete,
-  };
+  const completedCount = steps.filter(
+    (step) => step.status === 'complete'
+  ).length;
+  return { steps, completedCount, isComplete: completedCount === steps.length };
 }
+
+export default useProjectWorkflow;

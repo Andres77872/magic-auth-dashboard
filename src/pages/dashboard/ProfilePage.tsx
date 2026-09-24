@@ -1,201 +1,316 @@
-import React from 'react';
-import { useAuth, useUserType } from '@/hooks';
-import { PageContainer, PageHeader, Card, CardHeader, CardContent, Badge, CopyableId, ErrorState } from '@/components/common';
+import React, { useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { Layers, ShieldCheck, Users } from 'lucide-react';
+import {
+  CopyableId,
+  ErrorState,
+  FactList,
+  PageContainer,
+  PageHeader,
+  Panel,
+  UserTypeBadge,
+} from '@/components/common';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { UserAvatar } from '@/components/features/users/UserAvatar';
-import { User, Settings2, Shield, Clock } from 'lucide-react';
-import { getUserTypeBadgeVariant } from '@/utils/component-utils';
+import { useAsyncData, useAuth } from '@/hooks';
+import { globalRolesService } from '@/services/global-roles.service';
+import { permissionAssignmentsService } from '@/services/permission-assignments.service';
+import { userService } from '@/services/user.service';
+import {
+  formatDate,
+  formatDateTime,
+  formatRelativeTime,
+} from '@/utils/formatters';
+import { ROUTES } from '@/utils/routes';
+import type { PermissionSource } from '@/types/permission-assignments.types';
 
-/**
- * ProfilePage - User's own profile page for self-service account management
- * 
- * Note: Profile settings management (password change, email update, etc.) is
- * deferred to a future milestone. This page currently displays user information.
- */
+const SOURCE_LABELS: Record<
+  PermissionSource['source_type'],
+  { label: string; icon: typeof ShieldCheck }
+> = {
+  role: { label: 'From your role', icon: ShieldCheck },
+  user_group: { label: 'From your user groups', icon: Users },
+  direct: { label: 'Assigned to you directly', icon: Layers },
+};
+
+function SourceGroup({
+  type,
+  sources,
+}: {
+  type: PermissionSource['source_type'];
+  sources: PermissionSource[];
+}): React.JSX.Element {
+  const { label, icon: Icon } = SOURCE_LABELS[type];
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+        {label}
+        <span className="font-mono text-[11px]">{sources.length}</span>
+      </div>
+      {sources.length === 0 ? (
+        <p className="m-0 text-xs text-muted-foreground">None.</p>
+      ) : (
+        <ul className="m-0 list-none space-y-1 p-0">
+          {sources.map((source) => (
+            <li
+              key={`${source.source_type}-${source.source_name}-${source.permission_group_hash}`}
+              className="flex items-center justify-between gap-3 text-[13px]"
+            >
+              <span className="truncate text-foreground">
+                {source.permission_group_name}
+              </span>
+              <span className="truncate text-xs text-muted-foreground">
+                {type === 'direct'
+                  ? source.notes || 'Direct'
+                  : source.source_name}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** The signed-in operator's own account and where their access comes from. */
 export function ProfilePage(): React.JSX.Element {
-  const { user } = useAuth();
-  const { getUserTypeLabel, userType } = useUserType();
+  const { user: sessionUser } = useAuth();
+  const fetchProfile = useCallback(() => userService.getMyProfile(), []);
+  const profile = useAsyncData(fetchProfile);
+  const fetchRole = useCallback(() => globalRolesService.getMyRole(), []);
+  const role = useAsyncData(fetchRole);
+  const fetchSources = useCallback(
+    () => permissionAssignmentsService.getMyPermissionSources(),
+    []
+  );
+  const sources = useAsyncData(fetchSources);
+  const fetchPermissions = useCallback(
+    () => permissionAssignmentsService.getMyPermissions(),
+    []
+  );
+  const permissions = useAsyncData(fetchPermissions);
 
-  if (!user) {
+  const user = profile.data;
+  const username = user?.username ?? sessionUser?.username ?? 'Your profile';
+
+  if (profile.error && !user) {
     return (
-      <PageContainer maxWidth="lg" as="main">
-        <PageHeader title="Profile" icon={<User size={24} aria-hidden="true" />} />
+      <PageContainer>
+        <PageHeader title="Your profile" />
         <ErrorState
-          variant="card"
-          title="Couldn't load your profile"
-          message="Unable to load profile information."
+          title="Your profile could not be loaded"
+          message={profile.error}
+          onRetry={() => void profile.refetch()}
         />
       </PageContainer>
     );
   }
 
   return (
-    <PageContainer maxWidth="lg" as="main">
-      <PageHeader 
-        title="Profile" 
-        subtitle="Manage your account settings and preferences"
-        icon={<User size={24} aria-hidden="true" />}
+    <PageContainer>
+      <PageHeader
+        title={username}
+        icon={<UserAvatar username={username} size="lg" />}
+        badge={
+          <UserTypeBadge userType={user?.user_type ?? sessionUser?.user_type} />
+        }
+        subtitle={
+          user ? (
+            <>
+              {user.email || 'No contact email'} · Joined{' '}
+              {formatDate(user.created_at)} ·{' '}
+              {user.last_login
+                ? `Last signed in ${formatRelativeTime(user.last_login)}`
+                : 'First session'}
+            </>
+          ) : (
+            'Loading your account…'
+          )
+        }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* User Identity Card - Left column on desktop, full width on mobile */}
-        <Card padding="lg" elevated className="lg:col-span-1">
-          <CardContent className="flex flex-col items-center gap-4 text-center">
-            <UserAvatar 
-              username={user.username} 
-              userType={userType ?? undefined}
-              size="lg"
-              className="h-20 w-20 text-2xl"
-            />
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold tracking-tight">{user.username}</h2>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
-              <Badge 
-                variant={getUserTypeBadgeVariant(userType ?? 'consumer')}
-                size="md"
-              >
-                {getUserTypeLabel()}
-              </Badge>
-            </div>
-            {user.last_login && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
-                <Clock size={14} aria-hidden="true" />
-                <span>Last login: {new Date(user.last_login).toLocaleDateString()}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-6">
+          <Panel title="Account">
+            {profile.isLoading ? (
+              <Skeleton className="h-32" />
+            ) : user ? (
+              <FactList
+                facts={[
+                  {
+                    label: 'User ID',
+                    value: (
+                      <CopyableId
+                        id={user.user_hash}
+                        startChars={10}
+                        endChars={4}
+                      />
+                    ),
+                  },
+                  {
+                    label: 'Contact email',
+                    value: user.email || (
+                      <span className="text-muted-foreground">Not set</span>
+                    ),
+                  },
+                  { label: 'Created', value: formatDateTime(user.created_at) },
+                  {
+                    label: 'Last sign-in',
+                    value: formatDateTime(user.last_login, 'Never'),
+                  },
+                ]}
+              />
+            ) : null}
+            <p className="m-0 mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
+              Session length and sign-out live in{' '}
+              <Link to={ROUTES.SETTINGS}>session settings</Link>.
+            </p>
+          </Panel>
 
-        {/* Account Details Card - Right column on desktop */}
-        <Card padding="lg" className="lg:col-span-2">
-          <CardHeader>
-            <h3 className="flex items-center gap-2 text-base font-semibold">
-              <Settings2 size={18} aria-hidden="true" />
-              Account Details
-            </h3>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {/* Email */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Email Address
-                </label>
-                <p className="text-sm font-medium">{user.email || 'Not provided'}</p>
+          <Panel title="Groups & projects" padding="none">
+            {profile.isLoading ? (
+              <div className="p-5">
+                <Skeleton className="h-16" />
               </div>
-
-              {/* User Hash */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  User ID
-                </label>
-                <CopyableId id={user.user_hash} />
-              </div>
-
-              {/* Account Status */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Status
-                </label>
-                <Badge 
-                  variant={user.is_active ? 'success' : 'secondary'}
-                  size="sm"
-                  dot
-                >
-                  {user.is_active ? 'Active' : 'Inactive'}
-                </Badge>
-              </div>
-
-              {/* Account Created */}
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Created
-                </label>
-                <p className="text-sm">
-                  {new Date(user.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Access Summary Card */}
-        {((user.groups?.length ?? 0) > 0 || (user.projects?.length ?? 0) > 0) && (
-          <Card padding="lg" className="lg:col-span-3">
-            <CardHeader>
-              <h3 className="flex items-center gap-2 text-base font-semibold">
-                <Shield size={18} aria-hidden="true" />
-                Access Summary
-              </h3>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Groups */}
-                {user.groups && user.groups.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Groups ({user.groups.length})
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {user.groups.slice(0, 5).map((group) => (
-                        <Badge key={group.group_hash} variant="secondary" size="sm">
+            ) : (
+              <div className="divide-y divide-border">
+                <div className="px-5 py-3.5">
+                  <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    User groups
+                  </div>
+                  {(user?.groups ?? []).length === 0 ? (
+                    <p className="m-0 text-xs text-muted-foreground">
+                      You aren&apos;t in any user group.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(user?.groups ?? []).map((group) => (
+                        <Badge
+                          key={group.group_hash}
+                          variant="secondary"
+                          size="sm"
+                        >
                           {group.group_name}
                         </Badge>
                       ))}
-                      {user.groups.length > 5 && (
-                        <Badge variant="outline" size="sm">
-                          +{user.groups.length - 5} more
-                        </Badge>
-                      )}
                     </div>
+                  )}
+                </div>
+                <div className="px-5 py-3.5">
+                  <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    Projects you can reach
                   </div>
-                )}
-
-                {/* Projects */}
-                {user.projects && user.projects.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Projects ({user.projects.length})
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {user.projects.slice(0, 5).map((project) => (
-                        <Badge key={project.project_hash} variant="outline" size="sm">
+                  {(user?.projects ?? []).length === 0 ? (
+                    <p className="m-0 text-xs text-muted-foreground">
+                      {user?.user_type === 'root'
+                        ? 'Root accounts administer every project without group access.'
+                        : 'No project access through groups.'}
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(user?.projects ?? []).map((project) => (
+                        <Link
+                          key={project.project_hash}
+                          to={`${ROUTES.PROJECTS}/${encodeURIComponent(project.project_hash)}`}
+                          className="rounded border border-border bg-secondary/60 px-2 py-0.5 text-xs text-foreground no-underline hover:border-input"
+                        >
                           {project.project_name}
-                        </Badge>
+                        </Link>
                       ))}
-                      {user.projects.length > 5 && (
-                        <Badge variant="outline" size="sm">
-                          +{user.projects.length - 5} more
-                        </Badge>
-                      )}
                     </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </Panel>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-6">
+          <Panel
+            title="Your access"
+            description="Where your permissions come from"
+          >
+            <div className="space-y-5">
+              <div>
+                <div className="mb-1.5 text-xs font-medium text-muted-foreground">
+                  Global role
+                </div>
+                {role.isLoading ? (
+                  <Skeleton className="h-5 w-40" />
+                ) : role.data ? (
+                  <div className="flex flex-wrap items-center gap-2 text-[13px]">
+                    <span className="font-medium text-foreground">
+                      {role.data.role_display_name}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {role.data.role_name}
+                    </span>
                   </div>
+                ) : (
+                  <p className="m-0 text-xs text-muted-foreground">
+                    No global role.{' '}
+                    {(user?.user_type ?? sessionUser?.user_type) !==
+                      'consumer' &&
+                      'Root and admin accounts get their console permissions from their user type.'}
+                  </p>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        )}
 
-        {/* Placeholder for future profile settings */}
-        <Card padding="lg" className="lg:col-span-3">
-          <CardContent>
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <div className="h-12 w-12 rounded-full bg-muted-subtle flex items-center justify-center">
-                <Settings2 size={24} className="text-muted-foreground" aria-hidden="true" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-base font-semibold">Profile Settings</h3>
-                <p className="text-sm text-muted-foreground max-w-md">
-                  Profile management features (password change, email update, preferences) 
-                  will be implemented in a future milestone.
+              {sources.isLoading ? (
+                <Skeleton className="h-24" />
+              ) : sources.error ? (
+                <p className="m-0 text-xs text-muted-foreground">
+                  Permission sources could not be loaded.
                 </p>
-              </div>
+              ) : sources.data ? (
+                <>
+                  <SourceGroup
+                    type="role"
+                    sources={sources.data.sources.from_role}
+                  />
+                  <SourceGroup
+                    type="user_group"
+                    sources={sources.data.sources.from_user_groups}
+                  />
+                  <SourceGroup
+                    type="direct"
+                    sources={sources.data.sources.from_direct_assignment}
+                  />
+                </>
+              ) : null}
             </div>
-          </CardContent>
-        </Card>
+          </Panel>
+
+          <Panel
+            title="Effective permissions"
+            description="Every permission you hold, from all sources"
+          >
+            {permissions.isLoading ? (
+              <Skeleton className="h-16" />
+            ) : permissions.error ? (
+              <p className="m-0 text-xs text-muted-foreground">
+                Permissions could not be loaded.
+              </p>
+            ) : (permissions.data ?? []).length === 0 ? (
+              <p className="m-0 text-xs text-muted-foreground">
+                No permissions from roles or permission groups.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1">
+                {(permissions.data ?? []).map((permission) => (
+                  <span
+                    key={permission}
+                    className="rounded border border-border bg-secondary/60 px-1.5 py-px font-mono text-[11px] text-foreground"
+                  >
+                    {permission}
+                  </span>
+                ))}
+              </div>
+            )}
+          </Panel>
+        </div>
       </div>
     </PageContainer>
   );

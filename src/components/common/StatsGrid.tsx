@@ -30,11 +30,14 @@ export function StatsGrid({
       aria-label="Statistics"
     >
       {stats.map((stat, index) => (
-        <StatCard key={stat.title || `stat-${index}`} {...stat} loading={loading} />
+        <StatCard
+          key={stat.title || `stat-${index}`}
+          {...stat}
+          loading={loading}
+        />
       ))}
     </div>
   );
 }
 
 export default StatsGrid;
-

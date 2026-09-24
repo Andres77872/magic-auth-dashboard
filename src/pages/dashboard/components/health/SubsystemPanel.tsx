@@ -53,7 +53,9 @@ export function SubsystemPanel({
           {status && <HealthStatusBadge status={status} />}
         </div>
         {checked && (
-          <span className="text-xs text-muted-foreground">Checked {checked}</span>
+          <span className="text-xs text-muted-foreground">
+            Checked {checked}
+          </span>
         )}
       </div>
 
@@ -63,8 +65,12 @@ export function SubsystemPanel({
         <Collapsible>
           <CollapsibleTrigger className="text-xs font-medium text-muted-foreground hover:text-foreground">
             <ChevronRight className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-90" />
-            <span className="group-data-[state=open]:hidden">Show all details</span>
-            <span className="hidden group-data-[state=open]:inline">Hide details</span>
+            <span className="group-data-[state=open]:hidden">
+              Show all details
+            </span>
+            <span className="hidden group-data-[state=open]:inline">
+              Hide details
+            </span>
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="mt-2 rounded-lg border border-border bg-muted/20 p-3">

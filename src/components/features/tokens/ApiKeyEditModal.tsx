@@ -1,12 +1,10 @@
 /**
- * API Key Edit Modal
- *
- * Modal for editing API key metadata (name, description, expiration).
- * PUT /api-keys/{key_id} (admin endpoint)
+ * Edit an API key's name, description or expiry (`PUT /api-keys/{key_id}`).
+ * The backend treats empty values as "unchanged", so fields can be changed but
+ * not cleared, and revoked keys can't be edited at all.
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { Key, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,174 +16,151 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { useApiKeys } from '@/hooks';
-import { useToast } from '@/hooks/useToast';
-import type { ApiKey, UpdateApiKeyRequest } from '@/types/api-key.types';
+import { useApiKeyMutations } from '@/hooks/useApiKeys';
+import {
+  computeApiKeyStatus,
+  type ApiKey,
+  type UpdateApiKeyRequest,
+} from '@/types/api-key.types';
+import { apiKeyHint, expiryDateToIso, isoToUtcDate } from './api-key-format';
+import { describeApiKeyError } from './api-key-errors';
+import { ExpiryDateInput, Field, FormError } from './ApiKeyFormFields';
 
-interface ApiKeyEditModalProps {
-  isOpen: boolean;
+export interface ApiKeyEditModalProps {
+  apiKey: ApiKey | null;
   onClose: () => void;
-  keyData: ApiKey | null;
-  onSuccess?: () => void;
+  onSaved: (updated: ApiKey) => void;
 }
 
 export function ApiKeyEditModal({
-  isOpen,
+  apiKey,
   onClose,
-  keyData,
-  onSuccess,
+  onSaved,
 }: ApiKeyEditModalProps): React.JSX.Element {
-  const { updateKey } = useApiKeys({ autoFetch: false });
-  const { showToast } = useToast();
-
+  const { updateKey, pending } = useApiKeyMutations();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [expiryDate, setExpiryDate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const isSubmitting = pending === 'update';
 
-  useEffect(() => {
-    if (isOpen && keyData) {
-      setName(keyData.name || '');
-      setDescription(keyData.description || '');
-      setExpiresAt(keyData.expires_at ? keyData.expires_at.split('T')[0] : '');
-      setError(null);
-    }
-  }, [isOpen, keyData]);
+  // Load the key's values whenever a different key is opened.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  if ((apiKey?.public_id ?? null) !== loadedFor) {
+    setLoadedFor(apiKey?.public_id ?? null);
+    setName(apiKey?.name ?? '');
+    setDescription(apiKey?.description ?? '');
+    setExpiryDate(isoToUtcDate(apiKey?.expires_at));
+    setError(null);
+  }
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!keyData) return;
-
+  const handleSubmit = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault();
+    if (!apiKey) return;
     const request: UpdateApiKeyRequest = {};
-
-    if (name.trim()) request.name = name.trim();
-    if (description.trim()) request.description = description.trim();
-    if (expiresAt) request.expires_at = expiresAt;
-
-    void (async (): Promise<void> => {
-      setIsSubmitting(true);
-      setError(null);
-
-      try {
-        const success = await updateKey(keyData.public_id, request);
-
-        if (success) {
-          showToast(`Key "${keyData.fingerprint}" has been updated successfully.`, 'success');
-          onSuccess?.();
-          onClose();
-        } else {
-          setError('Failed to update API key');
-        }
-      } catch {
-        setError('Unable to update API key');
-      } finally {
-        setIsSubmitting(false);
-      }
-    })();
-  }, [keyData, name, description, expiresAt, updateKey, showToast, onSuccess, onClose]);
-
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setError(null);
-      onClose();
+    if (name.trim() && name.trim() !== apiKey.name) request.name = name.trim();
+    if (
+      description.trim() &&
+      description.trim() !== (apiKey.description ?? '')
+    ) {
+      request.description = description.trim();
     }
-  }, [onClose]);
+    if (expiryDate && expiryDate !== isoToUtcDate(apiKey.expires_at)) {
+      request.expires_at = expiryDateToIso(expiryDate);
+    }
+    if (Object.keys(request).length === 0) {
+      setError('Change the name, description or expiry date to save.');
+      return;
+    }
+    setError(null);
+    try {
+      const updated = await updateKey(apiKey.public_id, request);
+      onSaved(updated);
+    } catch (err) {
+      setError(describeApiKeyError(err, 'The API key could not be updated.'));
+    }
+  };
 
-  if (!keyData) return <></>;
-
-  const minDate = new Date().toISOString().split('T')[0];
+  const expired = apiKey ? computeApiKeyStatus(apiKey) === 'expired' : false;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={apiKey !== null}
+      onOpenChange={(open) => !open && !isSubmitting && onClose()}
+    >
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Edit API Key
-          </DialogTitle>
+          <DialogTitle>Edit API key</DialogTitle>
           <DialogDescription>
-            Update the metadata for this API key.
+            {apiKey ? (
+              <>
+                <span className="font-mono text-xs">{apiKeyHint(apiKey)}</span>{' '}
+                · The secret itself can&apos;t be changed.
+              </>
+            ) : null}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-3 py-2 mb-4">
-          <Badge variant="subtlePrimary" size="md">
-            Fingerprint: {keyData.fingerprint}
-          </Badge>
-          <span className="font-mono text-xs text-muted-foreground">
-            Key ending in ...{keyData.secret_last4}
-          </span>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-name">Name</Label>
+        <form
+          onSubmit={(event) => void handleSubmit(event)}
+          className="space-y-4"
+          noValidate
+        >
+          <Field id="edit-api-key-name" label="Name">
             <Input
-              id="edit-name"
+              id="edit-api-key-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Production Deploy Key"
-              disabled={isSubmitting}
+              onChange={(event) => setName(event.target.value)}
               maxLength={100}
+              disabled={isSubmitting}
+              className="h-8 text-[13px]"
             />
-            <p className="text-xs text-muted-foreground">
-              A friendly name to identify this key
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
+          </Field>
+          <Field
+            id="edit-api-key-description"
+            label="Description"
+            helper="Descriptions can be replaced but not cleared."
+          >
             <Textarea
-              id="edit-description"
+              id="edit-api-key-description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g., CI/CD pipeline authentication"
-              disabled={isSubmitting}
-              className="min-h-[80px]"
+              onChange={(event) => setDescription(event.target.value)}
               maxLength={500}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-expires_at">Expiration</Label>
-            <Input
-              id="edit-expires_at"
-              type="date"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
+              rows={2}
               disabled={isSubmitting}
-              min={minDate}
+              className="text-[13px]"
             />
-            <p className="text-xs text-muted-foreground">
-              Extend expiration to reactivate an expired key
-            </p>
-          </div>
+          </Field>
+          <Field
+            id="edit-api-key-expiry"
+            label="Expiry date"
+            helper={
+              expired
+                ? 'This key has expired. A future date reactivates it.'
+                : 'The key stops working at 00:00 UTC on this date.'
+            }
+          >
+            <ExpiryDateInput
+              id="edit-api-key-expiry"
+              value={expiryDate}
+              onChange={setExpiryDate}
+              disabled={isSubmitting}
+            />
+          </Field>
 
-          {error && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+          <FormError message={error} />
 
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
+              variant="secondary"
+              onClick={onClose}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Changes
+            <Button type="submit" loading={isSubmitting}>
+              Save changes
             </Button>
           </DialogFooter>
         </form>

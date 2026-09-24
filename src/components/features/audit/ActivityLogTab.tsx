@@ -1,300 +1,370 @@
-import React, { useState, useCallback, useEffect, useMemo, memo } from 'react';
-import { cn } from '@/lib/utils';
+/**
+ * Activity log: management and sign-in events (`GET /admin/activity`) with
+ * search, type and time filters, server pagination, a detail sheet and an
+ * export of exactly what the filters match.
+ */
+
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { History } from 'lucide-react';
+import { DataView } from '@/components/common/DataView';
+import type { DataViewColumn } from '@/components/common/DataView.types';
+import { ErrorState } from '@/components/common/ErrorState';
+import { TablePager } from '@/components/common/TablePager';
+import { ActivityIcon } from '@/components/common/ActivityIcon';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Pagination } from '@/components/common/Pagination';
-import { ActivityTable } from './ActivityTable';
-import { ActivityFilters } from './ActivityFilters';
+import { EntityCombobox } from '@/components/features/shared-pickers';
+import { useActivityLogs, useActivityTypes } from '@/hooks/audit/useAuditData';
+import { getActivityLabel, getActivitySummary } from '@/utils/activity';
+import { formatDateTime, formatRelativeTime } from '@/utils/formatters';
+import { ROUTES } from '@/utils/routes';
+import { cn } from '@/lib/utils';
+import type {
+  ActivityFilters,
+  ActivityLog,
+  ActivityUser,
+} from '@/types/audit.types';
 import { ActivityDetailPanel } from './ActivityDetailPanel';
-import { useActivityLogs } from '@/hooks/audit/useActivityLogs';
-import { useActivityTypes } from '@/hooks/audit/useActivityTypes';
-import {
-  RefreshCw,
-  Pause,
-  Play,
-  Timer,
-} from 'lucide-react';
-import type { ActivityLog, ActivityFilters as ActivityFiltersType } from '@/types/audit.types';
+import { ActivityExport } from './ActivityExport';
+import { DaysSelect, FilterChip, RefreshButton } from './AuditFilterControls';
 
 export interface ActivityLogTabProps {
-  onActivitySelect?: (activity: ActivityLog) => void;
-  initialFilters?: ActivityFiltersType;
-  onUserClick?: (userId: string) => void;
-  onProjectClick?: (projectId: string) => void;
   className?: string;
 }
 
-/**
- * ActivityLogTab - Main activity log view with filtering and pagination
- * Requirements: 1.1, 1.3, 1.4, 1.5, 6.1, 6.2, 6.3, 6.4, 6.5
- */
-export const ActivityLogTab = memo(function ActivityLogTab({
-  onActivitySelect,
-  initialFilters = {},
-  onUserClick,
-  onProjectClick,
+const PAGE_SIZES = [25, 50, 100];
+const DEFAULT_DAYS = 30;
+
+interface ScopeFilter {
+  id: string;
+  label: string;
+}
+
+function NoRowClick({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <span data-no-row-click onClick={(event) => event.stopPropagation()}>
+      {children}
+    </span>
+  );
+}
+
+function PersonLink({ user }: { user: ActivityUser }): React.JSX.Element {
+  return (
+    <NoRowClick>
+      <Link
+        to={`${ROUTES.USERS}/${encodeURIComponent(user.userHash)}`}
+        className="text-foreground no-underline hover:underline"
+      >
+        {user.username}
+      </Link>
+    </NoRowClick>
+  );
+}
+
+const COLUMNS: DataViewColumn<ActivityLog>[] = [
+  {
+    key: 'activityType',
+    header: 'Event',
+    render: (_value, activity) => {
+      const summary = getActivitySummary(activity.details);
+      return (
+        <div className="flex min-w-0 items-center gap-2.5">
+          <ActivityIcon activityType={activity.activityType} />
+          <div className="min-w-0">
+            <div className="truncate font-medium text-foreground">
+              {getActivityLabel(activity.activityType)}
+            </div>
+            {summary && (
+              <div className="max-w-[320px] truncate text-xs text-muted-foreground">
+                {summary}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    key: 'user',
+    header: 'Actor',
+    render: (_value, activity) =>
+      activity.user ? (
+        <PersonLink user={activity.user} />
+      ) : (
+        <span className="text-muted-foreground">System</span>
+      ),
+  },
+  {
+    key: 'targetUser',
+    header: 'Target',
+    hideOnMobile: true,
+    render: (_value, activity) =>
+      activity.targetUser &&
+      activity.targetUser.userHash !== activity.user?.userHash ? (
+        <PersonLink user={activity.targetUser} />
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
+  },
+  {
+    key: 'project',
+    header: 'Project',
+    hideOnMobile: true,
+    render: (_value, activity) =>
+      activity.project ? (
+        <NoRowClick>
+          <Link
+            to={`${ROUTES.PROJECTS}/${encodeURIComponent(activity.project.hash)}`}
+            className="text-foreground no-underline hover:underline"
+          >
+            {activity.project.name}
+          </Link>
+        </NoRowClick>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
+  },
+  {
+    key: 'ipAddress',
+    header: 'IP address',
+    hideOnMobile: true,
+    render: (_value, activity) =>
+      activity.ipAddress ? (
+        <span className="font-mono text-xs text-muted-foreground">
+          {activity.ipAddress}
+        </span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
+  },
+  {
+    key: 'createdAt',
+    header: 'When',
+    align: 'right',
+    render: (_value, activity) => (
+      <time
+        dateTime={activity.createdAt}
+        title={formatDateTime(activity.createdAt)}
+        className="whitespace-nowrap font-mono text-[11px] text-muted-foreground"
+      >
+        {formatRelativeTime(activity.createdAt)}
+      </time>
+    ),
+  },
+];
+
+export function ActivityLogTab({
   className,
 }: ActivityLogTabProps): React.JSX.Element {
-  // State
-  const [selectedActivity, setSelectedActivity] = useState<ActivityLog | null>(null);
-  const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
-  const [pageSize, setPageSize] = useState(50);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [activityType, setActivityType] = useState<string | undefined>(
+    undefined
+  );
+  const [days, setDays] = useState(DEFAULT_DAYS);
+  const [userScope, setUserScope] = useState<ScopeFilter | null>(null);
+  const [projectScope, setProjectScope] = useState<ScopeFilter | null>(null);
+  const [limit, setLimit] = useState(PAGE_SIZES[0]);
+  const [offset, setOffset] = useState(0);
+  const [selected, setSelected] = useState<ActivityLog | null>(null);
 
-  // Hooks
-  const {
-    activities,
-    pagination,
-    isLoading,
-    error,
-    refetch,
-    setFilters,
-    filters,
-    isAutoRefreshing,
-    setAutoRefresh,
-    secondsUntilRefresh,
-  } = useActivityLogs({
-    filters: initialFilters,
-    limit: pageSize,
-    autoRefresh: false,
-    refreshInterval: 30000,
-  });
-
-  const { activityTypes, isLoading: isLoadingTypes } = useActivityTypes();
-
-  // Memoize the selected activity ID to prevent unnecessary re-renders
-  const selectedId = useMemo(() => selectedActivity?.id, [selectedActivity?.id]);
-
-  // Pause auto-refresh when detail panel is open
+  // Debounce free-text search; every filter change restarts at the first page.
   useEffect(() => {
-    if (isDetailPanelOpen && isAutoRefreshing) {
-      setAutoRefresh(false);
-    }
-  }, [isDetailPanelOpen, isAutoRefreshing, setAutoRefresh]);
+    const next = searchInput.trim();
+    if (next === search) return undefined;
+    const handle = window.setTimeout(() => {
+      setSearch(next);
+      setOffset(0);
+    }, 300);
+    return () => window.clearTimeout(handle);
+  }, [searchInput, search]);
 
-  // Handle row click
-  const handleRowClick = useCallback(
-    (activity: ActivityLog) => {
-      setSelectedActivity(activity);
-      setIsDetailPanelOpen(true);
-      onActivitySelect?.(activity);
-    },
-    [onActivitySelect]
+  const filters: ActivityFilters = useMemo(
+    () => ({
+      activityType,
+      days,
+      search: search || undefined,
+      userId: userScope?.id,
+      projectId: projectScope?.id,
+    }),
+    [activityType, days, search, userScope, projectScope]
   );
 
-  // Handle detail panel close
-  const handleDetailPanelClose = useCallback(() => {
-    setIsDetailPanelOpen(false);
-  }, []);
-
-  // Handle filters change
-  const handleFiltersChange = useCallback(
-    (newFilters: ActivityFiltersType) => {
-      setFilters(newFilters);
-    },
-    [setFilters]
+  const { activities, total, isLoading, isRefreshing, error, refetch } =
+    useActivityLogs({ filters, limit, offset });
+  const types = useActivityTypes();
+  const typeOptions = useMemo(
+    () =>
+      types.activityTypes
+        .map((type) => ({
+          value: type,
+          label: getActivityLabel(type),
+          description: type,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [types.activityTypes]
   );
 
-  // Handle page change
-  const handlePageChange = useCallback(
-    (_page: number) => {
-      // Note: This would need enhancement in the hook to support offset-based pagination
-      // For now, we trigger a refetch which will reset to page 1
-      refetch();
-    },
-    [refetch]
+  const hasFilters = Boolean(
+    activityType || search || userScope || projectScope || days !== DEFAULT_DAYS
   );
+  const setFilter = (apply: () => void): void => {
+    apply();
+    setOffset(0);
+  };
+  const clearFilters = (): void =>
+    setFilter(() => {
+      setSearchInput('');
+      setSearch('');
+      setActivityType(undefined);
+      setDays(DEFAULT_DAYS);
+      setUserScope(null);
+      setProjectScope(null);
+    });
 
-  // Handle page size change
-  const handlePageSizeChange = useCallback(
-    (size: number) => {
-      setPageSize(size);
-      refetch();
-    },
-    [refetch]
-  );
-
-
-  // Handle manual refresh
-  const handleRefresh = useCallback(() => {
-    refetch();
-  }, [refetch]);
-
-  // Toggle auto-refresh
-  const toggleAutoRefresh = useCallback(() => {
-    setAutoRefresh(!isAutoRefreshing);
-  }, [isAutoRefreshing, setAutoRefresh]);
+  if (error && activities.length === 0 && !isLoading) {
+    return (
+      <ErrorState
+        title="The activity log could not be loaded"
+        message={error}
+        onRetry={() => void refetch()}
+        isRetrying={isRefreshing}
+      />
+    );
+  }
 
   return (
-    <div className={cn('space-y-4', className)}>
-      {/* Filters and Actions Row */}
-      <div className="flex flex-col gap-3 md:gap-4">
-        {/* Mobile: Filters row + Actions row stacked */}
-        {/* Desktop: Side by side */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <ActivityFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            activityTypes={activityTypes}
-            isLoading={isLoading || isLoadingTypes}
-            className="flex-1"
-          />
-
-          {/* Actions - Always visible */}
-          <div className="flex items-center justify-end gap-2 flex-shrink-0">
-            {/* Auto-refresh Controls */}
-            <div className="flex items-center gap-1 border rounded-md p-1">
-            <Button
-              variant={isAutoRefreshing ? 'primary' : 'ghost'}
-              size="sm"
-              onClick={toggleAutoRefresh}
-              className="h-7 gap-1"
-              aria-label={isAutoRefreshing ? 'Pause auto-refresh' : 'Enable auto-refresh'}
-            >
-                {isAutoRefreshing ? (
-                  <>
-                    <Pause className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span className="sr-only sm:not-sr-only sm:inline">Pause</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-3.5 w-3.5" aria-hidden="true" />
-                    <span className="sr-only sm:not-sr-only sm:inline">Auto</span>
-                  </>
-                )}
-              </Button>
-              {isAutoRefreshing && (
-                <Badge variant="secondary" className="gap-1 h-7">
-                  <Timer className="h-3 w-3" aria-hidden="true" />
-                  <span className="tabular-nums">{secondsUntilRefresh}s</span>
-                </Badge>
-              )}
-            </div>
-
-            {/* Manual Refresh */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="gap-1"
-              aria-label="Refresh activities"
-            >
-              <RefreshCw
-                className={cn('h-4 w-4', isLoading && 'animate-spin')}
-                aria-hidden="true"
-              />
-              <span className="sr-only sm:not-sr-only sm:inline">Refresh</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Error State */}
-      {error && (
-        <div
-          className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg"
-          role="alert"
-        >
-          <p className="text-sm text-destructive font-medium">{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="mt-2"
-          >
-            Try Again
-          </Button>
-        </div>
+    <div
+      className={cn(
+        'transition-opacity',
+        isRefreshing && 'opacity-70',
+        className
       )}
-
-      {/* Activity Table */}
-      <ActivityTable
-        activities={activities}
+    >
+      <DataView<ActivityLog>
+        data={activities}
+        columns={COLUMNS}
+        keyExtractor={(activity) => activity.id}
+        showSearch
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+        searchPlaceholder="Search type, details or username"
+        toolbarFilters={
+          <>
+            <div className="w-full sm:w-52">
+              <EntityCombobox
+                aria-label="Filter by activity type"
+                value={activityType ?? ''}
+                options={typeOptions}
+                isLoading={types.isLoading}
+                error={types.error}
+                onChange={(option) =>
+                  setFilter(() => setActivityType(option?.value))
+                }
+                placeholder="All activity types"
+                searchPlaceholder="Search activity types"
+                clearable
+              />
+            </div>
+            <DaysSelect
+              value={days}
+              onChange={(next) => setFilter(() => setDays(next))}
+            />
+            {userScope && (
+              <FilterChip
+                label="User"
+                value={userScope.label}
+                onRemove={() => setFilter(() => setUserScope(null))}
+              />
+            )}
+            {projectScope && (
+              <FilterChip
+                label="Project"
+                value={projectScope.label}
+                onRemove={() => setFilter(() => setProjectScope(null))}
+              />
+            )}
+          </>
+        }
+        toolbarActions={
+          <>
+            <RefreshButton
+              onClick={() => void refetch()}
+              refreshing={isRefreshing}
+              label="Refresh activity"
+            />
+            <ActivityExport
+              source="activity"
+              matchCount={total}
+              filters={{
+                activity_type: activityType,
+                days,
+                user_id: userScope?.id,
+                project_id: projectScope?.id,
+              }}
+              unsupportedFilterNote={
+                search ? 'Search text is not applied to exports' : undefined
+              }
+            />
+          </>
+        }
+        onRowClick={setSelected}
         isLoading={isLoading}
-        onRowClick={handleRowClick}
-        selectedId={selectedId}
-        emptyMessage="No activities found matching your filters"
+        skeletonRows={8}
+        emptyIcon={<History className="h-8 w-8" />}
+        emptyMessage={
+          hasFilters
+            ? 'No activity matches these filters'
+            : 'No activity in this period'
+        }
+        emptyDescription={
+          hasFilters
+            ? 'Try a longer time range or clear the filters.'
+            : 'Sign-ins and management changes will appear here.'
+        }
+        emptyAction={
+          hasFilters ? (
+            <Button variant="secondary" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          ) : undefined
+        }
+        caption="Activity log"
+      />
+      <TablePager
+        offset={offset}
+        limit={limit}
+        pageCount={activities.length}
+        total={total}
+        onOffsetChange={setOffset}
+        pageSizeOptions={PAGE_SIZES}
+        onLimitChange={(next) => {
+          setLimit(next);
+          setOffset(0);
+        }}
+        itemLabel="entries"
       />
 
-      {/* Pagination */}
-      {!isLoading && activities.length > 0 && (
-        <div className="flex flex-col gap-3 sm:gap-4">
-          {/* Mobile: Stacked layout */}
-          {/* Desktop: Side by side */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Items info - Always visible */}
-            <div className="text-sm text-muted-foreground text-center sm:text-left">
-              <span className="sm:hidden">
-                {pagination.offset + 1}-{Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total.toLocaleString()}
-              </span>
-              <span className="hidden sm:inline">
-                Showing{' '}
-                <span className="font-medium text-foreground">
-                  {pagination.offset + 1}
-                </span>
-                {' '}-{' '}
-                <span className="font-medium text-foreground">
-                  {Math.min(pagination.offset + pagination.limit, pagination.total)}
-                </span>
-                {' '}of{' '}
-                <span className="font-medium text-foreground">{pagination.total.toLocaleString()}</span>
-                {' '}activities
-              </span>
-            </div>
-
-            {/* Pagination controls */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4">
-              {/* Page Size Selector - Hidden on very small screens */}
-              <div className="hidden xs:flex items-center gap-2">
-                <span className="text-sm text-muted-foreground hidden sm:inline">Per page:</span>
-                <Select
-                  value={String(pageSize)}
-                  onValueChange={(value) => handlePageSizeChange(Number(value))}
-                >
-                  <SelectTrigger className="h-8 w-[4.5rem] px-2.5" aria-label="Items per page">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Page Navigation */}
-              <Pagination
-                currentPage={pagination.currentPage}
-                totalPages={pagination.totalPages}
-                totalItems={pagination.total}
-                itemsPerPage={pageSize}
-                onPageChange={handlePageChange}
-                itemLabelSingular="activity"
-                itemLabelPlural="activities"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Detail Panel */}
       <ActivityDetailPanel
-        activity={selectedActivity}
-        isOpen={isDetailPanelOpen}
-        onClose={handleDetailPanelClose}
-        onUserClick={onUserClick}
-        onProjectClick={onProjectClick}
+        activity={selected}
+        onClose={() => setSelected(null)}
+        onFilterUser={(user) => {
+          setSelected(null);
+          setFilter(() => setUserScope({ id: user.id, label: user.username }));
+        }}
+        onFilterProject={(project) => {
+          setSelected(null);
+          setFilter(() =>
+            setProjectScope({ id: project.id, label: project.name })
+          );
+        }}
       />
     </div>
   );
-});
+}
 
 export default ActivityLogTab;

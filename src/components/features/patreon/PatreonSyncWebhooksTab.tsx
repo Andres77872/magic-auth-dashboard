@@ -2,62 +2,113 @@
  * PatreonSyncWebhooksTab
  *
  * ROOT-only operational view: the sync-job queue and recent webhook deliveries,
- * plus a top-level manual resync action.
+ * each with a status filter. Resyncs are queued from the page header.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import React, { useCallback, useMemo } from 'react';
+import { Info, Webhook, Workflow } from 'lucide-react';
 import {
-  Badge,
-  Button,
+  CopyableId,
   DataView,
+  ErrorState,
+  FilterBar,
   Pagination,
   type DataViewColumn,
+  type Filter,
 } from '@/components/common';
+import { Badge } from '@/components/ui/badge';
 import { usePatreonSyncJobs, usePatreonWebhooks } from '@/hooks';
-import { cn } from '@/lib/utils';
+import {
+  patreonStatusLabel,
+  type PatreonSyncJob,
+  type PatreonWebhookDelivery,
+} from '@/types/patreon.types';
 import { StatusBadge } from './StatusBadge';
-import { toneClasses } from './patreon-status-tone';
-import { PatreonResyncModal } from './PatreonResyncModal';
-import type { PatreonSyncJob, PatreonWebhookDelivery } from '@/types/patreon.types';
+import { Timestamp } from './patreon-format';
+import { useRefreshSignal } from './useRefreshSignal';
 
 const PAGE_SIZE = 20;
+const ALL = 'all';
 
-function formatTimestamp(value: string | null): string {
-  if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+const JOB_STATUS_OPTIONS = [
+  { value: ALL, label: 'Any status' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'running', label: 'Running' },
+  { value: 'retry', label: 'Retrying' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
+const DELIVERY_STATUS_OPTIONS = [
+  { value: ALL, label: 'Any status' },
+  { value: 'processed', label: 'Processed' },
+  { value: 'ignored', label: 'Ignored' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'received', label: 'Received' },
+  { value: 'replay', label: 'Replay' },
+];
+
+function SectionHeader({
+  icon,
+  title,
+  description,
+  filter,
+  total,
+  noun,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  filter: Filter;
+  total: number | null;
+  noun: [string, string];
+}): React.JSX.Element {
+  return (
+    <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+      <div className="flex items-start gap-3">
+        <span
+          className="mt-0.5 text-muted-foreground [&_svg]:h-4 [&_svg]:w-4"
+          aria-hidden="true"
+        >
+          {icon}
+        </span>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {total !== null && (
+          <span className="text-sm text-muted-foreground">
+            {total.toLocaleString()} {total === 1 ? noun[0] : noun[1]}
+          </span>
+        )}
+        <FilterBar filters={[filter]} showClearButton={false} />
+      </div>
+    </div>
+  );
 }
 
-export function PatreonSyncWebhooksTab(): React.JSX.Element {
+export interface PatreonSyncWebhooksTabProps {
+  /** Incremented by the page after a resync is queued or on page refresh. */
+  refreshSignal?: number;
+}
+
+export function PatreonSyncWebhooksTab({
+  refreshSignal = 0,
+}: PatreonSyncWebhooksTabProps): React.JSX.Element {
   const jobs = usePatreonSyncJobs(PAGE_SIZE);
   const webhooks = usePatreonWebhooks(PAGE_SIZE);
-  const [resyncOpen, setResyncOpen] = useState(false);
+  const { fetchSyncJobs } = jobs;
+  const { fetchWebhooks } = webhooks;
 
-  const jobsPage = Math.floor((jobs.filters.offset || 0) / (jobs.filters.limit || PAGE_SIZE)) + 1;
-  const jobsTotalPages = jobs.pagination ? Math.ceil(jobs.pagination.total / jobs.pagination.limit) : 0;
-  const webhooksPage =
-    Math.floor((webhooks.filters.offset || 0) / (webhooks.filters.limit || PAGE_SIZE)) + 1;
-  const webhooksTotalPages = webhooks.pagination
-    ? Math.ceil(webhooks.pagination.total / webhooks.pagination.limit)
-    : 0;
-
-  const handleJobsPageChange = useCallback(
-    (page: number) => {
-      const offset = (page - 1) * (jobs.filters.limit || PAGE_SIZE);
-      jobs.setFilters({ offset });
-      void jobs.fetchSyncJobs({ offset });
-    },
-    [jobs]
-  );
-
-  const handleWebhooksPageChange = useCallback(
-    (page: number) => {
-      const offset = (page - 1) * (webhooks.filters.limit || PAGE_SIZE);
-      webhooks.setFilters({ offset });
-      void webhooks.fetchWebhooks({ offset });
-    },
-    [webhooks]
+  useRefreshSignal(
+    refreshSignal,
+    useCallback(() => {
+      void fetchSyncJobs();
+      void fetchWebhooks();
+    }, [fetchSyncJobs, fetchWebhooks])
   );
 
   const jobColumns: DataViewColumn<PatreonSyncJob>[] = useMemo(
@@ -67,46 +118,77 @@ export function PatreonSyncWebhooksTab(): React.JSX.Element {
         header: 'Job',
         render: (_v, row) => (
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">{row.jobType}</span>
-            <span className="font-mono text-xs text-muted-foreground">{row.jobId}</span>
+            <span className="text-sm font-medium text-foreground">
+              {patreonStatusLabel(row.jobType)}
+            </span>
+            <CopyableId
+              id={row.jobId}
+              startChars={8}
+              endChars={4}
+              label="job id"
+            />
           </div>
         ),
       },
-      { key: 'status', header: 'Status', render: (_v, row) => <StatusBadge status={row.status} /> },
+      {
+        key: 'status',
+        header: 'Status',
+        render: (_v, row) => (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <StatusBadge status={row.status} />
+            {row.hasError && row.status !== 'failed' && (
+              <Badge
+                variant="warning"
+                size="sm"
+                title="The last attempt reported an error"
+              >
+                Error
+              </Badge>
+            )}
+          </div>
+        ),
+      },
       {
         key: 'source',
         header: 'Source',
-        render: (_v, row) => <span className="text-sm text-muted-foreground">{row.source || '—'}</span>,
+        hideOnMobile: true,
+        render: (_v, row) => (
+          <span className="text-sm text-muted-foreground">
+            {row.source ? patreonStatusLabel(row.source) : '—'}
+          </span>
+        ),
       },
       {
         key: 'attempts',
         header: 'Attempts',
         align: 'center',
         render: (_v, row) => (
-          <span className="text-sm">
+          <span className="text-sm tabular-nums">
             {row.attempts}/{row.maxAttempts}
           </span>
         ),
       },
       {
-        key: 'hasError',
-        header: 'Error',
-        align: 'center',
+        key: 'notBefore',
+        header: 'Next run',
+        hideOnMobile: true,
         render: (_v, row) =>
-          row.hasError ? (
-            <Badge variant="outline" className={cn(toneClasses('destructive'))}>
-              Error
-            </Badge>
+          row.status === 'pending' || row.status === 'retry' ? (
+            <Timestamp value={row.notBefore} />
           ) : (
             <span className="text-sm text-muted-foreground">—</span>
           ),
       },
       {
         key: 'createdAt',
-        header: 'Created',
-        render: (_v, row) => (
-          <span className="text-sm text-muted-foreground">{formatTimestamp(row.createdAt)}</span>
-        ),
+        header: 'Queued',
+        render: (_v, row) => <Timestamp value={row.createdAt} />,
+      },
+      {
+        key: 'completedAt',
+        header: 'Finished',
+        hideOnMobile: true,
+        render: (_v, row) => <Timestamp value={row.completedAt} />,
       },
     ],
     []
@@ -119,110 +201,164 @@ export function PatreonSyncWebhooksTab(): React.JSX.Element {
         header: 'Event',
         render: (_v, row) => (
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-foreground">{row.eventType}</span>
-            <span className="font-mono text-xs text-muted-foreground">{row.deliveryId}</span>
+            <span className="font-mono text-sm text-foreground">
+              {row.eventType}
+            </span>
+            <CopyableId
+              id={row.deliveryId}
+              startChars={8}
+              endChars={4}
+              label="delivery id"
+            />
           </div>
         ),
       },
-      { key: 'status', header: 'Status', render: (_v, row) => <StatusBadge status={row.status} /> },
       {
-        key: 'signatureValid',
-        header: 'Signature',
-        align: 'center',
-        render: (_v, row) => (
-          <Badge
-            variant="outline"
-            className={cn(toneClasses(row.signatureValid ? 'success' : 'destructive'))}
-          >
-            {row.signatureValid ? 'Valid' : 'Invalid'}
-          </Badge>
-        ),
+        key: 'status',
+        header: 'Outcome',
+        render: (_v, row) => <StatusBadge status={row.status} />,
       },
       {
         key: 'receivedAt',
         header: 'Received',
-        render: (_v, row) => (
-          <span className="text-sm text-muted-foreground">{formatTimestamp(row.receivedAt)}</span>
-        ),
+        render: (_v, row) => <Timestamp value={row.receivedAt} />,
       },
       {
         key: 'processedAt',
         header: 'Processed',
-        render: (_v, row) => (
-          <span className="text-sm text-muted-foreground">{formatTimestamp(row.processedAt)}</span>
-        ),
+        hideOnMobile: true,
+        render: (_v, row) => <Timestamp value={row.processedAt} />,
       },
     ],
     []
   );
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-2 rounded-lg border border-info/30 bg-info/5 p-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-info" />
-          <p className="text-sm text-foreground">
-            Resyncs are enqueued as jobs and processed only while the Patreon sync worker
-            is running. Watch the worker heartbeat on the Overview tab.
-          </p>
-        </div>
-        <Button variant="primary" onClick={() => setResyncOpen(true)}>
-          <RefreshCw size={14} className="mr-1.5" />
-          Resync…
-        </Button>
-      </div>
+  const jobsPageSize = jobs.filters.limit || PAGE_SIZE;
+  const jobsPage = Math.floor((jobs.filters.offset || 0) / jobsPageSize) + 1;
+  const jobsTotalPages = jobs.pagination
+    ? Math.ceil(jobs.pagination.total / jobsPageSize)
+    : 0;
+  const hooksPageSize = webhooks.filters.limit || PAGE_SIZE;
+  const hooksPage =
+    Math.floor((webhooks.filters.offset || 0) / hooksPageSize) + 1;
+  const hooksTotalPages = webhooks.pagination
+    ? Math.ceil(webhooks.pagination.total / hooksPageSize)
+    : 0;
 
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Sync jobs</h3>
-        <DataView<PatreonSyncJob>
-          data={jobs.jobs}
-          columns={jobColumns}
-          keyExtractor={(item) => item.jobId}
-          isLoading={jobs.isLoading}
-          emptyMessage="No sync jobs"
-          emptyDescription={jobs.error || 'No Patreon sync jobs have been recorded.'}
+  return (
+    <div className="space-y-8">
+      <section className="space-y-3" aria-label="Sync jobs">
+        <SectionHeader
+          icon={<Workflow />}
+          title="Sync jobs"
+          description="Resyncs and sweeps queued for the sync worker. Finished jobs are kept for 30 days."
+          filter={{
+            key: 'jobStatus',
+            label: 'Job status',
+            options: JOB_STATUS_OPTIONS,
+            value: jobs.filters.status || ALL,
+            onChange: (value) =>
+              jobs.setFilters({
+                status: value === ALL ? '' : value,
+                offset: 0,
+              }),
+          }}
+          total={jobs.error ? null : (jobs.pagination?.total ?? null)}
+          noun={['job', 'jobs']}
         />
-        {jobsTotalPages > 1 && jobs.pagination && (
+        {jobs.error ? (
+          <ErrorState
+            title="Couldn’t load sync jobs"
+            message={jobs.error}
+            onRetry={() => void fetchSyncJobs()}
+          />
+        ) : (
+          <DataView<PatreonSyncJob>
+            data={jobs.jobs}
+            columns={jobColumns}
+            keyExtractor={(item) => item.jobId}
+            isLoading={jobs.isLoading}
+            emptyIcon={<Workflow size={32} aria-hidden="true" />}
+            emptyMessage={
+              jobs.filters.status ? 'No jobs with this status' : 'No sync jobs'
+            }
+            emptyDescription="Jobs appear when a resync is queued, a webhook needs a source-of-truth read, or a sweep runs."
+          />
+        )}
+        {!jobs.error && jobsTotalPages > 1 && jobs.pagination && (
           <Pagination
             currentPage={jobsPage}
             totalPages={jobsTotalPages}
             totalItems={jobs.pagination.total}
-            itemsPerPage={jobs.pagination.limit}
-            onPageChange={handleJobsPageChange}
+            itemsPerPage={jobsPageSize}
+            onPageChange={(page) =>
+              jobs.setFilters({ offset: (page - 1) * jobsPageSize })
+            }
             itemLabelSingular="job"
             itemLabelPlural="jobs"
           />
         )}
       </section>
 
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Webhook deliveries</h3>
-        <DataView<PatreonWebhookDelivery>
-          data={webhooks.deliveries}
-          columns={webhookColumns}
-          keyExtractor={(item) => item.deliveryId}
-          isLoading={webhooks.isLoading}
-          emptyMessage="No webhook deliveries"
-          emptyDescription={webhooks.error || 'No Patreon webhook deliveries have been recorded.'}
+      <section className="space-y-3" aria-label="Webhook deliveries">
+        <SectionHeader
+          icon={<Webhook />}
+          title="Webhook deliveries"
+          description="Signed deliveries from Patreon and what happened to each. Kept for 90 days."
+          filter={{
+            key: 'deliveryStatus',
+            label: 'Delivery outcome',
+            options: DELIVERY_STATUS_OPTIONS,
+            value: webhooks.filters.status || ALL,
+            onChange: (value) =>
+              webhooks.setFilters({
+                status: value === ALL ? '' : value,
+                offset: 0,
+              }),
+          }}
+          total={webhooks.error ? null : (webhooks.pagination?.total ?? null)}
+          noun={['delivery', 'deliveries']}
         />
-        {webhooksTotalPages > 1 && webhooks.pagination && (
+        <p className="flex items-start gap-2 text-xs text-muted-foreground">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          Only deliveries with a valid signature are recorded. Rejected
+          signatures are counted on the Overview.
+        </p>
+        {webhooks.error ? (
+          <ErrorState
+            title="Couldn’t load webhook deliveries"
+            message={webhooks.error}
+            onRetry={() => void fetchWebhooks()}
+          />
+        ) : (
+          <DataView<PatreonWebhookDelivery>
+            data={webhooks.deliveries}
+            columns={webhookColumns}
+            keyExtractor={(item) => item.deliveryId}
+            isLoading={webhooks.isLoading}
+            emptyIcon={<Webhook size={32} aria-hidden="true" />}
+            emptyMessage={
+              webhooks.filters.status
+                ? 'No deliveries with this outcome'
+                : 'No webhook deliveries'
+            }
+            emptyDescription="Register the /webhooks/patreon endpoint in Patreon; deliveries appear here once they arrive."
+          />
+        )}
+        {!webhooks.error && hooksTotalPages > 1 && webhooks.pagination && (
           <Pagination
-            currentPage={webhooksPage}
-            totalPages={webhooksTotalPages}
+            currentPage={hooksPage}
+            totalPages={hooksTotalPages}
             totalItems={webhooks.pagination.total}
-            itemsPerPage={webhooks.pagination.limit}
-            onPageChange={handleWebhooksPageChange}
+            itemsPerPage={hooksPageSize}
+            onPageChange={(page) =>
+              webhooks.setFilters({ offset: (page - 1) * hooksPageSize })
+            }
             itemLabelSingular="delivery"
             itemLabelPlural="deliveries"
           />
         )}
       </section>
-
-      <PatreonResyncModal
-        isOpen={resyncOpen}
-        onClose={() => setResyncOpen(false)}
-        onSubmitted={() => void jobs.fetchSyncJobs()}
-      />
     </div>
   );
 }

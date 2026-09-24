@@ -1,424 +1,331 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { FolderKanban, Plus, RefreshCw } from 'lucide-react';
 import {
+  DataView,
+  ErrorState,
   PageContainer,
   PageHeader,
-  Button,
-  DataView,
-  DataViewCard,
-  Badge,
-  Pagination,
-  ErrorState,
-  StatsGrid,
+  TablePager,
+  type DataViewColumn,
 } from '@/components/common';
-import type { DataViewColumn } from '@/components/common';
+import { Button } from '@/components/ui/button';
+import { ProjectAccessBadge } from '@/components/features/projects/ProjectAccessBadge';
 import { ProjectActionsMenu } from '@/components/features/projects/ProjectActionsMenu';
 import { ProjectFormModal } from '@/components/features/projects/ProjectFormModal';
-import { useProjects } from '@/hooks';
-import { FolderKanban, Plus } from 'lucide-react';
-import { formatDate, formatCount } from '@/utils/component-utils';
-import type { ProjectDetails } from '@/types/project.types';
+import { DeleteProjectDialog } from '@/components/features/projects/DeleteProjectDialog';
+import { useProjects, type ProjectSortKey } from '@/hooks/useProjects';
+import { useUserType } from '@/hooks/useUserType';
+import { PROJECT_LIST_MAX_LIMIT } from '@/services/project.service';
+import { formatCount, formatNumber } from '@/utils/formatters';
 import { ROUTES } from '@/utils/routes';
+import { cn } from '@/lib/utils';
+import type { ProjectSummary } from '@/types/project.types';
 
-export const ProjectListPage: React.FC = () => {
+const PAGE_SIZES = [25, 50, 100];
+const SORT_KEYS: readonly ProjectSortKey[] = ['project_name', 'access_level'];
+
+function projectPath(projectHash: string): string {
+  return `${ROUTES.PROJECTS}/${encodeURIComponent(projectHash)}`;
+}
+
+export function ProjectListPage(): React.JSX.Element {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<ProjectDetails | null>(
-    null
+  const { isRoot } = useUserType();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // The URL holds search, page, page size and sort so views are shareable.
+  const query = searchParams.get('q') ?? '';
+  const limit = PAGE_SIZES.includes(Number(searchParams.get('limit')))
+    ? Number(searchParams.get('limit'))
+    : 25;
+  const page = Math.max(
+    1,
+    Number.parseInt(searchParams.get('page') ?? '1', 10) || 1
   );
-  const [searchQuery, setSearchQuery] = useState('');
-  const [createdProjectHash, setCreatedProjectHash] = useState<string | null>(null);
+  const requestedOffset = (page - 1) * limit;
+  const [sortKey, sortDir] = (searchParams.get('sort') ?? '').split(':');
+  const sortBy = (SORT_KEYS as readonly string[]).includes(sortKey)
+    ? (sortKey as ProjectSortKey)
+    : 'project_name';
+  const sortOrder = sortDir === 'desc' ? 'desc' : 'asc';
+
+  const updateParams = useCallback(
+    (changes: Record<string, string | null>, resetPage = true) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          for (const [key, value] of Object.entries(changes)) {
+            if (value === null || value === '') next.delete(key);
+            else next.set(key, value);
+          }
+          if (resetPage) next.delete('page');
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  // Debounce typing into the URL-backed search.
+  const [searchInput, setSearchInput] = useState(query);
+  const [lastQuery, setLastQuery] = useState(query);
+  if (query !== lastQuery) {
+    setLastQuery(query);
+    setSearchInput(query);
+  }
+  useEffect(() => {
+    if (searchInput.trim() === query) return;
+    const id = window.setTimeout(
+      () => updateParams({ q: searchInput.trim() || null }),
+      300
+    );
+    return () => window.clearTimeout(id);
+  }, [searchInput, query, updateParams]);
 
   const {
     projects,
-    pagination,
+    offset,
+    total,
+    truncated,
     isLoading,
+    isRefreshing,
     error,
-    fetchProjects,
-    setFilters,
-    setPage,
-    setSort,
-    filters,
-  } = useProjects();
+    refetch,
+  } = useProjects({
+    search: query,
+    offset: requestedOffset,
+    limit,
+    sortBy,
+    sortOrder,
+  });
+  const refresh = useCallback(() => void refetch(), [refetch]);
 
-  const handleSearchChange = (query: string) => {
-    setSearchQuery(query);
-    setFilters({ ...filters, search: query || undefined });
-  };
+  // The dialog keeps its last mode while it animates closed.
+  const [form, setForm] = useState<{
+    open: boolean;
+    mode: 'create' | 'edit';
+    project: ProjectSummary | null;
+  }>({
+    open: false,
+    mode: 'create',
+    project: null,
+  });
+  const openCreate = (): void =>
+    setForm({ open: true, mode: 'create', project: null });
+  const [deleteTarget, setDeleteTarget] = useState<ProjectSummary | null>(null);
 
-  const handlePageChange = (page: number) => {
-    setPage(page);
-  };
-
-  const handleSortChange = (
-    sortField: string,
-    sortDirection: 'asc' | 'desc'
-  ) => {
-    setSort(sortField, sortDirection);
-  };
-
-  const handleCreateClick = () => {
-    setShowCreateModal(true);
-  };
-
-  const handleEditProject = (project: ProjectDetails) => {
-    setSelectedProject(project);
-    setShowEditModal(true);
-  };
-
-  const handleCloseCreateModal = () => {
-    setShowCreateModal(false);
-  };
-
-  const handleCloseEditModal = () => {
-    setShowEditModal(false);
-    setSelectedProject(null);
-  };
-
-  const handleProjectSuccess = () => {
-    fetchProjects();
-    
-    // Navigate to the newly created project's Groups tab if we have the hash
-    if (createdProjectHash) {
-      navigate(`${ROUTES.PROJECT}/${createdProjectHash}?tab=groups`);
-      setCreatedProjectHash(null);
-    }
-  };
-
-  const handleProjectCreated = (projectHash: string) => {
-    setCreatedProjectHash(projectHash);
-  };
-
-  const handleProjectDelete = () => {
-    fetchProjects();
-  };
-
-  const handleViewDetails = useCallback(
-    (project: ProjectDetails) => {
-      navigate(`${ROUTES.PROJECT}/${project.project_hash}`);
-    },
-    [navigate]
-  );
-
-  const handleCardActionInteraction = useCallback(
-    (event: React.SyntheticEvent) => {
-      event.stopPropagation();
-    },
-    []
-  );
-
-  const formatCreatedDate = useCallback((createdAt?: string) => {
-    if (!createdAt) return '—';
-    const parsed = new Date(createdAt);
-    if (Number.isNaN(parsed.getTime())) return '—';
-    return formatDate(createdAt);
-  }, []);
-
-  const formatAccessLabel = useCallback((accessLevel?: string) => {
-    if (!accessLevel) return '';
-    return accessLevel.replace(/[_-]/g, ' ').toUpperCase();
-  }, []);
-
-  // Define columns for DataView
-  const columns: DataViewColumn<ProjectDetails>[] = useMemo(
+  const columns = useMemo<DataViewColumn<ProjectSummary>[]>(
     () => [
       {
         key: 'project_name',
-        header: 'Project Name',
+        header: 'Project',
         sortable: true,
-        render: (_value: any, project: ProjectDetails) => (
-          <div className="flex flex-col gap-1 min-w-0">
-            <button
-              type="button"
-              onClick={() => handleViewDetails(project)}
-              className="text-sm font-medium text-primary hover:underline text-left truncate"
-              title={project.project_name}
-              aria-label={`View details for ${project.project_name}`}
+        render: (_value, project) => (
+          <div className="min-w-0">
+            <Link
+              to={projectPath(project.project_hash)}
+              onClick={(event) => event.stopPropagation()}
+              className="block truncate text-[13px] font-medium text-foreground no-underline hover:underline"
             >
               {project.project_name}
-            </button>
-            {project.project_description ? (
-              <span className="text-xs text-muted-foreground line-clamp-1">
-                {project.project_description}
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                No description
-              </span>
-            )}
+            </Link>
+            <span className="block max-w-[640px] truncate text-xs text-muted-foreground">
+              {project.project_description || 'No description'}
+            </span>
           </div>
         ),
       },
       {
-        key: 'member_count',
-        header: 'Members',
+        key: 'access_level',
+        header: 'Your access',
         sortable: true,
-        align: 'center',
-        width: '120px',
-        render: (_value: any, project: ProjectDetails) => {
-          const memberCount = project.member_count;
-          return (
-            <Badge variant="secondary">
-              {typeof memberCount === 'number'
-                ? formatCount(memberCount, 'member')
-                : '—'}
-            </Badge>
-          );
-        },
-      },
-      {
-        key: 'is_active',
-        header: 'Status',
-        sortable: true,
-        width: '160px',
-        render: (_value: any, project: ProjectDetails) => {
-          const isActive =
-            typeof project.is_active === 'boolean' ? project.is_active : null;
-          const statusLabel =
-            isActive === null ? 'Unknown' : isActive ? 'Active' : 'Inactive';
-          const statusVariant =
-            isActive === null ? 'secondary' : isActive ? 'success' : 'error';
-          const accessLabel = formatAccessLabel(project.access_level);
-          return (
-            <div className="flex items-center justify-center gap-2">
-              <Badge variant={statusVariant}>{statusLabel}</Badge>
-              {accessLabel && <Badge variant="info">{accessLabel}</Badge>}
-            </div>
-          );
-        },
-      },
-      {
-        key: 'created_at',
-        header: 'Created',
-        sortable: true,
-        width: '180px',
-        render: (_value: any, project: ProjectDetails) => (
-          <span className="text-sm text-muted-foreground">
-            {formatCreatedDate(project.created_at)}
-          </span>
+        width: '150px',
+        render: (_value, project) => (
+          <ProjectAccessBadge accessLevel={project.access_level} />
         ),
       },
       {
         key: 'project_hash',
-        header: 'Actions',
-        sortable: false,
-        width: '80px',
-        align: 'center',
-        render: (_value: any, project: ProjectDetails) => (
+        header: '',
+        width: '52px',
+        align: 'right',
+        render: (_value, project) => (
           <ProjectActionsMenu
             project={project}
-            onEdit={handleEditProject}
-            onDelete={handleProjectDelete}
+            onEdit={(row) =>
+              setForm({ open: true, mode: 'edit', project: row })
+            }
+            onDelete={setDeleteTarget}
           />
         ),
       },
     ],
-    [
-      handleEditProject,
-      handleProjectDelete,
-      handleViewDetails,
-      formatAccessLabel,
-      formatCreatedDate,
-    ]
+    []
   );
 
-  // Render card for grid view
-  const renderCard = useCallback(
-    (project: ProjectDetails) => (
-      <DataViewCard
-        title={project.project_name}
-        description={project.project_description}
-        icon={<FolderKanban size={24} />}
-        badges={[
-          <Badge
-            key="status"
-            variant={
-              project.is_active === undefined
-                ? 'secondary'
-                : project.is_active
-                  ? 'success'
-                  : 'error'
-            }
-          >
-            {project.is_active === undefined
-              ? 'Unknown'
-              : project.is_active
-                ? 'Active'
-                : 'Inactive'}
-          </Badge>,
-          ...(project.access_level
-            ? [
-                <Badge key="access" variant="info">
-                  {formatAccessLabel(project.access_level)}
-                </Badge>,
-              ]
-            : []),
-        ]}
-        stats={[
-          {
-            label: 'Members',
-            value: (
-              <Badge variant="secondary">
-                {typeof project.member_count === 'number'
-                  ? formatCount(project.member_count, 'member')
-                  : '—'}
-              </Badge>
-            ),
-          },
-          {
-            label: 'Created',
-            value: formatCreatedDate(project.created_at),
-          },
-        ]}
-        onClick={() => handleViewDetails(project)}
-        actions={
-          <div
-            onClick={handleCardActionInteraction}
-            onKeyDown={handleCardActionInteraction}
-          >
-            <ProjectActionsMenu
-              project={project}
-              onEdit={handleEditProject}
-              onDelete={handleProjectDelete}
-            />
-          </div>
-        }
-      />
-    ),
-    [
-      formatAccessLabel,
-      formatCreatedDate,
-      handleCardActionInteraction,
-      handleEditProject,
-      handleProjectDelete,
-      handleViewDetails,
-    ]
-  );
+  const subtitle = isLoading
+    ? 'Loading projects…'
+    : [
+        query
+          ? `${formatCount(total, 'project')} matching “${query}”`
+          : isRoot
+            ? formatCount(total, 'project')
+            : `${formatCount(total, 'project')} you administer`,
+        truncated
+          ? `showing the first ${formatNumber(PROJECT_LIST_MAX_LIMIT)}`
+          : null,
+        isRoot ? null : 'New projects are created by root users',
+      ]
+        .filter(Boolean)
+        .join(' · ');
 
   return (
     <PageContainer>
       <PageHeader
-        title="Project Management"
-        subtitle="Manage and organize your projects"
-        icon={<FolderKanban size={28} />}
+        title="Projects"
+        subtitle={subtitle}
         actions={
-          <Button
-            variant="primary"
-            size="md"
-            leftIcon={<Plus size={16} />}
-            onClick={handleCreateClick}
-            aria-label="Create a new project"
-          >
-            Create Project
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              onClick={refresh}
+              disabled={isRefreshing}
+              aria-label="Refresh projects"
+            >
+              <RefreshCw
+                className={cn(isRefreshing && 'animate-spin')}
+                aria-hidden="true"
+              />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+            {isRoot && (
+              <Button onClick={openCreate}>
+                <Plus aria-hidden="true" />
+                Create project
+              </Button>
+            )}
+          </>
         }
       />
 
-      {/* Statistics Grid */}
-      <div className="mb-6">
-        <StatsGrid
-          stats={[
-            {
-              title: 'Total Projects',
-              value: pagination?.total ?? 0,
-              icon: <FolderKanban size={16} />,
-              variant: 'primary',
-              gradient: true,
-            },
-          ]}
-          columns={2}
-          loading={isLoading}
-        />
-      </div>
-
-      {/* Error State */}
-      {error ? (
+      {error && total === 0 ? (
         <ErrorState
-          icon={<FolderKanban size={24} />}
-          title="Failed to load projects"
+          title="Projects could not be loaded"
           message={error}
-          onRetry={fetchProjects}
-          retryLabel="Try Again"
-          variant="card"
-          size="md"
+          onRetry={refresh}
+          isRetrying={isRefreshing}
         />
       ) : (
-        /* Data View - Unified Table and Grid with Integrated Toolbar */
-        <DataView<ProjectDetails>
-          data={projects}
-          columns={columns}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          showViewToggle={true}
-          showSearch={true}
-          searchValue={searchQuery}
-          onSearchChange={handleSearchChange}
-          searchPlaceholder="Search projects by name or description..."
-          renderCard={renderCard}
-          gridColumns={{
-            mobile: 1,
-            tablet: 2,
-            desktop: 3,
-          }}
-          onSort={(key, direction) =>
-            handleSortChange(key as string, direction)
-          }
-          isLoading={isLoading}
-          emptyMessage={
-            searchQuery
-              ? 'No projects match your search criteria'
-              : 'No projects found'
-          }
-          emptyIcon={<FolderKanban size={32} />}
-          emptyAction={
-            <Button
-              variant="primary"
-              leftIcon={<Plus size={16} />}
-              onClick={handleCreateClick}
-              aria-label="Create your first project"
-            >
-              Create Your First Project
-            </Button>
-          }
-          skeletonRows={8}
-        />
-      )}
-
-      {/* Pagination */}
-      {pagination && pagination.total > pagination.limit && !error && (
-        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm text-muted-foreground">
-            Showing {projects.length} of {pagination.total} projects
-          </span>
-          <Pagination
-            currentPage={Math.floor(pagination.offset / pagination.limit) + 1}
-            totalPages={Math.ceil(pagination.total / pagination.limit)}
-            totalItems={pagination.total}
-            itemsPerPage={pagination.limit}
-            onPageChange={handlePageChange}
+        <div className={cn('transition-opacity', isRefreshing && 'opacity-70')}>
+          {error && (
+            <p className="mb-3 text-xs text-destructive" role="alert">
+              The list could not be refreshed: {error}
+            </p>
+          )}
+          <DataView<ProjectSummary>
+            data={projects}
+            columns={columns}
+            keyExtractor={(project) => project.project_hash}
+            showSearch
+            searchValue={searchInput}
+            onSearchChange={setSearchInput}
+            searchPlaceholder="Search by name or description"
+            onSort={(key, direction) =>
+              updateParams({ sort: `${String(key)}:${direction}` })
+            }
+            onRowClick={(project) =>
+              void navigate(projectPath(project.project_hash))
+            }
+            isLoading={isLoading}
+            skeletonRows={8}
+            emptyIcon={<FolderKanban className="h-8 w-8" />}
+            emptyMessage={
+              query
+                ? 'No projects match this search'
+                : isRoot
+                  ? 'No projects yet'
+                  : 'No projects assigned'
+            }
+            emptyDescription={
+              query
+                ? 'Try a different name or description.'
+                : isRoot
+                  ? 'Create a project for each application your users sign in to.'
+                  : 'A root user makes you a project administrator by adding you to its admin group.'
+            }
+            emptyAction={
+              query ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setSearchInput('')}
+                >
+                  Clear search
+                </Button>
+              ) : isRoot ? (
+                <Button size="sm" onClick={openCreate}>
+                  Create project
+                </Button>
+              ) : undefined
+            }
+            caption="Projects"
           />
+          <TablePager
+            offset={offset}
+            limit={limit}
+            pageCount={projects.length}
+            total={total}
+            onOffsetChange={(nextOffset) =>
+              updateParams(
+                { page: String(Math.floor(nextOffset / limit) + 1) },
+                false
+              )
+            }
+            pageSizeOptions={PAGE_SIZES}
+            onLimitChange={(nextLimit) =>
+              updateParams({ limit: String(nextLimit) })
+            }
+            itemLabel="projects"
+          />
+          {truncated && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              The API returns at most {formatNumber(PROJECT_LIST_MAX_LIMIT)}{' '}
+              projects per request, so some may not be listed. Search by name to
+              find them.
+            </p>
+          )}
         </div>
       )}
 
-      {/* Create Project Modal */}
       <ProjectFormModal
-        isOpen={showCreateModal}
-        onClose={handleCloseCreateModal}
-        onSuccess={handleProjectSuccess}
-        mode="create"
-        onProjectCreated={handleProjectCreated}
+        open={form.open}
+        onOpenChange={(open) => setForm((prev) => ({ ...prev, open }))}
+        mode={form.mode}
+        project={form.project}
+        onSaved={(saved) => {
+          if (form.mode === 'create') {
+            void navigate(projectPath(saved.project_hash));
+          } else {
+            refresh();
+          }
+        }}
       />
 
-      {/* Edit Project Modal */}
-      <ProjectFormModal
-        isOpen={showEditModal}
-        onClose={handleCloseEditModal}
-        onSuccess={handleProjectSuccess}
-        mode="edit"
-        project={selectedProject}
-      />
+      {deleteTarget && (
+        <DeleteProjectDialog
+          project={deleteTarget}
+          open
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+          onDeleted={() => {
+            setDeleteTarget(null);
+            refresh();
+          }}
+        />
+      )}
     </PageContainer>
   );
-};
+}
+
+export default ProjectListPage;

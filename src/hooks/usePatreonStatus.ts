@@ -19,7 +19,9 @@ interface UsePatreonStatusReturn {
   refetch: () => Promise<void>;
 }
 
-export function usePatreonStatus(options?: { autoFetch?: boolean }): UsePatreonStatusReturn {
+export function usePatreonStatus(options?: {
+  autoFetch?: boolean;
+}): UsePatreonStatusReturn {
   const autoFetch = options?.autoFetch ?? true;
   const [status, setStatus] = useState<PatreonAdminStatus | null>(null);
   const [isLoading, setIsLoading] = useState(autoFetch);
@@ -45,7 +47,8 @@ export function usePatreonStatus(options?: { autoFetch?: boolean }): UsePatreonS
         const data = await patreonService.getStatus();
         if (active) setStatus(data);
       } catch (err) {
-        if (active) setError(errorMessage(err, 'Failed to load Patreon status'));
+        if (active)
+          setError(errorMessage(err, 'Failed to load Patreon status'));
       } finally {
         if (active) setIsLoading(false);
       }

@@ -34,7 +34,7 @@ export function Pagination({
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-  const getVisiblePages = () => {
+  const getVisiblePages = (): (number | string)[] => {
     const delta = 2;
     const range: number[] = [];
     const rangeWithDots: (number | string)[] = [];
@@ -64,19 +64,19 @@ export function Pagination({
     return rangeWithDots;
   };
 
-  const handlePageClick = (page: number | string) => {
+  const handlePageClick = (page: number | string): void => {
     if (typeof page === 'number' && page !== currentPage) {
       onPageChange(page);
     }
   };
 
-  const handlePrevious = () => {
+  const handlePrevious = (): void => {
     if (currentPage > 1) {
       onPageChange(currentPage - 1);
     }
   };
 
-  const handleNext = () => {
+  const handleNext = (): void => {
     if (currentPage < totalPages) {
       onPageChange(currentPage + 1);
     }
@@ -96,7 +96,10 @@ export function Pagination({
 
   return (
     <nav
-      className={cn('flex flex-col sm:flex-row items-center justify-between gap-4', className)}
+      className={cn(
+        'flex flex-col sm:flex-row items-center justify-between gap-4',
+        className
+      )}
       aria-label="Pagination"
     >
       <div className="text-sm text-muted-foreground sm:text-xs">
@@ -120,7 +123,11 @@ export function Pagination({
           <ChevronLeft style={{ width: iconSize, height: iconSize }} />
         </button>
 
-        <div className="flex items-center gap-1" role="group" aria-label="Page numbers">
+        <div
+          className="flex items-center gap-1"
+          role="group"
+          aria-label="Page numbers"
+        >
           {visiblePages.map((page, index) =>
             typeof page === 'string' ? (
               <span
@@ -171,4 +178,4 @@ export function Pagination({
   );
 }
 
-export default Pagination; 
+export default Pagination;

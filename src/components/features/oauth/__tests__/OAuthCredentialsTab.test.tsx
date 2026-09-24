@@ -2,23 +2,11 @@ import { type ComponentProps } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OAuthCredentialsTab } from '../OAuthCredentialsTab';
-import { oauthService } from '@/services/oauth.service';
-import { useToast } from '@/hooks';
 import type { OAuthCredentialsStatus } from '@/types/oauth.types';
 
-vi.mock('@/services/oauth.service', () => ({
-  oauthService: {
-    setCredentials: vi.fn(),
-    testCredentials: vi.fn(),
-  },
-}));
+const { showToast } = vi.hoisted(() => ({ showToast: vi.fn() }));
 
-vi.mock('@/hooks', () => ({
-  useToast: vi.fn(),
-}));
-
-const showToast = vi.fn();
-const mockedService = vi.mocked(oauthService);
+vi.mock('@/hooks/useToast', () => ({ useToast: () => ({ showToast }) }));
 
 const ACTIVE_CREDENTIALS: OAuthCredentialsStatus = {
   credential_status: 'active',
@@ -37,15 +25,17 @@ const ABSENT_CREDENTIALS: OAuthCredentialsStatus = {
   credentials_set_at: null,
 };
 
-function renderTab(
-  props: Partial<ComponentProps<typeof OAuthCredentialsTab>> = {},
-): ComponentProps<typeof OAuthCredentialsTab> {
-  const merged: ComponentProps<typeof OAuthCredentialsTab> = {
-    connectionHash: 'conn_1',
-    providerType: 'google',
+type Props = ComponentProps<typeof OAuthCredentialsTab>;
+
+function renderTab(props: Partial<Props> = {}): Props {
+  const merged: Props = {
     credentials: ABSENT_CREDENTIALS,
+    connectionName: 'Acme Google',
     isRoot: true,
-    onChanged: vi.fn(),
+    onSave: vi.fn<Props['onSave']>().mockResolvedValue(undefined),
+    onTest: vi
+      .fn<Props['onTest']>()
+      .mockResolvedValue({ valid: true, problems: [] }),
     ...props,
   };
   render(<OAuthCredentialsTab {...merged} />);
@@ -54,61 +44,74 @@ function renderTab(
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(useToast).mockReturnValue({ showToast });
 });
 
 describe('OAuthCredentialsTab', () => {
-  it('never renders a secret — only presence flags and a fingerprint', () => {
+  it('never renders a secret — only presence and a fingerprint', () => {
     renderTab({ credentials: ACTIVE_CREDENTIALS });
 
     expect(screen.getByText('abc123def456')).toBeInTheDocument();
-    expect(screen.getByText('active')).toBeInTheDocument();
-    // There is no reveal control, because the server cannot return the value.
-    expect(screen.queryByRole('button', { name: /reveal|show secret/i })).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Stored', { selector: 'span.rounded-full' })
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /reveal|show secret/i })
+    ).not.toBeInTheDocument();
 
     const secretInput = screen.getByLabelText('Client secret');
     expect(secretInput).toHaveAttribute('type', 'password');
     expect(secretInput).toHaveValue('');
   });
 
-  it('shows a warning panel instead of the form for a non-root user', () => {
+  it('shows the status and a note instead of the form for an admin', () => {
     renderTab({ credentials: ACTIVE_CREDENTIALS, isRoot: false });
 
     expect(
-      screen.getByText(/only root users can set or rotate oauth credentials/i),
+      screen.getByText(/only root users can store or rotate oauth credentials/i)
     ).toBeInTheDocument();
     expect(screen.queryByLabelText('Client secret')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /save credentials/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /test connection/i })).not.toBeInTheDocument();
-    // Read-only status is still visible to an admin.
+    expect(
+      screen.queryByRole('button', {
+        name: /save credentials|rotate credentials/i,
+      })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /test connection/i })
+    ).not.toBeInTheDocument();
     expect(screen.getByText('abc123def456')).toBeInTheDocument();
   });
 
-  it('flips the save verb from "Save credentials" to "Rotate credentials" when active', () => {
+  it('switches from "Save credentials" to "Rotate credentials" once credentials are stored', () => {
     const { unmount } = render(
       <OAuthCredentialsTab
-        connectionHash="conn_1"
-        providerType="google"
         credentials={ABSENT_CREDENTIALS}
+        connectionName="Acme Google"
         isRoot
-        onChanged={vi.fn()}
-      />,
+        onSave={vi.fn()}
+        onTest={vi.fn()}
+      />
     );
-    expect(screen.getByRole('button', { name: /save credentials/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /save credentials/i })
+    ).toBeInTheDocument();
     unmount();
 
     renderTab({ credentials: ACTIVE_CREDENTIALS });
-    expect(screen.getByRole('button', { name: /rotate credentials/i })).toBeInTheDocument();
-    expect(screen.getByText(/rotating replaces the stored secret immediately/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /rotate credentials/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/replaces the stored secret immediately/i)
+    ).toBeInTheDocument();
   });
 
-  it('runs the non-persisting probe before saving and reports the would-be fingerprint', async () => {
-    mockedService.testCredentials.mockResolvedValue({
-      success: true,
-      message: 'ok',
-      result: { valid: true, problems: [], client_secret_fingerprint: 'feed0000beef' },
+  it('runs the non-persisting probe and compares the would-be fingerprint with the stored one', async () => {
+    const onTest = vi.fn<Props['onTest']>().mockResolvedValue({
+      valid: true,
+      problems: [],
+      client_secret_fingerprint: 'abc123def456',
     });
-    renderTab();
+    const { onSave } = renderTab({ credentials: ACTIVE_CREDENTIALS, onTest });
 
     fireEvent.change(screen.getByLabelText('Client secret'), {
       target: { value: 'super-secret' },
@@ -116,60 +119,93 @@ describe('OAuthCredentialsTab', () => {
     fireEvent.click(screen.getByRole('button', { name: /test connection/i }));
 
     await waitFor(() =>
-      expect(mockedService.testCredentials.mock.calls[0]).toEqual([
-        'conn_1',
-        { client_secret: 'super-secret', signing_key: undefined },
-      ]),
+      expect(onTest).toHaveBeenCalledWith({ client_secret: 'super-secret' })
     );
-    expect(await screen.findByText(/feed0000beef/)).toBeInTheDocument();
-    expect(mockedService.setCredentials.mock.calls).toHaveLength(0);
+    expect(
+      await screen.findByText(/the same secret that is stored now/i)
+    ).toBeInTheDocument();
+    expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('clears the inputs after a successful submit and refreshes the parent', async () => {
-    mockedService.setCredentials.mockResolvedValue({
-      success: true,
-      message: 'ok',
-      credentials: ACTIVE_CREDENTIALS,
-    });
-    const { onChanged } = renderTab();
+  it('lists the problems of an invalid configuration', async () => {
+    const onTest = vi
+      .fn<Props['onTest']>()
+      .mockResolvedValue({ valid: false, problems: ['issuer is required'] });
+    renderTab({ onTest });
+
+    fireEvent.click(screen.getByRole('button', { name: /test connection/i }));
+
+    expect(await screen.findByText('issuer is required')).toBeInTheDocument();
+    expect(onTest).toHaveBeenCalledWith({ client_secret: undefined });
+  });
+
+  it('clears the inputs only after a successful save', async () => {
+    const { onSave } = renderTab();
 
     const secretInput = screen.getByLabelText('Client secret');
     fireEvent.change(secretInput, { target: { value: 'super-secret' } });
-    expect(secretInput).toHaveValue('super-secret');
-
     fireEvent.click(screen.getByRole('button', { name: /save credentials/i }));
 
     await waitFor(() =>
-      expect(mockedService.setCredentials.mock.calls[0]).toEqual([
-        'conn_1',
-        { client_secret: 'super-secret', signing_key: undefined },
-      ]),
+      expect(onSave).toHaveBeenCalledWith({
+        client_secret: 'super-secret',
+        signing_key: undefined,
+      })
     );
     await waitFor(() => expect(secretInput).toHaveValue(''));
     expect(screen.getByLabelText(/signing key/i)).toHaveValue('');
-    expect(onChanged).toHaveBeenCalledTimes(1);
-    expect(showToast).toHaveBeenCalledWith(
-      'Credentials saved (encrypted; never echoed)',
-      'success',
+    expect(showToast).toHaveBeenCalledWith('Credentials saved', 'success');
+  });
+
+  it('keeps the typed secret and shows the backend message when saving fails', async () => {
+    const onSave = vi
+      .fn<Props['onSave']>()
+      .mockRejectedValue(
+        new Error('Server OAuth secret encryption keys are not configured')
+      );
+    renderTab({ onSave });
+
+    const secretInput = screen.getByLabelText('Client secret');
+    fireEvent.change(secretInput, { target: { value: 'super-secret' } });
+    fireEvent.click(screen.getByRole('button', { name: /save credentials/i }));
+
+    await waitFor(() =>
+      expect(showToast).toHaveBeenCalledWith(
+        'Server OAuth secret encryption keys are not configured',
+        'error'
+      )
     );
+    expect(secretInput).toHaveValue('super-secret');
   });
 
   it('refuses an empty submit without calling the API', async () => {
-    renderTab();
+    const { onSave } = renderTab();
 
     fireEvent.click(screen.getByRole('button', { name: /save credentials/i }));
 
     await waitFor(() =>
-      expect(showToast).toHaveBeenCalledWith('Enter a client secret or a signing key', 'error'),
+      expect(showToast).toHaveBeenCalledWith(
+        'Enter a client secret or a signing key.',
+        'error'
+      )
     );
-    expect(mockedService.setCredentials.mock.calls).toHaveLength(0);
+    expect(onSave).not.toHaveBeenCalled();
   });
 
-  it('discloses that secrets are encrypted and never returned', () => {
-    renderTab();
+  it('keeps line breaks in a pasted signing key', async () => {
+    const { onSave } = renderTab();
+    const pem = '-----BEGIN PRIVATE KEY-----\nMIGT\n-----END PRIVATE KEY-----';
 
-    expect(
-      screen.getByText(/secrets are encrypted server-side and never returned/i),
-    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/signing key/i), {
+      target: { value: pem },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save credentials/i }));
+
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith({
+        client_secret: undefined,
+        signing_key: pem,
+      })
+    );
   });
 });

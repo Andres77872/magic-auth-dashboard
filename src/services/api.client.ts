@@ -1,4 +1,5 @@
 import { API_CONFIG, ERROR_MESSAGES, HTTP_STATUS } from '@/utils/constants';
+import { ApiError } from '@/utils/error-handler';
 import type { ApiResponse } from '@/types/api.types';
 import { HttpMethod } from '@/types/api.types';
 import type { LoginResponse, ValidationResponse } from '@/types/auth.types';
@@ -24,7 +25,57 @@ type QueryParamValue = string | number;
 
 class AuthGenerationChangedError extends Error {}
 
-export function filterUndefinedValues(params: object): Record<string, QueryParamValue> {
+/**
+ * The backend reports failures as `{status: "error", error: {code, message}}`;
+ * older routes use a top-level `message` or FastAPI's `detail` string.
+ */
+function readBackendError(data: unknown): { message?: string; code?: string } {
+  if (!data || typeof data !== 'object') return {};
+  const record = data as Record<string, unknown>;
+  const text = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.trim() ? value : undefined;
+  const nested =
+    record.error && typeof record.error === 'object'
+      ? (record.error as Record<string, unknown>)
+      : undefined;
+  return {
+    message:
+      text(nested?.message) ?? text(record.message) ?? text(record.detail),
+    code: text(nested?.code) ?? text(record.error_code),
+  };
+}
+
+/**
+ * 401s that mean "your session is fine, but this action needs more proof".
+ * Refreshing can't help and they must never sign the operator out:
+ * - `AUTH_1008`: a recent sign-in is required (API key changes, project switch);
+ * - `AUTH_1001` on the password-change route: the current password was wrong.
+ * (`AUTH_1001` is the backend's default auth code elsewhere, so it is scoped.)
+ */
+function isStepUpRequired(endpoint: string, code: string | undefined): boolean {
+  if (code === 'AUTH_1008') return true;
+  return code === 'AUTH_1001' && endpoint === '/auth/password/change';
+}
+
+/** Read a JSON error body without consuming the response. */
+async function peekErrorCode(response: Response): Promise<string | undefined> {
+  try {
+    const data: unknown = await response.clone().json();
+    return readBackendError(data).code;
+  } catch {
+    return undefined;
+  }
+}
+
+function parseRetryAfter(header: string | null): number | undefined {
+  if (!header) return undefined;
+  const seconds = Number.parseInt(header, 10);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : undefined;
+}
+
+export function filterUndefinedValues(
+  params: object
+): Record<string, QueryParamValue> {
   const cleanParams: Record<string, QueryParamValue> = {};
 
   Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
@@ -80,11 +131,10 @@ class ApiClient {
   ): Record<string, unknown> {
     const cleaned: Record<string, unknown> = {};
 
+    // Drop `undefined` (field not sent); keep `null`, which JSON routes use to clear a value.
     Object.entries(data).forEach(([key, value]) => {
-      // Only include properties that are not undefined
       if (value !== undefined) {
-        // Convert null to empty string if needed, or keep null
-        cleaned[key] = value === null ? '' : value;
+        cleaned[key] = value;
       }
     });
 
@@ -163,7 +213,9 @@ class ApiClient {
     );
   }
 
-  private isTokenPairPayload(payload: LoginResponse | undefined): payload is LoginResponse {
+  private isTokenPairPayload(
+    payload: LoginResponse | undefined
+  ): payload is LoginResponse {
     return (
       payload?.success === true &&
       typeof payload.expires_at === 'string' &&
@@ -175,7 +227,10 @@ class ApiClient {
     return status >= 400 && status < 500 && status !== 429;
   }
 
-  private shouldAttemptRefresh(endpoint: string, config: RequestConfig): boolean {
+  private shouldAttemptRefresh(
+    endpoint: string,
+    config: RequestConfig
+  ): boolean {
     return (
       !config.skipAuth &&
       !config.skipRefresh &&
@@ -191,34 +246,33 @@ class ApiClient {
   }
 
   async refreshAuthSession(
-    observedGeneration: string | null = sessionRefreshCoordinator.getGeneration()
+    observedGeneration:
+      | string
+      | null = sessionRefreshCoordinator.getGeneration()
   ): Promise<SessionRefreshResult> {
-    return sessionRefreshCoordinator.refresh(
-      async () => {
-        const response = await this.requestRawWithRetry('/auth/refresh', {
-          method: HttpMethod.POST,
-          skipAuth: true,
-          skipRefresh: true,
-          retries: 0,
-        });
+    return sessionRefreshCoordinator.refresh(async () => {
+      const response = await this.requestRawWithRetry('/auth/refresh', {
+        method: HttpMethod.POST,
+        skipAuth: true,
+        skipRefresh: true,
+        retries: 0,
+      });
 
-        let payload: LoginResponse | undefined;
-        try {
-          payload = (await response.json()) as LoginResponse;
-        } catch {
-          // A successful refresh must satisfy the documented token-pair contract.
-        }
+      let payload: LoginResponse | undefined;
+      try {
+        payload = (await response.json()) as LoginResponse;
+      } catch {
+        // A successful refresh must satisfy the documented token-pair contract.
+      }
 
-        const success = response.ok && this.isTokenPairPayload(payload);
+      const success = response.ok && this.isTokenPairPayload(payload);
 
-        return {
-          success,
-          terminal: !response.ok && this.isTerminalRefreshStatus(response.status),
-          response: success ? payload : undefined,
-        };
-      },
-      observedGeneration
-    );
+      return {
+        success,
+        terminal: !response.ok && this.isTerminalRefreshStatus(response.status),
+        response: success ? payload : undefined,
+      };
+    }, observedGeneration);
   }
 
   private async requestRawCoordinated(
@@ -329,12 +383,21 @@ class ApiClient {
     const data = (await response.json()) as ApiResponse<T>;
 
     if (!response.ok) {
+      const backendError = readBackendError(data);
       // Handle specific HTTP status codes
       switch (response.status) {
         case HTTP_STATUS.UNAUTHORIZED:
           if (this.isLoginEndpoint(endpoint)) {
             // For login failures, return the error response to be handled by the login form
-            throw new Error(data.message || 'Invalid username or password');
+            throw new Error(
+              backendError.message || 'Invalid username or password'
+            );
+          } else if (isStepUpRequired(endpoint, backendError.code)) {
+            throw new ApiError(
+              backendError.message || 'Sign in again to continue.',
+              response.status,
+              backendError.code
+            );
           } else {
             const generationChanged =
               sessionRefreshCoordinator.getGeneration() !== requestGeneration;
@@ -343,23 +406,39 @@ class ApiClient {
                 'Authentication session changed while the request was in flight'
               );
             }
-            if (
-              allowUnauthorizedDispatch &&
-              !generationChanged
-            ) {
+            if (allowUnauthorizedDispatch && !generationChanged) {
               this.dispatchUnauthorized();
             }
-            throw new Error(data.message || ERROR_MESSAGES.SESSION_EXPIRED);
+            throw new Error(
+              backendError.message || ERROR_MESSAGES.SESSION_EXPIRED
+            );
           }
         case HTTP_STATUS.FORBIDDEN:
-          throw new Error('Access denied. Insufficient permissions.');
+          throw new ApiError(
+            backendError.message || ERROR_MESSAGES.FORBIDDEN,
+            response.status,
+            backendError.code
+          );
         case HTTP_STATUS.NOT_FOUND:
-          throw new Error('Resource not found.');
+          throw new ApiError(
+            backendError.message || 'Resource not found.',
+            response.status,
+            backendError.code
+          );
         case HTTP_STATUS.UNPROCESSABLE_ENTITY:
           // Return validation errors as-is
           return data;
-        default:
-          throw new Error(data.message || `HTTP Error: ${response.status}`);
+        default: {
+          const error = new ApiError(
+            backendError.message || `HTTP Error: ${response.status}`,
+            response.status,
+            backendError.code
+          );
+          error.retryAfterSeconds = parseRetryAfter(
+            response.headers.get('retry-after')
+          );
+          throw error;
+        }
       }
     }
 
@@ -465,9 +544,12 @@ class ApiClient {
 
     if (
       response.status === HTTP_STATUS.UNAUTHORIZED &&
-      this.shouldAttemptRefresh(endpoint, config)
+      this.shouldAttemptRefresh(endpoint, config) &&
+      !isStepUpRequired(endpoint, await peekErrorCode(response))
     ) {
-      const refreshed = await this.refreshAuthSession(observedRefreshGeneration);
+      const refreshed = await this.refreshAuthSession(
+        observedRefreshGeneration
+      );
       if (refreshed.success) {
         requestGeneration = sessionRefreshCoordinator.getGeneration();
         response = await this.requestRawCoordinated(endpoint, config);
@@ -606,9 +688,12 @@ class ApiClient {
 
     if (
       response.status === HTTP_STATUS.UNAUTHORIZED &&
-      this.shouldAttemptRefresh(endpoint, config)
+      this.shouldAttemptRefresh(endpoint, config) &&
+      !isStepUpRequired(endpoint, await peekErrorCode(response))
     ) {
-      const refreshed = await this.refreshAuthSession(observedRefreshGeneration);
+      const refreshed = await this.refreshAuthSession(
+        observedRefreshGeneration
+      );
       if (refreshed.success) {
         requestGeneration = sessionRefreshCoordinator.getGeneration();
         response = await this.requestRawWithRetry(endpoint, config);
@@ -617,27 +702,40 @@ class ApiClient {
       }
     }
 
-    if (response.status === HTTP_STATUS.UNAUTHORIZED) {
-      if (
-        allowUnauthorizedDispatch &&
-        sessionRefreshCoordinator.getGeneration() === requestGeneration
-      ) {
-        this.dispatchUnauthorized();
-      }
-      throw new Error(ERROR_MESSAGES.SESSION_EXPIRED);
-    }
-
     if (!response.ok) {
-      let message = `Export failed with status ${response.status}`;
+      let backendError: { message?: string; code?: string } = {};
       try {
-        const errorData = (await response.json()) as { message?: string };
-        if (errorData?.message) {
-          message = errorData.message;
-        }
+        backendError = readBackendError(await response.json());
       } catch {
-        // non-JSON error body; keep the status-based message
+        // Non-JSON error body; fall back to a status-based message.
       }
-      throw new Error(message);
+
+      if (
+        response.status === HTTP_STATUS.UNAUTHORIZED &&
+        !isStepUpRequired(endpoint, backendError.code)
+      ) {
+        if (
+          allowUnauthorizedDispatch &&
+          sessionRefreshCoordinator.getGeneration() === requestGeneration
+        ) {
+          this.dispatchUnauthorized();
+        }
+        throw new ApiError(
+          backendError.message || ERROR_MESSAGES.SESSION_EXPIRED,
+          response.status,
+          backendError.code
+        );
+      }
+
+      const error = new ApiError(
+        backendError.message || `Export failed with status ${response.status}`,
+        response.status,
+        backendError.code
+      );
+      error.retryAfterSeconds = parseRetryAfter(
+        response.headers.get('retry-after')
+      );
+      throw error;
     }
 
     return response.blob();
@@ -658,9 +756,17 @@ class ApiClient {
     });
   }
 
-  async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+  /**
+   * DELETE with no body by default. Pass `formData` for the few routes that
+   * read optional `Form(...)` fields on delete (e.g. an API key's `revoke_reason`).
+   */
+  async delete<T>(
+    endpoint: string,
+    formData?: Record<string, unknown>
+  ): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.DELETE,
+      ...(formData ? { body: formData, isFormData: true } : {}),
     });
   }
 

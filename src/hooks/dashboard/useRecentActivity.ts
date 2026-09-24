@@ -1,127 +1,48 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { analyticsService } from '@/services/analytics.service';
-import type {
-  Activity,
-  UseRecentActivityOptions,
-  UseRecentActivityReturn,
-} from '@/types/analytics.types';
+import { useCallback } from 'react';
+import { auditService } from '@/services/audit.service';
+import { useAuth } from '@/hooks/useAuth';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import type { ActivityLog } from '@/types/audit.types';
 
-export function useRecentActivity(
-  options: UseRecentActivityOptions = {}
-): UseRecentActivityReturn {
-  const {
-    filters = {},
-    limit = 10,
-    autoRefresh = false,
-    refreshInterval = 30000,
-  } = options;
+interface UseRecentActivityOptions {
+  limit?: number;
+  pollIntervalMs?: number;
+}
 
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Start with loading true
-  const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [cursor, setCursor] = useState<string | undefined>(undefined);
+interface UseRecentActivityReturn {
+  activities: ActivityLog[];
+  total: number;
+  isLoading: boolean;
+  isRefreshing: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
 
-  const intervalRef = useRef<number | null>(null);
-  const isMountedRef = useRef(true);
-
-  // Reset mounted ref on mount, clear interval on unmount
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, []);
-
-  const fetchActivities = useCallback(async (
-    isInitialLoad = false,
-    loadMoreCursor?: string
-  ) => {
-    if (!isMountedRef.current) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await analyticsService.getRecentActivity({
-        filters,
-        limit,
-        cursor: loadMoreCursor,
-      });
-
-      if (!isMountedRef.current) return;
-
-      if (isInitialLoad || !loadMoreCursor) {
-        // Replace activities for initial load or filter changes
-        setActivities(response.activities || []);
-      } else {
-        // Append activities for pagination
-        setActivities(prev => [...prev, ...(response.activities || [])]);
-      }
-
-      setHasMore(response.hasMore || false);
-      setCursor(response.nextCursor);
-    } catch (err) {
-      if (!isMountedRef.current) return;
-      
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load activities';
-      setError(errorMessage);
-      console.error('Failed to fetch recent activity:', err);
-    } finally {
-      if (isMountedRef.current) {
-        setIsLoading(false);
-      }
+/** The newest platform activity (`GET /admin/activity`), for compact feeds. */
+export function useRecentActivity({
+  limit = 8,
+  pollIntervalMs = 60_000,
+}: UseRecentActivityOptions = {}): UseRecentActivityReturn {
+  const { isAuthenticated } = useAuth();
+  const fetcher = useCallback(
+    () => auditService.getActivityLogs({ limit, days: 30 }),
+    [limit]
+  );
+  const { data, error, isLoading, isRefreshing, refetch } = useAsyncData(
+    fetcher,
+    {
+      enabled: isAuthenticated,
+      pollIntervalMs,
     }
-  }, [filters, limit]);
-
-  // Load more activities for pagination
-  const loadMore = useCallback(async () => {
-    if (!hasMore || isLoading || !cursor) return;
-
-    await fetchActivities(false, cursor);
-  }, [hasMore, isLoading, cursor, fetchActivities]);
-
-  // Refetch activities (for refresh button or filter changes)
-  const refetch = useCallback(() => {
-    setCursor(undefined);
-    fetchActivities(true);
-  }, [fetchActivities]);
-
-  // Initial load and filter changes
-  useEffect(() => {
-    setCursor(undefined);
-    fetchActivities(true);
-  }, [fetchActivities]);
-
-  // Auto-refresh functionality
-  useEffect(() => {
-    if (autoRefresh && refreshInterval > 0) {
-      intervalRef.current = setInterval(() => {
-        if (!isLoading && isMountedRef.current) {
-          // Only refresh the first page to avoid disrupting pagination
-          setCursor(undefined);
-          fetchActivities(true);
-        }
-      }, refreshInterval);
-
-      return () => {
-        if (intervalRef.current) {
-          clearInterval(intervalRef.current);
-          intervalRef.current = null;
-        }
-      };
-    }
-  }, [autoRefresh, refreshInterval, isLoading, fetchActivities]);
-
+  );
   return {
-    activities,
-    isLoading,
+    activities: data?.activities ?? [],
+    total: data?.pagination.total ?? 0,
     error,
-    hasMore,
+    isLoading,
+    isRefreshing,
     refetch,
-    loadMore,
   };
-} 
+}
+
+export default useRecentActivity;

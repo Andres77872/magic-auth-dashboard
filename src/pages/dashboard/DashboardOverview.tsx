@@ -1,136 +1,192 @@
 import React from 'react';
-import { 
-  QuickActionsPanel, 
-  SystemHealthPanel,
-  RecentActivityFeed,
-  StatisticsGrid
-} from './components';
+import { Link } from 'react-router-dom';
+import {
+  Activity,
+  FolderKanban,
+  RefreshCw,
+  Users,
+  UsersRound,
+} from 'lucide-react';
 import {
   PageContainer,
   PageHeader,
+  StatCard,
+  ErrorState,
 } from '@/components/common';
-import { BillingSummaryPanel } from '@/components/features/billing';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  useAuth,
+  useBillingMetrics,
+  useRecentActivity,
+  useSystemHealth,
+  useSystemStats,
+  useUserStatistics,
+  useUserType,
+} from '@/hooks';
+import { formatNumber, formatRelativeTime } from '@/utils/formatters';
+import { getUserTypeLabel } from '@/utils/component-utils';
+import { ROUTES } from '@/utils/routes';
 import { cn } from '@/lib/utils';
-import { RefreshCw, LayoutDashboard, AlertCircle } from 'lucide-react';
-import { useSystemStats, useSystemHealth, useUserType, useAuth } from '@/hooks';
+import { AccessModelPanel } from './components/overview/AccessModelPanel';
+import { ActivityFeedPanel } from './components/overview/ActivityFeedPanel';
+import { ServiceHealthPanel } from './components/overview/ServiceHealthPanel';
+import { UserCompositionPanel } from './components/overview/UserCompositionPanel';
+
+function weeklyDelta(
+  count: number | undefined,
+  noun: string
+): string | undefined {
+  if (count === undefined) return undefined;
+  return count > 0
+    ? `+${formatNumber(count)} ${noun} in the last 7 days`
+    : `No new ${noun} this week`;
+}
 
 export function DashboardOverview(): React.JSX.Element {
   const { user } = useAuth();
-  const { stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useSystemStats();
-  const { health, isLoading: healthLoading, error: healthError, refetch: refetchHealth } = useSystemHealth();
-  const { isRoot, getUserTypeLabel, userType } = useUserType();
+  const { isRoot } = useUserType();
+  const { stats, isLoading, isRefreshing, error, updatedAt, refetch } =
+    useSystemStats();
+  const userStats = useUserStatistics(30);
+  const activity = useRecentActivity({ limit: 8 });
+  const health = useSystemHealth();
+  const billing = useBillingMetrics();
 
-  const getGreeting = (): string => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+  const refreshAll = (): void => {
+    void refetch();
+    void userStats.refetch();
+    void activity.refetch();
+    void health.refetch();
+    billing.refetch();
   };
 
-  const userTypeStyles = {
-    root: 'bg-destructive/10 text-destructive border-destructive/30',
-    admin: 'bg-warning/10 text-warning border-warning/30',
-    consumer: 'bg-primary/10 text-primary border-primary/30',
-  };
+  const refreshing =
+    isRefreshing ||
+    activity.isRefreshing ||
+    health.isRefreshing ||
+    userStats.isRefreshing;
+  const totals = stats?.totals;
 
   return (
     <PageContainer>
       <PageHeader
-        title={user ? `${getGreeting()}, ${user.username}` : 'Dashboard'}
-        subtitle="Overview of your authentication system"
-        icon={<LayoutDashboard size={24} />}
-        badge={
-          <Badge 
-            variant="outline" 
-            className={cn('px-2.5 py-0.5', userTypeStyles[userType as keyof typeof userTypeStyles])}
-          >
-            {getUserTypeLabel()}
-          </Badge>
+        title="Overview"
+        subtitle={
+          <>
+            Signed in as{' '}
+            <span className="font-medium text-foreground">
+              {user?.username}
+            </span>
+            {user && ` · ${getUserTypeLabel(user.user_type)}`}
+            {updatedAt && <> · Updated {formatRelativeTime(updatedAt)}</>}
+          </>
         }
         actions={
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetchStats()}
-            disabled={statsLoading}
-          >
-            <RefreshCw className={cn('h-4 w-4 mr-2', statsLoading && 'animate-spin')} />
-            Refresh
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={refreshAll}
+              disabled={refreshing}
+              aria-label="Refresh overview"
+            >
+              <RefreshCw
+                className={cn(refreshing && 'animate-spin')}
+                aria-hidden="true"
+              />
+              Refresh
+            </Button>
+            <Button asChild variant="primary" size="md">
+              <Link to={ROUTES.USERS}>Manage users</Link>
+            </Button>
+          </>
         }
       />
 
-      {/* Statistics Grid */}
-      <div className="mt-6">
-        <StatisticsGrid
-          stats={stats}
-          isLoading={statsLoading}
-          error={statsError}
-          onRetry={refetchStats}
+      {error && !stats ? (
+        <ErrorState
+          title="Platform statistics are unavailable"
+          message={error}
+          onRetry={() => void refetch()}
+          isRetrying={isRefreshing}
+          variant="card"
+          size="md"
         />
-      </div>
+      ) : (
+        <section
+          aria-label="Platform totals"
+          className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4"
+        >
+          <StatCard
+            title="Users"
+            value={formatNumber(totals?.users)}
+            icon={<Users />}
+            href={ROUTES.USERS}
+            loading={isLoading}
+            subValue={weeklyDelta(stats?.recent_activity.new_users_7d, 'users')}
+          />
+          <StatCard
+            title="Active sessions"
+            value={formatNumber(totals?.active_sessions)}
+            icon={<Activity />}
+            variant="success"
+            loading={isLoading}
+            subValue="Live access tokens · 15-minute lifetime"
+          />
+          <StatCard
+            title="Projects"
+            value={formatNumber(totals?.projects)}
+            icon={<FolderKanban />}
+            href={ROUTES.PROJECTS}
+            loading={isLoading}
+            subValue={weeklyDelta(
+              stats?.recent_activity.new_projects_7d,
+              'projects'
+            )}
+          />
+          <StatCard
+            title="User groups"
+            value={formatNumber(totals?.user_groups)}
+            icon={<UsersRound />}
+            href={ROUTES.GROUPS}
+            loading={isLoading}
+            subValue={
+              totals
+                ? `${formatNumber(totals.project_groups)} project groups · ${formatNumber(stats?.groups_summary.avg_users_per_group ?? 0)} users per group on average`
+                : undefined
+            }
+          />
+        </section>
+      )}
 
-      {/* Error State for failed data fetches */}
-      {(statsError || healthError) && (
-        <div className="mt-6 p-4 rounded-lg border border-destructive/30 bg-destructive/5">
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-foreground mb-1">Data Refresh Options</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Some dashboard data failed to load. You can manually refresh individual sections.
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {statsError && (
-                  <Button 
-                    onClick={refetchStats}
-                    variant="outline"
-                    size="sm"
-                    disabled={statsLoading}
-                  >
-                    <RefreshCw className={cn('h-4 w-4 mr-2', statsLoading && 'animate-spin')} />
-                    {statsLoading ? 'Refreshing...' : 'Refresh Statistics'}
-                  </Button>
-                )}
-                {healthError && isRoot && (
-                  <Button 
-                    onClick={refetchHealth}
-                    variant="outline"
-                    size="sm"
-                    disabled={healthLoading}
-                  >
-                    <RefreshCw className={cn('h-4 w-4 mr-2', healthLoading && 'animate-spin')} />
-                    {healthLoading ? 'Checking...' : 'Refresh Health Status'}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <UserCompositionPanel
+            stats={stats}
+            userStats={userStats.statistics}
+            userStatsError={userStats.error}
+            isLoading={isLoading}
+          />
+          <ServiceHealthPanel
+            health={health.health}
+            healthError={health.error}
+            isLoading={health.isLoading}
+            billing={billing.metrics}
+            canViewDetails={isRoot}
+            onRetry={() => void health.refetch()}
+          />
         </div>
-      )}
-
-      {/* Billing & Plans metrics (admin+) */}
-      <BillingSummaryPanel />
-
-      {/* Quick Actions Panel */}
-      <QuickActionsPanel />
-
-      {/* Recent Activity Feed */}
-      <RecentActivityFeed />
-
-      {/* System Health Panel (ROOT only) */}
-      {isRoot && (
-        <SystemHealthPanel
-          health={health}
-          isLoading={healthLoading}
-          error={healthError}
-          onRefresh={refetchHealth}
-        />
-      )}
+        <div className="flex min-w-0 flex-col gap-6">
+          <ActivityFeedPanel
+            activities={activity.activities}
+            total={activity.total}
+            isLoading={activity.isLoading}
+            error={activity.error}
+            onRetry={() => void activity.refetch()}
+          />
+          <AccessModelPanel stats={stats} isLoading={isLoading} />
+        </div>
+      </div>
     </PageContainer>
   );
 }

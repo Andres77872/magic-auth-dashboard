@@ -3,7 +3,12 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import { NavigationMenu } from '@/components/navigation';
-import { NAVIGATION_ITEMS, NAVIGATION_SECTIONS, ROUTES, type NavItem } from '@/utils/routes';
+import {
+  NAVIGATION_ITEMS,
+  NAVIGATION_SECTIONS,
+  ROUTES,
+  type NavItem,
+} from '@/utils/routes';
 import { canAccessRoute } from '@/utils/permissions';
 import { UserType } from '@/types/auth.types';
 
@@ -15,13 +20,17 @@ vi.mock('@/hooks', () => ({
 
 function visibleItemsFor(userType: string): NavItem[] {
   return NAVIGATION_SECTIONS.filter((section) =>
-    section.allowedUserTypes.includes(userType),
-  ).flatMap((section) => section.items.filter((item) => item.allowedUserTypes.includes(userType)));
+    section.allowedUserTypes.includes(userType)
+  ).flatMap((section) =>
+    section.items.filter((item) => item.allowedUserTypes.includes(userType))
+  );
 }
 
 describe('OAuth navigation', () => {
   it('adds OAuth to the operations section next to Billing, for root and admin', () => {
-    const operations = NAVIGATION_SECTIONS.find((section) => section.id === 'operations');
+    const operations = NAVIGATION_SECTIONS.find(
+      (section) => section.id === 'operations'
+    );
     const oauthItem = operations?.items.find((item) => item.id === 'oauth');
 
     expect(oauthItem).toMatchObject({
@@ -42,8 +51,12 @@ describe('OAuth navigation', () => {
   });
 
   it('is visible for both root and admin users', () => {
-    expect(visibleItemsFor('root').some((item) => item.id === 'oauth')).toBe(true);
-    expect(visibleItemsFor('admin').some((item) => item.id === 'oauth')).toBe(true);
+    expect(visibleItemsFor('root').some((item) => item.id === 'oauth')).toBe(
+      true
+    );
+    expect(visibleItemsFor('admin').some((item) => item.id === 'oauth')).toBe(
+      true
+    );
   });
 
   it('is an admin-reachable route, unlike the root-only system prefixes', () => {
@@ -60,8 +73,8 @@ describe('OAuth navigation', () => {
       React.createElement(
         MemoryRouter,
         { initialEntries: [ROUTES.OAUTH] },
-        React.createElement(NavigationMenu, { userType: UserType.ADMIN }),
-      ),
+        React.createElement(NavigationMenu, { userType: UserType.ADMIN })
+      )
     );
 
     const oauthLink = screen.getByRole('link', { name: /^OAuth$/ });
@@ -76,11 +89,13 @@ describe('OAuth navigation', () => {
       React.createElement(
         MemoryRouter,
         { initialEntries: [ROUTES.OAUTH] },
-        React.createElement(NavigationMenu, { userType: UserType.ADMIN }),
-      ),
+        React.createElement(NavigationMenu, { userType: UserType.ADMIN })
+      )
     );
 
     expect(screen.getByRole('link', { name: /^OAuth$/ })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /^System$/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: /^System$/ })
+    ).not.toBeInTheDocument();
   });
 });

@@ -13,6 +13,7 @@ export { useEmailTemplates, useEmailTemplate } from './useEmailTemplates';
 export { usePatreonStatus } from './usePatreonStatus';
 export { usePatreonEntitlements } from './usePatreonEntitlements';
 export { usePatreonEntitlement } from './usePatreonEntitlement';
+export { usePatreonEntitlementHistory } from './usePatreonEntitlementHistory';
 export { usePatreonTierMap } from './usePatreonTierMap';
 export { usePatreonSyncJobs } from './usePatreonSyncJobs';
 export { usePatreonWebhooks } from './usePatreonWebhooks';
@@ -22,8 +23,8 @@ export { useResyncPatreon } from './useResyncPatreon';
 export { default as useSystemStats } from './dashboard/useSystemStats';
 export { default as useSystemHealth } from './dashboard/useSystemHealth';
 export { default as useSystemCacheStats } from './dashboard/useSystemCacheStats';
-export { default as useDashboardCache } from './dashboard/useDashboardCache';
 export { useRecentActivity } from './dashboard/useRecentActivity';
+export { useUserStatistics } from './dashboard/useUserStatistics';
 export { default as useBillingMetrics } from './dashboard/useBillingMetrics';
 
 // User Profile & Management hooks
@@ -32,18 +33,10 @@ export { default as useUserActions } from './useUserActions';
 export { default as useProjectDetails } from './useProjectDetails';
 export { default as useGroupDetails } from './useGroupDetails';
 export { default as useGroupMemberActions } from './useGroupMemberActions';
-export { default as useProjectMembers } from './useProjectMembers';
-export { default as useGroupMembers } from './useGroupMembers';
 export { useUsersByGroup } from './useUsersByGroup';
 
-// Utility hooks
-export { useDebounce, useDebouncedCallback } from './useDebounce';
-
-// Global Roles & Permission Assignments hooks
-export { useGlobalRoles } from './useGlobalRoles';
-export { useGlobalPermissionGroups } from './useGlobalPermissionGroups';
-export { usePermissionAssignments } from './usePermissionAssignments';
-export { usePermissionManagement } from '@/contexts/PermissionManagementContext';
+// Roles & permissions
+export { useAccessCatalog } from './useAccessCatalog';
 
 // Audit hooks
 export {
@@ -59,3 +52,6 @@ export { useUserGroupsWithAccess } from './useUserGroupsWithAccess';
 
 // Navigation hooks
 export { useBackNavigation } from './useBackNavigation';
+export { useTabParam } from './useTabParam';
+export { useAsyncData } from './useAsyncData';
+export { useMediaQuery } from './useMediaQuery';

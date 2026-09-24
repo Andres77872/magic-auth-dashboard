@@ -10,7 +10,9 @@ interface RootOnlyRouteProps {
   children: ReactNode;
 }
 
-export function RootOnlyRoute({ children }: RootOnlyRouteProps): React.JSX.Element {
+export function RootOnlyRoute({
+  children,
+}: RootOnlyRouteProps): React.JSX.Element {
   const { isAuthenticated } = useAuth();
   const { userType } = useUserType();
 
@@ -25,4 +27,4 @@ export function RootOnlyRoute({ children }: RootOnlyRouteProps): React.JSX.Eleme
   );
 }
 
-export default RootOnlyRoute; 
+export default RootOnlyRoute;

@@ -3,18 +3,21 @@ import * as SliderPrimitive from '@radix-ui/react-slider';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-const sliderTrackVariants = cva('relative w-full grow overflow-hidden rounded-full bg-primary/20', {
-  variants: {
-    size: {
-      sm: 'h-1',
-      md: 'h-1.5',
-      lg: 'h-2',
+const sliderTrackVariants = cva(
+  'relative w-full grow overflow-hidden rounded-full bg-primary/20',
+  {
+    variants: {
+      size: {
+        sm: 'h-1',
+        md: 'h-1.5',
+        lg: 'h-2',
+      },
     },
-  },
-  defaultVariants: {
-    size: 'md',
-  },
-});
+    defaultVariants: {
+      size: 'md',
+    },
+  }
+);
 
 const sliderThumbVariants = cva(
   'block rounded-full border border-primary/50 bg-background shadow transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
@@ -33,7 +36,11 @@ const sliderThumbVariants = cva(
 );
 
 export interface SliderProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>, 'value' | 'onValueChange' | 'onChange'>,
+  extends
+    Omit<
+      React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>,
+      'value' | 'onValueChange' | 'onChange'
+    >,
     VariantProps<typeof sliderTrackVariants> {
   value?: number;
   onChange?: (value: number) => void;
@@ -42,9 +49,25 @@ export interface SliderProps
   label?: string;
 }
 
-const Slider = React.forwardRef<React.ElementRef<typeof SliderPrimitive.Root>, SliderProps>(
-  ({ className, size, value, onChange, onValueChange, showValue = false, label, disabled, ...props }, ref) => {
-    const handleValueChange = (values: number[]) => {
+const Slider = React.forwardRef<
+  React.ElementRef<typeof SliderPrimitive.Root>,
+  SliderProps
+>(
+  (
+    {
+      className,
+      size,
+      value,
+      onChange,
+      onValueChange,
+      showValue = false,
+      label,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    const handleValueChange = (values: number[]): void => {
       if (onChange) {
         onChange(values[0]);
       }
@@ -76,7 +99,9 @@ const Slider = React.forwardRef<React.ElementRef<typeof SliderPrimitive.Root>, S
           <SliderPrimitive.Track className={cn(sliderTrackVariants({ size }))}>
             <SliderPrimitive.Range className="absolute h-full bg-primary" />
           </SliderPrimitive.Track>
-          <SliderPrimitive.Thumb className={cn(sliderThumbVariants({ size }))} />
+          <SliderPrimitive.Thumb
+            className={cn(sliderThumbVariants({ size }))}
+          />
         </SliderPrimitive.Root>
       </div>
     );

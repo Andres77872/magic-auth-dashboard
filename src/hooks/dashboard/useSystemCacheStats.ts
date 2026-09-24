@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
-import { systemService } from '@/services';
+import { useCallback } from 'react';
+import { systemService } from '@/services/system.service';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
+/** `GET /system/cache/stats` → `cache_statistics`: Redis key counts per cache category. */
 export interface CacheStats {
+  sessions: number;
+  access_checks: number;
+  permission_checks: number;
+  user_types: number;
+  role_checks: number;
+  api_keys: number;
   total_keys: number;
-  memory_used_mb: number;
-  hit_rate: number;
-  miss_rate: number;
 }
 
 interface UseSystemCacheStatsReturn {
@@ -16,57 +21,19 @@ interface UseSystemCacheStatsReturn {
 
 export function useSystemCacheStats(
   enabled: boolean,
-  refreshInterval = 30000
+  refreshInterval = 30_000
 ): UseSystemCacheStatsReturn {
-  const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const fetchCacheStats = useCallback(async () => {
-    if (!enabled) {
-      setCacheStats(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await systemService.getCacheStats();
-      // The endpoint returns either a flat stats object or one nested under
-      // `cache_statistics`; normalise both to CacheStats.
-      const data = response.data as
-        | (Partial<CacheStats> & { cache_statistics?: CacheStats })
-        | undefined;
-      if (response.success && data) {
-        setCacheStats((data.cache_statistics ?? data) as CacheStats);
-      }
-    } catch {
-      // Optional dashboard data: preserve current behavior and fail silently.
-    } finally {
-      setIsLoading(false);
-    }
-  }, [enabled]);
-
-  useEffect(() => {
-    if (!enabled) {
-      setCacheStats(null);
-      setIsLoading(false);
-      return;
-    }
-
-    void fetchCacheStats();
-    const interval = setInterval(() => {
-      void fetchCacheStats();
-    }, refreshInterval);
-
-    return () => clearInterval(interval);
-  }, [enabled, fetchCacheStats, refreshInterval]);
-
-  return {
-    cacheStats,
-    isLoading,
-    refetch: fetchCacheStats,
-  };
+  const fetcher = useCallback(async (): Promise<CacheStats | null> => {
+    const response = (await systemService.getCacheStats()) as unknown as {
+      cache_statistics?: CacheStats | null;
+    };
+    return response.cache_statistics ?? null;
+  }, []);
+  const { data, isLoading, refetch } = useAsyncData(fetcher, {
+    enabled,
+    pollIntervalMs: refreshInterval,
+  });
+  return { cacheStats: data, isLoading, refetch };
 }
 
 export default useSystemCacheStats;

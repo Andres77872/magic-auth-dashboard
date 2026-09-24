@@ -13,6 +13,7 @@ export type BillingGroupStatus = 'active' | 'suspended' | 'archived';
 export type CredentialStatus = 'absent' | 'active' | 'rotating' | 'revoked';
 export type CatalogItemType = 'subscription_plan' | 'credit_package';
 export type ProvisioningStatus = 'pending' | 'active' | 'failed' | 'archived';
+export type CatalogSyncStatus = 'never' | 'ok' | 'drift' | 'error';
 
 export interface BillingGroup {
   group_hash: string;
@@ -31,7 +32,8 @@ export interface BillingGroup {
   project_count?: number | null;
   catalog_item_count?: number | null;
   last_catalog_synced_at?: string | null;
-  catalog_sync_status?: 'never' | 'ok' | 'drift' | 'error' | string;
+  /** Last `POST .../catalog/sync` outcome (`never` until the first sync). */
+  catalog_sync_status: CatalogSyncStatus;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -85,6 +87,9 @@ export interface BillingMetrics {
   catalog_failed: number;
   catalog_archived: number;
   projects_mapped: number;
+  groups_with_webhook_secret?: number;
+  /** Active billing groups that cannot verify Stripe webhooks yet. */
+  webhook_secret_missing_active_groups?: number;
 }
 
 export interface BillingCredentialsStatus {
@@ -165,7 +170,7 @@ export interface CredentialValidationResponse extends ApiResponse {
 export interface CatalogDriftItem {
   item_hash: string;
   plan_code: string;
-  item_type: CatalogItemType | string;
+  item_type: CatalogItemType;
   drift_kind: string;
   local_unit_amount?: number | null;
   stripe_unit_amount?: number | null;
@@ -175,7 +180,7 @@ export interface CatalogDriftItem {
 }
 
 export interface CatalogImportCandidate {
-  item_type: CatalogItemType | string;
+  item_type: CatalogItemType;
   plan_code: string;
   display_name: string;
   currency?: string | null;
@@ -198,7 +203,7 @@ export interface CatalogReconcileResult {
 }
 
 export interface CatalogReconcileResponse extends ApiResponse {
-  result: CatalogReconcileResult;
+  result?: CatalogReconcileResult | null;
 }
 
 export interface CatalogImportRequest {
@@ -212,6 +217,32 @@ export interface CatalogImportResponse extends ApiResponse {
   conflicts: string[];
 }
 
+// --- normalised service results ---------------------------------------------------------
+export interface BillingGroupPage {
+  groups: BillingGroup[];
+  /** Matching groups for the search (root: database count; admin: owned groups). */
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
+
+/** `GET /admin/billing/{group_hash}` — group, projects, full catalog, credential status, readiness. */
+export interface BillingGroupDetails {
+  group: BillingGroup;
+  projects: BillingGroupProject[];
+  /** Every item, archived ones included. */
+  catalog: CatalogItem[];
+  credentials: BillingCredentialsStatus;
+  readiness: BillingGroupReadiness | null;
+}
+
+export type BillingCapability =
+  | 'checkout'
+  | 'portal'
+  | 'provisioning'
+  | 'webhooks';
+
 // --- response envelopes (extend ApiResponse; fields are top-level per api.auth) ----------
 export interface ListBillingGroupsResponse extends ApiResponse {
   billing_groups: BillingGroup[];
@@ -224,33 +255,25 @@ export interface ListBillingGroupsResponse extends ApiResponse {
 }
 
 export interface BillingGroupResponse extends ApiResponse {
-  billing_group: BillingGroup;
+  billing_group?: BillingGroup | null;
 }
 
 export interface BillingGroupDetailsResponse extends ApiResponse {
-  billing_group: BillingGroup;
+  billing_group?: BillingGroup | null;
   projects: BillingGroupProject[];
   catalog: CatalogItem[];
-  credentials: BillingCredentialsStatus;
+  credentials?: BillingCredentialsStatus | null;
   readiness?: BillingGroupReadiness | null;
 }
 
-export interface BillingGroupProjectsResponse extends ApiResponse {
-  projects: BillingGroupProject[];
-}
-
-export interface CatalogListResponse extends ApiResponse {
-  catalog: CatalogItem[];
-}
-
 export interface CatalogItemResponse extends ApiResponse {
-  item: CatalogItem;
+  item?: CatalogItem | null;
 }
 
 export interface BillingCredentialsStatusResponse extends ApiResponse {
-  credentials: BillingCredentialsStatus;
+  credentials?: BillingCredentialsStatus | null;
 }
 
 export interface BillingMetricsResponse extends ApiResponse {
-  metrics: BillingMetrics;
+  metrics?: BillingMetrics | null;
 }

@@ -1,7 +1,12 @@
 import React from 'react';
 import type { ReactNode, KeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 export interface DataViewCardStat {
@@ -62,7 +67,7 @@ export function DataViewCard({
 }: DataViewCardProps): React.JSX.Element {
   const isInteractive = !!onClick;
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     if (isInteractive && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       onClick?.();
@@ -191,7 +196,10 @@ export function DataViewCard({
                   </span>
                   <div className="flex items-center gap-1.5">
                     {stat.icon && (
-                      <span className="text-muted-foreground" aria-hidden="true">
+                      <span
+                        className="text-muted-foreground"
+                        aria-hidden="true"
+                      >
                         {stat.icon}
                       </span>
                     )}
@@ -228,4 +236,3 @@ export function DataViewCard({
 }
 
 export default DataViewCard;
-

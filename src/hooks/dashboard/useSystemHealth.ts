@@ -1,76 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
 import { systemService } from '@/services';
-import { useAuth, useUserType } from '@/hooks';
+import { useAuth } from '@/hooks/useAuth';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import type { SystemHealthData } from '@/types/dashboard.types';
-import type { HealthComponent } from '@/types/system.types';
+
+interface UseSystemHealthOptions {
+  enabled?: boolean;
+  pollIntervalMs?: number;
+}
 
 interface UseSystemHealthReturn {
   health: SystemHealthData | null;
   isLoading: boolean;
+  isRefreshing: boolean;
   error: string | null;
-  refetch: () => void;
+  updatedAt: Date | null;
+  refetch: () => Promise<void>;
 }
 
-export function useSystemHealth(): UseSystemHealthReturn {
-  const [health, setHealth] = useState<SystemHealthData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+/** Component health from `GET /system/health` (available to any signed-in operator). */
+export function useSystemHealth({
+  enabled = true,
+  pollIntervalMs = 30_000,
+}: UseSystemHealthOptions = {}): UseSystemHealthReturn {
   const { isAuthenticated } = useAuth();
-  const { isRoot } = useUserType();
-
-  const fetchHealth = async () => {
-    if (!isAuthenticated || !isRoot) {
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      const response = await systemService.getSystemHealth();
-      
-      if (response.success) {
-        // Pass the full components map through untouched so the health monitor
-        // can surface every check the API returns (email, patreon, billing, …),
-        // not just the three it used to cherry-pick. Status tolerance for
-        // unknown/new values lives in the shared `statusTone` helper.
-        // Data is at the top level of the response, not nested under 'data'.
-        setHealth({
-          status: response.status ?? 'unhealthy',
-          timestamp: response.timestamp,
-          components: (response.components ?? {}) as Record<string, HealthComponent>,
-        });
-      } else {
-        setError(response.message || 'Failed to fetch system health');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!isRoot) {
-      setIsLoading(false);
-      return;
-    }
-
-    fetchHealth();
-
-    // Set up auto-refresh every 10 seconds for health monitoring
-    const interval = setInterval(fetchHealth, 10000);
-    
-    return () => clearInterval(interval);
-  }, [isAuthenticated, isRoot]);
-
-  return {
-    health,
-    isLoading,
-    error,
-    refetch: fetchHealth,
-  };
+  const fetcher = useCallback(async (): Promise<SystemHealthData> => {
+    const response = await systemService.getSystemHealth();
+    return {
+      status: response.status ?? 'unhealthy',
+      timestamp: response.timestamp,
+      components: response.components ?? {},
+    };
+  }, []);
+  const { data, ...state } = useAsyncData(fetcher, {
+    enabled: enabled && isAuthenticated,
+    pollIntervalMs,
+  });
+  return { health: data, ...state };
 }
 
-export default useSystemHealth; 
+export default useSystemHealth;

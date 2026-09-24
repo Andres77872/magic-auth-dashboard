@@ -65,7 +65,12 @@ export function FilterBar({
         ))}
       </div>
       {showClearButton && hasActiveFilters && onClearAll && (
-        <Button variant="outline" size="sm" onClick={onClearAll} className="gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearAll}
+          className="gap-1"
+        >
           <X className="h-3.5 w-3.5" aria-hidden="true" />
           Clear Filters
         </Button>
@@ -75,4 +80,3 @@ export function FilterBar({
 }
 
 export default FilterBar;
-

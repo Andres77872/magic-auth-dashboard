@@ -3,19 +3,17 @@
  *
  * Never a free-text comma-separated field — api.auth stores one row per URL and
  * matches by exact string equality, so each value must be pasted byte-identically
- * into the provider's console. Every value is rendered through `CopyableId` for
- * exactly that reason; a mismatch there is the most common setup failure.
+ * into the provider's console. Every value is copyable for exactly that reason; a
+ * mismatch there is the most common setup failure.
  *
- * `validateAllowedUrl` (in `oauth-status.ts`) mirrors the server's `url_safety.py`
- * rules so a bad value is refused before the round trip. It is usability only — the
- * server re-validates.
+ * `validateAllowedUrl` mirrors the server's `url_safety.py` rules so a bad value is
+ * refused before the round trip. It is usability only — the server re-validates.
  */
 
 import React from 'react';
-import { Link2, Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -24,17 +22,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CopyableId, ConfirmDialog, EmptyState } from '@/components/common';
-import { useToast } from '@/hooks';
-import { oauthService } from '@/services/oauth.service';
-import type { OAuthAllowedUrl, OAuthUrlKind } from '@/types/oauth.types';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { CopyableId } from '@/components/common/CopyableId';
+import { useToast } from '@/hooks/useToast';
+import type {
+  OAuthAllowedUrl,
+  OAuthBindingUrlCreateRequest,
+  OAuthUrlKind,
+} from '@/types/oauth.types';
 import { URL_KIND_LABELS, validateAllowedUrl } from './oauth-status';
 
 export interface OAuthAllowedUrlListProps {
-  projectHash: string;
+  /** Unique per binding; used for element ids. */
   connectionKey: string;
   urls: OAuthAllowedUrl[];
-  onChanged: () => void;
+  /** Resolves after the API stored the URL and the binding was refetched. */
+  onAdd: (request: OAuthBindingUrlCreateRequest) => Promise<void>;
+  onRemove: (urlId: string) => Promise<void>;
   /**
    * Allow plain http for localhost. Defaults to Vite's dev flag so production
    * builds refuse it, matching the server's `APP_ENV` behaviour.
@@ -43,15 +47,24 @@ export interface OAuthAllowedUrlListProps {
   disabled?: boolean;
 }
 
+const PLACEHOLDER: Record<OAuthUrlKind, string> = {
+  redirect_uri: 'https://app.example.com/auth/callback',
+  return_origin: 'https://app.example.com',
+};
+
+function isUrlKind(value: string): value is OAuthUrlKind {
+  return value === 'redirect_uri' || value === 'return_origin';
+}
+
 function errorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error ? err.message : fallback;
+  return err instanceof Error && err.message ? err.message : fallback;
 }
 
 export function OAuthAllowedUrlList({
-  projectHash,
   connectionKey,
   urls,
-  onChanged,
+  onAdd,
+  onRemove,
   allowHttpLocalhost = import.meta.env.DEV,
   disabled = false,
 }: OAuthAllowedUrlListProps): React.JSX.Element {
@@ -60,12 +73,16 @@ export function OAuthAllowedUrlList({
   const [value, setValue] = React.useState('');
   const [fieldError, setFieldError] = React.useState<string | null>(null);
   const [adding, setAdding] = React.useState(false);
-  const [pendingRemove, setPendingRemove] = React.useState<OAuthAllowedUrl | null>(null);
+  const [pendingRemove, setPendingRemove] =
+    React.useState<OAuthAllowedUrl | null>(null);
   const [removing, setRemoving] = React.useState(false);
 
   const inputId = `oauth-url-${connectionKey}`;
+  const hasRedirect = urls.some((entry) => entry.kind === 'redirect_uri');
+  const hasOrigin = urls.some((entry) => entry.kind === 'return_origin');
 
-  const handleAdd = async (): Promise<void> => {
+  const handleAdd = async (event?: React.FormEvent): Promise<void> => {
+    event?.preventDefault();
     const problem = validateAllowedUrl(kind, value, { allowHttpLocalhost });
     if (problem) {
       setFieldError(problem);
@@ -74,15 +91,11 @@ export function OAuthAllowedUrlList({
     setFieldError(null);
     setAdding(true);
     try {
-      await oauthService.addBindingUrl(projectHash, connectionKey, {
-        kind,
-        url: value.trim(),
-      });
+      await onAdd({ kind, url: value.trim() });
       showToast(`${URL_KIND_LABELS[kind]} added`, 'success');
       setValue('');
-      onChanged();
     } catch (err) {
-      showToast(errorMessage(err, 'Failed to add URL'), 'error');
+      showToast(errorMessage(err, 'The URL could not be added.'), 'error');
     } finally {
       setAdding(false);
     }
@@ -92,53 +105,81 @@ export function OAuthAllowedUrlList({
     if (!pendingRemove) return;
     setRemoving(true);
     try {
-      await oauthService.removeBindingUrl(projectHash, connectionKey, pendingRemove.id);
-      showToast('URL removed', 'success');
-      onChanged();
+      await onRemove(pendingRemove.id);
+      showToast(
+        `${URL_KIND_LABELS[pendingRemove.kind] ?? 'URL'} removed`,
+        'success'
+      );
+      setPendingRemove(null);
     } catch (err) {
-      showToast(errorMessage(err, 'Failed to remove URL'), 'error');
+      showToast(errorMessage(err, 'The URL could not be removed.'), 'error');
     } finally {
       setRemoving(false);
-      setPendingRemove(null);
     }
   };
 
+  const missing = [
+    !hasRedirect && 'a redirect URI',
+    !hasOrigin && 'a return origin',
+  ].filter(Boolean);
+
   return (
     <div className="space-y-3">
-      {urls.length === 0 ? (
-        <EmptyState
-          icon={<Link2 />}
-          title="No allow-listed URLs"
-          description="Sign-in cannot complete until this binding has both a redirect URI and a return origin."
-          size="sm"
-        />
-      ) : (
-        <ul className="divide-y rounded-md border border-border" aria-label="Allow-listed URLs">
+      {urls.length > 0 && (
+        <ul
+          className="m-0 list-none divide-y divide-border rounded-md border border-border p-0"
+          aria-label="Allowed URLs"
+        >
           {urls.map((entry) => (
-            <li key={entry.id} className="flex items-center gap-3 p-3">
-              <Badge variant="secondary">{URL_KIND_LABELS[entry.kind] ?? entry.kind}</Badge>
+            <li key={entry.id} className="flex items-center gap-3 px-3 py-2">
+              <span className="w-28 shrink-0 text-xs text-muted-foreground">
+                {URL_KIND_LABELS[entry.kind] ?? entry.kind}
+              </span>
               <div className="min-w-0 flex-1">
-                <CopyableId id={entry.url} label={URL_KIND_LABELS[entry.kind] ?? entry.kind} showFull />
+                <CopyableId
+                  id={entry.url}
+                  label={URL_KIND_LABELS[entry.kind] ?? entry.kind}
+                  showFull
+                />
               </div>
               <Button
-                variant="outline"
-                size="sm"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
                 disabled={disabled}
                 onClick={() => setPendingRemove(entry)}
                 aria-label={`Remove ${entry.url}`}
               >
-                <Trash2 size={14} />
+                <Trash2 aria-hidden="true" />
               </Button>
             </li>
           ))}
         </ul>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+      {missing.length > 0 && (
+        <p className="m-0 text-xs text-warning">
+          Sign-in can&apos;t complete until this binding has{' '}
+          {missing.join(' and ')}.
+        </p>
+      )}
+
+      <form
+        className="flex flex-col gap-2 sm:flex-row sm:items-end"
+        onSubmit={(event) => void handleAdd(event)}
+        noValidate
+      >
         <div className="space-y-1.5">
           <Label htmlFor={`${inputId}-kind`}>Kind</Label>
-          <Select value={kind} onValueChange={(next) => setKind(next as OAuthUrlKind)}>
-            <SelectTrigger id={`${inputId}-kind`} className="w-44" aria-label="URL kind">
+          <Select
+            value={kind}
+            onValueChange={(next) => {
+              if (isUrlKind(next)) setKind(next);
+              if (fieldError) setFieldError(null);
+            }}
+            disabled={disabled || adding}
+          >
+            <SelectTrigger id={`${inputId}-kind`} className="h-[34px] w-40">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -147,43 +188,58 @@ export function OAuthAllowedUrlList({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex-1 space-y-1.5">
-          <Label htmlFor={inputId}>
-            {kind === 'redirect_uri' ? 'Redirect URI' : 'Return origin'}
-          </Label>
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Label htmlFor={inputId}>{URL_KIND_LABELS[kind]}</Label>
           <Input
             id={inputId}
             value={value}
-            placeholder={
-              kind === 'redirect_uri'
-                ? 'https://app.example.com/auth/callback'
-                : 'https://app.example.com'
-            }
+            placeholder={PLACEHOLDER[kind]}
             error={fieldError || undefined}
             onChange={(event) => {
               setValue(event.target.value);
               if (fieldError) setFieldError(null);
             }}
+            disabled={disabled || adding}
+            spellCheck={false}
+            autoComplete="off"
             fullWidth
           />
         </div>
-        <Button onClick={() => void handleAdd()} loading={adding} disabled={disabled}>
-          <Plus size={16} className="mr-1" /> Add URL
+        <Button
+          type="submit"
+          variant="secondary"
+          loading={adding}
+          disabled={disabled}
+        >
+          <Plus aria-hidden="true" />
+          Add URL
         </Button>
-      </div>
+      </form>
 
-      <p className="text-xs text-muted-foreground">
-        Matching is exact. Paste each value into the provider console byte for byte — no
-        wildcards, no fragments, and origins are scheme, host and optional port only.
+      <p className="m-0 text-xs text-muted-foreground">
+        Matching is exact: copy each value into the provider console as is. No
+        wildcards or fragments; origins are scheme, host and optional port only.
       </p>
 
       <ConfirmDialog
         isOpen={pendingRemove !== null}
         onClose={() => setPendingRemove(null)}
         onConfirm={() => void handleRemove()}
-        title="Remove allow-listed URL"
-        message="Remove this URL? Sign-in requests that use it will be refused immediately."
-        confirmText="Remove"
+        title={
+          pendingRemove?.kind === 'return_origin'
+            ? 'Remove this return origin?'
+            : 'Remove this redirect URI?'
+        }
+        message={
+          <>
+            Sign-in requests that use{' '}
+            <span className="break-all font-mono text-foreground">
+              {pendingRemove?.url}
+            </span>{' '}
+            are refused immediately.
+          </>
+        }
+        confirmText="Remove URL"
         variant="warning"
         isLoading={removing}
       />

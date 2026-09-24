@@ -1,99 +1,206 @@
 /**
  * EmailTemplatesList
  *
- * Lists every transactional email template with its status (built-in default vs
- * customized version) and a link into the editor.
+ * Table of every transactional template (built-in and custom) with where its
+ * active content comes from, its version, required variables and whether it is
+ * enabled. The list is not paginated by the API, so search is local.
  */
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Pencil } from 'lucide-react';
-import { Badge, Button, EmptyState, ErrorState, Skeleton } from '@/components/common';
-import { useEmailTemplates } from '@/hooks/useEmailTemplates';
-import { ROUTES } from '@/utils/routes';
-import { emailTemplateLabel } from '@/types/email-templates.types';
+import React, { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Mail } from 'lucide-react';
+import { DataView, type DataViewColumn } from '@/components/common';
+import { Badge } from '@/components/ui/badge';
+import { formatDateTime, formatRelativeTime } from '@/utils/formatters';
+import {
+  emailTemplateLabel,
+  emailTemplatePurposeLabel,
+  emailTemplateSourceBadge,
+  emailTemplateStatusBadge,
+  type EmailTemplateSummary,
+} from '@/types/email-templates.types';
+import { emailTemplateEditorPath } from './paths';
 
-export function EmailTemplatesList(): React.JSX.Element {
-  const { templates, isLoading, error, refetch } = useEmailTemplates();
+interface EmailTemplateRow extends EmailTemplateSummary {
+  /** Display name, searchable alongside the code and subject. */
+  name: string;
+}
 
-  if (isLoading) {
-    return <EmailTemplatesListSkeleton />;
-  }
-  if (error) {
-    return <ErrorState title="Couldn't load templates" message={error} onRetry={() => void refetch()} />;
-  }
-  if (templates.length === 0) {
-    return (
-      <EmptyState
-        icon={<Mail />}
-        title="No templates"
-        description="No transactional email templates were returned."
-      />
-    );
-  }
-
+function VariableChips({ names }: { names: string[] }): React.JSX.Element {
+  if (names.length === 0)
+    return <span className="text-xs text-muted-foreground">None</span>;
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {templates.map((t) => (
-        <div
-          key={t.templateCode}
-          className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5"
+    <div className="flex max-w-[260px] flex-wrap gap-1">
+      {names.slice(0, 2).map((name) => (
+        <span
+          key={name}
+          className="max-w-[160px] truncate rounded-sm border border-border bg-secondary/60 px-1.5 py-px font-mono text-[11px] text-foreground"
+          title={`$${name}`}
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <Mail size={18} className="text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">{emailTemplateLabel(t.templateCode)}</h3>
-                <p className="font-mono text-xs text-muted-foreground">{t.templateCode}</p>
-              </div>
-            </div>
-            <Badge variant={t.isCustomized ? 'info' : 'secondary'} size="sm">
-              {t.isCustomized ? `Customized · v${t.version}` : 'Default'}
-            </Badge>
-          </div>
-
-          <p className="line-clamp-2 text-sm text-muted-foreground">
-            <span className="text-muted-foreground/70">Subject: </span>
-            {t.subjectTemplate}
-          </p>
-
-          <div className="mt-auto flex items-center justify-between gap-2 pt-1">
-            <span className="text-xs text-muted-foreground">
-              {t.requiredVariables.length > 0
-                ? `Requires ${t.requiredVariables.map((v) => '$' + v).join(', ')}`
-                : 'No required variables'}
-            </span>
-            <Link to={`${ROUTES.EMAIL_TEMPLATES}/${t.templateCode}`}>
-              <Button variant="outline">
-                <Pencil size={14} className="mr-1.5" /> Edit
-              </Button>
-            </Link>
-          </div>
-        </div>
+          ${name}
+        </span>
       ))}
+      {names.length > 2 && (
+        <span
+          className="px-1 text-[11px] text-muted-foreground"
+          title={names
+            .slice(2)
+            .map((n) => `$${n}`)
+            .join(', ')}
+        >
+          +{names.length - 2}
+        </span>
+      )}
     </div>
   );
 }
 
-function EmailTemplatesListSkeleton(): React.JSX.Element {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-10 w-10 rounded-lg" />
-            <div className="space-y-1.5">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-24" />
-            </div>
+interface EmailTemplatesListProps {
+  templates: EmailTemplateSummary[];
+  isLoading: boolean;
+  /** Rendered in the empty state (one action). */
+  emptyAction?: React.ReactNode;
+}
+
+export function EmailTemplatesList({
+  templates,
+  isLoading,
+  emptyAction,
+}: EmailTemplatesListProps): React.JSX.Element {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const isSearching = search.trim() !== '';
+
+  const rows = useMemo<EmailTemplateRow[]>(
+    () =>
+      templates.map((template) => ({
+        ...template,
+        name: emailTemplateLabel(template.templateCode),
+      })),
+    [templates]
+  );
+
+  const columns = useMemo<DataViewColumn<EmailTemplateRow>[]>(
+    () => [
+      {
+        key: 'name',
+        header: 'Template',
+        render: (_value, row) => (
+          <div className="min-w-0">
+            <Link
+              to={emailTemplateEditorPath(row.templateCode)}
+              onClick={(event) => event.stopPropagation()}
+              className="block truncate text-[13px] font-medium text-foreground no-underline hover:underline"
+            >
+              {row.name}
+            </Link>
+            <span className="block truncate font-mono text-xs text-muted-foreground">
+              {row.templateCode}
+            </span>
           </div>
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-8 w-20 self-end" />
-        </div>
-      ))}
-    </div>
+        ),
+      },
+      {
+        key: 'subjectTemplate',
+        header: 'Subject',
+        hideOnMobile: true,
+        render: (_value, row) => (
+          <span
+            className="line-clamp-2 max-w-[360px] text-[13px] text-muted-foreground"
+            title={row.subjectTemplate}
+          >
+            {row.subjectTemplate || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'source',
+        header: 'Content',
+        width: '190px',
+        render: (_value, row) => {
+          const badge = emailTemplateSourceBadge(row);
+          return (
+            <div className="flex flex-col items-start gap-1">
+              <Badge variant={badge.variant} size="sm">
+                {badge.label}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {row.version !== null ? (
+                  <span className="font-mono">v{row.version}</span>
+                ) : (
+                  'No saved version'
+                )}
+                {row.isDynamic &&
+                  ` · ${emailTemplatePurposeLabel(row.purpose)}`}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        key: 'requiredVariables',
+        header: 'Required variables',
+        hideOnMobile: true,
+        render: (_value, row) => (
+          <VariableChips names={row.requiredVariables} />
+        ),
+      },
+      {
+        key: 'isEnabled',
+        header: 'Status',
+        width: '130px',
+        render: (_value, row) => {
+          const badge = emailTemplateStatusBadge(row);
+          return (
+            <div className="flex flex-col items-start gap-1">
+              <Badge variant={badge.variant} size="sm" dot>
+                {badge.label}
+              </Badge>
+              {!row.isEnabled && row.disabledAt && (
+                <span
+                  className="whitespace-nowrap text-xs text-muted-foreground"
+                  title={formatDateTime(row.disabledAt)}
+                >
+                  {formatRelativeTime(row.disabledAt)}
+                </span>
+              )}
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
+
+  return (
+    <DataView<EmailTemplateRow>
+      data={rows}
+      columns={columns}
+      keyExtractor={(row) => row.templateCode}
+      showSearch
+      enableLocalSearch
+      searchValue={search}
+      onSearchChange={setSearch}
+      searchKeys={['name', 'templateCode', 'subjectTemplate']}
+      searchPlaceholder="Search by name, code or subject"
+      onRowClick={(row) =>
+        void navigate(emailTemplateEditorPath(row.templateCode))
+      }
+      rowClassName={(row) => (row.isEnabled ? '' : 'opacity-70')}
+      isLoading={isLoading}
+      skeletonRows={7}
+      emptyIcon={<Mail className="h-8 w-8" />}
+      emptyMessage={
+        isSearching ? 'No templates match this search' : 'No email templates'
+      }
+      emptyDescription={
+        isSearching
+          ? 'Try a different name, code or subject.'
+          : 'No templates were returned.'
+      }
+      emptyAction={isSearching ? undefined : emptyAction}
+      caption="Email templates"
+    />
   );
 }
 

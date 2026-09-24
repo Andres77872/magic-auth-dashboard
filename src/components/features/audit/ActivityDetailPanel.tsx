@@ -1,513 +1,233 @@
-import React, { memo, useCallback, useMemo } from 'react';
-import { cn } from '@/lib/utils';
+/**
+ * Side sheet for one activity entry. Shows the listed row immediately and
+ * fills in severity, user agent and metadata from `GET /admin/activity/{id}`.
+ * People and projects link by hash; the internal ids are only used to filter.
+ */
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Filter } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetDescription,
 } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import {
-  User,
-  FolderKanban,
-  Clock,
-  Globe,
-  ExternalLink,
-  FileJson,
-  LogIn,
-  LogOut,
-  UserPlus,
-  UserMinus,
-  UserCog,
-  FolderPlus,
-  FolderMinus,
-  FolderCog,
-  Users,
-  Shield,
-  ShieldOff,
-  Layers,
-  Settings,
-  AlertTriangle,
-  FileText,
-} from 'lucide-react';
-import { formatDateTime } from '@/utils/component-utils';
-import { CopyButton } from '@/components/common';
-import type { ActivityLog, ActivityType } from '@/types/audit.types';
-
-type ActivityConfig = {
-  icon: React.ElementType;
-  variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-  label: string;
-};
-
-/**
- * Activity type configuration for icons and colors
- */
-const ACTIVITY_TYPE_CONFIG: Record<
-  ActivityType,
-  {
-    icon: React.ElementType;
-    variant: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-    label: string;
-  }
-> = {
-  user_login: { icon: LogIn, variant: 'success', label: 'User Login' },
-  user_logout: { icon: LogOut, variant: 'secondary', label: 'User Logout' },
-  user_registration: {
-    icon: UserPlus,
-    variant: 'info',
-    label: 'User Registration',
-  },
-  user_update: { icon: UserCog, variant: 'primary', label: 'User Update' },
-  user_status_change: {
-    icon: UserCog,
-    variant: 'warning',
-    label: 'User Status Change',
-  },
-  user_password_reset: {
-    icon: Shield,
-    variant: 'warning',
-    label: 'Password Reset',
-  },
-  user_type_changed: {
-    icon: UserCog,
-    variant: 'warning',
-    label: 'User Type Changed',
-  },
-  project_creation: {
-    icon: FolderPlus,
-    variant: 'success',
-    label: 'Project Created',
-  },
-  project_update: {
-    icon: FolderCog,
-    variant: 'primary',
-    label: 'Project Updated',
-  },
-  project_delete: {
-    icon: FolderMinus,
-    variant: 'error',
-    label: 'Project Deleted',
-  },
-  project_member_add: {
-    icon: UserPlus,
-    variant: 'info',
-    label: 'Project Member Added',
-  },
-  project_member_remove: {
-    icon: UserMinus,
-    variant: 'warning',
-    label: 'Project Member Removed',
-  },
-  project_ownership_transferred: {
-    icon: FolderCog,
-    variant: 'warning',
-    label: 'Ownership Transferred',
-  },
-  group_creation: { icon: Users, variant: 'success', label: 'Group Created' },
-  group_update: { icon: Users, variant: 'primary', label: 'Group Updated' },
-  group_delete: { icon: Users, variant: 'error', label: 'Group Deleted' },
-  user_group_assign: {
-    icon: UserPlus,
-    variant: 'info',
-    label: 'User Added to Group',
-  },
-  user_group_remove: {
-    icon: UserMinus,
-    variant: 'warning',
-    label: 'User Removed from Group',
-  },
-  permission_grant: {
-    icon: Shield,
-    variant: 'warning',
-    label: 'Permission Granted',
-  },
-  permission_revoke: {
-    icon: ShieldOff,
-    variant: 'warning',
-    label: 'Permission Revoked',
-  },
-  role_removed: { icon: ShieldOff, variant: 'warning', label: 'Role Removed' },
-  bulk_role_assignment: {
-    icon: Layers,
-    variant: 'warning',
-    label: 'Bulk Role Assignment',
-  },
-  bulk_group_assignment: {
-    icon: Layers,
-    variant: 'warning',
-    label: 'Bulk Group Assignment',
-  },
-  bulk_user_update: {
-    icon: Layers,
-    variant: 'warning',
-    label: 'Bulk User Update',
-  },
-  bulk_user_delete: {
-    icon: Layers,
-    variant: 'error',
-    label: 'Bulk User Delete',
-  },
-  admin_action: { icon: Settings, variant: 'warning', label: 'Admin Action' },
-  system_event: { icon: AlertTriangle, variant: 'info', label: 'System Event' },
-};
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ActivityIcon } from '@/components/common/ActivityIcon';
+import { CopyableId } from '@/components/common/CopyableId';
+import { useActivityDetail } from '@/hooks/audit/useAuditData';
+import { getActivityLabel } from '@/utils/activity';
+import { formatDateTime } from '@/utils/formatters';
+import { ROUTES } from '@/utils/routes';
+import type {
+  ActivityLog,
+  ActivityProject,
+  ActivityUser,
+} from '@/types/audit.types';
+import { SEVERITY_BADGE, formatStructured } from './audit-format';
 
 export interface ActivityDetailPanelProps {
   activity: ActivityLog | null;
-  isOpen: boolean;
   onClose: () => void;
-  onUserClick?: (userId: string) => void;
-  onProjectClick?: (projectId: string) => void;
-  className?: string;
+  onFilterUser?: (user: ActivityUser) => void;
+  onFilterProject?: (project: ActivityProject) => void;
 }
 
-/**
- * DetailRow - A row displaying a label and value
- */
-const DetailRow = memo(function DetailRow({
+function Row({
   label,
-  value,
-  icon: Icon,
-  monospace = false,
-  className,
+  children,
 }: {
   label: string;
-  value: React.ReactNode;
-  icon?: React.ElementType;
-  monospace?: boolean;
-  className?: string;
-}) {
+  children: React.ReactNode;
+}): React.JSX.Element {
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
-      <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        {label}
-      </span>
-      <div
-        className={cn(
-          'flex items-center gap-2',
-          monospace && 'font-mono text-sm'
-        )}
-      >
-        {Icon && (
-          <Icon
-            className="h-4 w-4 text-muted-foreground flex-shrink-0"
-            aria-hidden="true"
-          />
-        )}
-        <span className="break-all">{value}</span>
-      </div>
+    <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-3 py-2 text-[13px]">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="m-0 min-w-0 break-words text-foreground">{children}</dd>
     </div>
   );
-});
+}
 
-// Default config for unknown activity types
-const DEFAULT_DETAIL_CONFIG: ActivityConfig = {
-  icon: FileText,
-  variant: 'secondary',
-  label: 'Unknown',
-};
-
-// Helper to get activity config (pure function)
-const getActivityConfig = (type: ActivityType): ActivityConfig => {
+function UserLink({ user }: { user: ActivityUser }): React.JSX.Element {
   return (
-    ACTIVITY_TYPE_CONFIG[type] || { ...DEFAULT_DETAIL_CONFIG, label: type }
+    <Link
+      to={`${ROUTES.USERS}/${encodeURIComponent(user.userHash)}`}
+      className="text-foreground no-underline hover:underline"
+    >
+      {user.username}
+    </Link>
   );
-};
+}
 
-/**
- * ActivityDetailPanel - Slide-out panel showing detailed activity information
- * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
- */
-export const ActivityDetailPanel = memo(function ActivityDetailPanel({
+function Structured({ value }: { value: string }): React.JSX.Element {
+  return (
+    <pre className="m-0 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground">
+      {value}
+    </pre>
+  );
+}
+
+export function ActivityDetailPanel({
   activity,
-  isOpen,
   onClose,
-  onUserClick,
-  onProjectClick,
+  onFilterUser,
+  onFilterProject,
 }: ActivityDetailPanelProps): React.JSX.Element {
-  // Memoize the close handler
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) onClose();
-    },
-    [onClose]
-  );
-
-  // Memoize the config based on activity type
-  const config = useMemo(() => {
-    if (!activity) return null;
-    return getActivityConfig(activity.activityType);
-  }, [activity?.activityType]);
-
-  // Memoize click handlers
-  const handleUserClick = useCallback(() => {
-    if (activity?.user && onUserClick) {
-      onUserClick(activity.user.id);
-    }
-  }, [activity?.user, onUserClick]);
-
-  const handleTargetUserClick = useCallback(() => {
-    if (activity?.targetUser && onUserClick) {
-      onUserClick(activity.targetUser.id);
-    }
-  }, [activity?.targetUser, onUserClick]);
-
-  const handleProjectClick = useCallback(() => {
-    if (activity?.project && onProjectClick) {
-      onProjectClick(activity.project.id);
-    }
-  }, [activity?.project, onProjectClick]);
-
-  // Memoize the JSON details
-  const detailsJson = useMemo(() => {
-    if (!activity || Object.keys(activity.details).length === 0) return null;
-    return JSON.stringify(activity.details, null, 2);
-  }, [activity?.details]);
-
-  if (!activity || !config) {
-    return (
-      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-        <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-[540px]">
-          <SheetHeader>
-            <SheetTitle>Activity Details</SheetTitle>
-          </SheetHeader>
-          <div className="flex items-center justify-center h-48 text-muted-foreground">
-            No activity selected
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
-
-  const IconComponent = config.icon;
+  const detail = useActivityDetail(activity?.id ?? null);
+  const entry = detail.activity ?? activity;
+  const details = entry ? formatStructured(entry.details) : null;
+  const metadata = detail.activity
+    ? formatStructured(detail.activity.metadata)
+    : null;
 
   return (
-    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-[540px] overflow-y-auto">
-        <SheetHeader>
-            <div className="flex items-start justify-between gap-4 pr-8">
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    'flex items-center justify-center w-10 h-10 rounded-lg',
-                    config.variant === 'success' && 'bg-success/10',
-                    config.variant === 'error' && 'bg-destructive/10',
-                    config.variant === 'warning' && 'bg-warning/10',
-                    config.variant === 'info' && 'bg-info/10',
-                    config.variant === 'primary' && 'bg-primary/10',
-                    config.variant === 'secondary' && 'bg-muted'
-                  )}
-                >
-                  <IconComponent
-                    className={cn(
-                      'h-5 w-5',
-                      config.variant === 'success' && 'text-success',
-                      config.variant === 'error' && 'text-destructive',
-                      config.variant === 'warning' && 'text-warning',
-                      config.variant === 'info' && 'text-info',
-                      config.variant === 'primary' && 'text-primary',
-                      config.variant === 'secondary' && 'text-muted-foreground'
-                    )}
-                    aria-hidden="true"
-                  />
-                </div>
-                <div>
-                  <SheetTitle className="text-left">{config.label}</SheetTitle>
-                  <SheetDescription className="text-left">
-                    Activity details and metadata
+    <Sheet open={activity !== null} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+        {entry && (
+          <>
+            <SheetHeader>
+              <div className="flex items-center gap-3 pr-6">
+                <ActivityIcon activityType={entry.activityType} />
+                <div className="min-w-0">
+                  <SheetTitle className="truncate text-[17px]">
+                    {getActivityLabel(entry.activityType)}
+                  </SheetTitle>
+                  <SheetDescription className="text-xs">
+                    <time dateTime={entry.createdAt}>
+                      {formatDateTime(entry.createdAt)}
+                    </time>
                   </SheetDescription>
                 </div>
               </div>
-            </div>
-          </SheetHeader>
+            </SheetHeader>
 
-          <div className="mt-6 space-y-6">
-            {/* Activity ID */}
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-              <div>
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide block mb-1">
-                  Activity ID
-                </span>
-                <span className="font-mono text-sm">{activity.id}</span>
+            <dl className="mt-5 divide-y divide-border border-y border-border">
+              <Row label="Severity">
+                {detail.activity ? (
+                  <Badge
+                    variant={SEVERITY_BADGE[detail.activity.severity].variant}
+                    size="sm"
+                  >
+                    {SEVERITY_BADGE[detail.activity.severity].label}
+                  </Badge>
+                ) : detail.isLoading ? (
+                  <Skeleton className="h-4 w-16" />
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </Row>
+              <Row label="Type">
+                <span className="font-mono text-xs">{entry.activityType}</span>
+                {detail.activity?.activityCategory && (
+                  <span className="text-muted-foreground">
+                    {' '}
+                    · {detail.activity.activityCategory}
+                  </span>
+                )}
+              </Row>
+              {detail.activity?.activityDescription && (
+                <Row label="About">{detail.activity.activityDescription}</Row>
+              )}
+              <Row label="Actor">
+                {entry.user ? (
+                  <UserLink user={entry.user} />
+                ) : (
+                  <span className="text-muted-foreground">System</span>
+                )}
+              </Row>
+              {entry.targetUser && (
+                <Row label="Target">
+                  <UserLink user={entry.targetUser} />
+                </Row>
+              )}
+              {entry.project && (
+                <Row label="Project">
+                  <Link
+                    to={`${ROUTES.PROJECTS}/${encodeURIComponent(entry.project.hash)}`}
+                    className="text-foreground no-underline hover:underline"
+                  >
+                    {entry.project.name}
+                  </Link>
+                </Row>
+              )}
+              <Row label="IP address">
+                {entry.ipAddress ? (
+                  <span className="font-mono text-xs">{entry.ipAddress}</span>
+                ) : (
+                  <span className="text-muted-foreground">—</span>
+                )}
+              </Row>
+              {detail.activity?.userAgent && (
+                <Row label="User agent">
+                  <span className="text-xs text-muted-foreground">
+                    {detail.activity.userAgent}
+                  </span>
+                </Row>
+              )}
+              <Row label="Entry ID">
+                <CopyableId id={entry.id} label="Activity ID" />
+              </Row>
+            </dl>
+
+            {detail.error && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Extra details couldn&apos;t be loaded. {detail.error}
+              </p>
+            )}
+
+            {details && (
+              <section className="mt-5 space-y-2">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.07em] text-muted-foreground">
+                  Details
+                </h3>
+                <Structured value={details} />
+              </section>
+            )}
+            {metadata && (
+              <section className="mt-5 space-y-2">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.07em] text-muted-foreground">
+                  Metadata
+                </h3>
+                <Structured value={metadata} />
+              </section>
+            )}
+
+            {(entry.user && onFilterUser) ||
+            (entry.project && onFilterProject) ? (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {entry.user && onFilterUser && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => entry.user && onFilterUser(entry.user)}
+                  >
+                    <Filter aria-hidden="true" />
+                    Only {entry.user.username}
+                  </Button>
+                )}
+                {entry.project && onFilterProject && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      entry.project && onFilterProject(entry.project)
+                    }
+                  >
+                    <Filter aria-hidden="true" />
+                    Only {entry.project.name}
+                  </Button>
+                )}
               </div>
-              <CopyButton value={activity.id} />
-            </div>
-
-            {/* Timestamp */}
-            <DetailRow
-              label="Timestamp"
-              value={formatDateTime(activity.createdAt)}
-              icon={Clock}
-            />
-
-            {/* Activity Type Badge */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Activity Type
-              </span>
-              <Badge variant={config.variant} className="w-fit gap-1.5">
-                <IconComponent className="h-3.5 w-3.5" aria-hidden="true" />
-                {config.label}
-              </Badge>
-            </div>
-
-            <Separator />
-
-            {/* User Information */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold">User Information</h4>
-
-              {activity.user ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <DetailRow
-                      label="Performed By"
-                      value={activity.user.username}
-                      icon={User}
-                    />
-                    {onUserClick && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleUserClick}
-                        className="gap-1"
-                      >
-                        View Profile
-                        <ExternalLink
-                          className="h-3.5 w-3.5"
-                          aria-hidden="true"
-                        />
-                      </Button>
-                    )}
-                  </div>
-                  <DetailRow
-                    label="User Hash"
-                    value={activity.user.userHash}
-                    monospace
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">System action</p>
-              )}
-
-              {activity.targetUser && (
-                <>
-                  <Separator />
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold">Target User</h4>
-                    <div className="flex items-center justify-between">
-                      <DetailRow
-                        label="Username"
-                        value={activity.targetUser.username}
-                        icon={User}
-                      />
-                      {onUserClick && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleTargetUserClick}
-                          className="gap-1"
-                        >
-                          View Profile
-                          <ExternalLink
-                            className="h-3.5 w-3.5"
-                            aria-hidden="true"
-                          />
-                        </Button>
-                      )}
-                    </div>
-                    <DetailRow
-                      label="User Hash"
-                      value={activity.targetUser.userHash}
-                      monospace
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Project Information */}
-            <div className="space-y-4">
-              <h4 className="text-sm font-semibold">Project Context</h4>
-
-              {activity.project ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <DetailRow
-                      label="Project Name"
-                      value={activity.project.name}
-                      icon={FolderKanban}
-                    />
-                    {onProjectClick && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleProjectClick}
-                        className="gap-1"
-                      >
-                        View Project
-                        <ExternalLink
-                          className="h-3.5 w-3.5"
-                          aria-hidden="true"
-                        />
-                      </Button>
-                    )}
-                  </div>
-                  <DetailRow
-                    label="Project Hash"
-                    value={activity.project.hash}
-                    monospace
-                  />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No project context
-                </p>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* IP Address */}
-            <DetailRow
-              label="IP Address"
-              value={activity.ipAddress || 'Not recorded'}
-              icon={Globe}
-              monospace={!!activity.ipAddress}
-            />
-
-            <Separator />
-
-            {/* Activity Details (JSON) */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <FileJson
-                  className="h-4 w-4 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Additional Details
-                </span>
-              </div>
-              {detailsJson ? (
-                <pre className="p-3 bg-muted/50 rounded-lg text-xs font-mono overflow-x-auto max-h-[200px] overflow-y-auto">
-                  {detailsJson}
-                </pre>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No additional details
-                </p>
-              )}
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-});
+            ) : null}
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 export default ActivityDetailPanel;

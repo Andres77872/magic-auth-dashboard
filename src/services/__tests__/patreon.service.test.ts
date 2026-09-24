@@ -101,7 +101,11 @@ describe('patreonService', () => {
       pagination: { limit: 20, offset: 0, total: 5, has_more: false },
     } as never);
 
-    const result = await patreonService.getEntitlements({ limit: 20, offset: 0, status: 'active' });
+    const result = await patreonService.getEntitlements({
+      limit: 20,
+      offset: 0,
+      status: 'active',
+    });
 
     expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/entitlements', {
       limit: 20,
@@ -116,16 +120,98 @@ describe('patreonService', () => {
       planCode: 'tier1',
       tierCode: 'gold',
       tierName: 'Gold',
+      nextRenewalAt: null,
       lastSyncedAt: '2026-06-20T00:00:00Z',
+      staleAfter: null,
       updatedAt: '2026-06-20T01:00:00Z',
     });
-    expect(result.pagination).toEqual({ limit: 20, offset: 0, total: 5, has_more: false });
+    expect(result.pagination).toEqual({
+      limit: 20,
+      offset: 0,
+      total: 5,
+      has_more: false,
+    });
+  });
+
+  it('getEntitlements() sends link-status and search filters with API names', async () => {
+    mockApi.get.mockResolvedValue({
+      success: true,
+      items: [],
+      pagination: {},
+    } as never);
+    await patreonService.getEntitlements({
+      limit: 20,
+      offset: 40,
+      linkStatus: 'linked',
+      search: '  alice ',
+    });
+    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/entitlements', {
+      limit: 20,
+      offset: 40,
+      link_status: 'linked',
+      search: 'alice',
+    });
+  });
+
+  it("marks the API's zone-less UTC timestamps as UTC", async () => {
+    mockApi.get.mockResolvedValue({
+      success: true,
+      items: [
+        {
+          user_hash: 'usr-aaa',
+          last_synced_at: '2026-06-20T08:30:00',
+          stale_after: '2026-06-21T08:30:00Z',
+        },
+      ],
+      pagination: {},
+    } as never);
+    const result = await patreonService.getEntitlements();
+    expect(result.items[0].lastSyncedAt).toBe('2026-06-20T08:30:00Z');
+    expect(result.items[0].staleAfter).toBe('2026-06-21T08:30:00Z');
+  });
+
+  it('getEntitlementHistory() maps transitions', async () => {
+    mockApi.get.mockResolvedValue({
+      success: true,
+      user_hash: 'usr-aaa',
+      items: [
+        {
+          history_id: 'peh-1',
+          previous_status: 'active',
+          new_status: 'former',
+          previous_plan_code: 'plus',
+          new_plan_code: 'free',
+          reason: 'member_absent_from_source_of_truth',
+          sync_source: 'api_pull',
+          observed_at: '2026-06-20T00:00:00',
+        },
+      ],
+    } as never);
+    const items = await patreonService.getEntitlementHistory('usr aaa', 25);
+    expect(mockApi.get).toHaveBeenCalledWith(
+      '/admin/patreon/entitlements/usr%20aaa/history',
+      { limit: 25 }
+    );
+    expect(items[0]).toMatchObject({
+      historyId: 'peh-1',
+      previousStatus: 'active',
+      newStatus: 'former',
+      newPlanCode: 'free',
+      observedAt: '2026-06-20T00:00:00Z',
+    });
   });
 
   it('getEntitlements() omits empty status from the query params', async () => {
-    mockApi.get.mockResolvedValue({ success: true, items: [], pagination: {} } as never);
+    mockApi.get.mockResolvedValue({
+      success: true,
+      items: [],
+      pagination: {},
+    } as never);
     await patreonService.getEntitlements({ limit: 20, offset: 0, status: '' });
-    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/entitlements', { limit: 20, offset: 0 });
+    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/entitlements', {
+      limit: 20,
+      offset: 0,
+    });
   });
 
   it('getEntitlement() maps a single detail object', async () => {
@@ -146,7 +232,9 @@ describe('patreonService', () => {
     } as never);
 
     const detail = await patreonService.getEntitlement('usr-bbb');
-    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/entitlements/usr-bbb');
+    expect(mockApi.get).toHaveBeenCalledWith(
+      '/admin/patreon/entitlements/usr-bbb'
+    );
     expect(detail.userHash).toBe('usr-bbb');
     expect(detail.planCode).toBe('tier1');
     expect(detail.linkStatus).toBe('linked');
@@ -172,11 +260,20 @@ describe('patreonService', () => {
       ],
     } as never);
 
-    const entries = await patreonService.getTierMap();
-    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/tier-map');
-    expect(entries[0].campaignFingerprint).toBe('abc123def456');
-    expect(entries[0].tierFingerprint).toBe('fed654cba321');
-    expect(entries[0].active).toBe(true);
+    const { items, pagination } = await patreonService.getTierMap({
+      limit: 100,
+      offset: 0,
+      active: false,
+    });
+    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/tier-map', {
+      limit: 100,
+      offset: 0,
+      active: 'false',
+    });
+    expect(items[0].campaignFingerprint).toBe('abc123def456');
+    expect(items[0].tierFingerprint).toBe('fed654cba321');
+    expect(items[0].active).toBe(true);
+    expect(pagination.total).toBe(1);
   });
 
   it('getSyncJobs() maps jobs + pagination', async () => {
@@ -199,7 +296,10 @@ describe('patreonService', () => {
     } as never);
 
     const result = await patreonService.getSyncJobs({ limit: 20, offset: 0 });
-    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/sync-jobs', { limit: 20, offset: 0 });
+    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/sync-jobs', {
+      limit: 20,
+      offset: 0,
+    });
     expect(result.items[0].jobId).toBe('psj-1');
     expect(result.items[0].hasError).toBe(true);
     expect(result.pagination.total).toBe(1);
@@ -222,7 +322,10 @@ describe('patreonService', () => {
     } as never);
 
     const result = await patreonService.getWebhooks({ limit: 20, offset: 0 });
-    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/webhooks', { limit: 20, offset: 0 });
+    expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/webhooks', {
+      limit: 20,
+      offset: 0,
+    });
     expect(result.items[0].eventType).toBe('members:update');
     expect(result.items[0].signatureValid).toBe(true);
   });
@@ -251,5 +354,34 @@ describe('patreonService', () => {
     expect(result.accepted).toBe(true);
     expect(result.status).toBe('queued');
     expect(result.correlationId).toBe('psj-xyz');
+  });
+
+  it('resync() sends no user hash for a full sweep, omits an empty note, and keeps not_linked as an outcome', async () => {
+    mockApi.post.mockResolvedValue({
+      success: true,
+      accepted: false,
+      status: 'not_linked',
+      message: 'This user has no linked Patreon membership to resync.',
+    } as never);
+
+    const result = await patreonService.resync({
+      scope: 'all',
+      userHash: 'usr-ignored',
+      reason: '   ',
+      force: true,
+    });
+
+    expect(mockApi.post).toHaveBeenCalledWith('/admin/patreon/resync', {
+      scope: 'all',
+      user_hash: undefined,
+      reason: undefined,
+      force: true,
+    });
+    expect(result).toEqual({
+      accepted: false,
+      status: 'not_linked',
+      correlationId: null,
+      message: 'This user has no linked Patreon membership to resync.',
+    });
   });
 });

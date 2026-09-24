@@ -41,12 +41,12 @@ const truncateHashDisplay = (
 ): string => {
   // Total display length would be startChars + "..." + endChars = startChars + endChars + 3
   const totalDisplayLength = startChars + endChars + 3;
-  
+
   // If hash is shorter than display length, don't truncate
   if (hash.length <= totalDisplayLength) {
     return hash;
   }
-  
+
   return `${hash.slice(0, startChars)}...${hash.slice(-endChars)}`;
 };
 
@@ -63,16 +63,15 @@ export function CopyableId({
   const { showToast } = useToast();
 
   // Determine the display text
-  const displayText = showFull || !truncate 
-    ? id 
-    : truncateHashDisplay(id, startChars, endChars);
+  const displayText =
+    showFull || !truncate ? id : truncateHashDisplay(id, startChars, endChars);
 
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(id);
       setCopied(true);
       showToast('Copied to clipboard', 'success');
-      
+
       // Reset copied state after 2000ms
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -100,11 +99,14 @@ export function CopyableId({
               variant="ghost"
               size="xs"
               className="h-5 w-5 p-0 opacity-60 hover:opacity-100 transition-opacity"
-              onClick={handleCopy}
+              onClick={() => void handleCopy()}
               aria-label="Copy to clipboard"
             >
               {copied ? (
-                <Check className="h-3.5 w-3.5 text-success" aria-hidden="true" />
+                <Check
+                  className="h-3.5 w-3.5 text-success"
+                  aria-hidden="true"
+                />
               ) : (
                 <Copy className="h-3.5 w-3.5" aria-hidden="true" />
               )}

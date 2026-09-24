@@ -1,303 +1,146 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Spinner } from '@/components/ui/spinner';
-import { StatCard } from '@/components/common';
-import { projectService } from '@/services';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { FolderTree, Info } from 'lucide-react';
+import { Panel } from '@/components/common/Panel';
+import { CopyableId } from '@/components/common/CopyableId';
+import { EmptyState } from '@/components/common/EmptyState';
+import { formatDateTime } from '@/utils/formatters';
+import { ROUTES } from '@/utils/routes';
 import type {
-  ProjectDetails,
-  UserAccess,
-  ProjectStatistics,
   ProjectGroupInfo,
+  ProjectInfo,
+  ProjectUserAccess,
 } from '@/types/project.types';
-import { CopyableId } from '@/components/common';
-import { formatDate } from '@/utils/component-utils';
-import {
-  Activity,
-  Clock,
-  Users,
-  Layers,
-  Zap,
-  FolderTree,
-} from 'lucide-react';
+import { ProjectAccessBadge } from './ProjectAccessBadge';
+import { ProjectActivityPanel } from './ProjectActivityPanel';
+import { ProjectAdministratorsPanel } from './ProjectAdministratorsPanel';
 
 interface ProjectOverviewTabProps {
-  project: ProjectDetails;
-  userAccess: UserAccess | null;
-  statistics: ProjectStatistics | null;
-  projectGroups?: ProjectGroupInfo[];
+  project: ProjectInfo;
+  userAccess: ProjectUserAccess;
+  projectGroups: ProjectGroupInfo[];
+  /** Root or an assigned admin (can read the project's user groups). */
+  canManage: boolean;
+  /** Only root may change the project's `admin_…` group. */
+  isRoot: boolean;
 }
 
-export const ProjectOverviewTab: React.FC<ProjectOverviewTabProps> = ({
-  project,
-  userAccess,
-  statistics,
-  projectGroups = [],
-}) => {
-  const [activity, setActivity] = useState<any[]>([]);
-  const [isLoadingActivity, setIsLoadingActivity] = useState(false);
-
-  useEffect(() => {
-    const fetchRecentActivity = async () => {
-      try {
-        setIsLoadingActivity(true);
-        const response = await projectService.getProjectActivity(
-          project.project_hash,
-          {
-            limit: 5,
-          }
-        );
-        if (response.success) {
-          // Backend returns 'activities' key, fallback to 'data' for compatibility
-          setActivity((response as any).activities || response.data || []);
-        }
-      } catch (err) {
-        console.error('Error fetching project activity:', err);
-      } finally {
-        setIsLoadingActivity(false);
-      }
-    };
-
-    fetchRecentActivity();
-  }, [project.project_hash]);
-
-  const getStatValue = (value: number | string | undefined): number => {
-    if (typeof value === 'number') return value;
-    if (typeof value === 'string' && !isNaN(Number(value)))
-      return Number(value);
-    return 0;
-  };
-
-  const totalUsers = getStatValue(statistics?.total_users);
-  const totalGroups = getStatValue(statistics?.total_groups);
-
+function Fact({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
   return (
-    <div className="space-y-6">
-      {/* Stats Cards Row */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <StatCard
-          title="Total Users"
-          value={totalUsers}
-          icon={<Users className="h-5 w-5" aria-hidden="true" />}
-          variant="primary"
-          gradient
-        />
-
-        <StatCard
-          title="Total Groups"
-          value={totalGroups}
-          icon={<Layers className="h-5 w-5" aria-hidden="true" />}
-          variant="success"
-          gradient
-        />
-
-        <StatCard
-          title="Active Sessions"
-          value={statistics?.active_sessions ?? 0}
-          icon={<Zap className="h-5 w-5" aria-hidden="true" />}
-          variant="info"
-          gradient
-        />
-
-        <StatCard
-          title="Project Groups"
-          value={projectGroups.length}
-          icon={<FolderTree className="h-5 w-5" aria-hidden="true" />}
-          variant="warning"
-          gradient
-        />
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Project Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Project Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">
-                Project ID
-              </p>
-              <CopyableId
-                id={project.project_hash}
-                label="Click to copy project hash"
-                className="w-full"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Created
-                </p>
-                <p className="text-sm">{formatDate(project.created_at, {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Last Updated
-                </p>
-                <p className="text-sm">
-                  {project.updated_at
-                    ? formatDate(project.updated_at, {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : 'Never'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Status
-                </p>
-                {project.is_active !== false ? (
-                  <Badge variant="success">Active</Badge>
-                ) : (
-                  <Badge variant="warning">Inactive</Badge>
-                )}
-              </div>
-              {userAccess?.access_level && (
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Your Access
-                  </p>
-                  <Badge variant="info">{userAccess.access_level}</Badge>
-                </div>
-              )}
-            </div>
-
-            {userAccess?.permissions && userAccess.permissions.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Your Permissions
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {userAccess.permissions.map((permission, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {permission}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Project Groups */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderTree className="h-5 w-5" />
-              Project Groups
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {projectGroups.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-6 text-center">
-                <FolderTree className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  No project groups assigned
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  This project is not part of any project groups
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {projectGroups.map((group) => (
-                  <div
-                    key={group.group_hash}
-                    className="p-3 rounded-lg border bg-muted/30 space-y-2"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm truncate">
-                          {group.group_name}
-                        </p>
-                        {group.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                            {group.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <CopyableId
-                      id={group.group_hash}
-                      label="Click to copy group hash"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingActivity ? (
-            <div className="flex items-center justify-center py-8">
-              <Spinner size="lg" />
-            </div>
-          ) : activity.length > 0 ? (
-            <div className="space-y-3">
-              {activity.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-start justify-between gap-4 p-3 rounded-lg border"
-                >
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <p className="font-medium text-sm">
-                      {item.action || item.activity_type || 'Activity'}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.description ||
-                        item.details ||
-                        'No details available'}
-                    </p>
-                  </div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
-                    <Clock className="h-3 w-3" />
-                    {item.created_at && formatDate(item.created_at, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Activity className="h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">
-                No recent activity found
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-[140px_minmax(0,1fr)] items-start gap-3 py-2.5 text-[13px]">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="m-0 min-w-0 text-foreground">{children}</dd>
     </div>
   );
-};
+}
+
+/** Facts about the project, where it sits in the access chain, who administers it and what happened recently. */
+export function ProjectOverviewTab({
+  project,
+  userAccess,
+  projectGroups,
+  canManage,
+  isRoot,
+}: ProjectOverviewTabProps): React.JSX.Element {
+  return (
+    <div className="space-y-6">
+      {!canManage && (
+        <div className="flex gap-2.5 rounded-lg border border-border bg-card px-4 py-3 text-[13px] text-muted-foreground">
+          <Info
+            className="mt-0.5 h-4 w-4 shrink-0 text-info"
+            aria-hidden="true"
+          />
+          <p className="m-0">
+            You reach this project through your user groups but don&apos;t
+            administer it. Members, groups, sign-in and settings are available
+            to root users and the project&apos;s administrators.
+          </p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <Panel title="Details">
+            <dl className="m-0 divide-y divide-border">
+              <Fact label="Project hash">
+                <CopyableId id={project.project_hash} label="Project hash" />
+              </Fact>
+              <Fact label="Created">
+                {formatDateTime(project.created_at, 'Not reported')}
+              </Fact>
+              {project.updated_at && (
+                <Fact label="Last updated">
+                  {formatDateTime(project.updated_at)}
+                </Fact>
+              )}
+              <Fact label="Your access">
+                <div className="flex flex-wrap items-center gap-2">
+                  <ProjectAccessBadge accessLevel={userAccess.access_level} />
+                  <span className="text-xs text-muted-foreground">
+                    {userAccess.access_level === 'admin_access'
+                      ? isRoot
+                        ? 'Root users administer every project.'
+                        : 'You are one of its administrators.'
+                      : 'Through your user groups.'}
+                  </span>
+                </div>
+              </Fact>
+            </dl>
+          </Panel>
+
+          <ProjectActivityPanel projectHash={project.project_hash} />
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-6">
+          <Panel
+            title="Project groups"
+            description="User groups granted one of these groups can sign in to the project."
+            padding="none"
+          >
+            {projectGroups.length === 0 ? (
+              <EmptyState
+                icon={<FolderTree />}
+                title="Not in any project group"
+                description="No user group can reach this project until it is added to a project group."
+                size="sm"
+              />
+            ) : (
+              <ul className="m-0 list-none divide-y divide-border px-5 py-1">
+                {projectGroups.map((group) => (
+                  <li key={group.group_hash} className="py-2.5">
+                    <Link
+                      to={`${ROUTES.PROJECT_GROUPS}/${encodeURIComponent(group.group_hash)}`}
+                      className="block truncate text-[13px] font-medium text-foreground no-underline hover:underline"
+                    >
+                      {group.group_name}
+                    </Link>
+                    {group.description && (
+                      <p className="m-0 truncate text-xs text-muted-foreground">
+                        {group.description}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
+
+          {canManage && (
+            <ProjectAdministratorsPanel
+              projectHash={project.project_hash}
+              canEdit={isRoot}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ProjectOverviewTab;

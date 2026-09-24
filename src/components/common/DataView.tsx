@@ -316,7 +316,7 @@ export function DataView<T extends object>({
   // RENDER TABLE VIEW
   // ============================================================================
 
-  const renderTableView = () => (
+  const renderTableView = (): React.JSX.Element => (
     <DataViewTableView
       data={displayData}
       columns={columns}
@@ -351,7 +351,7 @@ export function DataView<T extends object>({
   // RENDER GRID VIEW
   // ============================================================================
 
-  const renderGridView = () => (
+  const renderGridView = (): React.JSX.Element => (
     <DataViewGridView
       data={displayData}
       getItemKey={getItemKey}
@@ -371,7 +371,7 @@ export function DataView<T extends object>({
   // RENDER RESPONSIVE VIEW (Cards on mobile, Table on desktop)
   // ============================================================================
 
-  const renderResponsiveView = () => {
+  const renderResponsiveView = (): React.JSX.Element => {
     if (!renderCard) {
       // Fallback to table if no card renderer
       return renderTableView();

@@ -47,7 +47,7 @@ export function SearchBar({
     };
   }, [searchValue, debouncedSearch]);
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     setSearchValue('');
     onSearch('');
   };
@@ -57,7 +57,7 @@ export function SearchBar({
   return (
     <div className={cn('relative', className)}>
       <Search
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+        className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-muted-foreground"
         style={{ width: iconSize, height: iconSize }}
         aria-hidden="true"
       />
@@ -90,4 +90,3 @@ export function SearchBar({
 }
 
 export default SearchBar;
-

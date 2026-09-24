@@ -62,4 +62,4 @@ export interface SystemHealthResponse extends ApiResponse {
   status: string;
   timestamp: string;
   components: Record<string, HealthComponent>;
-} 
+}

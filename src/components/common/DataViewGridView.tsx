@@ -50,7 +50,7 @@ export function DataViewGridView<T extends object>({
   emptyAction,
   caption,
 }: DataViewGridViewProps<T>): React.JSX.Element {
-  const getGridClasses = () => {
+  const getGridClasses = (): string => {
     const mobile = gridColumns.mobile ?? 1;
     const tablet = gridColumns.tablet ?? 2;
     const desktop = gridColumns.desktop ?? 3;

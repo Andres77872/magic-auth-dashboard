@@ -22,20 +22,24 @@ export { ProjectSignInTab } from './ProjectSignInTab';
 export type { ProjectSignInTabProps } from './ProjectSignInTab';
 
 export {
+  CONNECTION_STATUS_OPTIONS,
   EXISTING_USER_POLICY_OPTIONS,
   PROVIDER_TYPE_LABELS,
   PROVISIONING_MODE_OPTIONS,
   READINESS_CHECK_LABELS,
   URL_KIND_LABELS,
+  allowListSummary,
   bindingEffectiveState,
-  catalogStatusVariant,
-  connectionStatusVariant,
-  credentialStatusVariant,
+  catalogStatusPresentation,
+  connectionStatusPresentation,
+  credentialStatusPresentation,
   isBindingConflict,
   isCatalogDrift,
+  provisioningModeLabel,
   provisioningModeRequiresGroup,
-  provisioningModeVariant,
   providerTypeLabel,
   readinessCheckLabel,
+  restrictionLabel,
   validateAllowedUrl,
+  validateConnectionKey,
 } from './oauth-status';

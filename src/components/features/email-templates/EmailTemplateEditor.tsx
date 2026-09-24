@@ -1,492 +1,705 @@
 /**
  * EmailTemplateEditor
  *
- * Edits a transactional template's subject + HTML + plain-text as one versioned
- * unit, with an allowlisted variable insert menu, live server preview (sandboxed
- * iframe / plain-text), send-test, reset-to-default, and version history with
- * rollback.
+ * Edits a template's subject + HTML + plain text as one versioned unit:
+ * page header with the primary Save action, a content panel with an
+ * allowlisted variable insert menu, a live server preview, version history
+ * with restore, sample data, and reset / disable / enable.
  *
- * The container loads the template; the inner form is keyed by code+version so a
- * fresh load (incl. after save/rollback) re-initialises the draft via lazy
- * useState — no copy-prop-to-state effect required.
+ * The page loads the template and passes the mutations in; it re-mounts this
+ * component (via `key`) whenever the active version changes, so the draft is
+ * initialised once from props — no prop-to-state syncing effect.
  */
 
 import React from 'react';
-import { History, RotateCcw, Save, Send } from 'lucide-react';
-import { Badge, Button, ConfirmDialog, Input, Skeleton } from '@/components/common';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useToast } from '@/hooks';
-import { useEmailTemplate } from '@/hooks/useEmailTemplates';
 import {
+  AlertCircle,
+  AlertTriangle,
+  History,
+  MoreHorizontal,
+  Power,
+  RotateCcw,
+  Send,
+} from 'lucide-react';
+import {
+  ActionsMenu,
+  ConfirmDialog,
+  FactList,
+  PageHeader,
+  Panel,
+  TabNavigation,
+  type ActionMenuItem,
+} from '@/components/common';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useToast } from '@/hooks/useToast';
+import { useEmailTemplatePreview } from '@/hooks/useEmailTemplates';
+import { formatDateTime, formatRelativeTime } from '@/utils/formatters';
+import {
+  EMAIL_TEMPLATE_LIMITS,
   draftFieldIssues,
   emailTemplateLabel,
+  emailTemplatePurposeLabel,
+  emailTemplateSourceBadge,
+  emailTemplateStatusBadge,
   validateTemplateDraft,
   type EmailTemplateDetail,
   type EmailTemplateDraft,
-  type EmailTemplatePreview as EmailTemplatePreviewData,
+  type EmailTemplateVersion,
   type SendTestResult,
 } from '@/types/email-templates.types';
+import {
+  EmailTemplatePreview,
+  type EmailPreviewMode,
+} from './EmailTemplatePreview';
 import { VariableInsertMenu } from './VariableInsertMenu';
-import { EmailTemplatePreview } from './EmailTemplatePreview';
+import { insertAtCaret } from './caret';
 
-type Field = 'subject' | 'html' | 'text';
+type Field = 'subject' | EmailPreviewMode;
 
-const SUBJECT_MAX_LENGTH = 255; // mirrors the backend subject limit
-
-interface EmailTemplateEditorProps {
-  templateCode: string;
-  /** Reports unsaved-edit state up so the page can guard navigation away. */
+export interface EmailTemplateEditorProps {
+  template: EmailTemplateDetail;
+  onSave: (draft: EmailTemplateDraft) => Promise<number | null>;
+  onRollback: (version: number) => Promise<void>;
+  onDisable: () => Promise<void>;
+  onSendTest: (draft?: EmailTemplateDraft) => Promise<SendTestResult>;
+  /** Reports unsaved-edit state so the page can guard navigation away. */
   onDirtyChange?: (dirty: boolean) => void;
+}
+
+function sameDraft(a: EmailTemplateDraft, b: EmailTemplateDraft): boolean {
+  return (
+    a.subjectTemplate === b.subjectTemplate &&
+    a.htmlTemplate === b.htmlTemplate &&
+    a.textTemplate === b.textTemplate
+  );
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
 }
 
 export function EmailTemplateEditor({
-  templateCode,
+  template,
+  onSave,
+  onRollback,
+  onDisable,
+  onSendTest,
   onDirtyChange,
 }: EmailTemplateEditorProps): React.JSX.Element {
-  const { template, isLoading, error, save, preview, sendTest, rollback } = useEmailTemplate(templateCode);
-
-  if (isLoading) {
-    return <EditorSkeleton />;
-  }
-  if (error || !template) {
-    return (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
-        {error ?? 'Template not found.'}
-      </div>
-    );
-  }
-
-  return (
-    <EditorForm
-      key={`${template.templateCode}:${template.version ?? 'code'}`}
-      template={template}
-      save={save}
-      preview={preview}
-      sendTest={sendTest}
-      rollback={rollback}
-      onDirtyChange={onDirtyChange}
-    />
-  );
-}
-
-interface EditorFormProps {
-  template: EmailTemplateDetail;
-  save: (draft: EmailTemplateDraft) => Promise<number | null>;
-  preview: (draft?: EmailTemplateDraft) => Promise<EmailTemplatePreviewData>;
-  sendTest: (draft?: EmailTemplateDraft) => Promise<SendTestResult>;
-  rollback: (version: number) => Promise<void>;
-  onDirtyChange?: (dirty: boolean) => void;
-}
-
-function EditorForm({
-  template,
-  save,
-  preview,
-  sendTest,
-  rollback,
-  onDirtyChange,
-}: EditorFormProps): React.JSX.Element {
   const { showToast } = useToast();
+  const label = emailTemplateLabel(template.templateCode);
 
-  const [draft, setDraft] = React.useState<EmailTemplateDraft>(() => ({
-    subjectTemplate: template.subjectTemplate,
-    htmlTemplate: template.htmlTemplate,
-    textTemplate: template.textTemplate,
-  }));
-  const [activeTab, setActiveTab] = React.useState<'html' | 'text'>('html');
-  const [previewData, setPreviewData] = React.useState<EmailTemplatePreviewData>({
-    subject: '',
-    html: '',
-    text: '',
-  });
-  const [previewLoading, setPreviewLoading] = React.useState(false);
-  const [previewError, setPreviewError] = React.useState<string | null>(null);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [isSending, setIsSending] = React.useState(false);
-  const [isRollingBack, setIsRollingBack] = React.useState(false);
-  const [showHistory, setShowHistory] = React.useState(false);
-  const [confirmVersion, setConfirmVersion] = React.useState<number | null>(null);
-  const [resetOpen, setResetOpen] = React.useState(false);
+  const saved = React.useMemo<EmailTemplateDraft>(
+    () => ({
+      subjectTemplate: template.subjectTemplate,
+      htmlTemplate: template.htmlTemplate,
+      textTemplate: template.textTemplate,
+    }),
+    [template.subjectTemplate, template.htmlTemplate, template.textTemplate]
+  );
+  const [draft, setDraft] = React.useState<EmailTemplateDraft>(saved);
+  const [body, setBody] = React.useState<EmailPreviewMode>('html');
+  const [pending, setPending] = React.useState<
+    'save' | 'send' | 'rollback' | 'disable' | 'enable' | null
+  >(null);
+  const [confirm, setConfirm] = React.useState<
+    'reset' | 'disable' | 'enable' | null
+  >(null);
+  const [restoreVersion, setRestoreVersion] = React.useState<number | null>(
+    null
+  );
 
   const subjectRef = React.useRef<HTMLInputElement>(null);
-  const htmlRef = React.useRef<HTMLTextAreaElement>(null);
-  const textRef = React.useRef<HTMLTextAreaElement>(null);
+  const bodyRef = React.useRef<HTMLTextAreaElement>(null);
   const lastFocused = React.useRef<Field>('html');
 
+  const variableRules = React.useMemo(
+    () => ({
+      allowedVariables: template.allowedVariables,
+      requiredVariables: template.requiredVariables,
+    }),
+    [template.allowedVariables, template.requiredVariables]
+  );
   const validation = React.useMemo(
-    () =>
-      validateTemplateDraft(draft, {
-        allowedVariables: template.allowedVariables,
-        requiredVariables: template.requiredVariables,
-      }),
-    [draft, template]
+    () => validateTemplateDraft(draft, variableRules),
+    [draft, variableRules]
   );
-
   const fieldIssues = React.useMemo(
-    () => draftFieldIssues(draft, { allowedVariables: template.allowedVariables }),
-    [draft, template.allowedVariables]
+    () => draftFieldIssues(draft, variableRules),
+    [draft, variableRules]
   );
 
-  const isDirty =
-    draft.subjectTemplate !== template.subjectTemplate ||
-    draft.htmlTemplate !== template.htmlTemplate ||
-    draft.textTemplate !== template.textTemplate;
-
+  const isDirty = !sameDraft(draft, saved);
   const isAtDefault =
-    draft.subjectTemplate === template.default.subjectTemplate &&
-    draft.htmlTemplate === template.default.htmlTemplate &&
-    draft.textTemplate === template.default.textTemplate;
+    template.builtInDefault !== null &&
+    sameDraft(draft, template.builtInDefault);
+  const activeVersion =
+    template.versions.find((version) => version.isActive) ?? null;
 
-  // Report dirty state up (page guards navigation); clear it on unmount.
+  const {
+    preview,
+    isLoading: previewLoading,
+    error: previewError,
+  } = useEmailTemplatePreview(template.templateCode, draft, {
+    enabled: validation.valid,
+  });
+
+  // Report dirty state up (the page guards navigation); clear it on unmount.
   React.useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
-  React.useEffect(() => {
-    return (): void => onDirtyChange?.(false);
-  }, [onDirtyChange]);
-
-  // Warn on tab close / reload while there are unsaved edits. (The app uses a
-  // non-data <BrowserRouter>, so in-app navigation is guarded by the page.)
-  React.useEffect(() => {
-    if (!isDirty) return undefined;
-    const handler = (event: BeforeUnloadEvent): void => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handler);
-    return (): void => window.removeEventListener('beforeunload', handler);
-  }, [isDirty]);
-
-  // Debounced live preview from the backend (authoritative render). All state
-  // updates happen inside the async timeout callback, not the effect body. While
-  // the draft is invalid we keep the last render (shown as "paused") and skip.
-  const previewValid = validation.valid;
-  React.useEffect(() => {
-    if (!previewValid) return undefined;
-    let cancelled = false;
-    const handle = window.setTimeout(() => {
-      setPreviewLoading(true);
-      preview(draft)
-        .then((result) => {
-          if (!cancelled) {
-            setPreviewData({ subject: result.subject, html: result.html, text: result.text });
-            setPreviewError(null);
-          }
-        })
-        .catch((err: unknown) => {
-          if (!cancelled) setPreviewError(err instanceof Error ? err.message : 'Preview failed');
-        })
-        .finally(() => {
-          if (!cancelled) setPreviewLoading(false);
-        });
-    }, 500);
-    return (): void => {
-      cancelled = true;
-      window.clearTimeout(handle);
-    };
-  }, [draft, previewValid, preview]);
+  React.useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
 
   const insertVariable = (token: string): void => {
-    const field = lastFocused.current;
-    const ref =
-      field === 'subject' ? subjectRef.current : field === 'text' ? textRef.current : htmlRef.current;
+    const target: Field = lastFocused.current === 'subject' ? 'subject' : body;
     const key: keyof EmailTemplateDraft =
-      field === 'subject' ? 'subjectTemplate' : field === 'text' ? 'textTemplate' : 'htmlTemplate';
-    const current = draft[key];
-    const start = ref?.selectionStart ?? current.length;
-    const end = ref?.selectionEnd ?? current.length;
-    const next = current.slice(0, start) + token + current.slice(end);
+      target === 'subject'
+        ? 'subjectTemplate'
+        : target === 'text'
+          ? 'textTemplate'
+          : 'htmlTemplate';
+    const field = target === 'subject' ? subjectRef.current : bodyRef.current;
+    const { next, restore } = insertAtCaret(field, draft[key], token);
     setDraft((prev) => ({ ...prev, [key]: next }));
-    requestAnimationFrame(() => {
-      if (ref) {
-        const pos = start + token.length;
-        ref.focus();
-        ref.setSelectionRange(pos, pos);
-      }
+    requestAnimationFrame(restore);
+  };
+
+  const run = async (
+    kind: NonNullable<typeof pending>,
+    action: () => Promise<string>,
+    failure: string
+  ): Promise<boolean> => {
+    setPending(kind);
+    try {
+      showToast(await action(), 'success');
+      return true;
+    } catch (err) {
+      showToast(errorMessage(err, failure), 'error');
+      return false;
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const handleSave = (): void => {
+    if (!validation.valid || !isDirty || pending) return;
+    void run(
+      'save',
+      async () => {
+        const version = await onSave(draft);
+        return version !== null
+          ? `Saved ${label} as version ${version}.`
+          : `Saved ${label}.`;
+      },
+      'The template could not be saved.'
+    );
+  };
+
+  // A dirty draft is what gets tested, so an invalid draft blocks the test
+  // (otherwise the active version would be sent instead of the edits).
+  const sendBlockedReason = !template.isEnabled
+    ? 'Enable the template before sending a test.'
+    : isDirty && !validation.valid
+      ? 'Fix the problems in the draft before sending a test of it.'
+      : null;
+  const sendHint =
+    sendBlockedReason ??
+    (isDirty
+      ? 'Sends your unsaved draft to your own verified email address.'
+      : 'Sends the active version to your own verified email address.');
+
+  const handleSendTest = (): void => {
+    if (sendBlockedReason || pending) return;
+    void run(
+      'send',
+      async () => {
+        const result = await onSendTest(isDirty ? draft : undefined);
+        return `Test email sent to ${result.recipientMasked}.`;
+      },
+      'The test email could not be sent.'
+    );
+  };
+
+  const handleRestore = async (version: number): Promise<void> => {
+    const ok = await run(
+      'rollback',
+      async () => {
+        await onRollback(version);
+        return `Version ${version} is active again.`;
+      },
+      'The version could not be restored.'
+    );
+    if (ok) setRestoreVersion(null);
+  };
+
+  const handleDisable = async (): Promise<void> => {
+    const ok = await run(
+      'disable',
+      async () => {
+        await onDisable();
+        return `${label} is disabled.`;
+      },
+      'The template could not be disabled.'
+    );
+    if (ok) setConfirm(null);
+  };
+
+  // Re-activating the current stored version re-enables without a new version;
+  // a built-in default has no stored version, so enabling saves it as one.
+  const canEnable =
+    !template.isEnabled &&
+    (template.version !== null || template.source === 'code');
+  const handleEnable = async (): Promise<void> => {
+    const ok = await run(
+      'enable',
+      async () => {
+        if (template.version !== null) await onRollback(template.version);
+        else await onSave(saved);
+        return `${label} is enabled.`;
+      },
+      'The template could not be enabled.'
+    );
+    if (ok) setConfirm(null);
+  };
+
+  const menuItems: ActionMenuItem[] = [];
+  if (template.builtInDefault !== null) {
+    menuItems.push({
+      key: 'reset',
+      label: 'Load built-in default',
+      icon: <RotateCcw />,
+      onClick: () => setConfirm('reset'),
+      disabled: isAtDefault || pending !== null,
     });
-  };
-
-  const handleSave = async (): Promise<void> => {
-    if (!validation.valid) return;
-    setIsSaving(true);
-    try {
-      const version = await save(draft);
-      showToast(
-        `Saved ${emailTemplateLabel(template.templateCode)}${version ? ` (v${version})` : ''}`,
-        'success'
-      );
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to save template', 'error');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Disabled while a dirty draft is invalid, so admins can't unknowingly test the
-  // active version instead of their edits.
-  const sendTestDisabled = isSending || (isDirty && !validation.valid);
-  const sendTestHint =
-    isDirty && !validation.valid
-      ? 'Fix the validation errors before sending a test of your draft.'
-      : isDirty
-        ? 'Sends a rendered test of your unsaved draft to your verified email.'
-        : 'Sends the active version to your verified email address.';
-
-  const handleSendTest = async (): Promise<void> => {
-    if (sendTestDisabled) return;
-    setIsSending(true);
-    try {
-      // Dirty + valid → test the draft; clean → test the active version.
-      const result = await sendTest(isDirty ? draft : undefined);
-      showToast(`Test email sent to ${result.recipientMasked}`, 'success');
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Failed to send test email', 'error');
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const confirmReset = (): void => {
-    setDraft({
-      subjectTemplate: template.default.subjectTemplate,
-      htmlTemplate: template.default.htmlTemplate,
-      textTemplate: template.default.textTemplate,
+  }
+  if (template.isEnabled) {
+    menuItems.push({
+      key: 'disable',
+      label: 'Disable template',
+      icon: <Power />,
+      onClick: () => setConfirm('disable'),
+      disabled: pending !== null,
+      destructive: true,
     });
-    setResetOpen(false);
-    showToast('Loaded the built-in default. Save to apply it.', 'info');
-  };
+  }
 
-  const handleRollback = async (version: number): Promise<void> => {
-    setIsRollingBack(true);
-    try {
-      await rollback(version);
-      setConfirmVersion(null);
-      showToast(`Rolled back to v${version}`, 'success');
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Rollback failed', 'error');
-    } finally {
-      setIsRollingBack(false);
-    }
-  };
+  const statusBadge = emailTemplateStatusBadge(template);
+  const sourceBadge = emailTemplateSourceBadge(template);
+
+  const subtitle = (
+    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+      <span className="font-mono text-xs">{template.templateCode}</span>
+      {template.isDynamic && (
+        <span>· {emailTemplatePurposeLabel(template.purpose)}</span>
+      )}
+      <span aria-hidden="true">·</span>
+      {activeVersion ? (
+        <span title={formatDateTime(activeVersion.createdAt)}>
+          Version {activeVersion.version} saved{' '}
+          {formatRelativeTime(activeVersion.createdAt)}
+        </span>
+      ) : template.source === 'code' ? (
+        <span>Sending the built-in default</span>
+      ) : (
+        <span>No saved version</span>
+      )}
+    </span>
+  );
 
   return (
-    <div className="space-y-4">
-      {/* Action bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span className="font-mono text-xs">{template.templateCode}</span>
-          <Badge variant={template.isCustomized ? 'info' : 'secondary'} size="sm">
-            {template.isCustomized ? `Customized · v${template.version}` : 'Built-in default'}
-          </Badge>
-          {isDirty && (
-            <Badge variant="warning" size="sm" dot>
-              Unsaved changes
+    <>
+      <PageHeader
+        title={label}
+        subtitle={subtitle}
+        badge={
+          <>
+            <Badge variant={statusBadge.variant} size="sm" dot>
+              {statusBadge.label}
             </Badge>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setShowHistory((v) => !v)}>
-            <History size={15} className="mr-1.5" /> History
-          </Button>
-          <Button variant="outline" onClick={() => setResetOpen(true)} disabled={isAtDefault}>
-            <RotateCcw size={15} className="mr-1.5" /> Reset to default
-          </Button>
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {/* span keeps the tooltip reachable even when the button is disabled */}
-                <span className="inline-flex">
-                  <Button
-                    variant="outline"
-                    onClick={() => void handleSendTest()}
-                    disabled={sendTestDisabled}
+            <Badge variant={sourceBadge.variant} size="sm">
+              {sourceBadge.label}
+            </Badge>
+            {isDirty && (
+              <Badge variant="warning" size="sm">
+                Unsaved changes
+              </Badge>
+            )}
+          </>
+        }
+        actions={
+          <>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {/* The span keeps the hint reachable while the button is disabled. */}
+                  <span
+                    className="inline-flex"
+                    tabIndex={sendBlockedReason ? 0 : -1}
                   >
-                    <Send size={15} className="mr-1.5" /> {isSending ? 'Sending…' : 'Send test'}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{sendTestHint}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <Button
-            variant="primary"
-            onClick={() => void handleSave()}
-            disabled={!validation.valid || !isDirty || isSaving}
-          >
-            <Save size={15} className="mr-1.5" /> {isSaving ? 'Saving…' : 'Save'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Version history */}
-      {showHistory && (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Version history</h3>
-          {template.versions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No saved versions yet — this template uses the built-in default.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {template.versions.map((v) => (
-                <li key={v.version} className="flex items-center justify-between gap-3 py-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-muted-foreground">v{v.version}</span>
-                    {v.isActive && (
-                      <Badge variant="success" size="sm">
-                        Active
-                      </Badge>
-                    )}
-                    <span className="text-foreground">{v.subjectTemplate}</span>
-                    {v.createdAt && (
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(v.createdAt).toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                  {!v.isActive && (
-                    <Button variant="outline" onClick={() => setConfirmVersion(v.version)}>
-                      Restore
+                    <Button
+                      variant="secondary"
+                      onClick={handleSendTest}
+                      disabled={Boolean(sendBlockedReason) || pending !== null}
+                      loading={pending === 'send'}
+                    >
+                      <Send aria-hidden="true" />
+                      Send test
                     </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {/* Editor + preview */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3 rounded-lg border border-border bg-card p-4">
-          <Input
-            id="tmpl-subject"
-            ref={subjectRef}
-            fullWidth
-            label="Subject"
-            value={draft.subjectTemplate}
-            maxLength={SUBJECT_MAX_LENGTH}
-            showCharCount
-            helperText="Single line. Insert $variables from the menu below."
-            onFocus={() => (lastFocused.current = 'subject')}
-            onChange={(e) => setDraft((prev) => ({ ...prev, subjectTemplate: e.target.value }))}
-            placeholder="Activate your $app_name email"
-          />
-
-          <VariableInsertMenu
-            variables={template.allowedVariables}
-            required={template.requiredVariables}
-            onInsert={insertVariable}
-          />
-
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'html' | 'text')}>
-            <TabsList>
-              <TabsTrigger value="html">
-                HTML body
-                {fieldIssues.html && (
-                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="text">
-                Plain text
-                {fieldIssues.text && (
-                  <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-warning" aria-hidden="true" />
-                )}
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="html">
-              <Textarea
-                ref={htmlRef}
-                aria-label="HTML body"
-                value={draft.htmlTemplate}
-                onFocus={() => (lastFocused.current = 'html')}
-                onChange={(e) => setDraft((prev) => ({ ...prev, htmlTemplate: e.target.value }))}
-                spellCheck={false}
-                className="min-h-[480px] font-mono text-xs leading-relaxed"
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{sendHint}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {menuItems.length > 0 && (
+              <ActionsMenu
+                ariaLabel="More template actions"
+                triggerIcon={<MoreHorizontal className="h-4 w-4" />}
+                triggerClassName="h-[34px] w-[34px] border border-input bg-card"
+                items={menuItems}
               />
-            </TabsContent>
-            <TabsContent value="text">
-              <Textarea
-                ref={textRef}
-                aria-label="Plain text body"
-                value={draft.textTemplate}
-                onFocus={() => (lastFocused.current = 'text')}
-                onChange={(e) => setDraft((prev) => ({ ...prev, textTemplate: e.target.value }))}
-                spellCheck={false}
-                className="min-h-[480px] font-mono text-xs leading-relaxed"
-              />
-            </TabsContent>
-          </Tabs>
-
-          {!validation.valid && (
-            <ul
-              role="alert"
-              aria-live="polite"
-              className="space-y-1 rounded-md border border-warning/30 bg-warning/5 p-3 text-xs text-warning"
+            )}
+            <Button
+              onClick={handleSave}
+              disabled={!validation.valid || !isDirty || pending !== null}
+              loading={pending === 'save'}
             >
-              {validation.errors.map((err) => (
-                <li key={err}>• {err}</li>
-              ))}
-            </ul>
-          )}
-        </div>
+              Save
+            </Button>
+          </>
+        }
+      />
 
-        <div className="min-h-[520px]">
+      <div className="space-y-4">
+        {!template.isEnabled && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive-subtle px-4 py-3"
+          >
+            <div className="flex min-w-0 items-start gap-2.5 text-[13px] text-destructive-subtle-foreground">
+              <AlertTriangle
+                className="mt-0.5 h-4 w-4 shrink-0"
+                aria-hidden="true"
+              />
+              <p className="m-0">
+                This template is disabled
+                {template.disabledAt && (
+                  <span title={formatDateTime(template.disabledAt)}>
+                    {' '}
+                    ({formatRelativeTime(template.disabledAt)})
+                  </span>
+                )}
+                . Emails that use it are cancelled instead of sent.{' '}
+                {canEnable
+                  ? 'Enable it, save a new version or restore one from the history.'
+                  : 'Save a version to enable it.'}
+              </p>
+            </div>
+            {canEnable && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() =>
+                  template.version !== null
+                    ? void handleEnable()
+                    : setConfirm('enable')
+                }
+                disabled={pending !== null}
+                loading={pending === 'enable'}
+              >
+                Enable template
+              </Button>
+            )}
+          </div>
+        )}
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Panel
+            title="Content"
+            description="Subject, HTML and plain text are saved together as one version."
+            actions={
+              <TabNavigation
+                variant="segmented"
+                size="sm"
+                ariaLabel="Body to edit"
+                activeTab={body}
+                onChange={(id) => setBody(id === 'text' ? 'text' : 'html')}
+                tabs={[
+                  {
+                    id: 'html',
+                    label: 'HTML',
+                    icon: fieldIssues.html ? (
+                      <AlertCircle className="text-warning" />
+                    ) : undefined,
+                  },
+                  {
+                    id: 'text',
+                    label: 'Plain text',
+                    icon: fieldIssues.text ? (
+                      <AlertCircle className="text-warning" />
+                    ) : undefined,
+                  },
+                ]}
+              />
+            }
+          >
+            <div className="space-y-3">
+              <Input
+                ref={subjectRef}
+                fullWidth
+                label="Subject"
+                value={draft.subjectTemplate}
+                maxLength={EMAIL_TEMPLATE_LIMITS.subject}
+                showCharCount
+                validationState={fieldIssues.subject ? 'warning' : null}
+                onFocus={() => (lastFocused.current = 'subject')}
+                onChange={(event) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    subjectTemplate: event.target.value,
+                  }))
+                }
+                placeholder="Activate your $app_name email"
+              />
+
+              <VariableInsertMenu
+                variables={template.allowedVariables}
+                required={template.requiredVariables}
+                onInsert={insertVariable}
+              />
+
+              <Textarea
+                key={body}
+                ref={bodyRef}
+                aria-label={body === 'html' ? 'HTML body' : 'Plain-text body'}
+                value={
+                  body === 'html' ? draft.htmlTemplate : draft.textTemplate
+                }
+                validationState={fieldIssues[body] ? 'warning' : null}
+                onFocus={() => (lastFocused.current = body)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setDraft((prev) =>
+                    body === 'html'
+                      ? { ...prev, htmlTemplate: value }
+                      : { ...prev, textTemplate: value }
+                  );
+                }}
+                spellCheck={false}
+                className="min-h-[440px] font-mono text-xs leading-relaxed"
+              />
+
+              {!validation.valid && (
+                <ul
+                  role="alert"
+                  className="m-0 list-none space-y-1 rounded-md border border-warning/30 bg-warning-subtle px-3 py-2 text-xs text-warning-subtle-foreground"
+                >
+                  {validation.errors.map((error) => (
+                    <li key={error}>{error}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </Panel>
+
           <EmailTemplatePreview
-            subject={previewData.subject}
-            html={previewData.html}
-            text={previewData.text}
-            mode={activeTab}
-            isLoading={previewLoading}
+            subject={preview?.subject ?? ''}
+            html={preview?.html ?? ''}
+            text={preview?.text ?? ''}
+            mode={body}
+            isLoading={
+              previewLoading ||
+              (validation.valid && preview === null && previewError === null)
+            }
             error={previewError}
             paused={!validation.valid}
           />
         </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <VersionHistoryPanel
+            versions={template.versions}
+            usesBuiltInDefault={template.source === 'code'}
+            disabled={pending !== null}
+            onRestore={setRestoreVersion}
+          />
+          <Panel
+            title="Sample data"
+            description="Values the server substitutes in previews and test sends."
+          >
+            {preview && Object.keys(preview.sampleVariables).length > 0 ? (
+              <FactList
+                facts={Object.entries(preview.sampleVariables).map(
+                  ([name, value]) => ({
+                    label: `$${name}`,
+                    value: <span className="break-all">{value}</span>,
+                    mono: true,
+                  })
+                )}
+              />
+            ) : (
+              <p className="m-0 text-[13px] text-muted-foreground">
+                {preview
+                  ? 'This template has no variables.'
+                  : 'Sample values appear with the first preview.'}
+              </p>
+            )}
+          </Panel>
+        </div>
       </div>
 
       <ConfirmDialog
-        isOpen={resetOpen}
-        onClose={() => setResetOpen(false)}
-        onConfirm={confirmReset}
-        title="Load built-in default?"
-        message="This replaces the editor contents with the built-in default. Unsaved edits will be lost — save afterwards to apply it."
+        isOpen={confirm === 'reset'}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          if (template.builtInDefault) setDraft(template.builtInDefault);
+          setConfirm(null);
+          showToast(
+            'Loaded the built-in default. Save to make it the active version.',
+            'info'
+          );
+        }}
+        title="Load the built-in default?"
+        message="The editor is replaced with the built-in subject, HTML and plain text. Nothing changes until you save; unsaved edits are lost."
         variant="warning"
         confirmText="Load default"
-        cancelText="Cancel"
       />
 
       <ConfirmDialog
-        isOpen={confirmVersion !== null}
-        onClose={() => setConfirmVersion(null)}
-        onConfirm={() => confirmVersion !== null && void handleRollback(confirmVersion)}
-        title={confirmVersion !== null ? `Roll back to v${confirmVersion}?` : 'Roll back?'}
-        message="This re-activates the selected version. It becomes the version sent to users."
+        isOpen={restoreVersion !== null}
+        onClose={() => setRestoreVersion(null)}
+        onConfirm={() =>
+          restoreVersion !== null && void handleRestore(restoreVersion)
+        }
+        title={`Restore version ${restoreVersion ?? ''}?`}
+        message={
+          <>
+            Version {restoreVersion} becomes the active version and is sent from
+            now on. The current version stays in the history.
+            {!template.isEnabled && ' The template is enabled again.'}
+            {isDirty && ' Your unsaved edits are discarded.'}
+          </>
+        }
         variant="warning"
-        confirmText="Roll back"
-        isLoading={isRollingBack}
+        confirmText="Restore version"
+        isLoading={pending === 'rollback'}
       />
-    </div>
+
+      <ConfirmDialog
+        isOpen={confirm === 'disable'}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => void handleDisable()}
+        title={`Disable ${label}?`}
+        message={
+          <>
+            No one receives these emails while the template is disabled: queued
+            messages that use it are cancelled and test sends are blocked.
+            Saving a version or restoring one enables it again.
+          </>
+        }
+        confirmText="Disable template"
+        confirmationPhrase={
+          template.isDynamic ? undefined : template.templateCode
+        }
+        isLoading={pending === 'disable'}
+      />
+
+      <ConfirmDialog
+        isOpen={confirm === 'enable'}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => void handleEnable()}
+        title={`Enable ${label}?`}
+        message="The built-in default is saved as version 1 and becomes active, so these emails are sent again."
+        variant="info"
+        confirmText="Enable template"
+        isLoading={pending === 'enable'}
+      />
+    </>
   );
 }
 
-function EditorSkeleton(): React.JSX.Element {
+interface VersionHistoryPanelProps {
+  versions: EmailTemplateVersion[];
+  usesBuiltInDefault: boolean;
+  disabled: boolean;
+  onRestore: (version: number) => void;
+}
+
+function VersionHistoryPanel({
+  versions,
+  usesBuiltInDefault,
+  disabled,
+  onRestore,
+}: VersionHistoryPanelProps): React.JSX.Element {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Skeleton className="h-5 w-56" />
-        <div className="flex gap-2">
-          <Skeleton variant="button" />
-          <Skeleton variant="button" />
-          <Skeleton variant="button" />
+    <Panel
+      title="Version history"
+      description={
+        versions.length > 0
+          ? `${versions.length} saved ${versions.length === 1 ? 'version' : 'versions'}, newest first`
+          : undefined
+      }
+      padding="none"
+    >
+      {versions.length === 0 ? (
+        <div className="flex items-center gap-2.5 px-5 py-6 text-[13px] text-muted-foreground">
+          <History className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {usesBuiltInDefault
+            ? 'No saved versions. The built-in default is sent until you save one.'
+            : 'No saved versions.'}
         </div>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Skeleton className="h-[520px] w-full rounded-lg" />
-        <Skeleton className="h-[520px] w-full rounded-lg" />
-      </div>
-    </div>
+      ) : (
+        <ul className="m-0 max-h-[360px] list-none divide-y divide-border overflow-y-auto p-0">
+          {versions.map((version) => (
+            <li
+              key={version.version}
+              className="flex items-center gap-3 px-5 py-2.5"
+            >
+              <span className="w-10 shrink-0 font-mono text-xs text-muted-foreground">
+                v{version.version}
+              </span>
+              <div className="min-w-0 flex-1">
+                <span
+                  className="block truncate text-[13px] text-foreground"
+                  title={version.subjectTemplate}
+                >
+                  {version.subjectTemplate}
+                </span>
+                <span
+                  className="block text-xs text-muted-foreground"
+                  title={formatDateTime(version.createdAt)}
+                >
+                  {formatRelativeTime(version.createdAt)}
+                </span>
+              </div>
+              {version.isActive ? (
+                <Badge variant="success" size="sm">
+                  Active
+                </Badge>
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onRestore(version.version)}
+                  disabled={disabled}
+                  aria-label={`Restore version ${version.version}`}
+                >
+                  Restore
+                </Button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }
 

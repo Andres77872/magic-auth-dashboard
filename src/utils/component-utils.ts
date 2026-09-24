@@ -1,247 +1,46 @@
-// Component utility types for consistent prop patterns
+import type { UserType } from '@/types/auth.types';
 
-export type LayoutVariant = 
-  | 'flex-between'
-  | 'flex-center' 
-  | 'flex-start'
-  | 'flex-end'
-  | 'flex-col-center'
-  | 'grid-gap-4'
-  | 'grid-gap-6';
+export {
+  formatCount,
+  formatDate,
+  formatDateTime,
+  formatRelativeTime,
+  truncateHash,
+} from './formatters';
 
-export type SpacingSize = 
-  | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '8' | '10' | '12';
-
-export type TextSize = 
-  | '2xs' | 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl';
-
-export type ColorVariant = 
-  | 'primary' | 'secondary' | 'tertiary' 
-  | 'error' | 'success' | 'warning' | 'info';
-
-// Helper function to build className strings
-export const cn = (...classes: (string | undefined | null | false)[]): string => {
-  return classes.filter(Boolean).join(' ');
-};
-
-// Layout utility functions
-export const getLayoutClass = (variant: LayoutVariant): string => variant;
-
-export const getSpacingClass = (
-  type: 'p' | 'm' | 'pt' | 'pr' | 'pb' | 'pl' | 'mt' | 'mr' | 'mb' | 'ml' | 'gap',
-  size: SpacingSize
-): string => `${type}-${size}`;
-
-export const getTextClass = (size: TextSize): string => `text-${size}`;
-
-export const getColorClass = (variant: ColorVariant): string => `text-${variant}`;
-
-// Common component prop interfaces
-export interface BaseComponentProps {
-  className?: string;
-  children?: React.ReactNode;
-}
-
-export interface LayoutProps extends BaseComponentProps {
-  layout?: LayoutVariant;
-  gap?: SpacingSize;
-  padding?: SpacingSize;
-  margin?: SpacingSize;
-}
-
-export interface TypographyProps {
-  size?: TextSize;
-  color?: ColorVariant;
-  weight?: 'normal' | 'medium' | 'semibold' | 'bold';
-}
-
-// Example usage in components:
-// const Card: React.FC<LayoutProps> = ({ layout = 'flex-col-center', gap = '4', children, className }) => {
-//   return (
-//     <div className={cn('card', getLayoutClass(layout), getSpacingClass('gap', gap), className)}>
-//       {children}
-//     </div>
-//   );
-// };
-
-// ============================================================
-// DATE FORMATTING UTILITIES
-// ============================================================
+export type BadgeVariant =
+  | 'primary'
+  | 'secondary'
+  | 'success'
+  | 'error'
+  | 'warning'
+  | 'info'
+  | 'purple';
 
 /**
- * Formats a date string to a localized short format
- * @param dateString - ISO date string
- * @param options - Intl.DateTimeFormatOptions to customize format
- * @returns Formatted date string
+ * Single source of truth for user-type colour: root is the rare, most
+ * privileged tier (violet), admins are the accent (azure), consumers are
+ * neutral. Keep in sync with UserTypeBadge and UserAvatar.
  */
-export const formatDate = (
-  dateString: string,
-  options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }
-): string => {
-  return new Date(dateString).toLocaleDateString('en-US', options);
-};
-
-/**
- * Formats a date string to include date and time
- * @param dateString - ISO date string
- * @returns Formatted date and time string
- */
-export const formatDateTime = (dateString: string): string => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-/**
- * Formats a date string to relative time (e.g., "2 days ago")
- * @param dateString - ISO date string
- * @returns Relative time string
- */
-export const formatRelativeTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
-  if (diffDays === 0) return 'Today';
-  if (diffDays === 1) return 'Yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-  return `${Math.floor(diffDays / 365)} years ago`;
-};
-
-// ============================================================
-// BADGE VARIANT UTILITIES
-// ============================================================
-
-export type BadgeVariant = 
-  | 'primary' 
-  | 'secondary' 
-  | 'success' 
-  | 'error' 
-  | 'warning' 
-  | 'info';
-
-export type UserType = 'root' | 'admin' | 'consumer';
-export type StatusType = 'active' | 'inactive';
-
-/**
- * Gets the appropriate badge variant for a user type
- * @param userType - The user type
- * @returns Badge variant
- */
-export const getUserTypeBadgeVariant = (userType: UserType): BadgeVariant => {
+export const getUserTypeBadgeVariant = (userType: string): BadgeVariant => {
   switch (userType) {
     case 'root':
-      return 'error';
+      return 'purple';
     case 'admin':
-      return 'warning';
-    case 'consumer':
       return 'info';
     default:
       return 'secondary';
   }
 };
 
-/**
- * Gets the appropriate badge variant for a status
- * @param isActive - Whether the entity is active
- * @returns Badge variant
- */
-export const getStatusBadgeVariant = (isActive: boolean): BadgeVariant => {
-  return isActive ? 'success' : 'secondary';
+export const USER_TYPE_LABELS: Record<UserType, string> = {
+  root: 'Root',
+  admin: 'Admin',
+  consumer: 'Consumer',
 };
 
-// ============================================================
-// STRING UTILITIES
-// ============================================================
+export const getUserTypeLabel = (userType: string): string =>
+  USER_TYPE_LABELS[userType as UserType] ?? userType;
 
-/**
- * Truncates a string to a specified length with ellipsis
- * @param str - String to truncate
- * @param maxLength - Maximum length
- * @returns Truncated string
- */
-export const truncateString = (str: string, maxLength: number): string => {
-  if (str.length <= maxLength) return str;
-  return `${str.substring(0, maxLength)}...`;
-};
-
-/**
- * Truncates a hash to show first N and last N characters with ellipsis
- * @param hash - Hash string
- * @param options - Optional configuration object
- * @param options.startChars - Number of characters to show at start (default: 8)
- * @param options.endChars - Number of characters to show at end (default: 8)
- * @returns Truncated hash with ellipsis in the middle
- */
-export const truncateHash = (
-  hash: string,
-  options?: { startChars?: number; endChars?: number }
-): string => {
-  const startChars = options?.startChars ?? 8;
-  const endChars = options?.endChars ?? 8;
-
-  // Edge case: if hash is too short to truncate meaningfully, return unmodified
-  if (hash.length <= startChars + endChars + 3) {
-    return hash;
-  }
-
-  return `${hash.slice(0, startChars)}...${hash.slice(-endChars)}`;
-};
-
-/**
- * Generates initials from a name or username
- * @param name - Full name or username
- * @returns Initials (max 2 characters)
- */
-export const getInitials = (name: string): string => {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  return name.substring(0, 2).toUpperCase();
-};
-
-// ============================================================
-// PLURALIZATION UTILITIES
-// ============================================================
-
-/**
- * Returns singular or plural form based on count
- * @param count - Number to check
- * @param singular - Singular form
- * @param plural - Plural form (optional, defaults to singular + 's')
- * @returns Appropriate form
- */
-export const pluralize = (
-  count: number,
-  singular: string,
-  plural?: string
-): string => {
-  return count === 1 ? singular : (plural || `${singular}s`);
-};
-
-/**
- * Formats a count with its label
- * @param count - Number to format
- * @param singular - Singular form of label
- * @param plural - Plural form (optional)
- * @returns Formatted string (e.g., "5 items")
- */
-export const formatCount = (
-  count: number,
-  singular: string,
-  plural?: string
-): string => {
-  return `${count} ${pluralize(count, singular, plural)}`;
-};
+export const getStatusBadgeVariant = (isActive: boolean): BadgeVariant =>
+  isActive ? 'success' : 'secondary';

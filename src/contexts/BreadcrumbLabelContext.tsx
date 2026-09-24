@@ -22,7 +22,6 @@ import React, {
 } from 'react';
 import { useLocation } from 'react-router-dom';
 
-
 interface BreadcrumbLabelContextValue {
   label: string | null;
   setLabel: (label: string | null) => void;
@@ -71,9 +70,7 @@ export function useBreadcrumbLabel(): BreadcrumbLabelContextValue {
  * and clears it on unmount. Pass the entity name once available (it can be
  * undefined/null while data loads — the breadcrumb falls back to the hash).
  */
-export function useSetBreadcrumbLabel(
-  label: string | null | undefined
-): void {
+export function useSetBreadcrumbLabel(label: string | null | undefined): void {
   const { setLabel } = useBreadcrumbLabel();
   useEffect(() => {
     setLabel(label ?? null);

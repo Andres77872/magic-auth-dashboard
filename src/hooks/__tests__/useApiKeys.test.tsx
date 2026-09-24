@@ -1,272 +1,185 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { useApiKeys } from '../useApiKeys';
-import { apiKeyService } from '@/services';
-import type { ApiKey, ApiKeyListResponse, CreateApiKeyResponse } from '@/types/api-key.types';
+import { useApiKeyMutations, useApiKeys } from '../useApiKeys';
+import type { ApiKey, ApiKeyPage, CreatedApiKey } from '@/types/api-key.types';
 
-vi.mock('@/services', () => ({
-  apiKeyService: {
-    listKeys: vi.fn(),
-    listKeysByUser: vi.fn(),
-    listKeysByProject: vi.fn(),
-    createKey: vi.fn(),
-    updateKey: vi.fn(),
-    revokeKey: vi.fn(),
-  },
+const mockService = vi.hoisted(() => ({
+  listKeys: vi.fn(),
+  getKey: vi.fn(),
+  createKey: vi.fn(),
+  updateKey: vi.fn(),
+  revokeKey: vi.fn(),
 }));
 
-const mockService = vi.mocked(apiKeyService);
+vi.mock('@/services/api-key.service', () => ({ apiKeyService: mockService }));
 
-const createMockKey = (overrides: Partial<ApiKey> = {}): ApiKey => ({
-  id: 'key-1',
-  public_id: 'pub-abc123',
-  name: 'Test Key',
-  fingerprint: 'ABC123DEF456',
-  secret_last4: 'xyz0',
-  project_id: 'proj-1',
-  owner_user_id: 'user-1',
-  expires_at: '2026-12-31',
-  is_active: true,
-  created_at: '2025-01-01',
-  ...overrides,
-});
+function makeKey(overrides: Partial<ApiKey> = {}): ApiKey {
+  return {
+    id: 'pub-abc123',
+    public_id: 'pub-abc123',
+    name: 'Billing worker',
+    description: null,
+    project_id: 'proj-internal-1',
+    owner_user_id: 'usr-internal-1',
+    is_active: true,
+    expires_at: null,
+    last_used_at: null,
+    created_at: '2026-01-01T00:00:00Z',
+    updated_at: null,
+    revoked_at: null,
+    revoke_reason: null,
+    fingerprint: 'ABC123DEF456',
+    secret_last4: 'xyz0',
+    hash_algorithm: 'hmac-sha256-v1',
+    project_hash: 'proj-hash-1',
+    project_name: 'Alpha',
+    ...overrides,
+  };
+}
 
-const createMockListResponse = (keys: ApiKey[] = []): ApiKeyListResponse => ({
-  success: true,
-  message: 'OK',
-  data: {
-    keys,
-    total: keys.length,
-    limit: 10,
-    offset: 0,
-  },
-});
+function makePage(keys: ApiKey[], total = keys.length): ApiKeyPage {
+  return { keys, total, limit: 25, offset: 0 };
+}
 
 describe('useApiKeys', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('listKeys (admin scope)', () => {
-    it('fetches all API keys via admin endpoint', async () => {
-      const mockKeys = [createMockKey()];
-      mockService.listKeys.mockResolvedValue(createMockListResponse(mockKeys));
+  it('loads a page for the given filters and exposes the backend total', async () => {
+    mockService.listKeys.mockResolvedValue(makePage([makeKey()], 42));
 
-      const { result } = renderHook(() => useApiKeys());
+    const { result } = renderHook(() =>
+      useApiKeys({
+        projectHash: 'proj-hash-1',
+        activeOnly: true,
+        limit: 25,
+        offset: 50,
+      })
+    );
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.keys).toHaveLength(1);
-      expect(result.current.keys[0].fingerprint).toBe('ABC123DEF456');
-      expect(result.current.totalCount).toBe(1);
-      expect(result.current.error).toBeNull();
-      expect(mockService.listKeys).toHaveBeenCalled();
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(mockService.listKeys).toHaveBeenCalledWith({
+      userHash: undefined,
+      projectHash: 'proj-hash-1',
+      activeOnly: true,
+      limit: 25,
+      offset: 50,
     });
+    expect(result.current.keys).toHaveLength(1);
+    expect(result.current.total).toBe(42);
+    expect(result.current.error).toBeNull();
+  });
 
-    it('sets error state on API failure', async () => {
-      mockService.listKeys.mockResolvedValue({
-        success: false,
-        message: 'Unauthorized',
-        data: undefined as any,
-      });
+  it('sends owner and project filters together', async () => {
+    mockService.listKeys.mockResolvedValue(makePage([]));
 
-      const { result } = renderHook(() => useApiKeys());
+    renderHook(() =>
+      useApiKeys({ userHash: 'usr-hash-1', projectHash: 'proj-hash-1' })
+    );
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.keys).toEqual([]);
-      expect(result.current.error).toBe('Unauthorized');
-    });
-
-    it('handles network errors', async () => {
-      mockService.listKeys.mockRejectedValue(new Error('Network error'));
-
-      const { result } = renderHook(() => useApiKeys());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.keys).toEqual([]);
-      expect(result.current.error).toBe('Network error');
-    });
-
-    it('does not auto-fetch when autoFetch is false', async () => {
-      mockService.listKeys.mockResolvedValue(createMockListResponse());
-
-      const { result } = renderHook(() => useApiKeys({ autoFetch: false }));
-
-      expect(result.current.isLoading).toBe(false);
-      expect(mockService.listKeys).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockService.listKeys).toHaveBeenCalledTimes(1));
+    expect(mockService.listKeys.mock.calls[0][0]).toMatchObject({
+      userHash: 'usr-hash-1',
+      projectHash: 'proj-hash-1',
     });
   });
 
-  describe('listKeysByUser', () => {
-    it('fetches keys filtered by user hash', async () => {
-      const mockKeys = [createMockKey({ owner_user_id: 'usr_target' })];
-      mockService.listKeysByUser.mockResolvedValue(createMockListResponse(mockKeys));
+  it('does not fetch while disabled (root without a filter)', async () => {
+    const { result } = renderHook(() => useApiKeys({ enabled: false }));
 
-      const { result } = renderHook(() => useApiKeys({ userHash: 'usr_target' }));
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(mockService.listKeysByUser).toHaveBeenCalledWith('usr_target', { limit: 10, offset: 0 });
-      expect(result.current.keys).toHaveLength(1);
-      expect(result.current.keys[0].owner_user_id).toBe('usr_target');
-    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(mockService.listKeys).not.toHaveBeenCalled();
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.keys).toEqual([]);
   });
 
-  describe('listKeysByProject', () => {
-    it('fetches keys filtered by project hash', async () => {
-      const mockKeys = [createMockKey({ name: 'Filtered Project Key' })];
-      mockService.listKeysByProject.mockResolvedValue(createMockListResponse(mockKeys));
+  it('surfaces request failures as an error message', async () => {
+    mockService.listKeys.mockRejectedValue(
+      new Error(
+        'Root users must provide at least user_hash or project_hash filter'
+      )
+    );
 
-      const { result } = renderHook(() => useApiKeys({ projectHash: 'prj_xyz' }));
+    const { result } = renderHook(() => useApiKeys());
 
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.keys).toEqual([]);
+    expect(result.current.error).toBe(
+      'Root users must provide at least user_hash or project_hash filter'
+    );
+  });
+});
 
-      expect(mockService.listKeysByProject).toHaveBeenCalledWith('prj_xyz', { limit: 10, offset: 0 });
-      expect(result.current.keys).toHaveLength(1);
-    });
+describe('useApiKeyMutations', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  describe('refetch', () => {
-    it('refetches keys with custom pagination params', async () => {
-      mockService.listKeys.mockResolvedValue(createMockListResponse());
+  it('creates a key and returns the one-time token', async () => {
+    const created: CreatedApiKey = {
+      ...makeKey(),
+      api_key: 'sk_pub-abc123.secret',
+    };
+    mockService.createKey.mockResolvedValue(created);
+    const { result } = renderHook(() => useApiKeyMutations());
 
-      const { result } = renderHook(() => useApiKeys());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+    let response: CreatedApiKey | undefined;
+    await act(async () => {
+      response = await result.current.createKey({
+        user_hash: 'usr-hash-1',
+        project_hash: 'proj-hash-1',
       });
-
-      await act(async () => {
-        await result.current.refetch({ limit: 20, offset: 10 });
-      });
-
-      expect(mockService.listKeys).toHaveBeenCalledWith({ limit: 20, offset: 10 });
     });
+
+    expect(response?.api_key).toBe('sk_pub-abc123.secret');
+    expect(mockService.createKey).toHaveBeenCalledWith({
+      user_hash: 'usr-hash-1',
+      project_hash: 'proj-hash-1',
+    });
+    expect(result.current.pending).toBeNull();
   });
 
-  describe('createKey (admin creates FOR consumer)', () => {
-    it('creates key with user_hash and returns response', async () => {
-      const mockResponse: CreateApiKeyResponse = {
-        success: true,
-        message: 'Created',
-        data: {
-          ...createMockKey(),
-          api_key: 'sk_pub-abc123.secret123',
-        },
-      };
-      mockService.createKey.mockResolvedValue(mockResponse);
+  it('tracks the pending mutation while a revoke is in flight', async () => {
+    let resolveRevoke: (value: {
+      key_id: string;
+      revoked_at: string;
+    }) => void = () => undefined;
+    mockService.revokeKey.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRevoke = resolve;
+      })
+    );
+    const { result } = renderHook(() => useApiKeyMutations());
 
-      const { result } = renderHook(() => useApiKeys({ autoFetch: false }));
-
-      await act(async () => {
-        const response = await result.current.createKey({
-          user_hash: 'usr_consumer1',
-          project_hash: 'proj-1',
-          name: 'New Key',
-        });
-        expect(response.success).toBe(true);
-        expect(response.data.api_key).toBe('sk_pub-abc123.secret123');
-      });
+    let pendingPromise: Promise<unknown> = Promise.resolve();
+    act(() => {
+      pendingPromise = result.current.revokeKey('pub-abc123');
     });
+    expect(result.current.pending).toBe('revoke');
 
-    it('throws on creation failure', async () => {
-      mockService.createKey.mockResolvedValue({
-        success: false,
-        message: 'Invalid project',
-        data: undefined as any,
+    await act(async () => {
+      resolveRevoke({
+        key_id: 'pub-abc123',
+        revoked_at: '2026-01-02T00:00:00Z',
       });
-
-      const { result } = renderHook(() => useApiKeys({ autoFetch: false }));
-
-      await act(async () => {
-        try {
-          await result.current.createKey({ user_hash: 'usr_x', project_hash: 'invalid' });
-        } catch (e) {
-          expect(e).toBeInstanceOf(Error);
-          expect((e as Error).message).toBe('Invalid project');
-        }
-      });
+      await pendingPromise;
     });
+    expect(result.current.pending).toBeNull();
+    expect(mockService.revokeKey).toHaveBeenCalledWith('pub-abc123');
   });
 
-  describe('revokeKey', () => {
-    it('optimistically updates key status on revoke', async () => {
-      const mockKeys = [createMockKey()];
-      mockService.listKeys.mockResolvedValue(createMockListResponse(mockKeys));
-      mockService.revokeKey.mockResolvedValue({ success: true, message: 'Revoked' });
+  it('rethrows failures so the caller can explain them', async () => {
+    mockService.updateKey.mockRejectedValue(
+      new Error('Recent reauthentication required')
+    );
+    const { result } = renderHook(() => useApiKeyMutations());
 
-      const { result } = renderHook(() => useApiKeys());
-
-      await waitFor(() => {
-        expect(result.current.keys).toHaveLength(1);
-      });
-
-      await act(async () => {
-        const success = await result.current.revokeKey('pub-abc123');
-        expect(success).toBe(true);
-      });
-
-      expect(result.current.keys[0].is_active).toBe(false);
-      expect(result.current.keys[0].revoked_at).toBeDefined();
+    await act(async () => {
+      await expect(
+        result.current.updateKey('pub-abc123', { name: 'New name' })
+      ).rejects.toThrow('Recent reauthentication required');
     });
-
-    it('sets error on revoke failure', async () => {
-      const mockKeys = [createMockKey()];
-      mockService.listKeys.mockResolvedValue(createMockListResponse(mockKeys));
-      mockService.revokeKey.mockResolvedValue({ success: false, message: 'Cannot revoke' });
-
-      const { result } = renderHook(() => useApiKeys());
-
-      await waitFor(() => {
-        expect(result.current.keys).toHaveLength(1);
-      });
-
-      await act(async () => {
-        const success = await result.current.revokeKey('pub-abc123');
-        expect(success).toBe(false);
-      });
-
-      expect(result.current.error).toBe('Cannot revoke');
-      expect(result.current.keys[0].is_active).toBe(true);
-    });
-  });
-
-  describe('updateKey', () => {
-    it('updates key in list after successful update', async () => {
-      const mockKeys = [createMockKey()];
-      mockService.listKeys.mockResolvedValue(createMockListResponse(mockKeys));
-      
-      const updatedKey = createMockKey({ name: 'Updated Name' });
-      mockService.updateKey.mockResolvedValue({
-        success: true,
-        message: 'Updated',
-        data: updatedKey,
-      });
-
-      const { result } = renderHook(() => useApiKeys());
-
-      await waitFor(() => {
-        expect(result.current.keys).toHaveLength(1);
-      });
-
-      await act(async () => {
-        const success = await result.current.updateKey('pub-abc123', { name: 'Updated Name' });
-        expect(success).toBe(true);
-      });
-
-      expect(result.current.keys[0].name).toBe('Updated Name');
-    });
+    expect(result.current.pending).toBeNull();
   });
 });

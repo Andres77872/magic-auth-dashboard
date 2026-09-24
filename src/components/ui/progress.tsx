@@ -23,21 +23,28 @@ const progressVariants = cva('h-full w-full flex-1 transition-all', {
   },
 });
 
-const trackSizeVariants = cva('relative w-full overflow-hidden rounded-full bg-primary/20', {
-  variants: {
-    size: {
-      sm: 'h-1',
-      md: 'h-2',
-      lg: 'h-3',
+const trackSizeVariants = cva(
+  'relative w-full overflow-hidden rounded-full bg-primary/20',
+  {
+    variants: {
+      size: {
+        sm: 'h-1',
+        md: 'h-2',
+        lg: 'h-3',
+      },
     },
-  },
-  defaultVariants: {
-    size: 'md',
-  },
-});
+    defaultVariants: {
+      size: 'md',
+    },
+  }
+);
 
 export interface ProgressProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>, 'value'>,
+  extends
+    Omit<
+      React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>,
+      'value'
+    >,
     VariantProps<typeof progressVariants> {
   value?: number;
   indeterminate?: boolean;
@@ -45,8 +52,23 @@ export interface ProgressProps
   label?: string;
 }
 
-const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root>, ProgressProps>(
-  ({ className, value = 0, variant, size, indeterminate = false, showLabel = false, label, ...props }, ref) => {
+const Progress = React.forwardRef<
+  React.ElementRef<typeof ProgressPrimitive.Root>,
+  ProgressProps
+>(
+  (
+    {
+      className,
+      value = 0,
+      variant,
+      size,
+      indeterminate = false,
+      showLabel = false,
+      label,
+      ...props
+    },
+    ref
+  ) => {
     const percentage = Math.min(Math.max(value, 0), 100);
 
     return (
@@ -55,7 +77,9 @@ const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root
           <div className="mb-1 flex items-center justify-between text-sm">
             {label && <span className="text-muted-foreground">{label}</span>}
             {showLabel && !indeterminate && (
-              <span className="text-muted-foreground">{Math.round(percentage)}%</span>
+              <span className="text-muted-foreground">
+                {Math.round(percentage)}%
+              </span>
             )}
           </div>
         )}
@@ -71,7 +95,11 @@ const Progress = React.forwardRef<React.ElementRef<typeof ProgressPrimitive.Root
               'rounded-full',
               indeterminate && 'animate-progress-indeterminate'
             )}
-            style={indeterminate ? undefined : { transform: `translateX(-${100 - percentage}%)` }}
+            style={
+              indeterminate
+                ? undefined
+                : { transform: `translateX(-${100 - percentage}%)` }
+            }
           />
         </ProgressPrimitive.Root>
       </div>

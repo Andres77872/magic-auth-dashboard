@@ -1,6 +1,6 @@
 /**
- * OAuth admin types — mirror api.auth ``/admin/oauth`` DTOs in
- * ``src/Util/oauth/admin_models.py`` exactly, in snake_case.
+ * OAuth admin types — mirror api.auth ``/admin/oauth`` (``src/routes/admin_oauth.py``) and
+ * its DTOs in ``src/Util/oauth/admin_models.py``, in snake_case.
  *
  * A CONNECTION holds one provider client (client id + encrypted secret + endpoints).
  * A BINDING attaches a connection to one project under a ``connection_key`` slug and
@@ -11,14 +11,30 @@
  * fingerprints and timestamps.
  */
 
-import type { ApiResponse } from '@/types/api.types';
+import type { PaginationResponse } from '@/types/api.types';
 
-export type OAuthProvisioningMode = 'disabled' | 'link_only' | 'auto_create' | 'both';
+export type OAuthProvisioningMode =
+  | 'disabled'
+  | 'link_only'
+  | 'auto_create'
+  | 'both';
 export type OAuthExistingUserPolicy = 'deny' | 'join_default_group';
-export type OAuthConnectionStatus = 'draft' | 'active' | 'disabled' | 'archived';
-export type OAuthCatalogStatus = 'disabled' | 'enabled' | 'degraded' | 'archived';
+export type OAuthConnectionStatus =
+  | 'draft'
+  | 'active'
+  | 'disabled'
+  | 'archived';
+export type OAuthCatalogStatus =
+  | 'disabled'
+  | 'enabled'
+  | 'degraded'
+  | 'archived';
 export type OAuthUrlKind = 'redirect_uri' | 'return_origin';
-export type OAuthCredentialStatus = 'absent' | 'active' | 'rotating' | 'revoked';
+export type OAuthCredentialStatus =
+  | 'absent'
+  | 'active'
+  | 'rotating'
+  | 'revoked';
 
 // --- provider catalog ---------------------------------------------------------------------
 
@@ -35,7 +51,15 @@ export interface OAuthProviderCatalogEntry {
   default_scopes?: string | null;
   adapter_registered: boolean;
   capabilities?: Record<string, unknown> | null;
+  /** Non-archived connections of this type. */
   connection_count: number;
+}
+
+/** ``GET /admin/oauth/providers``. */
+export interface OAuthProviderCatalog {
+  /** Deployment-wide ``OAUTH_ENABLED`` switch. */
+  oauth_enabled: boolean;
+  providers: OAuthProviderCatalogEntry[];
 }
 
 // --- credentials --------------------------------------------------------------------------
@@ -76,10 +100,11 @@ export interface OAuthConnectionInfo {
   userinfo_endpoint?: string | null;
   /** ``{"hosted_domains":[...]}`` / ``{"tenant_ids":[...]}`` / ``{"orgs":[...]}``. */
   restrictions?: Record<string, unknown> | null;
-  /** ``{"tenant":"…"}`` (Microsoft), ``{"team_id":"…","key_id":"…"}`` (Apple). */
+  /** ``{"tenant":"…"}`` (Microsoft). */
   provider_params?: Record<string, unknown> | null;
   tenant_endpoints_allowed: boolean;
   catalog_status?: string | null;
+  /** Bindings across ALL projects, including ones the caller cannot see. */
   binding_count: number;
   linked_identity_count: number;
   /** TRUE once an identity is linked: issuer / tenant / team can no longer change. */
@@ -107,6 +132,23 @@ export interface OAuthConnectionListItem {
   updated_at?: string | null;
   binding_count: number;
 }
+
+/**
+ * One page of ``GET /admin/oauth/connections``. ``pagination.total`` applies the same
+ * provider/status/search filters as the rows (and, for admins, only counts the
+ * connections they can see), so it is safe to show.
+ */
+export interface OAuthConnectionPage {
+  connections: OAuthConnectionListItem[];
+  pagination: PaginationResponse;
+}
+
+/**
+ * ``DELETE /admin/oauth/connections/{hash}``: ``deleted`` when nobody ever signed in
+ * through it, ``archived`` (kept, credentials erased) when external identities
+ * still reference it.
+ */
+export type OAuthConnectionDeleteOutcome = 'deleted' | 'archived';
 
 // --- bindings and allow-lists -------------------------------------------------------------
 
@@ -140,21 +182,29 @@ export interface OAuthBindingInfo {
   default_user_group_hash?: string | null;
   default_user_group_name?: string | null;
   existing_user_policy: OAuthExistingUserPolicy;
+  /** ``api`` or ``legacy_redeem``. */
   init_mode: string;
   has_legacy_redeem: boolean;
   delivery_mode: string;
   state_ttl_seconds?: number | null;
   urls: OAuthAllowedUrl[];
+  /** Server roll-up: every readiness check passes. */
   ready: boolean;
   readiness: OAuthReadinessCheck[];
 }
 
-/** Per-connection readiness roll-up returned by ``GET /projects/{hash}/readiness``. */
+/** Per-binding readiness returned by ``GET /projects/{hash}/readiness``. */
 export interface OAuthProjectReadinessEntry {
   connection_key: string;
   provider_type: string;
   ready: boolean;
   checks: OAuthReadinessCheck[];
+}
+
+/** ``GET /admin/oauth/projects/{hash}/readiness``. */
+export interface OAuthProjectReadiness {
+  oauth_enabled: boolean;
+  providers: OAuthProjectReadinessEntry[];
 }
 
 // --- request bodies (JSON; every OAuth admin endpoint takes a JSON body) ------------------
@@ -169,6 +219,7 @@ export interface OAuthConnectionCreateRequest {
   provider_type: string;
   display_name: string;
   client_id: string;
+  /** Omitted: the catalog's default scopes. */
   scopes?: string;
   owner_project_hash?: string;
   issuer?: string;
@@ -181,14 +232,38 @@ export interface OAuthConnectionCreateRequest {
   provider_params?: Record<string, unknown>;
 }
 
-export type OAuthConnectionUpdateRequest = Partial<
-  Omit<OAuthConnectionCreateRequest, 'provider_type' | 'owner_project_hash'>
->;
+/**
+ * Partial update: omitted fields keep their stored value. The dashboard clears an
+ * optional text field with ``''`` and a JSON field with ``{}`` — the transport turns a
+ * top-level ``null`` into ``''`` (see ``api.client.ts`` ``cleanRequestData``), which the
+ * backend rejects for the dict-typed fields.
+ */
+export interface OAuthConnectionUpdateRequest {
+  display_name?: string;
+  client_id?: string;
+  scopes?: string;
+  issuer?: string;
+  discovery_url?: string;
+  authorize_endpoint?: string;
+  token_endpoint?: string;
+  jwks_uri?: string;
+  userinfo_endpoint?: string;
+  restrictions?: Record<string, unknown>;
+  provider_params?: Record<string, unknown>;
+}
 
-/** Write-only. Sent as JSON so secrets never land in URL-encoded request logs. */
+/**
+ * Write-only. Sent as JSON so secrets never land in URL-encoded request logs. An omitted
+ * field keeps the stored secret; at least one field must be sent.
+ */
 export interface OAuthCredentialsRequest {
   client_secret?: string;
   signing_key?: string;
+}
+
+/** ``POST .../credentials/test``: only ``client_secret`` is used; nothing is saved. */
+export interface OAuthCredentialProbeRequest {
+  client_secret?: string;
 }
 
 export interface OAuthBindingUpsertRequest {
@@ -197,9 +272,10 @@ export interface OAuthBindingUpsertRequest {
   login_enabled?: boolean;
   link_enabled?: boolean;
   provisioning_mode?: OAuthProvisioningMode;
-  default_user_group_hash?: string | null;
+  /** ``''`` clears the default group (the transport sends ``null`` as ``''`` anyway). */
+  default_user_group_hash?: string;
   existing_user_policy?: OAuthExistingUserPolicy;
-  /** Backend accepts 30–600 seconds. */
+  /** Backend accepts 30–600 seconds; omitted keeps the stored value. */
   state_ttl_seconds?: number;
 }
 
@@ -210,68 +286,10 @@ export interface OAuthBindingUrlCreateRequest {
 
 export interface OAuthConnectionListParams {
   provider_type?: string;
-  status?: string;
+  status?: OAuthConnectionStatus;
+  /** Case-insensitive substring match on ``display_name`` (max 120 characters). */
   search?: string;
+  /** 1–200 (backend default 50). */
   limit?: number;
   offset?: number;
-}
-
-// --- response envelopes (fields are top-level per api.auth) --------------------------------
-
-export interface OAuthProvidersResponse extends ApiResponse {
-  /** Deployment-wide ``OAUTH_ENABLED`` switch. */
-  oauth_enabled: boolean;
-  providers: OAuthProviderCatalogEntry[];
-}
-
-/**
- * ``PUT /providers/{provider_type}`` echoes the raw catalog row rather than the
- * ``ProviderCatalogEntry`` DTO, so it is not modelled field-by-field — callers refetch
- * the catalog instead of reading it.
- */
-export interface OAuthProviderUpdateResponse extends ApiResponse {
-  provider?: Record<string, unknown> | null;
-}
-
-export interface OAuthConnectionListResponse extends ApiResponse {
-  connections: OAuthConnectionListItem[];
-  pagination: {
-    limit: number;
-    offset: number;
-    total: number;
-    has_more: boolean;
-  };
-}
-
-export interface OAuthConnectionResponse extends ApiResponse {
-  connection: OAuthConnectionInfo;
-}
-
-export interface OAuthConnectionDeleteResponse extends ApiResponse {
-  outcome: string;
-}
-
-export interface OAuthCredentialsStatusResponse extends ApiResponse {
-  credentials: OAuthCredentialsStatus;
-}
-
-export interface OAuthCredentialProbeResponse extends ApiResponse {
-  result: OAuthCredentialProbeResult;
-}
-
-export interface OAuthBindingListResponse extends ApiResponse {
-  bindings: OAuthBindingInfo[];
-}
-
-export interface OAuthBindingResponse extends ApiResponse {
-  binding: OAuthBindingInfo;
-}
-
-export interface OAuthProjectReadinessResponse extends ApiResponse {
-  oauth_enabled: boolean;
-  providers: OAuthProjectReadinessEntry[];
-}
-
-export interface OAuthAllowedUrlResponse extends ApiResponse {
-  url: OAuthAllowedUrl;
 }

@@ -32,7 +32,9 @@ class AuthService {
    * POST /auth/platform/login — no project_hash required.
    * Only accepts user_type: root | admin.
    */
-  async platformLogin(credentials: PlatformLoginRequest): Promise<PlatformLoginResponse> {
+  async platformLogin(
+    credentials: PlatformLoginRequest
+  ): Promise<PlatformLoginResponse> {
     const response = await apiClient.postForm<PlatformLoginResponse>(
       '/auth/platform/login',
       credentials,
@@ -78,6 +80,21 @@ class AuthService {
       // Continue with local logout even if API call fails
       console.warn('Logout API call failed:', error);
     }
+  }
+
+  /**
+   * POST /auth/password/change — the current password is the proof. Every other
+   * session of the user is revoked; this one stays valid. A wrong current
+   * password is `401 AUTH_1001`, which the transport reports without signing out.
+   */
+  async changePassword(
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    await apiClient.postForm('/auth/password/change', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
   }
 
   // Refresh through the shared same-tab/cross-tab coordinator.

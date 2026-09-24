@@ -1,118 +1,114 @@
-/**
- * API Key Service
- *
- * Service for admin-managed API key operations.
- * All endpoints are under /api-keys for admin-scope management.
- * Admins create/list/revoke tokens for user/service-account owners across projects.
- *
- * CRITICAL: api_key field is returned ONLY at creation.
- * Frontend must display token in one-time reveal modal.
- */
-
-import { apiClient } from './api.client';
+import { deleteJson, getJson, postFormJson, putFormJson, seg } from './request';
+import { asUtcTimestamp as asUtc } from '@/utils/formatters';
 import type {
-  ApiKeyListResponse,
+  ApiKey,
+  ApiKeyListParams,
+  ApiKeyPage,
   CreateApiKeyRequest,
-  CreateApiKeyResponse,
+  CreatedApiKey,
+  RevokedApiKey,
   UpdateApiKeyRequest,
-  ApiKeyResponse,
-  RevokeApiKeyResponse,
 } from '@/types/api-key.types';
 
+/**
+ * Admin-managed API keys (api.auth `api_keys.py`, prefix `/api-keys`).
+ *
+ * Every route answers `{success, message, data}`; methods return `data`.
+ * Create/update/revoke are Form-encoded and need a recent sign-in: the
+ * backend answers `401 AUTH_1008` when the operator's sign-in is older than
+ * the recent-auth window (5 minutes by default).
+ *
+ * The one-time secret (`api_key` on the create response) is passed straight
+ * to the caller; nothing here logs or caches it.
+ */
+
+interface Envelope<T> {
+  success?: boolean;
+  message?: string;
+  data?: T;
+}
+
+function unwrap<T>(response: Envelope<T>, what: string): T {
+  if (response.data === undefined || response.data === null) {
+    throw new Error(`The ${what} response did not include any data.`);
+  }
+  return response.data;
+}
+
+function normalizeKey<T extends ApiKey>(key: T): T {
+  return {
+    ...key,
+    description: key.description ?? null,
+    expires_at: asUtc(key.expires_at),
+    last_used_at: asUtc(key.last_used_at),
+    created_at: asUtc(key.created_at) ?? key.created_at,
+    updated_at: asUtc(key.updated_at),
+    revoked_at: asUtc(key.revoked_at),
+    revoke_reason: key.revoke_reason ?? null,
+    hash_algorithm: key.hash_algorithm ?? null,
+  };
+}
+
 class ApiKeyService {
-  private buildQuery(params?: Record<string, string | number | boolean | undefined>): string {
-    if (!params) return '';
-    const queryParams = new URLSearchParams();
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) queryParams.set(key, String(value));
-    }
-    const qs = queryParams.toString();
-    return qs ? `?${qs}` : '';
+  /**
+   * `GET /api-keys`. With `userHash` and/or `projectHash` the listing is
+   * scoped to them. Without filters, root gets `400` and an admin gets the
+   * keys of every project they administer (each project paged separately and
+   * concatenated, so only the first page is reliable).
+   */
+  async listKeys(params: ApiKeyListParams = {}): Promise<ApiKeyPage> {
+    const response = await getJson<Envelope<ApiKeyPage>>('/api-keys', {
+      user_hash: params.userHash,
+      project_hash: params.projectHash,
+      active_only: params.activeOnly ? true : undefined,
+      limit: params.limit,
+      offset: params.offset,
+    });
+    const page = unwrap(response, 'API key list');
+    return { ...page, keys: page.keys.map((key) => normalizeKey(key)) };
   }
 
-  /**
-   * List all API keys (admin scope).
-   * GET /api-keys
-   */
-  async listKeys(params?: { limit?: number; offset?: number; active_only?: boolean }): Promise<ApiKeyListResponse> {
-    const url = `/api-keys${this.buildQuery(params)}`;
-    const response = await apiClient.get<ApiKeyListResponse>(url);
-    return response as unknown as ApiKeyListResponse;
+  /** `GET /api-keys/{key_id}` — metadata with project and owner details. */
+  async getKey(keyId: string): Promise<ApiKey> {
+    const response = await getJson<Envelope<ApiKey>>(`/api-keys/${seg(keyId)}`);
+    return normalizeKey(unwrap(response, 'API key'));
   }
 
-  /**
-   * List keys by owner user.
-   * GET /api-keys/users/{user_hash}
-   */
-  async listKeysByUser(userHash: string, params?: { limit?: number; offset?: number; active_only?: boolean }): Promise<ApiKeyListResponse> {
-    const url = `/api-keys/users/${userHash}${this.buildQuery(params)}`;
-    const response = await apiClient.get<ApiKeyListResponse>(url);
-    return response as unknown as ApiKeyListResponse;
-  }
-
-  /**
-   * List keys by project.
-   * GET /api-keys/projects/{project_hash}
-   */
-  async listKeysByProject(projectHash: string, params?: { limit?: number; offset?: number; active_only?: boolean }): Promise<ApiKeyListResponse> {
-    const url = `/api-keys/projects/${projectHash}${this.buildQuery(params)}`;
-    const response = await apiClient.get<ApiKeyListResponse>(url);
-    return response as unknown as ApiKeyListResponse;
-  }
-
-  /**
-   * Create new API key for an owner user.
-   * POST /api-keys
-   *
-   * CRITICAL: Returns full token ONE-TIME only.
-   * Backend uses FormData, so we use postForm.
-   */
-  async createKey(request: CreateApiKeyRequest): Promise<CreateApiKeyResponse> {
-    const response = await apiClient.postForm<CreateApiKeyResponse>(
+  /** `POST /api-keys` — returns the one-time `api_key` token with the metadata. */
+  async createKey(request: CreateApiKeyRequest): Promise<CreatedApiKey> {
+    const response = await postFormJson<Envelope<CreatedApiKey>>(
       '/api-keys',
       request
     );
-    return response as unknown as CreateApiKeyResponse;
+    const created = unwrap(response, 'API key creation');
+    if (!created.api_key) {
+      throw new Error(
+        'The API key was created but its token was not returned.'
+      );
+    }
+    return normalizeKey(created);
   }
 
-  /**
-   * Update key metadata (name, description, expiry).
-   * PUT /api-keys/{key_id}
-   *
-   * Backend expects FormData (Form parameters), not JSON body.
-   */
-  async updateKey(publicId: string, request: UpdateApiKeyRequest): Promise<ApiKeyResponse> {
-    const response = await apiClient.putForm<ApiKeyResponse>(
-      `/api-keys/${publicId}`,
+  /** `PUT /api-keys/{key_id}` — revoked keys are refused with `400 AUTH_1012`. */
+  async updateKey(
+    keyId: string,
+    request: UpdateApiKeyRequest
+  ): Promise<ApiKey> {
+    const response = await putFormJson<Envelope<ApiKey>>(
+      `/api-keys/${seg(keyId)}`,
       request
     );
-    return response as unknown as ApiKeyResponse;
+    return normalizeKey(unwrap(response, 'API key update'));
   }
 
-  /**
-   * Revoke key (soft delete).
-   * DELETE /api-keys/{key_id}
-   *
-   * Backend expects optional revoke_reason as Form data, but HTTP DELETE
-   * with body has poor client support. Since revoke_reason is optional and
-   * never passed by the UI, we simply send DELETE without body.
-   */
-  async revokeKey(publicId: string): Promise<RevokeApiKeyResponse> {
-    const response = await apiClient.delete<RevokeApiKeyResponse>(
-      `/api-keys/${publicId}`
+  /** `DELETE /api-keys/{key_id}` with an optional form `revoke_reason` kept on the key. */
+  async revokeKey(keyId: string, reason?: string): Promise<RevokedApiKey> {
+    const trimmed = reason?.trim();
+    const response = await deleteJson<Envelope<RevokedApiKey>>(
+      `/api-keys/${seg(keyId)}`,
+      trimmed ? { revoke_reason: trimmed } : undefined
     );
-    return { success: response.success, message: response.message };
-  }
-
-  /**
-   * Get single key details.
-   * GET /api-keys/{key_id}
-   */
-  async getKey(publicId: string): Promise<ApiKeyResponse> {
-    const response = await apiClient.get<ApiKeyResponse>(
-      `/api-keys/${publicId}`
-    );
-    return response as unknown as ApiKeyResponse;
+    return unwrap(response, 'API key revocation');
   }
 }
 

@@ -16,7 +16,9 @@ interface UsePatreonEntitlementReturn {
   refetch: () => Promise<void>;
 }
 
-export function usePatreonEntitlement(userHash: string | null): UsePatreonEntitlementReturn {
+export function usePatreonEntitlement(
+  userHash: string | null
+): UsePatreonEntitlementReturn {
   const [detail, setDetail] = useState<PatreonEntitlementDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,9 @@ export function usePatreonEntitlement(userHash: string | null): UsePatreonEntitl
     try {
       setDetail(await patreonService.getEntitlement(userHash));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load entitlement detail');
+      setError(
+        err instanceof Error ? err.message : 'Failed to load entitlement detail'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +50,12 @@ export function usePatreonEntitlement(userHash: string | null): UsePatreonEntitl
         const data = await patreonService.getEntitlement(userHash);
         if (active) setDetail(data);
       } catch (err) {
-        if (active) setError(err instanceof Error ? err.message : 'Failed to load entitlement detail');
+        if (active)
+          setError(
+            err instanceof Error
+              ? err.message
+              : 'Failed to load entitlement detail'
+          );
       } finally {
         if (active) setIsLoading(false);
       }

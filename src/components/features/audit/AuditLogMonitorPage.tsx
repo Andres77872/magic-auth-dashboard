@@ -1,168 +1,95 @@
-import React, { useState, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ROUTES } from '@/utils/routes';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PageHeader } from '@/components/common/PageHeader';
+/**
+ * Audit log (`/audit`). Everyone with access sees the activity log; root also
+ * gets the per-request API log, security events and traffic statistics
+ * (platform-wide views). Sections live in `?tab=`; with a single section no
+ * tab bar is shown.
+ */
+
+import React from 'react';
 import { PageContainer } from '@/components/common/PageContainer';
+import { PageHeader } from '@/components/common/PageHeader';
+import { TabNavigation, type Tab } from '@/components/common/TabNavigation';
+import { useAuth } from '@/hooks/useAuth';
+import { useTabParam } from '@/hooks/useTabParam';
 import { ActivityLogTab } from './ActivityLogTab';
+import { ApiRequestsTab } from './ApiRequestsTab';
 import { SecurityEventsTab } from './SecurityEventsTab';
 import { AuditStatisticsTab } from './AuditStatisticsTab';
-import { ActivityExport } from './ActivityExport';
-import { useAuth } from '@/hooks/useAuth';
-import { useActivityLogs } from '@/hooks/audit/useActivityLogs';
-import { useToast } from '@/hooks/useToast';
-import {
-  Activity,
-  ShieldAlert,
-  BarChart3,
-} from 'lucide-react';
-import type { ActivityFilters } from '@/types/audit.types';
 
-const DEFAULT_TAB = 'activity';
-const VALID_TABS = ['activity', 'security', 'statistics'] as const;
-type TabType = typeof VALID_TABS[number];
+export type AuditTab = 'activity' | 'requests' | 'security' | 'statistics';
+
+const TABS: (Tab & { id: AuditTab; rootOnly: boolean; subtitle: string })[] = [
+  {
+    id: 'activity',
+    label: 'Activity',
+    rootOnly: false,
+    subtitle: 'Sign-ins and management changes across the platform',
+  },
+  {
+    id: 'requests',
+    label: 'API requests',
+    rootOnly: true,
+    subtitle: 'Every API call recorded by the audit middleware',
+  },
+  {
+    id: 'security',
+    label: 'Security events',
+    rootOnly: true,
+    subtitle: 'Denied requests, failed sign-ins and other security signals',
+  },
+  {
+    id: 'statistics',
+    label: 'Statistics',
+    rootOnly: true,
+    subtitle: 'API traffic volume, success rate and latency',
+  },
+];
+
+const ROOT_TABS: readonly AuditTab[] = TABS.map((tab) => tab.id);
+const ADMIN_TABS: readonly AuditTab[] = TABS.filter((tab) => !tab.rootOnly).map(
+  (tab) => tab.id
+);
 
 export interface AuditLogMonitorPageProps {
   className?: string;
 }
 
-/**
- * AuditLogMonitorPage - Main page component for the Audit Log Monitor
- * Requirements: 1.1, 3.1, 5.1
- */
 export function AuditLogMonitorPage({
   className,
 }: AuditLogMonitorPageProps): React.JSX.Element {
   const { user } = useAuth();
-  const { showToast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const [filters, _setFilters] = useState<ActivityFilters>({});
-
-  // Check if user is root (has access to all tabs)
   const isRoot = user?.user_type === 'root';
-
-  // Get activity logs for export
-  const { pagination } = useActivityLogs({ filters, limit: 1 });
-
-  // Derive active tab from URL query param with validation
-  const tabFromUrl = searchParams.get('tab');
-  const isValidTab = (tab: string | null): tab is TabType =>
-    tab !== null && VALID_TABS.includes(tab as TabType);
-
-  const canAccessTab = (tab: TabType): boolean =>
-    tab === 'activity' || isRoot; // Only root can access security/statistics
-
-  const activeTab: TabType = (() => {
-    if (!isValidTab(tabFromUrl)) return DEFAULT_TAB;
-    if (!canAccessTab(tabFromUrl)) return DEFAULT_TAB;
-    return tabFromUrl;
-  })();
-
-  // Handle tab change - update URL query param
-  const handleTabChange = useCallback((value: string) => {
-    setSearchParams(prev => {
-      prev.set('tab', value);
-      return prev;
-    });
-  }, [setSearchParams]);
-
-  // Handle user click (navigate to user profile)
-  const handleUserClick = useCallback((userId: string) => {
-    navigate(`${ROUTES.USER}/${userId}`);
-  }, [navigate]);
-
-  // Handle project click (navigate to project page)
-  const handleProjectClick = useCallback((projectId: string) => {
-    navigate(`${ROUTES.PROJECT}/${projectId}`);
-  }, [navigate]);
-
-  // Handle export events
-  const handleExportStart = useCallback(() => {
-    showToast('Export Started: Preparing your export file...', 'info');
-  }, [showToast]);
-
-  const handleExportComplete = useCallback(
-    (filename: string) => {
-      showToast(`Export Complete: Downloaded ${filename}`, 'success');
-    },
-    [showToast]
+  const available = isRoot ? ROOT_TABS : ADMIN_TABS;
+  const [activeTab, setActiveTab] = useTabParam<AuditTab>(
+    available,
+    'activity'
   );
-
-  const handleExportError = useCallback(
-    (error: string) => {
-      showToast(`Export Failed: ${error}`, 'error');
-    },
-    [showToast]
-  );
+  const visibleTabs = TABS.filter((tab) => available.includes(tab.id));
+  const current = TABS.find((tab) => tab.id === activeTab) ?? TABS[0];
 
   return (
     <PageContainer className={className}>
-      <PageHeader
-        title="Audit logs"
-        subtitle="Monitor system activities, security events, and audit statistics"
-        icon={<Activity className="h-6 w-6" aria-hidden="true" />}
-        actions={
-          <ActivityExport
-            filters={filters}
-            totalCount={pagination.total}
-            onExportStart={handleExportStart}
-            onExportComplete={handleExportComplete}
-            onExportError={handleExportError}
-          />
-        }
-      />
+      <PageHeader title="Audit log" subtitle={current.subtitle} />
 
-      <Tabs
-        value={activeTab}
-        onValueChange={handleTabChange}
-        className="space-y-6"
+      {visibleTabs.length > 1 && (
+        <TabNavigation
+          tabs={visibleTabs.map(({ id, label }) => ({ id, label }))}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          ariaLabel="Audit log sections"
+          className="mb-6"
+        />
+      )}
+
+      <div
+        role={visibleTabs.length > 1 ? 'tabpanel' : undefined}
+        aria-label={current.label}
       >
-        <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
-          <TabsTrigger value="activity" className="gap-2">
-            <Activity className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Activity</span>
-          </TabsTrigger>
-          {isRoot && (
-            <TabsTrigger value="security" className="gap-2">
-              <ShieldAlert className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Security</span>
-            </TabsTrigger>
-          )}
-          {isRoot && (
-            <TabsTrigger value="statistics" className="gap-2">
-              <BarChart3 className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden sm:inline">Statistics</span>
-            </TabsTrigger>
-          )}
-        </TabsList>
-
-        {/* Activity Log Tab */}
-        <TabsContent value="activity" className="mt-6">
-          <ActivityLogTab
-            initialFilters={filters}
-            onUserClick={handleUserClick}
-            onProjectClick={handleProjectClick}
-          />
-        </TabsContent>
-
-        {/* Security Events Tab - Root Only */}
-        {isRoot && (
-          <TabsContent value="security" className="mt-6">
-            <SecurityEventsTab
-              onUserClick={handleUserClick}
-              onProjectClick={handleProjectClick}
-            />
-          </TabsContent>
-        )}
-
-        {/* Audit Statistics Tab - Root Only */}
-        {isRoot && (
-          <TabsContent value="statistics" className="mt-6">
-            <AuditStatisticsTab />
-          </TabsContent>
-        )}
-      </Tabs>
+        {activeTab === 'activity' && <ActivityLogTab />}
+        {activeTab === 'requests' && <ApiRequestsTab />}
+        {activeTab === 'security' && <SecurityEventsTab />}
+        {activeTab === 'statistics' && <AuditStatisticsTab />}
+      </div>
     </PageContainer>
   );
 }

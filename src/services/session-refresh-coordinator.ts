@@ -60,8 +60,14 @@ interface RefreshStorage {
 }
 
 interface RefreshEventTarget {
-  addEventListener(type: 'storage', listener: (event: StorageEvent) => void): void;
-  removeEventListener(type: 'storage', listener: (event: StorageEvent) => void): void;
+  addEventListener(
+    type: 'storage',
+    listener: (event: StorageEvent) => void
+  ): void;
+  removeEventListener(
+    type: 'storage',
+    listener: (event: StorageEvent) => void
+  ): void;
 }
 
 export interface SessionRefreshCoordinatorOptions {
@@ -75,7 +81,10 @@ export interface SessionRefreshCoordinatorOptions {
 }
 
 const defaultGeneration = (): string => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
     return crypto.randomUUID();
   }
 
@@ -90,7 +99,9 @@ const metadataFromResponse = (
   rememberMe: response?.remember_me,
 });
 
-const isStoredRefreshMarker = (value: unknown): value is StoredRefreshMarker => {
+const isStoredRefreshMarker = (
+  value: unknown
+): value is StoredRefreshMarker => {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -103,10 +114,12 @@ const isStoredRefreshMarker = (value: unknown): value is StoredRefreshMarker => 
       candidate.status === 'transient_failure' ||
       candidate.status === 'terminal_failure' ||
       candidate.status === 'signed_out') &&
-    (candidate.expiresAt === undefined || typeof candidate.expiresAt === 'string') &&
+    (candidate.expiresAt === undefined ||
+      typeof candidate.expiresAt === 'string') &&
     (candidate.refreshExpiresAt === undefined ||
       typeof candidate.refreshExpiresAt === 'string') &&
-    (candidate.rememberMe === undefined || typeof candidate.rememberMe === 'boolean')
+    (candidate.rememberMe === undefined ||
+      typeof candidate.rememberMe === 'boolean')
   );
 };
 
@@ -177,9 +190,11 @@ export class SessionRefreshCoordinator {
     observedGeneration: string | null = this.getGeneration()
   ): Promise<SessionRefreshResult> {
     if (!this.inFlight) {
-      this.inFlight = this.runRefresh(execute, observedGeneration).finally(() => {
-        this.inFlight = null;
-      });
+      this.inFlight = this.runRefresh(execute, observedGeneration).finally(
+        () => {
+          this.inFlight = null;
+        }
+      );
     }
 
     return this.inFlight;
@@ -252,11 +267,13 @@ export class SessionRefreshCoordinator {
 
     return this.runExclusive(async () => {
       const currentMarker = this.readMarker();
-      const generationChanged = currentMarker?.generation !== observedGeneration;
+      const generationChanged =
+        currentMarker?.generation !== observedGeneration;
       const completionAge = currentMarker
         ? this.now() - currentMarker.completedAt
         : Number.POSITIVE_INFINITY;
-      const recentlyCompleted = completionAge >= 0 && completionAge <= this.freshnessMs;
+      const recentlyCompleted =
+        completionAge >= 0 && completionAge <= this.freshnessMs;
       const terminalBoundary =
         currentMarker?.status === 'terminal_failure' ||
         currentMarker?.status === 'signed_out';
@@ -339,7 +356,9 @@ export class SessionRefreshCoordinator {
     return result;
   }
 
-  private storeCompletion(execution: RefreshExecutionResult): StoredRefreshMarker {
+  private storeCompletion(
+    execution: RefreshExecutionResult
+  ): StoredRefreshMarker {
     const status: RefreshMarkerStatus = execution.success
       ? 'success'
       : execution.terminal
@@ -382,7 +401,10 @@ export class SessionRefreshCoordinator {
   private writeMarker(marker: StoredRefreshMarker): void {
     this.fallbackMarker = marker;
     try {
-      this.storage?.setItem(SESSION_REFRESH_GENERATION_KEY, JSON.stringify(marker));
+      this.storage?.setItem(
+        SESSION_REFRESH_GENERATION_KEY,
+        JSON.stringify(marker)
+      );
     } catch {
       // Storage can be unavailable in privacy-restricted contexts. Production
       // refresh fails closed without an origin-wide Web Lock.
@@ -392,7 +414,9 @@ export class SessionRefreshCoordinator {
   private readMarker(): StoredRefreshMarker | null {
     if (this.storage) {
       try {
-        const storedValue = this.storage.getItem(SESSION_REFRESH_GENERATION_KEY);
+        const storedValue = this.storage.getItem(
+          SESSION_REFRESH_GENERATION_KEY
+        );
         if (!storedValue) {
           this.fallbackMarker = null;
           return null;

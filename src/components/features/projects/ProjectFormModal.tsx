@@ -1,236 +1,131 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { projectService } from '@/services';
-import { useToast } from '@/hooks';
-import type { ProjectFormData, ProjectFormErrors, ProjectDetails } from '@/types/project.types';
-import { DEFAULT_GROUP_ROLES } from '@/utils/default-groups';
+import { useToast } from '@/hooks/useToast';
+import { useProjectMutations } from '@/hooks/useProjects';
+import type { ProjectFormData, ProjectInfo } from '@/types/project.types';
+import { ProjectForm } from './ProjectForm';
 
-interface ProjectFormModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
-  mode: 'create' | 'edit';
-  project?: ProjectDetails | null;
-  /**
-   * Called after successful project creation with the created project's hash.
-   * Only invoked in "create" mode.
-   */
-  onProjectCreated?: (projectHash: string) => void;
+/** The fields the edit dialog needs; list rows and detail records both fit. */
+export interface EditableProject {
+  project_hash: string;
+  project_name: string;
+  project_description: string | null;
 }
 
-export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
-  isOpen,
-  onClose,
-  onSuccess,
+interface ProjectFormModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mode: 'create' | 'edit';
+  /** Required in edit mode. */
+  project?: EditableProject | null;
+  /** Called with the API's copy of the project after it confirms the write. */
+  onSaved: (project: ProjectInfo) => void;
+}
+
+/** Create (root only) or edit a project's name and description. */
+export function ProjectFormModal({
+  open,
+  onOpenChange,
   mode,
   project,
-  onProjectCreated,
-}) => {
+  onSaved,
+}: ProjectFormModalProps): React.JSX.Element {
   const { showToast } = useToast();
-  const [formData, setFormData] = useState<ProjectFormData>({
-    project_name: '',
-    project_description: '',
-  });
-  const [errors, setErrors] = useState<ProjectFormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { pending, createProject, updateProject } = useProjectMutations();
+  const isSubmitting = pending !== null;
 
-  // Reset form when modal opens/closes or mode changes
-  useEffect(() => {
-    if (isOpen) {
-      if (mode === 'edit' && project) {
-        setFormData({
-          project_name: project.project_name || '',
-          project_description: project.project_description || '',
-        });
-      } else {
-        setFormData({
-          project_name: '',
-          project_description: '',
-        });
-      }
-      setErrors({});
-      setIsSubmitting(false);
-    }
-  }, [isOpen, mode, project]);
-
-  const validateForm = (): boolean => {
-    const newErrors: ProjectFormErrors = {};
-
-    // Validate project name
-    if (!formData.project_name.trim()) {
-      newErrors.project_name = 'Project name is required';
-    } else if (formData.project_name.trim().length < 3) {
-      newErrors.project_name = 'Project name must be at least 3 characters';
-    } else if (formData.project_name.trim().length > 100) {
-      newErrors.project_name = 'Project name must be less than 100 characters';
-    }
-
-    // Validate project description (optional but has constraints if provided)
-    if (formData.project_description && formData.project_description.length > 500) {
-      newErrors.project_description = 'Project description must be less than 500 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (field: keyof ProjectFormData) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setFormData(prev => ({
-        ...prev,
-        [field]: e.target.value,
-      }));
-
-      // Clear error when user starts typing
-      if (errors[field]) {
-        setErrors(prev => ({
-          ...prev,
-          [field]: undefined,
-        }));
-      }
-    };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const handleSubmit = async (values: ProjectFormData): Promise<void> => {
     try {
-      const projectData = {
-        project_name: formData.project_name.trim(),
-        project_description: formData.project_description.trim() || '',
-      };
-
       if (mode === 'create') {
-        const response = await projectService.createProject(projectData);
-        if (response.success) {
-          const projectHash = (response as any)?.project?.project_hash;
-          
-          // Build default group names for the toast message
-          const defaultGroupNames = DEFAULT_GROUP_ROLES.map(
-            (role) => `${role}_${projectHash ?? 'project'}`
-          );
-          
-          showToast(
-            `Project created successfully. Default groups created: ${defaultGroupNames.join(', ')}`,
-            'success'
-          );
-          
-          if (projectHash && onProjectCreated) {
-            onProjectCreated(projectHash);
-          }
-          
-          onSuccess();
-          onClose();
-        } else {
-          setErrors(prev => ({ ...prev, general: response.message || 'Failed to create project' }));
-        }
-      } else if (mode === 'edit' && project) {
-        const response = await projectService.updateProject(project.project_hash, projectData);
-        if (response.success) {
-          showToast('Project updated successfully', 'success');
-          onSuccess();
-          onClose();
-        } else {
-          setErrors(prev => ({ ...prev, general: response.message || 'Failed to update project' }));
-        }
+        const created = await createProject(values);
+        showToast(
+          `Project "${created.project_name}" created with its default groups.`,
+          'success'
+        );
+        onSaved(created);
+      } else {
+        if (!project) return;
+        const updated = await updateProject(project.project_hash, values);
+        showToast('Project updated.', 'success');
+        onSaved(updated);
       }
+      onOpenChange(false);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setErrors(prev => ({ ...prev, general: errorMessage }));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleCancel = () => {
-    if (!isSubmitting) {
-      onClose();
+      showToast(
+        err instanceof Error
+          ? err.message
+          : `The project could not be ${mode === 'create' ? 'created' : 'updated'}.`,
+        'error'
+      );
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => !isSubmitting && onOpenChange(next)}
+    >
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle>{mode === 'create' ? 'Create New Project' : 'Edit Project'}</DialogTitle>
+          <DialogTitle>
+            {mode === 'create' ? 'Create project' : 'Edit project'}
+          </DialogTitle>
           <DialogDescription>
             {mode === 'create'
-              ? 'Add a new project with a name and optional description.'
-              : 'Update the name or description of this project.'}
+              ? 'Projects are the applications your users sign in to.'
+              : 'Change the name or description shown across the console.'}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {errors.general && (
-            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
-              {errors.general}
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="project_name">
-              Project Name <span className="text-destructive">*</span>
-            </Label>
-            <Input
-              id="project_name"
-              type="text"
-              value={formData.project_name}
-              onChange={handleInputChange('project_name')}
-              placeholder="Enter project name"
-              disabled={isSubmitting}
-              error={errors.project_name}
-              autoFocus
-              fullWidth
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="project_description">Project Description</Label>
-            <Textarea
-              id="project_description"
-              value={formData.project_description}
-              onChange={handleInputChange('project_description')}
-              placeholder="Enter project description (optional)"
-              disabled={isSubmitting}
-              error={errors.project_description}
-              rows={4}
+        {mode === 'create' && (
+          <div className="flex gap-2.5 rounded-md border border-border bg-secondary/50 px-3 py-2.5 text-xs leading-5 text-muted-foreground">
+            <Info
+              className="mt-0.5 h-4 w-4 shrink-0 text-info"
+              aria-hidden="true"
             />
+            <p className="m-0">
+              The API also creates a project group for this project and three
+              user groups granted it:{' '}
+              <span className="font-mono text-foreground">admin_…</span>,{' '}
+              <span className="font-mono text-foreground">user_…</span> and{' '}
+              <span className="font-mono text-foreground">readonly_…</span>.
+              They start empty; add admin users to the{' '}
+              <span className="font-mono text-foreground">admin_…</span> group
+              to make them project administrators.
+            </p>
           </div>
+        )}
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              loading={isSubmitting}
-            >
-              {mode === 'create' ? 'Create Project' : 'Update Project'}
-            </Button>
-          </DialogFooter>
-        </form>
+        {/* Remount per open/project so the fields start from the current values. */}
+        {open && (
+          <ProjectForm
+            key={`${mode}:${project?.project_hash ?? 'new'}`}
+            mode={mode}
+            idPrefix={`project-${mode}`}
+            initialValues={
+              mode === 'edit' && project
+                ? {
+                    project_name: project.project_name,
+                    project_description: project.project_description ?? '',
+                  }
+                : undefined
+            }
+            onSubmit={(values) => void handleSubmit(values)}
+            onCancel={() => onOpenChange(false)}
+            submitLabel={mode === 'create' ? 'Create project' : 'Save changes'}
+            isSubmitting={isSubmitting}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
-};
+}
 
+export default ProjectFormModal;

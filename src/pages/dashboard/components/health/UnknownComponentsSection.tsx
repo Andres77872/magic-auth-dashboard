@@ -20,7 +20,9 @@ export function UnknownComponentsSection({
   handledKeys: string[];
 }): React.JSX.Element | null {
   const handled = new Set(handledKeys);
-  const leftover = Object.entries(components).filter(([key]) => !handled.has(key));
+  const leftover = Object.entries(components).filter(
+    ([key]) => !handled.has(key)
+  );
 
   if (!leftover.length) return null;
 

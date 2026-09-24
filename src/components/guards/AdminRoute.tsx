@@ -24,4 +24,4 @@ export function AdminRoute({ children }: AdminRouteProps): React.JSX.Element {
   );
 }
 
-export default AdminRoute; 
+export default AdminRoute;

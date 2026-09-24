@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method -- mock method refs in expect() assertions are not invoked. */
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { usePatreonStatus } from '../usePatreonStatus';
@@ -20,6 +21,7 @@ const sampleStatus: PatreonAdminStatus = {
     status: 'disabled',
     ready: false,
     disabled: true,
+    checkFailed: false,
     missing: [],
     degraded: [],
     featureFlags: {
@@ -42,6 +44,7 @@ const sampleStatus: PatreonAdminStatus = {
   s2s: { status: 'disabled', details: {} },
   worker: { status: 'disabled', details: {} },
   syncQueue: { status: 'disabled', details: {} },
+  databaseClock: { status: 'healthy', details: {} },
   metrics: {},
 };
 
@@ -65,7 +68,9 @@ describe('usePatreonStatus', () => {
   });
 
   it('sets an error when the status request fails', async () => {
-    mockService.getStatus.mockRejectedValue(new Error('Patreon status unavailable'));
+    mockService.getStatus.mockRejectedValue(
+      new Error('Patreon status unavailable')
+    );
 
     const { result } = renderHook(() => usePatreonStatus());
 

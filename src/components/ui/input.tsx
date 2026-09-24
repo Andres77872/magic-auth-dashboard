@@ -19,7 +19,8 @@ const inputVariants = cva(
 );
 
 export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
+  extends
+    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof inputVariants> {
   error?: string;
   helperText?: string;
@@ -54,21 +55,27 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     ref
   ) => {
-    const inputId = id || React.useId();
+    const generatedId = React.useId();
+    const inputId = id || generatedId;
     const hasError = !!error || validationState === 'error';
     const charCount = value ? String(value).length : 0;
 
     return (
       <div className={cn('w-full', !fullWidth && 'max-w-md')}>
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-foreground mb-1.5">
+          <label
+            htmlFor={inputId}
+            className="block text-sm font-medium text-foreground mb-1.5"
+          >
             {label}
             {props.required && <span className="text-destructive ml-1">*</span>}
           </label>
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">{leftIcon}</div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {leftIcon}
+            </div>
           )}
           <input
             type={type}
@@ -80,19 +87,35 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               leftIcon && 'pl-10',
               (rightIcon || loading) && 'pr-10',
               hasError && 'border-destructive focus-visible:ring-destructive',
-              validationState === 'success' && 'border-success focus-visible:ring-success',
-              validationState === 'warning' && 'border-warning focus-visible:ring-warning',
+              validationState === 'success' &&
+                'border-success focus-visible:ring-success',
+              validationState === 'warning' &&
+                'border-warning focus-visible:ring-warning',
               className
             )}
             ref={ref}
             aria-invalid={hasError}
-            aria-describedby={hasError ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+            aria-describedby={
+              hasError
+                ? `${inputId}-error`
+                : helperText
+                  ? `${inputId}-helper`
+                  : undefined
+            }
             {...props}
           />
           {loading && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
               <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
                 <path
                   className="opacity-75"
                   fill="currentColor"
@@ -102,7 +125,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
           {!loading && rightIcon && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{rightIcon}</div>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              {rightIcon}
+            </div>
           )}
         </div>
         {(error || helperText || (showCharCount && maxLength)) && (
@@ -114,7 +139,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 </p>
               )}
               {!error && helperText && (
-                <p id={`${inputId}-helper`} className="text-sm text-muted-foreground">
+                <p
+                  id={`${inputId}-helper`}
+                  className="text-sm text-muted-foreground"
+                >
                   {helperText}
                 </p>
               )}

@@ -1,22 +1,10 @@
-// Dashboard Overview Components
-export { default as WelcomeSection } from './WelcomeSection';
-export { default as StatisticsGrid } from './StatisticsGrid';
-export { default as QuickActionsPanel } from './QuickActionsPanel';
-export { default as QuickActionCard } from './QuickActionCard';
+// System health monitor (rendered on the root-only System page)
 export { default as SystemHealthPanel } from './SystemHealthPanel';
 export { default as HealthIndicator } from './HealthIndicator';
-
-// System Health Monitor — curated subsystem sections + primitives
 export * from './health';
 
-// Activity Feed Components
-export { default as RecentActivityFeed } from './RecentActivityFeed';
-export { default as ActivityItem } from './ActivityItem';
-export { default as ActivityFilter } from './ActivityFilter';
-
-// Analytics Components
-export { default as UserActivityAnalytics } from './UserActivityAnalytics';
-export { default as ProjectAnalyticsCard } from './ProjectAnalyticsCard';
-export { default as ProjectAnalyticsDashboard } from './ProjectAnalyticsDashboard';
-export { default as Chart } from './Chart';
-export { default as AnalyticsExport } from './AnalyticsExport';
+// Overview panels
+export { UserCompositionPanel } from './overview/UserCompositionPanel';
+export { ActivityFeedPanel } from './overview/ActivityFeedPanel';
+export { ServiceHealthPanel } from './overview/ServiceHealthPanel';
+export { AccessModelPanel } from './overview/AccessModelPanel';

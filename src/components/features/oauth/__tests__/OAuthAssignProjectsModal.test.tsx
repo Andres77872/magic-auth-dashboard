@@ -3,54 +3,54 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OAuthAssignProjectsModal } from '../OAuthAssignProjectsModal';
 import { isBindingConflict } from '../oauth-status';
-import { projectService } from '@/services';
-import { oauthService } from '@/services/oauth.service';
-import { useToast } from '@/hooks';
+import { projectService } from '@/services/project.service';
+import { ApiError } from '@/utils/error-handler';
 import type { ProjectListResponse } from '@/types/project.types';
 
-vi.mock('@/services', () => ({
+const { showToast } = vi.hoisted(() => ({ showToast: vi.fn() }));
+
+vi.mock('@/services/project.service', () => ({
   projectService: { getProjects: vi.fn() },
 }));
+vi.mock('@/hooks/useToast', () => ({ useToast: () => ({ showToast }) }));
 
-vi.mock('@/services/oauth.service', () => ({
-  oauthService: { upsertBinding: vi.fn() },
-}));
-
-vi.mock('@/hooks', () => ({
-  useToast: vi.fn(),
-}));
-
-const showToast = vi.fn();
 const mockedProjectService = vi.mocked(projectService);
-const mockedOAuthService = vi.mocked(oauthService);
 
 function projectsResponse(): ProjectListResponse {
-  const created_at = '2026-01-01T00:00:00Z';
+  const project = (
+    hash: string,
+    name: string
+  ): ProjectListResponse['projects'][number] => ({
+    project_hash: hash,
+    project_name: name,
+    project_description: null,
+    access_level: 'admin_access',
+    access_through: 'admin_access',
+  });
   return {
     success: true,
-    message: 'ok',
-    user_access_level: 'admin_access',
+    user_access_level: 'admin',
     projects: [
-      { project_hash: 'proj_a', project_name: 'Alpha', project_description: 'A', created_at },
-      { project_hash: 'proj_b', project_name: 'Bravo', project_description: 'B', created_at },
-      { project_hash: 'proj_c', project_name: 'Charlie', project_description: 'C', created_at },
-      { project_hash: 'proj_bound', project_name: 'Bound', project_description: 'E', created_at },
+      project('proj-a', 'Alpha'),
+      project('proj-b', 'Bravo'),
+      project('proj-c', 'Charlie'),
+      project('proj-bound', 'Bound'),
     ],
     pagination: { limit: 500, offset: 0, total: 4, has_more: false },
   };
 }
 
-function renderModal(
-  props: Partial<ComponentProps<typeof OAuthAssignProjectsModal>> = {},
-): ComponentProps<typeof OAuthAssignProjectsModal> {
-  const merged: ComponentProps<typeof OAuthAssignProjectsModal> = {
+type Props = ComponentProps<typeof OAuthAssignProjectsModal>;
+
+function renderModal(props: Partial<Props> = {}): Props {
+  const merged: Props = {
     isOpen: true,
     onClose: vi.fn(),
-    onSuccess: vi.fn(),
-    connectionHash: 'conn_1',
     connectionName: 'Acme Google',
     providerType: 'google',
     boundProjectHashes: [],
+    assignProject: vi.fn<Props['assignProject']>().mockResolvedValue(undefined),
+    onAssigned: vi.fn(),
     ...props,
   };
   render(<OAuthAssignProjectsModal {...merged} />);
@@ -59,13 +59,12 @@ function renderModal(
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(useToast).mockReturnValue({ showToast });
   mockedProjectService.getProjects.mockResolvedValue(projectsResponse());
 });
 
 describe('OAuthAssignProjectsModal', () => {
-  it('excludes projects already bound to this connection', async () => {
-    renderModal({ boundProjectHashes: ['proj_bound'] });
+  it('leaves out projects already bound to this connection', async () => {
+    renderModal({ boundProjectHashes: ['proj-bound'] });
 
     expect(await screen.findByText('Alpha')).toBeInTheDocument();
     expect(screen.queryByText('Bound')).not.toBeInTheDocument();
@@ -81,92 +80,86 @@ describe('OAuthAssignProjectsModal', () => {
     expect(keyInput).toHaveValue('acme-google');
   });
 
-  it('creates one DISABLED binding per selected project via the upsert endpoint', async () => {
-    mockedOAuthService.upsertBinding.mockResolvedValue({
-      success: true,
-      message: 'ok',
-    } as never);
-    const { onSuccess, onClose } = renderModal();
+  it('assigns each selected project under the normalised key, then refetches once and closes', async () => {
+    const { assignProject, onAssigned, onClose } = renderModal();
 
     await screen.findByText('Alpha');
+    fireEvent.change(screen.getByLabelText('Connection key'), {
+      target: { value: ' Acme-Google ' },
+    });
     fireEvent.click(screen.getByLabelText('Select Alpha'));
     fireEvent.click(screen.getByLabelText('Select Bravo'));
-
     fireEvent.click(screen.getByRole('button', { name: /assign \(2\)/i }));
 
-    await waitFor(() => expect(mockedOAuthService.upsertBinding.mock.calls).toHaveLength(2));
-    expect(mockedOAuthService.upsertBinding.mock.calls[0]).toEqual([
-      'proj_a',
-      'google',
-      {
-        connection_hash: 'conn_1',
-        enabled: false,
-        login_enabled: true,
-        link_enabled: true,
-        provisioning_mode: 'disabled',
-        existing_user_policy: 'deny',
-      },
-    ]);
+    await waitFor(() => expect(assignProject).toHaveBeenCalledTimes(2));
+    expect(assignProject).toHaveBeenNthCalledWith(1, 'proj-a', 'acme-google');
+    expect(assignProject).toHaveBeenNthCalledWith(2, 'proj-b', 'acme-google');
 
-    // The summary must say the binding is not yet usable.
     await waitFor(() =>
       expect(showToast).toHaveBeenCalledWith(
         expect.stringMatching(/redirect uri and a return origin/i),
-        'success',
-      ),
+        'success'
+      )
     );
-    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onAssigned).toHaveBeenCalledTimes(1);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('distinguishes a same-provider-type conflict from a generic failure and stays open', async () => {
-    mockedOAuthService.upsertBinding.mockImplementation((projectHash: string) => {
-      if (projectHash === 'proj_b') {
-        return Promise.reject(
-          new Error('This project already uses another google connection'),
-        );
-      }
-      if (projectHash === 'proj_c') {
-        return Promise.reject(new Error('Internal error'));
-      }
-      return Promise.resolve({ success: true, message: 'ok' } as never);
-    });
-    const { onSuccess, onClose } = renderModal();
+  it('separates 409 conflicts from failures, names the failure cause and stays open', async () => {
+    const assignProject = vi
+      .fn<Props['assignProject']>()
+      .mockImplementation((projectHash) => {
+        if (projectHash === 'proj-b') {
+          return Promise.reject(
+            new ApiError(
+              'This project already has a sign-in provider under the key "google".',
+              409
+            )
+          );
+        }
+        if (projectHash === 'proj-c') {
+          return Promise.reject(
+            new ApiError(
+              'This connection belongs to another project',
+              403,
+              'AUTHZ_4003'
+            )
+          );
+        }
+        return Promise.resolve();
+      });
+    const { onAssigned, onClose } = renderModal({ assignProject });
 
     await screen.findByText('Alpha');
     fireEvent.click(screen.getByLabelText('Select Alpha'));
     fireEvent.click(screen.getByLabelText('Select Bravo'));
     fireEvent.click(screen.getByLabelText('Select Charlie'));
-
     fireEvent.click(screen.getByRole('button', { name: /assign \(3\)/i }));
 
-    await waitFor(() => expect(mockedOAuthService.upsertBinding.mock.calls).toHaveLength(3));
-
-    // Per-row outcome badges, with the conflict distinct from the failure.
     expect(await screen.findByText('Assigned')).toBeInTheDocument();
-    expect(await screen.findByText('Already uses another connection')).toBeInTheDocument();
+    expect(await screen.findByText('Key in use')).toBeInTheDocument();
     expect(await screen.findByText('Failed')).toBeInTheDocument();
 
-    // One aggregate toast per non-empty bucket.
     await waitFor(() => {
       expect(showToast).toHaveBeenCalledWith(
-        expect.stringMatching(/^Assigned 1 project/),
-        'success',
+        expect.stringMatching(/^1 project assigned/),
+        'success'
       );
       expect(showToast).toHaveBeenCalledWith(
-        '1 project already use another Google connection',
-        'warning',
+        expect.stringMatching(/^1 project already uses the key "google"/),
+        'warning'
       );
-      expect(showToast).toHaveBeenCalledWith('Failed to assign 1 project', 'error');
+      expect(showToast).toHaveBeenCalledWith(
+        '1 project could not be assigned: This connection belongs to another project',
+        'error'
+      );
     });
-
-    expect(onSuccess).toHaveBeenCalledTimes(1);
-    // Stays open so the badges explaining the conflict remain visible.
+    expect(onAssigned).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
   });
 
   it('refuses an invalid connection key without calling the API', async () => {
-    renderModal();
+    const { assignProject } = renderModal();
 
     await screen.findByText('Alpha');
     fireEvent.click(screen.getByLabelText('Select Alpha'));
@@ -176,22 +169,42 @@ describe('OAuthAssignProjectsModal', () => {
     fireEvent.click(screen.getByRole('button', { name: /assign \(1\)/i }));
 
     expect(
-      await screen.findByText(/use lowercase letters, digits, hyphens and underscores/i),
+      await screen.findByText(
+        /use lowercase letters, digits, hyphens and underscores/i
+      )
     ).toBeInTheDocument();
-    expect(mockedOAuthService.upsertBinding.mock.calls).toHaveLength(0);
+    expect(assignProject).not.toHaveBeenCalled();
   });
 });
 
 describe('isBindingConflict', () => {
-  it('matches the "already uses" conflict phrasing', () => {
-    expect(isBindingConflict(new Error('This project already uses another connection'))).toBe(true);
-    expect(isBindingConflict(new Error('Duplicate entry for key uk_project_oauth_key'))).toBe(true);
-    expect(isBindingConflict(new Error('This connection belongs to another project'))).toBe(true);
+  it('is true only for 409 API errors', () => {
+    expect(
+      isBindingConflict(
+        new ApiError(
+          'A project_oauth_bindings with ... already exists',
+          409,
+          'CONF_5004'
+        )
+      )
+    ).toBe(true);
+    expect(
+      isBindingConflict(
+        new ApiError('This connection belongs to another project', 403)
+      )
+    ).toBe(false);
+    expect(isBindingConflict(new ApiError('Binding rejected', 400))).toBe(
+      false
+    );
   });
 
-  it('returns false for unrelated errors', () => {
-    expect(isBindingConflict(new Error('Network request failed'))).toBe(false);
+  it('does not guess from message text', () => {
+    expect(
+      isBindingConflict(
+        new Error('This project already uses another connection')
+      )
+    ).toBe(false);
+    expect(isBindingConflict('Duplicate entry')).toBe(false);
     expect(isBindingConflict(undefined)).toBe(false);
-    expect(isBindingConflict('Resource not found.')).toBe(false);
   });
 });

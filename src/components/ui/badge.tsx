@@ -17,6 +17,7 @@ const badgeVariants = cva(
         success: 'bg-success-subtle text-success-subtle-foreground',
         warning: 'bg-warning-subtle text-warning-subtle-foreground',
         info: 'bg-info-subtle text-info-subtle-foreground',
+        purple: 'bg-purple-subtle text-purple-subtle-foreground',
         outline: 'border border-border text-foreground',
         // Subtle variants (kept for explicit callers; identical to semantic twins)
         subtle: 'bg-muted-subtle text-muted-subtle-foreground',
@@ -28,7 +29,7 @@ const badgeVariants = cva(
         subtleInfo: 'bg-info-subtle text-info-subtle-foreground',
       },
       size: {
-        sm: 'px-2 py-0.5 text-[10px]',
+        sm: 'px-2 py-px text-[11px]',
         md: 'px-2.5 py-0.5 text-xs',
         lg: 'px-3 py-1 text-sm',
       },
@@ -42,7 +43,7 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends
-    React.HTMLAttributes<HTMLDivElement>,
+    React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {
   dot?: boolean;
 }
@@ -54,9 +55,12 @@ function Badge({
   dot,
   children,
   ...props
-}: BadgeProps) {
+}: BadgeProps): React.JSX.Element {
   return (
-    <div className={cn(badgeVariants({ variant, size }), className)} {...props}>
+    <span
+      className={cn(badgeVariants({ variant, size }), className)}
+      {...props}
+    >
       {dot && (
         <span
           className="h-1.5 w-1.5 rounded-full bg-current"
@@ -64,7 +68,7 @@ function Badge({
         />
       )}
       {children}
-    </div>
+    </span>
   );
 }
 

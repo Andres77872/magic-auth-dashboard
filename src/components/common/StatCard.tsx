@@ -1,7 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 
@@ -15,22 +15,42 @@ export interface StatCardProps {
     label?: string;
   };
   onClick?: () => void;
+  /** Makes the whole card a link to the related list. */
+  href?: string;
   loading?: boolean;
   className?: string;
-  /** Enable gradient background (from-{variant}/5 to-{variant}/10) */
+  /** @deprecated Meridian cards are flat; kept so existing callers compile. */
   gradient?: boolean;
-  /** Progress bar configuration */
   progress?: {
     value: number;
     max?: number;
     color?: string;
   };
-  /** Background variant for colored cards */
   variant?: 'default' | 'success' | 'warning' | 'info' | 'primary';
-  /** Secondary metric text below the main value */
-  subValue?: string;
+  /** Secondary line under the value. */
+  subValue?: React.ReactNode;
 }
 
+const ICON_TINTS: Record<NonNullable<StatCardProps['variant']>, string> = {
+  default: 'bg-primary-subtle text-primary-subtle-foreground',
+  primary: 'bg-primary-subtle text-primary-subtle-foreground',
+  success: 'bg-success-subtle text-success-subtle-foreground',
+  warning: 'bg-warning-subtle text-warning-subtle-foreground',
+  info: 'bg-info-subtle text-info-subtle-foreground',
+};
+
+const PROGRESS_VARIANTS: Record<
+  string,
+  'primary' | 'success' | 'warning' | 'destructive'
+> = {
+  primary: 'primary',
+  success: 'success',
+  warning: 'warning',
+  destructive: 'destructive',
+  default: 'primary',
+};
+
+/** Meridian metric card: overline label, large value, optional delta/progress. */
 export function StatCard({
   title,
   value,
@@ -38,74 +58,41 @@ export function StatCard({
   badge,
   trend,
   onClick,
+  href,
   loading = false,
   className = '',
-  gradient = false,
   progress,
   variant = 'default',
   subValue,
 }: StatCardProps): React.JSX.Element {
-  const trendDirection =
-    trend && trend.value > 0 ? 'up' : trend && trend.value < 0 ? 'down' : 'neutral';
+  const trendDirection = !trend
+    ? 'neutral'
+    : trend.value > 0
+      ? 'up'
+      : trend.value < 0
+        ? 'down'
+        : 'neutral';
+  const TrendIcon =
+    trendDirection === 'up'
+      ? TrendingUp
+      : trendDirection === 'down'
+        ? TrendingDown
+        : Minus;
+  const interactive = Boolean(href || onClick);
 
-  const getTrendIcon = () => {
-    if (trendDirection === 'up') {
-      return <TrendingUp className="h-3.5 w-3.5" aria-hidden="true" />;
-    }
-    if (trendDirection === 'down') {
-      return <TrendingDown className="h-3.5 w-3.5" aria-hidden="true" />;
-    }
-    return <Minus className="h-3.5 w-3.5" aria-hidden="true" />;
-  };
-
-  const trendColors = {
-    up: 'text-success',
-    down: 'text-destructive',
-    neutral: 'text-muted-foreground',
-  };
-
-  // Meridian metric icon tile tint per variant (quiet tint + saturated icon)
-  const iconTints: Record<string, string> = {
-    default: 'bg-primary/15 text-primary',
-    primary: 'bg-primary/15 text-primary',
-    success: 'bg-success/15 text-success',
-    warning: 'bg-warning/15 text-warning',
-    info: 'bg-info/15 text-info',
-  };
-  const iconTint = iconTints[variant] || iconTints.default;
-
-  // Map progress color to Progress component variant
-  const progressVariantMap: Record<string, 'primary' | 'success' | 'warning' | 'destructive'> = {
-    primary: 'primary',
-    success: 'success',
-    warning: 'warning',
-    destructive: 'destructive',
-    default: 'primary',
-  };
-
-  return (
-    <Card
-      // `gradient` retained for API compatibility but is a no-op — Meridian cards are flat.
-      className={cn(
-        'p-4',
-        onClick && 'cursor-pointer transition-colors hover:border-input',
-        gradient && '',
-        className
-      )}
-      onClick={onClick}
-      aria-label={onClick ? `View ${title}` : undefined}
-    >
+  const body = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <span className="text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
           {title}
         </span>
         <div className="flex items-center gap-2">
-          {badge && <span>{badge}</span>}
+          {badge}
           {icon && (
             <span
               className={cn(
                 'flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md [&_svg]:h-4 [&_svg]:w-4',
-                iconTint
+                ICON_TINTS[variant]
               )}
               aria-hidden="true"
             >
@@ -115,39 +102,75 @@ export function StatCard({
         </div>
       </div>
 
-      <div className="mt-2.5">
+      <div className="mt-2">
         {loading ? (
-          <Skeleton className="h-8 w-4/5" />
+          <Skeleton className="h-8 w-2/3" />
         ) : (
-          <div className="text-[30px] font-semibold leading-none tracking-[-0.01em]">
+          <div className="text-[28px] font-semibold leading-none tracking-[-0.01em] tabular-nums text-foreground">
             {value}
           </div>
         )}
         {subValue && !loading && (
-          <div className="mt-1.5 text-[13px] text-muted-foreground">{subValue}</div>
+          <div className="mt-2 text-xs text-muted-foreground">{subValue}</div>
         )}
         {progress && !loading && (
           <div className="mt-2.5">
             <Progress
               value={(progress.value / (progress.max ?? 100)) * 100}
-              variant={progressVariantMap[progress.color ?? 'default']}
+              variant={PROGRESS_VARIANTS[progress.color ?? 'default']}
               size="sm"
             />
           </div>
         )}
         {trend && !loading && (
-          <div className={cn('mt-2 flex items-center gap-1', trendColors[trendDirection])}>
-            <span>{getTrendIcon()}</span>
-            <span className="text-xs font-medium">{Math.abs(trend.value)}%</span>
+          <div
+            className={cn(
+              'mt-2 flex items-center gap-1 text-xs',
+              trendDirection === 'up' && 'text-success',
+              trendDirection === 'down' && 'text-destructive',
+              trendDirection === 'neutral' && 'text-muted-foreground'
+            )}
+          >
+            <TrendIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="font-medium">{Math.abs(trend.value)}%</span>
             {trend.label && (
-              <span className="text-xs text-muted-foreground">{trend.label}</span>
+              <span className="text-muted-foreground">{trend.label}</span>
             )}
           </div>
         )}
       </div>
-    </Card>
+    </>
   );
+
+  const classes = cn(
+    'block rounded-lg border border-border bg-card p-4 text-card-foreground',
+    interactive && 'transition-colors hover:border-input hover:bg-accent/30',
+    className
+  );
+
+  if (href) {
+    return (
+      <Link
+        to={href}
+        className={cn(classes, 'no-underline')}
+        aria-label={`${title}: ${value}`}
+      >
+        {body}
+      </Link>
+    );
+  }
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={cn(classes, 'w-full text-left')}
+      >
+        {body}
+      </button>
+    );
+  }
+  return <div className={classes}>{body}</div>;
 }
 
 export default StatCard;
-

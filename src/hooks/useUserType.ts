@@ -1,68 +1,47 @@
 import { useAuth } from './useAuth';
-import { UserType } from '@/types/auth.types';
+import { UserType, type User } from '@/types/auth.types';
+import { getUserTypeLabel } from '@/utils/component-utils';
 
-export function useUserType() {
+const RANK: Record<UserType, number> = {
+  [UserType.CONSUMER]: 1,
+  [UserType.ADMIN]: 2,
+  [UserType.ROOT]: 3,
+};
+
+interface UseUserTypeReturn {
+  user: User | null;
+  userType: UserType | null;
+  isRoot: boolean;
+  isAdmin: boolean;
+  isConsumer: boolean;
+  isAdminOrHigher: boolean;
+  hasMinimumUserType: (minimumType: UserType) => boolean;
+  canAccessRoute: (route: string) => boolean;
+  /** "Root", "Admin" or "Consumer" for the signed-in operator. */
+  getUserTypeLabel: () => string;
+}
+
+/**
+ * The signed-in operator's user type. Use for UX decisions only — the API
+ * enforces every permission independently.
+ */
+export function useUserType(): UseUserTypeReturn {
   const { user, userType, canAccessRoute } = useAuth();
 
-  const isUserType = (type: UserType): boolean => {
-    return userType === type;
-  };
-
-  const hasMinimumUserType = (minimumType: UserType): boolean => {
-    if (!userType) return false;
-    
-    const hierarchy = {
-      [UserType.CONSUMER]: 1,
-      [UserType.ADMIN]: 2,
-      [UserType.ROOT]: 3,
-    };
-    
-    return hierarchy[userType] >= hierarchy[minimumType];
-  };
+  const hasMinimumUserType = (minimumType: UserType): boolean =>
+    userType !== null && RANK[userType] >= RANK[minimumType];
 
   return {
     user,
     userType,
-    
-    // Type checking
-    isRoot: isUserType(UserType.ROOT),
-    isAdmin: isUserType(UserType.ADMIN),
-    isConsumer: isUserType(UserType.CONSUMER),
-    
-    // Hierarchy checking
-    hasMinimumUserType,
+    isRoot: userType === UserType.ROOT,
+    isAdmin: userType === UserType.ADMIN,
+    isConsumer: userType === UserType.CONSUMER,
     isAdminOrHigher: hasMinimumUserType(UserType.ADMIN),
-    
-    // Route access
+    hasMinimumUserType,
     canAccessRoute,
-    
-    // Display helpers
-    getUserTypeLabel: (): string => {
-      switch (userType) {
-        case UserType.ROOT:
-          return 'System Administrator';
-        case UserType.ADMIN:
-          return 'Project Administrator';
-        case UserType.CONSUMER:
-          return 'User';
-        default:
-          return 'Unknown';
-      }
-    },
-    
-    getUserTypeBadgeColor: (): string => {
-      switch (userType) {
-        case UserType.ROOT:
-          return 'var(--color-error)';
-        case UserType.ADMIN:
-          return 'var(--color-warning)';
-        case UserType.CONSUMER:
-          return 'var(--color-info)';
-        default:
-          return 'var(--color-gray-500)';
-      }
-    },
+    getUserTypeLabel: () => (userType ? getUserTypeLabel(userType) : 'Unknown'),
   };
 }
 
-export default useUserType; 
+export default useUserType;

@@ -85,7 +85,9 @@ export function DataViewTableView<T extends object>({
 }: DataViewTableViewProps<T>): React.JSX.Element {
   const totalColumns = selectable ? columns.length + 1 : columns.length;
 
-  const renderSortIcon = (column: DataViewColumn<T>) => {
+  const renderSortIcon = (
+    column: DataViewColumn<T>
+  ): React.JSX.Element | null => {
     if (!column.sortable) return null;
 
     const isActive = sortState.key === column.key;
@@ -106,7 +108,7 @@ export function DataViewTableView<T extends object>({
     );
   };
 
-  const renderBulkActionsBar = () => {
+  const renderBulkActionsBar = (): ReactNode => {
     if (!selectable || selectedItems.length === 0) return null;
     return bulkActions;
   };
@@ -157,7 +159,7 @@ export function DataViewTableView<T extends object>({
                 )}
                 {columns.map((column) => {
                   const isActive = sortState.key === column.key;
-                  const ariaSort = column.sortable
+                  const ariaSort: AriaAttributes['aria-sort'] = column.sortable
                     ? isActive
                       ? sortState.direction === 'asc'
                         ? 'ascending'
@@ -169,7 +171,7 @@ export function DataViewTableView<T extends object>({
                     <TableHead
                       key={column.key as string}
                       scope="col"
-                      aria-sort={ariaSort as AriaAttributes['aria-sort']}
+                      aria-sort={ariaSort}
                       className={cn(
                         ALIGN_CLASSES[column.align ?? 'left'],
                         column.sortable && 'cursor-pointer select-none',
@@ -184,7 +186,7 @@ export function DataViewTableView<T extends object>({
                         <button
                           type="button"
                           className={cn(
-                            'inline-flex items-center gap-0.5 rounded-sm px-1 -mx-1 py-0.5',
+                            'inline-flex items-center gap-0.5 rounded-sm px-1 -mx-1 py-0.5 uppercase tracking-[0.07em]',
                             'transition-colors hover:text-foreground',
                             isActive && 'text-foreground'
                           )}

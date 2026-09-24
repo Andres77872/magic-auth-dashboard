@@ -26,7 +26,12 @@ export function ChipList({
   return (
     <div className="flex flex-wrap gap-2">
       {list.map((item) => (
-        <Badge key={item} variant="outline" size="sm" className={toneClasses(tone)}>
+        <Badge
+          key={item}
+          variant="outline"
+          size="sm"
+          className={toneClasses(tone)}
+        >
           {item}
         </Badge>
       ))}

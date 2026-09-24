@@ -26,7 +26,8 @@ const skeletonVariants = cva('rounded-md bg-primary/10', {
 });
 
 export interface SkeletonProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof skeletonVariants> {
   width?: string | number;
   height?: string | number;
@@ -42,11 +43,13 @@ function Skeleton({
   count = 1,
   style,
   ...props
-}: SkeletonProps) {
+}: SkeletonProps): React.JSX.Element {
   const computedStyle: React.CSSProperties = {
     ...style,
     ...(width && { width: typeof width === 'number' ? `${width}px` : width }),
-    ...(height && { height: typeof height === 'number' ? `${height}px` : height }),
+    ...(height && {
+      height: typeof height === 'number' ? `${height}px` : height,
+    }),
   };
 
   if (count === 1) {

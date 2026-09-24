@@ -1,182 +1,182 @@
-import { apiClient } from './api.client';
-import type { ApiResponse, PaginationParams } from '@/types/api.types';
-import type { UserGroupWithProjectGroups } from '@/types/group.types';
+import { deleteJson, getJson, postFormJson, putFormJson, seg } from './request';
 import { groupService } from './group.service';
+import type {
+  AssignedProject,
+  CreateProjectGroupRequest,
+  CreateProjectGroupResponse,
+  GroupListParams,
+  ProjectAssignmentResponse,
+  ProjectGroup,
+  ProjectGroupDetails,
+  ProjectGroupListResponse,
+  ProjectGroupPage,
+  UpdateGroupRequest,
+  UpdatedGroup,
+  UserGroup,
+  UserGroupAccessResult,
+  UserGroupWithAccess,
+} from '@/types/group.types';
 
-export interface ProjectGroup {
-  group_hash: string;
-  group_name: string;
-  description: string;
-  project_count: number;
-  created_at: string;
-  updated_at?: string;
+// Kept so existing `import type { ProjectGroup } from '@/services/project-group.service'` keeps working.
+export type {
+  AssignedProject,
+  CreateProjectGroupRequest,
+  CreateProjectGroupResponse,
+  ProjectGroup,
+  ProjectGroupListResponse,
+} from '@/types/group.types';
+
+interface ProjectGroupDetailsBody {
+  project_group?: ProjectGroup | null;
+  assigned_projects?: AssignedProject[];
 }
 
-export interface CreateProjectGroupRequest {
-  group_name: string;
-  description?: string;
+/** Parallel requests used when aggregating user-group grants. */
+const GRANT_LOOKUP_CONCURRENCY = 5;
+
+function unexpected(what: string): Error {
+  return new Error(
+    `Unexpected response from the server while loading ${what}.`
+  );
 }
 
-export interface CreateProjectGroupResponse extends ApiResponse {
-  project_group: ProjectGroup;
-}
-
-export interface ProjectGroupListResponse extends ApiResponse {
-  project_groups: ProjectGroup[];
-  pagination: {
-    limit: number;
-    offset: number;
-    total: number;
-    has_more: boolean;
-  };
-}
-
-export interface AssignedProject {
-  project_hash: string;
-  project_name: string;
-  project_description?: string;
-}
-
-export interface ProjectGroupDetailsResponse extends ApiResponse {
-  project_group: ProjectGroup;
-  assigned_projects: AssignedProject[];
-  statistics: {
-    total_projects: number;
-  };
-}
-
+/**
+ * Project groups (`/admin/project-groups/*`, Form encoded). Requires `admin`
+ * or `manage_roles`. There is no `GET /admin/project-groups/{hash}/projects`
+ * route: a group's projects come with its details.
+ */
 class ProjectGroupService {
-  // List project groups
-  async getProjectGroups(params: PaginationParams = {}): Promise<ProjectGroupListResponse> {
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
+  /** Route body of the list (kept for existing callers; prefer {@link listProjectGroups}). */
+  async getProjectGroups(
+    params: GroupListParams = {}
+  ): Promise<ProjectGroupListResponse> {
+    return await getJson<ProjectGroupListResponse>('/admin/project-groups', {
+      limit: params.limit,
+      offset: params.offset,
+      search: params.search?.trim(),
+      sort_by: params.sort_by,
+      sort_order: params.sort_order,
     });
-    
-    const response = await apiClient.get<ProjectGroupListResponse>('/admin/project-groups', cleanParams);
-    return response as ProjectGroupListResponse;
   }
 
-  // Get project group details
-  async getProjectGroup(groupHash: string): Promise<ProjectGroupDetailsResponse> {
-    const response = await apiClient.get<ProjectGroupDetailsResponse>(`/admin/project-groups/${groupHash}`);
-    return response as ProjectGroupDetailsResponse;
+  async listProjectGroups(
+    params: GroupListParams = {}
+  ): Promise<ProjectGroupPage> {
+    const res = await this.getProjectGroups(params);
+    if (!Array.isArray(res.project_groups)) throw unexpected('project groups');
+    const total = res.pagination?.total;
+    if (typeof total !== 'number') throw unexpected('project groups');
+    return { projectGroups: res.project_groups, total };
   }
 
-  // Create new project group - uses form data per API spec
-  async createProjectGroup(groupData: CreateProjectGroupRequest): Promise<CreateProjectGroupResponse> {
-    const response = await apiClient.postForm<CreateProjectGroupResponse>('/admin/project-groups', groupData);
-    return response as CreateProjectGroupResponse;
+  async getProjectGroup(groupHash: string): Promise<ProjectGroupDetails> {
+    const res = await getJson<ProjectGroupDetailsBody>(
+      `/admin/project-groups/${seg(groupHash)}`
+    );
+    if (!res.project_group) throw new Error('Project group not found.');
+    if (!Array.isArray(res.assigned_projects))
+      throw unexpected('the project group');
+    return { projectGroup: res.project_group, projects: res.assigned_projects };
   }
 
-  // Update project group - uses form data per API spec
-  async updateProjectGroup(groupHash: string, data: Partial<CreateProjectGroupRequest>): Promise<CreateProjectGroupResponse> {
-    const response = await apiClient.putForm<CreateProjectGroupResponse>(`/admin/project-groups/${groupHash}`, data);
-    return response as CreateProjectGroupResponse;
+  async createProjectGroup(
+    data: CreateProjectGroupRequest
+  ): Promise<ProjectGroup> {
+    const res = await postFormJson<CreateProjectGroupResponse>(
+      '/admin/project-groups',
+      {
+        group_name: data.group_name.trim(),
+        description: data.description?.trim() || undefined,
+      }
+    );
+    if (!res.project_group) throw unexpected('the new project group');
+    return res.project_group;
   }
 
-  // Delete project group
-  async deleteProjectGroup(groupHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/admin/project-groups/${groupHash}`);
+  /**
+   * Empty values keep the current value (a description can't be cleared).
+   * Note: api.auth currently calls `sp_update_project_group` with one argument
+   * too many, so this route may fail server-side; the error is surfaced as is.
+   */
+  async updateProjectGroup(
+    groupHash: string,
+    data: UpdateGroupRequest
+  ): Promise<UpdatedGroup> {
+    const res = await putFormJson<{ project_group?: UpdatedGroup | null }>(
+      `/admin/project-groups/${seg(groupHash)}`,
+      {
+        group_name: data.group_name?.trim() || undefined,
+        description: data.description?.trim() || undefined,
+      }
+    );
+    if (!res.project_group) throw unexpected('the updated project group');
+    return res.project_group;
   }
 
-  // Assign project to a project group - uses form data per API spec
+  /** Soft-deletes the group, its project assignments and every user-group grant to it. Projects are untouched. */
+  async deleteProjectGroup(groupHash: string): Promise<void> {
+    await deleteJson(`/admin/project-groups/${seg(groupHash)}`);
+  }
+
+  /** Idempotent: re-adding reactivates the assignment. */
   async assignProjectToGroup(
     groupHash: string,
     projectHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.postForm<void>(
-      `/admin/project-groups/${groupHash}/projects`,
-      { project_hash: projectHash }
+  ): Promise<ProjectAssignmentResponse> {
+    return await postFormJson<ProjectAssignmentResponse>(
+      `/admin/project-groups/${seg(groupHash)}/projects`,
+      {
+        project_hash: projectHash,
+      }
     );
   }
 
-  // Remove project from a project group
+  /** Answers 200 even when the project wasn't in the group; affected project sessions are revoked. */
   async removeProjectFromGroup(
     groupHash: string,
     projectHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(
-      `/admin/project-groups/${groupHash}/projects/${projectHash}`
-    );
-  }
-
-  // Get projects assigned to a project group
-  async getGroupProjects(
-    groupHash: string,
-    params: PaginationParams = {}
-  ): Promise<ApiResponse<any[]>> {
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && (typeof value !== 'string' || value !== '')) {
-        cleanParams[key] = value;
-      }
-    });
-    
-    return await apiClient.get<any[]>(
-      `/admin/project-groups/${groupHash}/projects`, 
-      cleanParams
+  ): Promise<ProjectAssignmentResponse> {
+    return await deleteJson<ProjectAssignmentResponse>(
+      `/admin/project-groups/${seg(groupHash)}/projects/${seg(projectHash)}`
     );
   }
 
   /**
-   * Compute which user groups have access to a specific project group.
-   * Client-side aggregation: fetches all user groups + their project-group linkages,
-   * then filters for those linked to the target project group.
-   *
-   * NOTE: This is a Phase 1 workaround. Phase 2 should add a dedicated
-   * backend endpoint GET /admin/project-groups/{hash}/user-groups.
-   *
-   * Uses concurrency limit of 5 for parallel fetches.
+   * User groups granted this project group. api.auth has no reverse lookup,
+   * so every user group's grants are read (5 at a time). Groups whose grants
+   * can't be read are counted in `uncheckedCount` instead of being dropped
+   * silently.
    */
   async getUserGroupsForProjectGroup(
     projectGroupHash: string
-  ): Promise<UserGroupWithProjectGroups[]> {
-    // Step 1: Fetch all user groups
-    const allGroupsResponse = await groupService.getGroups({ limit: 500 });
-    if (!allGroupsResponse.success || !allGroupsResponse.user_groups) {
-      return [];
-    }
+  ): Promise<UserGroupAccessResult> {
+    const allGroups = await groupService.listAllGroups();
+    const userGroups: UserGroupWithAccess[] = [];
+    let uncheckedCount = 0;
 
-    const allUserGroups = allGroupsResponse.user_groups;
-
-    // Step 2: Fetch project-group linkages for each user group with concurrency limit of 5
-    const CONCURRENCY_LIMIT = 5;
-    const results: UserGroupWithProjectGroups[] = [];
-
-    for (let i = 0; i < allUserGroups.length; i += CONCURRENCY_LIMIT) {
-      const batch = allUserGroups.slice(i, i + CONCURRENCY_LIMIT);
-      const batchResults = await Promise.all(
-        batch.map(async (userGroup) => {
-          try {
-            const pgResponse = await groupService.getGroupProjectGroups(
-              userGroup.group_hash
-            );
-            const projectGroups = (pgResponse as any)?.project_groups ?? [];
-            return {
-              ...userGroup,
-              projectGroups,
-            };
-          } catch {
-            // If fetch fails for one group, include it with empty projectGroups
-            return {
-              ...userGroup,
-              projectGroups: [],
-            };
-          }
-        })
+    for (let i = 0; i < allGroups.length; i += GRANT_LOOKUP_CONCURRENCY) {
+      const batch = allGroups.slice(i, i + GRANT_LOOKUP_CONCURRENCY);
+      const outcomes = await Promise.allSettled(
+        batch.map((group) =>
+          groupService.listProjectGroupGrants(group.group_hash)
+        )
       );
-      results.push(...batchResults);
+      outcomes.forEach((outcome, index) => {
+        const group: UserGroup = batch[index];
+        if (outcome.status === 'rejected') {
+          uncheckedCount += 1;
+          return;
+        }
+        const grant = outcome.value.find(
+          (pg) => pg.group_hash === projectGroupHash
+        );
+        if (grant) userGroups.push({ ...group, granted_at: grant.granted_at });
+      });
     }
 
-    // Step 3: Filter for groups linked to the target project group
-    return results.filter((ug) =>
-      ug.projectGroups.some((pg) => pg.group_hash === projectGroupHash)
-    );
+    return { userGroups, uncheckedCount };
   }
 }
 
 export const projectGroupService = new ProjectGroupService();
-export default projectGroupService; 
+export default projectGroupService;

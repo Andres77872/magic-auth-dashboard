@@ -1,53 +1,39 @@
 import React from 'react';
+import { Avatar } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import type { UserType } from '@/types/auth.types';
 
 interface UserAvatarProps {
   username: string;
+  /** Kept for API compatibility; the tint is derived from the name. */
   userType?: UserType;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-const sizeStyles = {
-  sm: 'h-8 w-8 text-xs',
-  md: 'h-10 w-10 text-sm',
-  lg: 'h-14 w-14 text-lg',
-};
+const sizeMap = {
+  sm: { size: 'md', className: '' },
+  md: { size: 'lg', className: '' },
+  lg: { size: 'xl', className: 'h-14 w-14 text-lg' },
+} as const;
 
-const typeColorStyles: Record<UserType, string> = {
-  root: 'bg-destructive-subtle text-destructive-subtle-foreground',
-  admin: 'bg-info-subtle text-info-subtle-foreground',
-  consumer: 'bg-muted-subtle text-muted-subtle-foreground',
-};
-
+/**
+ * Deterministic monogram avatar (Meridian): the same username always gets the
+ * same tint, so people are recognisable across tables and detail pages.
+ */
 export function UserAvatar({
   username,
-  userType,
   size = 'md',
   className = '',
 }: UserAvatarProps): React.JSX.Element {
-  const initials =
-    username
-      .split(' ')
-      .map((name) => name.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || username.charAt(0).toUpperCase();
-
+  const mapped = sizeMap[size];
   return (
-    <div
-      className={cn(
-        'flex items-center justify-center rounded-full font-semibold shadow-sm ring-1 ring-border/50',
-        sizeStyles[size],
-        userType ? typeColorStyles[userType] : 'bg-muted text-muted-foreground',
-        className
-      )}
+    <Avatar
+      name={username}
+      size={mapped.size}
+      className={cn(mapped.className, className)}
       title={username}
-      aria-label={`Avatar for ${username}`}
-    >
-      <span>{initials}</span>
-    </div>
+    />
   );
 }
 

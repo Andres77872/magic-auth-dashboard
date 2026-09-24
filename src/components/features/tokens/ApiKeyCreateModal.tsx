@@ -1,13 +1,9 @@
 /**
- * API Key Create Modal
- *
- * Modal for admins to create API keys for a user.
- * Requires selecting both a target owner (user_hash) and a project.
- * Uses FormData per backend spec.
+ * Create a project-scoped API key for a user (`POST /api-keys`).
+ * On success the parent opens the one-time reveal dialog.
  */
 
-import React, { useState, useCallback } from 'react';
-import { Key, AlertTriangle, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,248 +15,173 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { useApiKeyMutations } from '@/hooks/useApiKeys';
+import type { ComboboxOption } from '@/components/features/shared-pickers';
+import type { CreatedApiKey } from '@/types/api-key.types';
+import { expiryDateToIso } from './api-key-format';
+import { describeApiKeyError } from './api-key-errors';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useApiKeys } from '@/hooks';
-import type { Project } from '@/types/auth.types';
-import type { CreateApiKeyResponse } from '@/types/api-key.types';
+  ExpiryDateInput,
+  Field,
+  FormError,
+  OwnerPicker,
+  ProjectPicker,
+} from './ApiKeyFormFields';
 
-interface ApiKeyCreateModalProps {
+export interface ApiKeyCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (response: CreateApiKeyResponse) => void;
-  accessibleProjects: Project[];
-  /** Pre-filled user hash from parent (owner-centric flow) */
-  prefilledUserHash?: string;
+  onCreated: (created: CreatedApiKey) => void;
+  /** Prefill from the page filters. */
+  initialOwner?: ComboboxOption | null;
+  initialProjectHash?: string;
 }
 
 export function ApiKeyCreateModal({
   isOpen,
   onClose,
-  onSuccess,
-  accessibleProjects,
-  prefilledUserHash,
+  onCreated,
+  initialOwner = null,
+  initialProjectHash = '',
 }: ApiKeyCreateModalProps): React.JSX.Element {
-  const { createKey } = useApiKeys({ autoFetch: false });
-
-  // Form state
-  const [userHash, setUserHash] = useState(prefilledUserHash || '');
-  const [selectedProjectHash, setSelectedProjectHash] = useState<string>('');
+  const { createKey, pending } = useApiKeyMutations();
+  const [owner, setOwner] = useState<ComboboxOption | null>(initialOwner);
+  const [projectHash, setProjectHash] = useState(initialProjectHash);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [expiryDate, setExpiryDate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const isSubmitting = pending === 'create';
 
-  // Reset form when modal opens
-  const handleOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      setUserHash(prefilledUserHash || '');
-      setSelectedProjectHash(accessibleProjects[0]?.project_hash || '');
+  // Reset the form each time the dialog opens.
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
+      setOwner(initialOwner);
+      setProjectHash(initialProjectHash);
       setName('');
       setDescription('');
-      setExpiresAt('');
+      setExpiryDate('');
       setError(null);
-      onClose();
     }
-  }, [accessibleProjects, prefilledUserHash, onClose]);
+  }
 
-  // Submit handler
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    
-    void (async (): Promise<void> => {
-      if (!userHash.trim()) {
-        setError('Owner user hash is required');
-        return;
-      }
-
-      if (!selectedProjectHash) {
-        setError('Project is required');
-        return;
-      }
-
-      setIsSubmitting(true);
-      setError(null);
-
-      try {
-        const response = await createKey({
-          user_hash: userHash.trim(),
-          project_hash: selectedProjectHash,
-          name: name.trim() || undefined,
-          description: description.trim() || undefined,
-          expires_at: expiresAt || undefined,
-        });
-
-        if (response.success) {
-          onSuccess(response);
-        } else {
-          setError(response.message || 'Failed to create API key');
-        }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Unable to create API key';
-        setError(errorMessage);
-      } finally {
-        setIsSubmitting(false);
-      }
-    })();
-  }, [userHash, selectedProjectHash, name, description, expiresAt, createKey, onSuccess]);
-
-  // Pre-select first project if available
-  React.useEffect(() => {
-    if (isOpen && accessibleProjects.length > 0 && !selectedProjectHash) {
-      setSelectedProjectHash(accessibleProjects[0].project_hash);
+  const handleSubmit = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault();
+    if (!owner) {
+      setError('Choose the user who will own the key.');
+      return;
     }
-    if (isOpen && prefilledUserHash) {
-      setUserHash(prefilledUserHash);
+    if (!projectHash) {
+      setError('Choose the project the key is scoped to.');
+      return;
     }
-  }, [isOpen, accessibleProjects, selectedProjectHash, prefilledUserHash]);
+    setError(null);
+    try {
+      const created = await createKey({
+        user_hash: owner.value,
+        project_hash: projectHash,
+        name: name.trim() || undefined,
+        description: description.trim() || undefined,
+        expires_at: expiryDate ? expiryDateToIso(expiryDate) : undefined,
+      });
+      onCreated(created);
+    } catch (err) {
+      setError(describeApiKeyError(err, 'The API key could not be created.'));
+    }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && !isSubmitting && onClose()}
+    >
       <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Create API Token
-          </DialogTitle>
+          <DialogTitle>Create API key</DialogTitle>
           <DialogDescription>
-            Create a project-scoped API token for a user.
+            The key acts as its owner within one project. The full key is shown
+            once, right after it is created.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Admin context warning */}
-          <div className="rounded-lg border border-warning/30 bg-warning/5 p-3">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
-              <p className="text-sm text-muted-foreground">
-                You are creating this token on behalf of a user.
-                The token's permissions are scoped to the selected project.
-              </p>
-            </div>
-          </div>
-
-          {/* Owner user hash (required) */}
-          <div className="space-y-2">
-            <Label htmlFor="user_hash">Owner User Hash *</Label>
-            <Input
-              id="user_hash"
-              value={userHash}
-              onChange={(e) => setUserHash(e.target.value)}
-              placeholder="e.g., usr_abc123def456"
-              disabled={isSubmitting || Boolean(prefilledUserHash)}
-              readOnly={Boolean(prefilledUserHash)}
-              required
+        <form
+          onSubmit={(event) => void handleSubmit(event)}
+          className="space-y-4"
+          noValidate
+        >
+          <Field id="api-key-owner" label="Owner">
+            <OwnerPicker
+              id="api-key-owner"
+              value={owner}
+              onChange={setOwner}
+              disabled={isSubmitting}
             />
-            <p className="text-xs text-muted-foreground">
-              {prefilledUserHash
-                ? 'Pre-filled from selected user'
-                : 'The hash of the user this token will belong to'}
-            </p>
-          </div>
-
-          {/* Project selector */}
-          <div className="space-y-2">
-            <Label htmlFor="project">Project *</Label>
-            {accessibleProjects.length === 0 ? (
-              <div className="text-sm text-muted-foreground p-2 border rounded-md bg-muted/50">
-                No projects available. You need at least one project to create a token.
-              </div>
-            ) : (
-              <Select
-                value={selectedProjectHash}
-                onValueChange={setSelectedProjectHash}
-                disabled={isSubmitting}
-              >
-                <SelectTrigger id="project">
-                  <SelectValue placeholder="Select a project" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accessibleProjects.map((project) => (
-                    <SelectItem key={project.project_hash} value={project.project_hash}>
-                      {project.project_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          {/* Name (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Name (optional)</Label>
+          </Field>
+          <Field id="api-key-project" label="Project">
+            <ProjectPicker
+              id="api-key-project"
+              value={projectHash}
+              onChange={(option) => setProjectHash(option?.value ?? '')}
+              disabled={isSubmitting}
+            />
+          </Field>
+          <Field
+            id="api-key-name"
+            label="Name"
+            optional
+            helper="Defaults to “API Key - owner name”."
+          >
             <Input
-              id="name"
+              id="api-key-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Production Deploy Key"
-              disabled={isSubmitting}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="e.g. Billing worker"
               maxLength={100}
+              disabled={isSubmitting}
+              className="h-8 text-[13px]"
             />
-            <p className="text-xs text-muted-foreground">
-              A friendly name to identify this token
-            </p>
-          </div>
-
-          {/* Description (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (optional)</Label>
+          </Field>
+          <Field id="api-key-description" label="Description" optional>
             <Textarea
-              id="description"
+              id="api-key-description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g., CI/CD pipeline authentication"
-              disabled={isSubmitting}
-              className="min-h-[80px]"
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="What uses this key?"
               maxLength={500}
-            />
-          </div>
-
-          {/* Expiration (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="expires_at">Expiration (optional)</Label>
-            <Input
-              id="expires_at"
-              type="date"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
+              rows={2}
               disabled={isSubmitting}
-              min={new Date().toISOString().split('T')[0]}
+              className="text-[13px]"
             />
-            <p className="text-xs text-muted-foreground">
-              Leave empty for no expiration
-            </p>
-          </div>
+          </Field>
+          <Field
+            id="api-key-expiry"
+            label="Expiry date"
+            optional
+            helper="The key stops working at 00:00 UTC on this date. Leave empty for a key that never expires."
+          >
+            <ExpiryDateInput
+              id="api-key-expiry"
+              value={expiryDate}
+              onChange={setExpiryDate}
+              disabled={isSubmitting}
+            />
+          </Field>
 
-          {/* Error display */}
-          {error && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+          <FormError message={error} />
 
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
+              variant="secondary"
+              onClick={onClose}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSubmitting || accessibleProjects.length === 0}
-            >
-              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Create Token
+            <Button type="submit" loading={isSubmitting}>
+              Create key
             </Button>
           </DialogFooter>
         </form>

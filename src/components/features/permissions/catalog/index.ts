@@ -1,1 +1,0 @@
-export { ProjectCatalogTab } from './ProjectCatalogTab';

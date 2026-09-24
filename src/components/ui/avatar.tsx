@@ -23,7 +23,8 @@ const avatarVariants = cva(
 );
 
 export interface AvatarProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
+  extends
+    React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof avatarVariants> {
   /** Name used to derive initials and a deterministic tint. */
   name?: string;

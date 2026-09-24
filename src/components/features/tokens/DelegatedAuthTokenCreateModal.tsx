@@ -1,12 +1,10 @@
 /**
- * Delegated Auth Token Create Modal
- *
- * Creates a normal api.auth API key for a target service project and keeps the
- * caller/source project only as reveal-time metadata for env snippet generation.
+ * Create a delegation key: an ordinary API key scoped to the TARGET service
+ * project. The caller (source) project is not sent to api.auth; it is only
+ * used to render the trusted-client snippet in the reveal dialog.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, KeyRound, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,290 +15,201 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useApiKeys } from '@/hooks';
-import type { User } from '@/types/auth.types';
-import type { ProjectDetails } from '@/types/project.types';
+import { useApiKeyMutations } from '@/hooks/useApiKeys';
+import type { ComboboxOption } from '@/components/features/shared-pickers';
 import type {
-  CreateApiKeyResponse,
+  CreatedApiKey,
   DelegatedAuthRevealConfig,
 } from '@/types/api-key.types';
+import { expiryDateToIso } from './api-key-format';
+import { describeApiKeyError } from './api-key-errors';
+import {
+  ExpiryDateInput,
+  Field,
+  FormError,
+  OwnerPicker,
+  ProjectPicker,
+} from './ApiKeyFormFields';
 
-interface DelegatedAuthTokenCreateModalProps {
+export const DEFAULT_DELEGATION_KEY_NAME = 'Magic LLM delegation key';
+
+export interface DelegatedAuthTokenCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (
-    response: CreateApiKeyResponse,
+  onCreated: (
+    created: CreatedApiKey,
     config: DelegatedAuthRevealConfig
   ) => void;
-  availableProjects: ProjectDetails[];
-  availableUsers: User[];
-}
-
-const DEFAULT_TOKEN_NAME = 'Magic LLM delegation token';
-
-function findProjectName(projects: ProjectDetails[], projectHash: string): string | undefined {
-  return projects.find((project) => project.project_hash === projectHash)?.project_name;
 }
 
 export function DelegatedAuthTokenCreateModal({
   isOpen,
   onClose,
-  onSuccess,
-  availableProjects,
-  availableUsers,
+  onCreated,
 }: DelegatedAuthTokenCreateModalProps): React.JSX.Element {
-  const { createKey } = useApiKeys({ autoFetch: false });
-
-  const [ownerUserHash, setOwnerUserHash] = useState('');
-  const [targetProjectHash, setTargetProjectHash] = useState('');
-  const [sourceProjectHash, setSourceProjectHash] = useState('');
-  const [name, setName] = useState(DEFAULT_TOKEN_NAME);
+  const { createKey, pending } = useApiKeyMutations();
+  const [owner, setOwner] = useState<ComboboxOption | null>(null);
+  const [target, setTarget] = useState<ComboboxOption | null>(null);
+  const [source, setSource] = useState<ComboboxOption | null>(null);
+  const [name, setName] = useState(DEFAULT_DELEGATION_KEY_NAME);
   const [description, setDescription] = useState('');
-  const [expiresAt, setExpiresAt] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [expiryDate, setExpiryDate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const isSubmitting = pending === 'create';
 
-  const targetProjectName = useMemo(
-    () => findProjectName(availableProjects, targetProjectHash),
-    [availableProjects, targetProjectHash]
-  );
-  const sourceProjectName = useMemo(
-    () => findProjectName(availableProjects, sourceProjectHash),
-    [availableProjects, sourceProjectHash]
-  );
-
-  const resetForm = useCallback(() => {
-    setOwnerUserHash('');
-    setTargetProjectHash('');
-    setSourceProjectHash('');
-    setName(DEFAULT_TOKEN_NAME);
-    setDescription('');
-    setExpiresAt('');
-    setError(null);
-  }, []);
-
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      if (!open) {
-        resetForm();
-        onClose();
-      }
-    },
-    [onClose, resetForm]
-  );
-
-  useEffect(() => {
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  if (wasOpen !== isOpen) {
+    setWasOpen(isOpen);
     if (isOpen) {
+      setOwner(null);
+      setTarget(null);
+      setSource(null);
+      setName(DEFAULT_DELEGATION_KEY_NAME);
+      setDescription('');
+      setExpiryDate('');
       setError(null);
     }
-  }, [isOpen]);
+  }
 
-  const handleSubmit = useCallback(
-    (event: React.FormEvent) => {
-      event.preventDefault();
-
-      void (async (): Promise<void> => {
-        const trimmedOwner = ownerUserHash.trim();
-        const trimmedTargetProject = targetProjectHash.trim();
-        const trimmedSourceProject = sourceProjectHash.trim();
-
-        if (!trimmedOwner) {
-          setError('Owner user hash is required');
-          return;
-        }
-
-        if (!trimmedTargetProject) {
-          setError('Target service project hash is required');
-          return;
-        }
-
-        if (!trimmedSourceProject) {
-          setError('Source caller project hash is required');
-          return;
-        }
-
-        setIsSubmitting(true);
-        setError(null);
-
-        try {
-          const response = await createKey({
-            user_hash: trimmedOwner,
-            project_hash: trimmedTargetProject,
-            name: name.trim() || undefined,
-            description: description.trim() || undefined,
-            expires_at: expiresAt || undefined,
-          });
-
-          if (!response.success) {
-            setError(response.message || 'Failed to create delegation token');
-            return;
-          }
-
-          onSuccess(response, {
-            ownerUserHash: trimmedOwner,
-            targetProjectHash: trimmedTargetProject,
-            targetProjectName,
-            sourceProjectHash: trimmedSourceProject,
-            sourceProjectName,
-          });
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Unable to create delegation token');
-        } finally {
-          setIsSubmitting(false);
-        }
-      })();
-    },
-    [
-      createKey,
-      description,
-      expiresAt,
-      name,
-      onSuccess,
-      ownerUserHash,
-      sourceProjectHash,
-      sourceProjectName,
-      targetProjectHash,
-      targetProjectName,
-    ]
-  );
-
-  const minDate = new Date().toISOString().split('T')[0];
+  const handleSubmit = async (event: React.FormEvent): Promise<void> => {
+    event.preventDefault();
+    if (!owner) {
+      setError('Choose the service user who will own the key.');
+      return;
+    }
+    if (!target) {
+      setError('Choose the target service project.');
+      return;
+    }
+    if (!source) {
+      setError('Choose the caller project.');
+      return;
+    }
+    setError(null);
+    try {
+      const created = await createKey({
+        user_hash: owner.value,
+        project_hash: target.value,
+        name: name.trim() || undefined,
+        description: description.trim() || undefined,
+        expires_at: expiryDate ? expiryDateToIso(expiryDate) : undefined,
+      });
+      onCreated(created, {
+        ownerUserHash: owner.value,
+        targetProjectHash: target.value,
+        targetProjectName: target.label,
+        sourceProjectHash: source.value,
+        sourceProjectName: source.label,
+      });
+    } catch (err) {
+      setError(
+        describeApiKeyError(err, 'The delegation key could not be created.')
+      );
+    }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent size="lg">
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => !open && !isSubmitting && onClose()}
+    >
+      <DialogContent size="md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" />
-            Create Delegation Token
-          </DialogTitle>
+          <DialogTitle>Create delegation key</DialogTitle>
           <DialogDescription>
-            Create a target-project API key for backend-to-backend delegated auth.
+            A key for backend-to-backend delegated auth. It is scoped to the
+            target service project; the caller project only appears in the
+            trusted-client setting shown afterwards.
           </DialogDescription>
         </DialogHeader>
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={(event) => void handleSubmit(event)}
           className="space-y-4"
+          noValidate
           data-testid="delegated-auth-token-form"
         >
-          <div className="rounded-sm border border-warning/30 bg-warning/5 p-3">
-            <div className="flex items-start gap-2">
-              <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" />
-              <p className="text-sm text-muted-foreground">
-                The caller project is used only for the Magic LLM trusted-client config.
-                The API key itself is scoped to the target service project.
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="delegated-owner-user">Owner User Hash *</Label>
-            <Input
-              id="delegated-owner-user"
-              list="delegated-owner-user-options"
-              value={ownerUserHash}
-              onChange={(event) => setOwnerUserHash(event.target.value)}
-              placeholder="usr_..."
+          <Field id="delegated-owner" label="Owner">
+            <OwnerPicker
+              id="delegated-owner"
+              value={owner}
+              onChange={setOwner}
               disabled={isSubmitting}
-              required
             />
-            <datalist id="delegated-owner-user-options">
-              {availableUsers.map((user) => (
-                <option key={user.user_hash} value={user.user_hash}>
-                  {user.username}
-                </option>
-              ))}
-            </datalist>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="delegated-target-project">Target Service Project *</Label>
-            <Input
+          </Field>
+          <Field
+            id="delegated-target-project"
+            label="Target service project"
+            helper="The service that accepts the key, e.g. Magic LLM."
+          >
+            <ProjectPicker
               id="delegated-target-project"
-              list="delegated-project-options"
-              value={targetProjectHash}
-              onChange={(event) => setTargetProjectHash(event.target.value)}
-              placeholder="api.magic_llm project hash"
+              value={target?.value ?? ''}
+              onChange={setTarget}
               disabled={isSubmitting}
-              required
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="delegated-source-project">Source Caller Project *</Label>
-            <Input
+          </Field>
+          <Field
+            id="delegated-source-project"
+            label="Caller project"
+            helper="The project whose backend sends the key."
+          >
+            <ProjectPicker
               id="delegated-source-project"
-              list="delegated-project-options"
-              value={sourceProjectHash}
-              onChange={(event) => setSourceProjectHash(event.target.value)}
-              placeholder="caller project hash"
+              value={source?.value ?? ''}
+              onChange={setSource}
               disabled={isSubmitting}
-              required
             />
-            <datalist id="delegated-project-options">
-              {availableProjects.map((project) => (
-                <option key={project.project_hash} value={project.project_hash}>
-                  {project.project_name}
-                </option>
-              ))}
-            </datalist>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="delegated-token-name">Name</Label>
+          </Field>
+          <Field id="delegated-name" label="Name">
             <Input
-              id="delegated-token-name"
+              id="delegated-name"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder={DEFAULT_TOKEN_NAME}
-              disabled={isSubmitting}
               maxLength={100}
-            />
-          </div>
-
-          <Textarea
-            id="delegated-token-description"
-            label="Description"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="e.g., Used by backend services for delegated Magic LLM calls"
-            disabled={isSubmitting}
-            maxLength={500}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="delegated-token-expires-at">Expiration</Label>
-            <Input
-              id="delegated-token-expires-at"
-              type="date"
-              value={expiresAt}
-              onChange={(event) => setExpiresAt(event.target.value)}
               disabled={isSubmitting}
-              min={minDate}
+              className="h-8 text-[13px]"
             />
-          </div>
+          </Field>
+          <Field id="delegated-description" label="Description" optional>
+            <Textarea
+              id="delegated-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              maxLength={500}
+              rows={2}
+              disabled={isSubmitting}
+              className="text-[13px]"
+            />
+          </Field>
+          <Field
+            id="delegated-expiry"
+            label="Expiry date"
+            optional
+            helper="The key stops working at 00:00 UTC on this date."
+          >
+            <ExpiryDateInput
+              id="delegated-expiry"
+              value={expiryDate}
+              onChange={setExpiryDate}
+              disabled={isSubmitting}
+            />
+          </Field>
 
-          {error && (
-            <div className="rounded-sm border border-destructive/30 bg-destructive/5 p-3">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+          <FormError message={error} />
 
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
+              variant="secondary"
+              onClick={onClose}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Delegation Token
+            <Button type="submit" loading={isSubmitting}>
+              Create delegation key
             </Button>
           </DialogFooter>
         </form>

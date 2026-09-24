@@ -1,388 +1,630 @@
 /**
  * PatreonStatusDashboard
  *
- * Read-only operational view for the Patreon entitlement/link integration.
+ * Read-only Overview for the Patreon entitlement/link integration: what needs
+ * attention, headline numbers, configuration posture and per-component health.
+ * The status payload is loaded once by the page and passed in.
  */
 
 import React from 'react';
 import {
   Activity,
   AlertTriangle,
+  CheckCircle2,
   Clock,
   Database,
-  HeartHandshake,
   KeyRound,
-  Link2,
+  ListChecks,
   MailCheck,
   Radio,
   RefreshCw,
   Server,
   ShieldCheck,
+  Timer,
+  Users,
+  Wallet,
 } from 'lucide-react';
-import { Button, ErrorState, Skeleton } from '@/components/common';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { usePatreonStatus } from '@/hooks/usePatreonStatus';
-import { cn } from '@/lib/utils';
+import { ErrorState, Skeleton } from '@/components/common';
 import {
-  formatPatreonMetric,
-  type PatreonAdminStatus,
-  type PatreonStatusGroup,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  FeatureFlagChips,
+  MetricTile,
+} from '@/pages/dashboard/components/health';
+import { formatDuration } from '@/lib/health-format';
+import type {
+  PatreonAdminStatus,
+  PatreonStatusGroup,
+} from '@/types/patreon.types';
+import {
+  normalizePatreonTimestamp,
+  patreonStatusLabel,
 } from '@/types/patreon.types';
 import { StatusBadge } from './StatusBadge';
-import { toneClasses } from './patreon-status-tone';
+import { Timestamp } from './patreon-format';
 
-function formatTimestamp(value?: string): string {
-  if (!value) return 'Unknown';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+// ---------------------------------------------------------------------------
+// Value helpers (the payload is loosely typed per component)
+// ---------------------------------------------------------------------------
+
+function num(group: PatreonStatusGroup, key: string): number | undefined {
+  const value = group.details[key];
+  return typeof value === 'number' && Number.isFinite(value)
+    ? value
+    : undefined;
 }
 
-function formatSeconds(value: unknown): string {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 'None';
-  if (value < 60) return `${value}s`;
-  if (value < 3600) return `${Math.round(value / 60)}m`;
-  if (value < 86400) return `${Math.round(value / 3600)}h`;
-  return `${Math.round(value / 86400)}d`;
+function text(group: PatreonStatusGroup, key: string): string | undefined {
+  const value = group.details[key];
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
 }
 
-function FeatureFlagCard({
-  label,
-  enabled,
-  icon,
+function count(value: number | undefined): string {
+  return value === undefined ? '—' : value.toLocaleString();
+}
+
+// ---------------------------------------------------------------------------
+// "Needs attention": each unhealthy signal as one sentence with its remedy
+// ---------------------------------------------------------------------------
+
+const TOKEN_PROBLEMS: Record<string, string> = {
+  not_ready:
+    'No creator access token is configured, so Patreon cannot be read.',
+  refresh_failed:
+    'Refreshing the creator token failed; fix the refresh settings or rotate PATREON_CREATOR_ACCESS_TOKEN.',
+  revoked:
+    'Patreon rejected the creator token; rotate PATREON_CREATOR_ACCESS_TOKEN.',
+  expired:
+    'The creator token has expired; rotate PATREON_CREATOR_ACCESS_TOKEN.',
+};
+
+interface AttentionItem {
+  key: string;
+  severity: 'warning' | 'destructive';
+  message: string;
+}
+
+function attentionItems(data: PatreonAdminStatus): AttentionItem[] {
+  const items: AttentionItem[] = [];
+  const {
+    readiness,
+    creatorToken,
+    webhooks,
+    snapshots,
+    tierMap,
+    proofDelivery,
+    worker,
+    syncQueue,
+    databaseClock,
+  } = data;
+  if (readiness.disabled) return items;
+
+  if (readiness.missing.length) {
+    items.push({
+      key: 'missing',
+      severity: 'destructive',
+      message: `Missing configuration: ${readiness.missing.join(', ')}. Enabled features stay unavailable until it is set.`,
+    });
+  }
+  if (creatorToken.degraded) {
+    items.push({
+      key: 'token',
+      severity: 'destructive',
+      message: `${TOKEN_PROBLEMS[creatorToken.status] ?? 'The creator token is not usable.'} Entitlements stop updating until Patreon can be read again.`,
+    });
+  }
+  if (readiness.featureFlags.sync && worker.status !== 'healthy') {
+    items.push({
+      key: 'worker',
+      severity: 'destructive',
+      message:
+        'The sync worker has no recent heartbeat: queued resyncs and scheduled sweeps are not running.',
+    });
+  }
+  const failedJobs = num(syncQueue, 'failed_jobs');
+  if (failedJobs) {
+    items.push({
+      key: 'failed-jobs',
+      severity: 'warning',
+      message: `${count(failedJobs)} sync ${failedJobs === 1 ? 'job' : 'jobs'} failed in the last ${num(syncQueue, 'failed_jobs_window_hours') ?? 24}h. See Sync & webhooks.`,
+    });
+  }
+  const stale = num(snapshots, 'stale_snapshot_count');
+  if (stale) {
+    items.push({
+      key: 'stale',
+      severity: 'warning',
+      message: `${count(stale)} linked ${stale === 1 ? 'entitlement is' : 'entitlements are'} stale (not refreshed from Patreon in time). Paid access is served as stale until a sync succeeds.`,
+    });
+  }
+  const misses = num(tierMap, 'misses_24h');
+  if (misses) {
+    items.push({
+      key: 'tier-map',
+      severity: 'warning',
+      message: `${count(misses)} tier-map ${misses === 1 ? 'miss' : 'misses'} in 24h: a patron is on a tier the tier map does not cover, so no paid plan was granted.`,
+    });
+  }
+  if (webhooks.status === 'degraded') {
+    items.push({
+      key: 'webhooks',
+      severity: 'warning',
+      message: `Webhook signature failures crossed the alert threshold (${count(num(webhooks, 'signature_failure_count'))} in the window). Check PATREON_WEBHOOK_SECRET against Patreon.`,
+    });
+  }
+  const failedProofs = num(proofDelivery, 'failed_24h');
+  if (failedProofs) {
+    items.push({
+      key: 'proofs',
+      severity: 'warning',
+      message: `${count(failedProofs)} link-proof ${failedProofs === 1 ? 'email' : 'emails'} failed to deliver in 24h.`,
+    });
+  }
+  if (databaseClock.status === 'degraded') {
+    items.push({
+      key: 'clock',
+      severity: 'warning',
+      message: `The database session clock is ${count(num(databaseClock, 'utc_offset_seconds'))}s off UTC; proof expiry and freshness windows are skewed. Run MySQL in UTC.`,
+    });
+  }
+  return items;
+}
+
+// ---------------------------------------------------------------------------
+// Pieces
+// ---------------------------------------------------------------------------
+
+function SummaryCard({
+  data,
 }: {
-  label: string;
-  enabled: boolean;
-  icon: React.ReactNode;
+  data: PatreonAdminStatus;
 }): React.JSX.Element {
+  const items = attentionItems(data);
+  const sentence = data.readiness.checkFailed
+    ? 'The Patreon configuration could not be read.'
+    : data.readiness.disabled
+      ? 'The integration is off. Nothing is linked, synced or served.'
+      : items.length
+        ? `${items.length} ${items.length === 1 ? 'thing needs' : 'things need'} attention.`
+        : 'Everything that is enabled is working.';
+
   return (
-    <div className="flex items-center justify-between rounded-lg border border-border bg-card p-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-          {icon}
-        </span>
-        <span className="truncate text-sm font-medium text-foreground">{label}</span>
-      </div>
-      <Badge
-        variant="outline"
-        className={enabled ? toneClasses('success') : toneClasses('muted')}
-      >
-        {enabled ? 'Enabled' : 'Disabled'}
-      </Badge>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle className="text-base">Patreon integration</CardTitle>
+              <StatusBadge status={data.status} />
+            </div>
+            <CardDescription className="mt-1">{sentence}</CardDescription>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Checked{' '}
+            <Timestamp
+              value={normalizePatreonTimestamp(data.generatedAt)}
+              className="text-xs"
+            />
+          </span>
+        </div>
+      </CardHeader>
+      {items.length > 0 && (
+        <CardContent>
+          <ul className="space-y-2">
+            {items.map((item) => (
+              <li
+                key={item.key}
+                className="flex items-start gap-2 text-sm text-foreground"
+              >
+                <AlertTriangle
+                  className={
+                    item.severity === 'destructive'
+                      ? 'mt-0.5 h-4 w-4 shrink-0 text-destructive'
+                      : 'mt-0.5 h-4 w-4 shrink-0 text-warning'
+                  }
+                  aria-hidden="true"
+                />
+                <span>{item.message}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+      )}
+      {items.length === 0 &&
+        !data.readiness.disabled &&
+        !data.readiness.checkFailed && (
+          <CardContent className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />
+            No open issues.
+          </CardContent>
+        )}
+    </Card>
+  );
+}
+
+function KeyNumbers({ data }: { data: PatreonAdminStatus }): React.JSX.Element {
+  const { snapshots, syncQueue, worker, readiness } = data;
+  const stale = num(snapshots, 'stale_snapshot_count');
+  const queued =
+    (num(syncQueue, 'pending_jobs') ?? 0) + (num(syncQueue, 'retry_jobs') ?? 0);
+  const failed = num(syncQueue, 'failed_jobs');
+  const heartbeatAge = num(worker, 'latest_heartbeat_age_seconds');
+
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <MetricTile
+        label="Linked users"
+        value={count(num(snapshots, 'linked_count'))}
+        icon={<Users className="h-3.5 w-3.5" />}
+      />
+      <MetricTile
+        label="Paid entitlements"
+        value={count(num(snapshots, 'active_paid_count'))}
+        icon={<Wallet className="h-3.5 w-3.5" />}
+      />
+      <MetricTile
+        label="Stale"
+        value={count(stale)}
+        icon={<Timer className="h-3.5 w-3.5" />}
+        tone={stale ? 'warning' : 'muted'}
+      />
+      <MetricTile
+        label="Queued jobs"
+        value={queued.toLocaleString()}
+        icon={<ListChecks className="h-3.5 w-3.5" />}
+        hint={
+          num(syncQueue, 'running_jobs')
+            ? `${num(syncQueue, 'running_jobs')} running`
+            : undefined
+        }
+      />
+      <MetricTile
+        label="Failed jobs (24h)"
+        value={count(failed)}
+        icon={<AlertTriangle className="h-3.5 w-3.5" />}
+        tone={failed ? 'destructive' : 'muted'}
+      />
+      <MetricTile
+        label="Worker heartbeat"
+        value={
+          heartbeatAge === undefined
+            ? 'None'
+            : `${formatDuration(heartbeatAge)} ago`
+        }
+        icon={<Activity className="h-3.5 w-3.5" />}
+        tone={
+          readiness.featureFlags.sync && worker.status !== 'healthy'
+            ? 'warning'
+            : 'muted'
+        }
+        hint={
+          text(worker, 'latest_mode')
+            ? `Last pass: ${patreonStatusLabel(text(worker, 'latest_mode'))}`
+            : undefined
+        }
+      />
     </div>
   );
 }
 
-function HealthCard({
-  title,
-  group,
-  icon,
-  details,
+const RETENTION_LABELS: Array<[string, string, string]> = [
+  ['proof_retention_after_expiry_hours', 'Link proofs', 'h after expiry'],
+  ['webhook_delivery_retention_days', 'Webhook ledger', ' days'],
+  ['raw_payload_retention_days', 'Raw payload quarantine', ' days'],
+];
+
+function ConfigurationCard({
+  data,
 }: {
-  title: string;
-  group: PatreonStatusGroup;
-  icon: React.ReactNode;
-  details: Array<[string, unknown]>;
+  data: PatreonAdminStatus;
 }): React.JSX.Element {
+  const { readiness } = data;
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              {icon}
-            </span>
-            <CardTitle className="truncate text-sm font-semibold">{title}</CardTitle>
-          </div>
-          <StatusBadge status={group.status} />
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Configuration</CardTitle>
+          <StatusBadge status={readiness.status} />
         </div>
+        <CardDescription>
+          Server-side settings; secrets are never shown.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {details.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between gap-4 text-sm">
-            <span className="text-muted-foreground">{label}</span>
-            <span className="max-w-[55%] truncate text-right font-medium text-foreground">
-              {formatPatreonMetric(value, 'None')}
-            </span>
+      <CardContent className="space-y-4">
+        <FeatureFlagChips
+          flags={{
+            linking: readiness.featureFlags.linking,
+            webhooks: readiness.featureFlags.webhooks,
+            sync: readiness.featureFlags.sync,
+            s2s_entitlement: readiness.featureFlags.s2sEntitlement,
+            creator_token_refresh: readiness.featureFlags.creatorTokenRefresh,
+            raw_payload_capture: readiness.featureFlags.rawPayloadCapture,
+          }}
+        />
+        <dl className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <dt className="text-xs text-muted-foreground">Campaigns</dt>
+            <dd className="text-lg font-semibold text-foreground">
+              {readiness.configuredCampaignCount}
+            </dd>
           </div>
-        ))}
+          <div>
+            <dt className="text-xs text-muted-foreground">Tier-map entries</dt>
+            <dd className="text-lg font-semibold text-foreground">
+              {readiness.configuredTierMapEntries}
+            </dd>
+          </div>
+        </dl>
+        {readiness.missing.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground">Missing settings</p>
+            <p className="mt-1 break-words font-mono text-xs text-foreground">
+              {readiness.missing.join(', ')}
+            </p>
+          </div>
+        )}
+        {readiness.degraded.length > 0 && (
+          <div>
+            <p className="text-xs text-muted-foreground">Degraded</p>
+            <p className="mt-1 text-sm text-foreground">
+              {readiness.degraded
+                .map((item) => patreonStatusLabel(item))
+                .join(', ')}
+            </p>
+          </div>
+        )}
+        <div>
+          <p className="text-xs text-muted-foreground">Retention</p>
+          <ul className="mt-1 space-y-0.5 text-sm text-foreground">
+            {RETENTION_LABELS.map(([key, label, unit]) => {
+              const value = readiness.retention[key];
+              return typeof value === 'number' ? (
+                <li key={key} className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">{label}</span>
+                  <span>
+                    {value}
+                    {unit}
+                  </span>
+                </li>
+              ) : null;
+            })}
+            <li className="flex justify-between gap-3">
+              <span className="text-muted-foreground">
+                Link and entitlement history
+              </span>
+              <span>Kept</span>
+            </li>
+          </ul>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  icon,
-}: {
+interface ComponentRow {
+  key: string;
   label: string;
-  value: string;
   icon: React.ReactNode;
+  group: PatreonStatusGroup;
+  detail: React.ReactNode;
+}
+
+function componentRows(data: PatreonAdminStatus): ComponentRow[] {
+  const {
+    creatorToken,
+    webhooks,
+    snapshots,
+    tierMap,
+    proofDelivery,
+    s2s,
+    worker,
+    syncQueue,
+    databaseClock,
+  } = data;
+  const tokenExpiry = normalizePatreonTimestamp(
+    text(creatorToken, 'expires_at')
+  );
+  return [
+    {
+      key: 'creator-token',
+      label: 'Creator token',
+      icon: <KeyRound />,
+      group: creatorToken,
+      detail:
+        text(creatorToken, 'source') === 'environment' ? (
+          'Static token from server settings'
+        ) : tokenExpiry ? (
+          <>
+            Expires <Timestamp value={tokenExpiry} className="text-xs" />
+          </>
+        ) : creatorToken.configured ? (
+          'Configured'
+        ) : (
+          'Not configured'
+        ),
+    },
+    {
+      key: 'webhooks',
+      label: 'Webhooks',
+      icon: <Radio />,
+      group: webhooks,
+      detail: webhooks.enabled
+        ? `${count(num(webhooks, 'signature_failure_count'))} signature failures · ${count(num(webhooks, 'retrying_deliveries'))} failed deliveries`
+        : 'Off',
+    },
+    {
+      key: 'snapshots',
+      label: 'Entitlement freshness',
+      icon: <Database />,
+      group: snapshots,
+      detail: `${count(num(snapshots, 'stale_snapshot_count'))} stale of ${count(num(snapshots, 'linked_count'))} linked`,
+    },
+    {
+      key: 'tier-map',
+      label: 'Tier map',
+      icon: <ShieldCheck />,
+      group: tierMap,
+      detail: `${count(num(tierMap, 'configured_entries'))} entries · ${count(num(tierMap, 'misses_24h'))} misses (24h)`,
+    },
+    {
+      key: 'proof-delivery',
+      label: 'Link-proof emails',
+      icon: <MailCheck />,
+      group: proofDelivery,
+      detail: `${count(num(proofDelivery, 'delivered_24h'))} sent · ${count(num(proofDelivery, 'failed_24h'))} failed · ${count(num(proofDelivery, 'in_flight'))} queued (24h)`,
+    },
+    {
+      key: 's2s',
+      label: 'S2S entitlement API',
+      icon: <Server />,
+      group: s2s,
+      detail: s2s.enabled
+        ? s2s.ready
+          ? 'Serving'
+          : 'Enabled, not ready'
+        : 'Off',
+    },
+    {
+      key: 'worker',
+      label: 'Sync worker',
+      icon: <Activity />,
+      group: worker,
+      detail:
+        num(worker, 'latest_heartbeat_age_seconds') !== undefined
+          ? `Heartbeat ${formatDuration(num(worker, 'latest_heartbeat_age_seconds'))} ago`
+          : 'No heartbeat',
+    },
+    {
+      key: 'sync-queue',
+      label: 'Sync queue',
+      icon: <RefreshCw />,
+      group: syncQueue,
+      detail: `${count(num(syncQueue, 'pending_jobs'))} pending · ${count(num(syncQueue, 'running_jobs'))} running · ${count(num(syncQueue, 'retry_jobs'))} retrying`,
+    },
+    {
+      key: 'database-clock',
+      label: 'Database clock',
+      icon: <Clock />,
+      group: databaseClock,
+      detail:
+        num(databaseClock, 'utc_offset_seconds') !== undefined
+          ? num(databaseClock, 'utc_offset_seconds') === 0
+            ? 'UTC'
+            : `${count(num(databaseClock, 'utc_offset_seconds'))}s from UTC`
+          : '—',
+    },
+  ];
+}
+
+function ComponentHealthCard({
+  data,
+}: {
+  data: PatreonAdminStatus;
 }): React.JSX.Element {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
-        {icon}
-        <span>{label}</span>
-      </div>
-      <p className="text-xl font-semibold text-foreground">{value}</p>
-    </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Components</CardTitle>
+        <CardDescription>
+          Each part of the integration and its latest signal.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        <ul className="divide-y divide-border">
+          {componentRows(data).map((row) => (
+            <li key={row.key} className="flex items-center gap-3 px-6 py-3">
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground [&_svg]:h-4 [&_svg]:w-4"
+                aria-hidden="true"
+              >
+                {row.icon}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  {row.label}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {row.detail}
+                </p>
+              </div>
+              <StatusBadge status={row.group.status} />
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
   );
 }
 
-function PatreonStatusContent({ data }: { data: PatreonAdminStatus }): React.JSX.Element {
-  const flags = data.readiness.featureFlags;
-  const metrics = data.metrics;
+// ---------------------------------------------------------------------------
 
-  return (
-    <div className="space-y-6">
-      <div className="rounded-lg border border-border bg-card p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <HeartHandshake size={20} />
-            </span>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold text-foreground">Patreon operations</h2>
-                <StatusBadge status={data.status} />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {data.readiness.ready
-                  ? 'Ready for enabled Patreon surfaces'
-                  : data.readiness.disabled
-                    ? 'All primary Patreon surfaces are disabled'
-                    : 'Configuration needs attention before activation'}
-              </p>
-            </div>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Generated {formatTimestamp(data.generatedAt)}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <FeatureFlagCard label="Linking" enabled={flags.linking} icon={<Link2 size={17} />} />
-        <FeatureFlagCard label="Webhooks" enabled={flags.webhooks} icon={<Radio size={17} />} />
-        <FeatureFlagCard label="Sync" enabled={flags.sync} icon={<RefreshCw size={17} />} />
-        <FeatureFlagCard label="S2S entitlement" enabled={flags.s2sEntitlement} icon={<Server size={17} />} />
-        <FeatureFlagCard label="Creator token refresh" enabled={flags.creatorTokenRefresh} icon={<KeyRound size={17} />} />
-        <FeatureFlagCard label="Raw payload capture" enabled={flags.rawPayloadCapture} icon={<Database size={17} />} />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <CardTitle className="text-base">Readiness</CardTitle>
-            <StatusBadge status={data.readiness.status} />
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-4 lg:grid-cols-[1fr_1fr_1.2fr]">
-          <div>
-            <p className="text-xs text-muted-foreground">Campaigns</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">
-              {data.readiness.configuredCampaignCount}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Tier-map entries</p>
-            <p className="mt-1 text-2xl font-semibold text-foreground">
-              {data.readiness.configuredTierMapEntries}
-            </p>
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Missing env keys</p>
-            {data.readiness.missing.length ? (
-              <div className="flex flex-wrap gap-2">
-                {data.readiness.missing.map((item) => (
-                  <Badge key={item} variant="outline" className={toneClasses('warning')}>
-                    {item}
-                  </Badge>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">None</p>
-            )}
-            {data.readiness.degraded.length > 0 && (
-              <div className="pt-2">
-                <p className="text-xs text-muted-foreground">Degraded reasons</p>
-                <ul className="mt-1 space-y-1 text-sm text-foreground">
-                  {data.readiness.degraded.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <HealthCard
-          title="Creator token"
-          group={data.creatorToken}
-          icon={<KeyRound size={17} />}
-          details={[
-            ['Configured', data.creatorToken.configured],
-            ['Degraded', data.creatorToken.degraded],
-            ['Expires', data.creatorToken.details.expires_at],
-          ]}
-        />
-        <HealthCard
-          title="Webhooks"
-          group={data.webhooks}
-          icon={<Radio size={17} />}
-          details={[
-            ['Enabled', data.webhooks.enabled],
-            ['Failures', data.webhooks.details.signature_failure_count],
-            ['Retrying', data.webhooks.details.retrying_deliveries],
-          ]}
-        />
-        <HealthCard
-          title="S2S"
-          group={data.s2s}
-          icon={<Server size={17} />}
-          details={[
-            ['Enabled', data.s2s.enabled],
-            ['Ready', data.s2s.ready],
-            ['Rate events', data.s2s.details.rate_event_count],
-          ]}
-        />
-        <HealthCard
-          title="Sync worker"
-          group={data.worker}
-          icon={<Activity size={17} />}
-          details={[
-            ['Sync enabled', data.worker.details.sync_enabled],
-            ['Heartbeats', data.worker.details.heartbeat_count],
-            ['Latest mode', data.worker.details.latest_mode],
-          ]}
-        />
-        <HealthCard
-          title="Sync queue"
-          group={data.syncQueue}
-          icon={<RefreshCw size={17} />}
-          details={[
-            ['Pending', data.syncQueue.details.pending_jobs],
-            ['Retry', data.syncQueue.details.retry_jobs],
-            ['Failed', data.syncQueue.details.failed_jobs],
-          ]}
-        />
-        <HealthCard
-          title="Snapshots"
-          group={data.snapshots}
-          icon={<Database size={17} />}
-          details={[
-            ['Current', data.snapshots.details.current_snapshot_count],
-            ['Stale', data.snapshots.details.stale_snapshot_count],
-            ['Oldest age', formatSeconds(data.snapshots.details.oldest_snapshot_age_seconds)],
-          ]}
-        />
-        <HealthCard
-          title="Proof delivery"
-          group={data.proofDelivery}
-          icon={<MailCheck size={17} />}
-          details={[
-            ['In flight', data.proofDelivery.details.in_flight],
-            ['Delivered 24h', data.proofDelivery.details.delivered_24h],
-            ['Failed 24h', data.proofDelivery.details.failed_24h],
-          ]}
-        />
-        <HealthCard
-          title="Tier map"
-          group={data.tierMap}
-          icon={<ShieldCheck size={17} />}
-          details={[
-            ['Misses 24h', data.tierMap.details.misses_24h],
-            ['Status', data.tierMap.status],
-          ]}
-        />
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <MetricCard
-          label="Stale snapshots"
-          value={formatPatreonMetric(metrics.patreon_stale_snapshot_count)}
-          icon={<Database size={14} />}
-        />
-        <MetricCard
-          label="Tier-map misses"
-          value={formatPatreonMetric(metrics.patreon_tier_map_misses_24h)}
-          icon={<ShieldCheck size={14} />}
-        />
-        <MetricCard
-          label="Webhook failure rate"
-          value={formatPatreonMetric(metrics.patreon_webhook_signature_failure_rate_per_minute)}
-          icon={<Radio size={14} />}
-        />
-        <MetricCard
-          label="Retrying deliveries"
-          value={formatPatreonMetric(metrics.patreon_webhook_retrying_deliveries)}
-          icon={<RefreshCw size={14} />}
-        />
-        <MetricCard
-          label="Failed proofs"
-          value={formatPatreonMetric(metrics.patreon_proof_delivery_failed_24h)}
-          icon={<MailCheck size={14} />}
-        />
-        <MetricCard
-          label="Worker heartbeat age"
-          value={formatSeconds(metrics.patreon_sync_worker_heartbeat_age_seconds)}
-          icon={<Clock size={14} />}
-        />
-      </div>
-
-      <div className="flex items-start gap-3 rounded-lg border border-info/30 bg-info/5 p-4">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-info" />
-        <p className="text-sm text-foreground">
-          Patreon is entitlement/link only. It must not issue local sessions, JWTs,
-          refresh tokens, cookies, API keys, or mutate auth validation responses.
-        </p>
-      </div>
-    </div>
-  );
+export interface PatreonStatusDashboardProps {
+  status: PatreonAdminStatus | null;
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
 }
 
-export function PatreonStatusDashboard(): React.JSX.Element {
-  const { status, isLoading, error, refetch } = usePatreonStatus();
-
+export function PatreonStatusDashboard({
+  status,
+  isLoading,
+  error,
+  onRetry,
+}: PatreonStatusDashboardProps): React.JSX.Element {
   if (isLoading && !status) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" aria-busy="true">
         <Skeleton className="h-28 rounded-lg" />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-20 rounded-lg" />
           ))}
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <Skeleton key={index} className="h-40 rounded-lg" />
-          ))}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
+          <Skeleton className="h-80 rounded-lg" />
+          <Skeleton className="h-80 rounded-lg" />
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return <ErrorState title="Could not load Patreon status" message={error} onRetry={() => void refetch()} />;
+  if (error && !status) {
+    return (
+      <ErrorState
+        title="Couldn’t load Patreon status"
+        message={error}
+        onRetry={onRetry}
+      />
+    );
   }
 
   if (!status) {
-    return <ErrorState title="No Patreon status" message="No Patreon status payload was returned." onRetry={() => void refetch()} />;
+    return (
+      <ErrorState
+        title="No Patreon status"
+        message="The server returned no status."
+        onRetry={onRetry}
+      />
+    );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={() => void refetch()} disabled={isLoading}>
-          <RefreshCw size={14} className={cn('mr-1.5', isLoading && 'animate-spin')} />
-          Refresh
-        </Button>
+      <SummaryCard data={status} />
+      <KeyNumbers data={status} />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
+        <ConfigurationCard data={status} />
+        <ComponentHealthCard data={status} />
       </div>
-      <PatreonStatusContent data={status} />
+      <p className="text-xs text-muted-foreground">
+        Patreon only grants entitlements. It never signs anyone in, issues
+        sessions or tokens, or changes auth validation.
+      </p>
     </div>
   );
 }

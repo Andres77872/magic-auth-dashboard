@@ -6,14 +6,8 @@ interface PublicRouteProps {
   children: ReactNode;
 }
 
-export function PublicRoute({
-  children,
-}: PublicRouteProps): React.JSX.Element {
-  return (
-    <ProtectedRoute requireAuth={false}>
-      {children}
-    </ProtectedRoute>
-  );
+export function PublicRoute({ children }: PublicRouteProps): React.JSX.Element {
+  return <ProtectedRoute requireAuth={false}>{children}</ProtectedRoute>;
 }
 
-export default PublicRoute; 
+export default PublicRoute;

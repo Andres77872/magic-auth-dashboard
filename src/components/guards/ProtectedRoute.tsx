@@ -23,11 +23,11 @@ export function ProtectedRoute({
   if (isLoading) {
     return (
       <div className="route-loading">
-        <LoadingSpinner 
-          size="lg" 
+        <LoadingSpinner
+          size="lg"
           variant="primary"
-          message="Verifying authentication..." 
-          fullScreen 
+          message="Verifying authentication..."
+          fullScreen
         />
       </div>
     );
@@ -37,11 +37,7 @@ export function ProtectedRoute({
   if (requireAuth && !isAuthenticated) {
     // Preserve the attempted URL for redirect after login
     return (
-      <Navigate
-        to={redirectTo}
-        state={{ from: location.pathname }}
-        replace
-      />
+      <Navigate to={redirectTo} state={{ from: location.pathname }} replace />
     );
   }
 

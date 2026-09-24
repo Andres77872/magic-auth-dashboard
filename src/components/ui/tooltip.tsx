@@ -6,8 +6,12 @@ const TooltipProvider = TooltipPrimitive.Provider;
 const Tooltip = TooltipPrimitive.Root;
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
-export type TooltipProps = React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Root>;
-export type TooltipContentProps = React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>;
+export type TooltipProps = React.ComponentPropsWithoutRef<
+  typeof TooltipPrimitive.Root
+>;
+export type TooltipContentProps = React.ComponentPropsWithoutRef<
+  typeof TooltipPrimitive.Content
+>;
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,

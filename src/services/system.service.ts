@@ -1,108 +1,79 @@
 import { apiClient } from './api.client';
 import type {
   SystemInfoResponse,
-  SystemHealthResponse
+  SystemHealthResponse,
 } from '@/types/system.types';
+import type {
+  AdminDashboardStats,
+  AdminUserStatistics,
+  AdminUserStatisticsResponse,
+} from '@/types/dashboard.types';
 import type { ApiResponse } from '@/types/api.types';
 
-export interface DashboardStatsResponse {
-  success: boolean;
-  totals: {
-    users: number;
-    projects: number;
-    user_groups: number;
-    project_groups: number;
-    active_sessions: number;
-    recent_activities: number;
-  };
-  recent_activity: {
-    new_users_7d: number;
-    new_projects_7d: number;
-    total_activities_7d: number;
-  };
-  user_breakdown: {
-    root_users: number;
-    admin_users: number;
-    consumer_users: number;
-  };
-  groups_summary: {
-    total_user_groups: number;
-    total_project_groups: number;
-    avg_users_per_group: number;
-    avg_projects_per_group: number;
-  };
-  growth: {
-    user_growth_7d: number;
-    project_growth_7d: number;
-  };
-  system_health: {
-    database: { status: string; latency_ms: number };
-    redis: { status: string; latency_ms: number };
-    overall_status: string;
-  };
-  generated_at: string;
-}
-
 /**
- * SystemService — thin wrapper over the API's system + admin-dashboard surface.
- * Every method here maps to a route that actually exists in the backend
- * (src/routes/system.py, prefix /system, and admin_dashboard.py, prefix /admin).
+ * Platform statistics and system operations (api.auth `system.py` under
+ * `/system` and `admin_dashboard.py` under `/admin`).
  */
 class SystemService {
-  // Admin Dashboard Stats — comprehensive statistics (GET /admin/dashboard/stats)
-  async getDashboardStats(): Promise<DashboardStatsResponse | null> {
-    try {
-      const response = (await apiClient.get<DashboardStatsResponse>(
-        '/admin/dashboard/stats'
-      )) as unknown as { totals?: unknown; data?: { totals?: unknown } };
-      // The response may come directly or wrapped in a data property
-      if (response && (response.totals || response.data?.totals)) {
-        return (response.data || response) as unknown as DashboardStatsResponse;
-      }
-      return null;
-    } catch {
-      return null;
+  /** GET /admin/dashboard/stats — bare object, no `success` envelope. */
+  async getDashboardStats(): Promise<AdminDashboardStats> {
+    const response = await apiClient.get<AdminDashboardStats>(
+      '/admin/dashboard/stats'
+    );
+    const stats = response as unknown as AdminDashboardStats;
+    if (!stats || typeof stats !== 'object' || !stats.totals) {
+      throw new Error(
+        'The dashboard statistics response was not in the expected format.'
+      );
     }
+    return stats;
   }
 
-  // System information (GET /system/info)
+  /**
+   * GET /admin/users/statistics — user growth and activity for the last `days`.
+   * The backend reports query failures as `statistics.error`; surface those as errors.
+   */
+  async getUserStatistics(days = 30): Promise<AdminUserStatistics> {
+    const response = (await apiClient.get<AdminUserStatisticsResponse>(
+      '/admin/users/statistics',
+      {
+        days,
+      }
+    )) as unknown as AdminUserStatisticsResponse;
+    const statistics = response?.statistics;
+    if (!statistics || 'error' in statistics) {
+      throw new Error(
+        statistics && 'error' in statistics
+          ? 'User statistics are unavailable right now.'
+          : 'The user statistics response was not in the expected format.'
+      );
+    }
+    return statistics;
+  }
+
+  /** GET /system/info */
   async getSystemInfo(): Promise<SystemInfoResponse> {
-    const response = await apiClient.get<SystemInfoResponse>('/system/info');
-    return response as SystemInfoResponse;
+    return (await apiClient.get<SystemInfoResponse>(
+      '/system/info'
+    )) as SystemInfoResponse;
   }
 
-  // System health (GET /system/health)
+  /** GET /system/health — any authenticated user. */
   async getSystemHealth(): Promise<SystemHealthResponse> {
-    const response = await apiClient.get<SystemHealthResponse>('/system/health');
-    return response as SystemHealthResponse;
+    return (await apiClient.get<SystemHealthResponse>(
+      '/system/health'
+    )) as SystemHealthResponse;
   }
 
-  // Liveness probe (GET /system/ping)
-  async pingSystem(): Promise<ApiResponse<unknown>> {
-    return await apiClient.get<unknown>('/system/ping');
-  }
-
-  // Cache statistics (GET /system/cache/stats)
+  /** GET /system/cache/stats */
   async getCacheStats(): Promise<ApiResponse<unknown>> {
     return await apiClient.get<unknown>('/system/cache/stats');
   }
 
-  // Clear the system cache (POST /system/cache/clear)
-  async clearSystemCache(): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>('/system/cache/clear');
-  }
-
-  // Invalidate a single user's cache (POST /system/cache/invalidate/user/{user_hash})
+  /** POST /system/cache/invalidate/user/{user_hash} */
   async invalidateUserCache(userHash: string): Promise<ApiResponse<void>> {
     return await apiClient.post<void>(
       `/system/cache/invalidate/user/${encodeURIComponent(userHash)}`
-    );
-  }
-
-  // Invalidate a project's cache (POST /system/cache/invalidate/project/{project_id})
-  async invalidateProjectCache(projectId: number): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(
-      `/system/cache/invalidate/project/${projectId}`
     );
   }
 }

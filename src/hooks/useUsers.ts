@@ -1,120 +1,72 @@
-import { useState, useEffect, useCallback } from 'react';
-import { userService } from '@/services';
-import type { UserListParams } from '@/types/user.types';
+import { useCallback } from 'react';
+import { userService } from '@/services/user.service';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import type { UserListParams, UserListResponse } from '@/types/user.types';
 import type { User, UserType } from '@/types/auth.types';
 import type { PaginationResponse } from '@/types/api.types';
 
-interface UseUsersFilters {
-  search?: string;
-  userType?: string;
-  isActive?: boolean;
-}
-
-interface UseUsersOptions {
+export interface UseUsersOptions {
   limit?: number;
-  initialFilters?: UseUsersFilters;
+  offset?: number;
+  search?: string;
+  userType?: UserType;
+  /** Include deactivated accounts (the API hides them by default). */
+  includeInactive?: boolean;
+  sortBy?: UserListParams['sort_by'];
+  sortOrder?: UserListParams['sort_order'];
+  enabled?: boolean;
 }
 
-interface UseUsersReturn {
+export interface UseUsersReturn {
   users: User[];
   pagination: PaginationResponse | null;
   isLoading: boolean;
+  isRefreshing: boolean;
   error: string | null;
+  refetch: () => Promise<void>;
+  /** Alias of `refetch`, kept for older callers. */
   fetchUsers: () => Promise<void>;
-  setFilters: (filters: UseUsersFilters) => void;
-  setPage: (page: number) => void;
-  setPageSize: (size: number) => void;
-  setSort: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
-  filters: UseUsersFilters;
-  currentPage: number;
-  limit: number;
-  sortBy: string | null;
-  sortOrder: 'asc' | 'desc';
 }
 
-export function useUsers(options: UseUsersOptions = {}): UseUsersReturn {
-  const { limit: initialLimit = 25, initialFilters = {} } = options;
-
-  const [users, setUsers] = useState<User[]>([]);
-  const [pagination, setPagination] = useState<PaginationResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFiltersState] = useState<UseUsersFilters>(initialFilters);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit, setLimit] = useState(initialLimit);
-  const [sortBy, setSortBy] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const params: UserListParams = {
+/** One page of `GET /users/list` for the given filters. */
+export function useUsers({
+  limit = 25,
+  offset = 0,
+  search,
+  userType,
+  includeInactive = false,
+  sortBy,
+  sortOrder,
+  enabled = true,
+}: UseUsersOptions = {}): UseUsersReturn {
+  const fetcher = useCallback(
+    (): Promise<UserListResponse> =>
+      userService.getUsers({
         limit,
-        offset: (currentPage - 1) * limit,
-        search: filters.search,
-        user_type_filter: filters.userType as UserType | undefined,
-        include_inactive: filters.isActive === false ? true : filters.isActive === true ? false : undefined,
-        ...(sortBy && { sort_by: sortBy }),
-        ...(sortBy && { sort_order: sortOrder }),
-      };
+        offset,
+        search: search?.trim() || undefined,
+        user_type_filter: userType,
+        include_inactive: includeInactive,
+        sort_by: sortBy,
+        sort_order: sortBy ? sortOrder : undefined,
+      }),
+    [limit, offset, search, userType, includeInactive, sortBy, sortOrder]
+  );
 
-      const response = await userService.getUsers(params);
-      
-      if (response.success && response.users) {
-        setUsers(response.users);
-        if (response.pagination) {
-          setPagination(response.pagination);
-        }
-      } else {
-        setError(response.message || 'Failed to fetch users');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [limit, currentPage, filters.search, filters.userType, filters.isActive, sortBy, sortOrder]);
-
-  const setFilters = useCallback((newFilters: UseUsersFilters) => {
-    setFiltersState(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, []);
-
-  const setPage = useCallback((page: number) => {
-    setCurrentPage(page);
-  }, []);
-
-  const setPageSize = useCallback((size: number) => {
-    setLimit(size);
-    setCurrentPage(1); // Reset to first page when page size changes
-  }, []);
-
-  const setSort = useCallback((newSortBy: string, newSortOrder: 'asc' | 'desc') => {
-    setSortBy(newSortBy);
-    setSortOrder(newSortOrder);
-    setCurrentPage(1); // Reset to first page when sorting changes
-  }, []);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  const { data, error, isLoading, isRefreshing, refetch } = useAsyncData(
+    fetcher,
+    { enabled }
+  );
 
   return {
-    users,
-    pagination,
+    users: data?.users ?? [],
+    pagination: data?.pagination ?? null,
     isLoading,
+    isRefreshing,
     error,
-    fetchUsers,
-    setFilters,
-    setPage,
-    setPageSize,
-    setSort,
-    filters,
-    currentPage,
-    limit,
-    sortBy,
-    sortOrder,
+    refetch,
+    fetchUsers: refetch,
   };
-} 
+}
+
+export default useUsers;

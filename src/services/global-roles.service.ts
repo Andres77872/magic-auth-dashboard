@@ -1,385 +1,284 @@
-import { apiClient } from './api.client';
-import type { ApiResponse, PaginationParams } from '@/types/api.types';
+import {
+  CATALOG_PAGE_SIZE,
+  deleteJson,
+  getJson,
+  postFormJson,
+  postJson,
+  putFormJson,
+  seg,
+} from './request';
 import type {
-  GlobalRole,
-  GlobalPermissionGroup,
-  GlobalPermission,
-  GlobalRoleAssignment,
-  CreateGlobalRoleRequest,
-  UpdateGlobalRoleRequest,
+  CatalogMetadata,
+  CatalogedRole,
   CreateGlobalPermissionGroupRequest,
-  CreateGlobalPermissionRequest
+  CreateGlobalPermissionRequest,
+  CreateGlobalRoleRequest,
+  GlobalPermission,
+  GlobalPermissionGroup,
+  GlobalPermissionGroupDetails,
+  GlobalRole,
+  GlobalRoleAssignment,
+  GlobalRoleDetails,
+  UpdateGlobalPermissionGroupRequest,
+  UpdateGlobalPermissionRequest,
+  UpdateGlobalRoleRequest,
 } from '@/types/global-roles.types';
 
+interface ListParams {
+  category?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Global roles, permission groups and permissions (`/roles/*`, all Form
+ * encoded). Methods return the payload itself, not the envelope.
+ *
+ * List endpoints cap `limit` at 100 and report `pagination.total` as the page
+ * length, so catalogue calls request the maximum page size.
+ */
 class GlobalRolesService {
-  // ============================================
-  // ROLE MANAGEMENT
-  // ============================================
-  
-  /**
-   * Create a new global role
-   * POST /roles/roles
-   */
-  async createRole(roleData: CreateGlobalRoleRequest): Promise<ApiResponse<GlobalRole>> {
-    return await apiClient.postForm<GlobalRole>('/roles/roles', roleData);
+  // Roles ---------------------------------------------------------------
+
+  async getRoles(params: ListParams = {}): Promise<GlobalRole[]> {
+    const res = await getJson<{ roles?: GlobalRole[] }>('/roles/roles', {
+      limit: params.limit ?? CATALOG_PAGE_SIZE,
+      offset: params.offset,
+    });
+    return res.roles ?? [];
   }
 
-  /**
-   * List all global roles
-   * GET /roles/roles
-   */
-  async getRoles(params: PaginationParams = {}): Promise<ApiResponse<GlobalRole[]>> {
-    const cleanParams = this.cleanParams(params);
-    return await apiClient.get<GlobalRole[]>('/roles/roles', cleanParams);
+  async getRole(roleHash: string): Promise<GlobalRoleDetails> {
+    const res = await getJson<Partial<GlobalRoleDetails>>(
+      `/roles/roles/${seg(roleHash)}`
+    );
+    if (!res.role) throw new Error('Role not found.');
+    return { role: res.role, permission_groups: res.permission_groups ?? [] };
   }
 
-  /**
-   * Get specific role details
-   * GET /roles/roles/{role_hash}
-   */
-  async getRole(roleHash: string): Promise<ApiResponse<GlobalRole>> {
-    return await apiClient.get<GlobalRole>(`/roles/roles/${roleHash}`);
+  async createRole(data: CreateGlobalRoleRequest): Promise<GlobalRole> {
+    const res = await postFormJson<{ role: GlobalRole }>('/roles/roles', data);
+    return res.role;
   }
 
-  /**
-   * Update role information
-   * PUT /roles/roles/{role_hash}
-   */
   async updateRole(
-    roleHash: string, 
+    roleHash: string,
     data: UpdateGlobalRoleRequest
-  ): Promise<ApiResponse<GlobalRole>> {
-    return await apiClient.putForm<GlobalRole>(`/roles/roles/${roleHash}`, data);
-  }
-
-  /**
-   * Delete a role
-   * DELETE /roles/roles/{role_hash}
-   */
-  async deleteRole(roleHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/roles/roles/${roleHash}`);
-  }
-
-  // ============================================
-  // PERMISSION GROUP MANAGEMENT
-  // ============================================
-  
-  /**
-   * Create permission group
-   * POST /roles/permission-groups
-   */
-  async createPermissionGroup(
-    groupData: CreateGlobalPermissionGroupRequest
-  ): Promise<ApiResponse<GlobalPermissionGroup>> {
-    return await apiClient.postForm<GlobalPermissionGroup>(
-      '/roles/permission-groups', 
-      groupData
-    );
-  }
-
-  /**
-   * List permission groups
-   * GET /roles/permission-groups
-   */
-  async getPermissionGroups(
-    params: { category?: string } & PaginationParams = {}
-  ): Promise<ApiResponse<GlobalPermissionGroup[]>> {
-    const cleanParams = this.cleanParams(params);
-    return await apiClient.get<GlobalPermissionGroup[]>(
-      '/roles/permission-groups', 
-      cleanParams
-    );
-  }
-
-  /**
-   * Get permission group details
-   * GET /roles/permission-groups/{group_hash}
-   */
-  async getPermissionGroup(groupHash: string): Promise<ApiResponse<GlobalPermissionGroup>> {
-    return await apiClient.get<GlobalPermissionGroup>(
-      `/roles/permission-groups/${groupHash}`
-    );
-  }
-
-  /**
-   * Update permission group
-   * PUT /roles/permission-groups/{group_hash}
-   */
-  async updatePermissionGroup(
-    groupHash: string,
-    data: Partial<CreateGlobalPermissionGroupRequest>
-  ): Promise<ApiResponse<GlobalPermissionGroup>> {
-    return await apiClient.putForm<GlobalPermissionGroup>(
-      `/roles/permission-groups/${groupHash}`,
+  ): Promise<GlobalRole> {
+    const res = await putFormJson<{ role: GlobalRole }>(
+      `/roles/roles/${seg(roleHash)}`,
       data
     );
+    return res.role;
   }
 
-  /**
-   * Delete permission group
-   * DELETE /roles/permission-groups/{group_hash}
-   */
-  async deletePermissionGroup(groupHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/roles/permission-groups/${groupHash}`);
+  async deleteRole(roleHash: string): Promise<void> {
+    await deleteJson(`/roles/roles/${seg(roleHash)}`);
   }
 
-  // ============================================
-  // ROLE-PERMISSION GROUP ASSIGNMENTS
-  // ============================================
-  
-  /**
-   * Assign permission group to role
-   * POST /roles/roles/{role_hash}/permission-groups/{group_hash}
-   */
+  async getRolePermissionGroups(
+    roleHash: string
+  ): Promise<GlobalPermissionGroup[]> {
+    const res = await getJson<{ permission_groups?: GlobalPermissionGroup[] }>(
+      `/roles/roles/${seg(roleHash)}/permission-groups`
+    );
+    return res.permission_groups ?? [];
+  }
+
   async assignPermissionGroupToRole(
     roleHash: string,
     groupHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(
-      `/roles/roles/${roleHash}/permission-groups/${groupHash}`
+  ): Promise<void> {
+    await postJson(
+      `/roles/roles/${seg(roleHash)}/permission-groups/${seg(groupHash)}`
     );
   }
 
-  /**
-   * Get role's permission groups
-   * GET /roles/roles/{role_hash}/permission-groups
-   */
-  async getRolePermissionGroups(
-    roleHash: string
-  ): Promise<ApiResponse<GlobalPermissionGroup[]>> {
-    return await apiClient.get<GlobalPermissionGroup[]>(
-      `/roles/roles/${roleHash}/permission-groups`
-    );
-  }
-
-  /**
-   * Remove permission group from role
-   * DELETE /roles/roles/{role_hash}/permission-groups/{group_hash}
-   */
   async removePermissionGroupFromRole(
     roleHash: string,
     groupHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(
-      `/roles/roles/${roleHash}/permission-groups/${groupHash}`
+  ): Promise<void> {
+    await deleteJson(
+      `/roles/roles/${seg(roleHash)}/permission-groups/${seg(groupHash)}`
     );
   }
 
-  // ============================================
-  // PERMISSION MANAGEMENT
-  // ============================================
-  
-  /**
-   * Create permission
-   * POST /roles/permissions
-   */
-  async createPermission(
-    permissionData: CreateGlobalPermissionRequest
-  ): Promise<ApiResponse<GlobalPermission>> {
-    return await apiClient.postForm<GlobalPermission>('/roles/permissions', permissionData);
+  // Permission groups ---------------------------------------------------
+
+  async getPermissionGroups(
+    params: ListParams = {}
+  ): Promise<GlobalPermissionGroup[]> {
+    const res = await getJson<{ permission_groups?: GlobalPermissionGroup[] }>(
+      '/roles/permission-groups',
+      {
+        category: params.category,
+        limit: params.limit ?? CATALOG_PAGE_SIZE,
+        offset: params.offset,
+      }
+    );
+    return res.permission_groups ?? [];
   }
 
-  /**
-   * List permissions
-   * GET /roles/permissions
-   */
-  async getPermissions(
-    params: { category?: string } & PaginationParams = {}
-  ): Promise<ApiResponse<GlobalPermission[]>> {
-    const cleanParams = this.cleanParams(params);
-    return await apiClient.get<GlobalPermission[]>('/roles/permissions', cleanParams);
+  async getPermissionGroup(
+    groupHash: string
+  ): Promise<GlobalPermissionGroupDetails> {
+    const res = await getJson<Partial<GlobalPermissionGroupDetails>>(
+      `/roles/permission-groups/${seg(groupHash)}`
+    );
+    if (!res.permission_group) throw new Error('Permission group not found.');
+    return {
+      permission_group: res.permission_group,
+      permissions: res.permissions ?? [],
+    };
   }
 
-  /**
-   * Get permission details
-   * GET /roles/permissions/{permission_hash}
-   */
-  async getPermission(permissionHash: string): Promise<ApiResponse<GlobalPermission>> {
-    return await apiClient.get<GlobalPermission>(`/roles/permissions/${permissionHash}`);
+  async createPermissionGroup(
+    data: CreateGlobalPermissionGroupRequest
+  ): Promise<GlobalPermissionGroup> {
+    const res = await postFormJson<{ permission_group: GlobalPermissionGroup }>(
+      '/roles/permission-groups',
+      data
+    );
+    return res.permission_group;
   }
 
-  /**
-   * Assign permission to permission group
-   * POST /roles/permission-groups/{group_hash}/permissions/{permission_hash}
-   */
+  async updatePermissionGroup(
+    groupHash: string,
+    data: UpdateGlobalPermissionGroupRequest
+  ): Promise<GlobalPermissionGroup> {
+    const res = await putFormJson<{ permission_group: GlobalPermissionGroup }>(
+      `/roles/permission-groups/${seg(groupHash)}`,
+      data
+    );
+    return res.permission_group;
+  }
+
+  async deletePermissionGroup(groupHash: string): Promise<void> {
+    await deleteJson(`/roles/permission-groups/${seg(groupHash)}`);
+  }
+
+  async getGroupPermissions(groupHash: string): Promise<GlobalPermission[]> {
+    const res = await getJson<{ permissions?: GlobalPermission[] }>(
+      `/roles/permission-groups/${seg(groupHash)}/permissions`
+    );
+    return res.permissions ?? [];
+  }
+
   async assignPermissionToGroup(
     groupHash: string,
     permissionHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(
-      `/roles/permission-groups/${groupHash}/permissions/${permissionHash}`
+  ): Promise<void> {
+    await postJson(
+      `/roles/permission-groups/${seg(groupHash)}/permissions/${seg(permissionHash)}`
     );
   }
 
-  /**
-   * Get permissions in group
-   * GET /roles/permission-groups/{group_hash}/permissions
-   */
-  async getGroupPermissions(groupHash: string): Promise<ApiResponse<GlobalPermission[]>> {
-    return await apiClient.get<GlobalPermission[]>(
-      `/roles/permission-groups/${groupHash}/permissions`
-    );
-  }
-
-  /**
-   * Remove permission from permission group
-   * DELETE /roles/permission-groups/{group_hash}/permissions/{permission_hash}
-   */
   async removePermissionFromGroup(
     groupHash: string,
     permissionHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(
-      `/roles/permission-groups/${groupHash}/permissions/${permissionHash}`
+  ): Promise<void> {
+    await deleteJson(
+      `/roles/permission-groups/${seg(groupHash)}/permissions/${seg(permissionHash)}`
     );
   }
 
-  /**
-   * Update permission
-   * PUT /roles/permissions/{permission_hash}
-   */
-  async updatePermission(
-    permissionHash: string,
-    data: Partial<CreateGlobalPermissionRequest>
-  ): Promise<ApiResponse<GlobalPermission>> {
-    return await apiClient.putForm<GlobalPermission>(
-      `/roles/permissions/${permissionHash}`,
+  // Permissions ---------------------------------------------------------
+
+  async getPermissions(params: ListParams = {}): Promise<GlobalPermission[]> {
+    const res = await getJson<{ permissions?: GlobalPermission[] }>(
+      '/roles/permissions',
+      {
+        category: params.category,
+        limit: params.limit ?? CATALOG_PAGE_SIZE,
+        offset: params.offset,
+      }
+    );
+    return res.permissions ?? [];
+  }
+
+  async createPermission(
+    data: CreateGlobalPermissionRequest
+  ): Promise<GlobalPermission> {
+    const res = await postFormJson<{ permission: GlobalPermission }>(
+      '/roles/permissions',
       data
     );
+    return res.permission;
   }
 
-  /**
-   * Delete permission
-   * DELETE /roles/permissions/{permission_hash}
-   */
-  async deletePermission(permissionHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/roles/permissions/${permissionHash}`);
+  async updatePermission(
+    permissionHash: string,
+    data: UpdateGlobalPermissionRequest
+  ): Promise<GlobalPermission> {
+    const res = await putFormJson<{ permission: GlobalPermission }>(
+      `/roles/permissions/${seg(permissionHash)}`,
+      data
+    );
+    return res.permission;
   }
 
-  // ============================================
-  // USER ROLE ASSIGNMENTS
-  // ============================================
-  
-  /**
-   * Assign role to user
-   * PUT /roles/users/{user_hash}/role
-   */
+  async deletePermission(permissionHash: string): Promise<void> {
+    await deleteJson(`/roles/permissions/${seg(permissionHash)}`);
+  }
+
+  // User role assignment --------------------------------------------------
+
+  /** The user's global role, or `null` when none is assigned. */
+  async getUserRole(userHash: string): Promise<GlobalRole | null> {
+    const res = await getJson<{ role?: GlobalRole | null }>(
+      `/roles/users/${seg(userHash)}/role`
+    );
+    return res.role ?? null;
+  }
+
+  async getMyRole(): Promise<GlobalRole | null> {
+    const res = await getJson<{ role?: GlobalRole | null }>(
+      '/roles/users/me/role'
+    );
+    return res.role ?? null;
+  }
+
   async assignRoleToUser(
     userHash: string,
     roleHash: string
-  ): Promise<ApiResponse<GlobalRoleAssignment>> {
-    return await apiClient.putForm<GlobalRoleAssignment>(
-      `/roles/users/${userHash}/role`,
+  ): Promise<GlobalRoleAssignment> {
+    return await putFormJson<GlobalRoleAssignment>(
+      `/roles/users/${seg(userHash)}/role`,
       { role_hash: roleHash }
     );
   }
 
-  /**
-   * Get user's role
-   * GET /roles/users/{user_hash}/role
-   */
-  async getUserRole(userHash: string): Promise<ApiResponse<GlobalRole>> {
-    return await apiClient.get<GlobalRole>(`/roles/users/${userHash}/role`);
+  async removeRoleFromUser(userHash: string): Promise<void> {
+    await deleteJson(`/roles/users/${seg(userHash)}/role`);
   }
 
-  /**
-   * Get current user's role
-   * GET /roles/users/me/role
-   */
-  async getMyRole(): Promise<ApiResponse<GlobalRole>> {
-    return await apiClient.get<GlobalRole>('/roles/users/me/role');
+  // Project catalog (UI suggestions only, never used for authorization) ----
+
+  async getProjectCatalogRoles(projectHash: string): Promise<CatalogedRole[]> {
+    const res = await getJson<{ cataloged_roles?: CatalogedRole[] }>(
+      `/roles/projects/${seg(projectHash)}/catalog/roles`
+    );
+    return res.cataloged_roles ?? [];
   }
 
-  /**
-   * Remove role from user
-   * DELETE /roles/users/{user_hash}/role
-   */
-  async removeRoleFromUser(userHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/roles/users/${userHash}/role`);
-  }
-
-  // ============================================
-  // PERMISSION CHECKING
-  // ============================================
-  
-  /**
-   * Get current user's permissions
-   * GET /permissions/users/me/permissions
-   */
-  async getMyPermissions(): Promise<ApiResponse<string[]>> {
-    return await apiClient.get<string[]>('/permissions/users/me/permissions');
-  }
-
-  /**
-   * Check specific permission
-   * GET /permissions/users/me/permissions/check/{permission_name}
-   */
-  async checkPermission(permissionName: string): Promise<ApiResponse<{
-    has_permission: boolean;
-    permission: string;
-  }>> {
-    return await apiClient.get<{
-      has_permission: boolean;
-      permission: string;
-    }>(`/permissions/users/me/permissions/check/${permissionName}`);
-  }
-
-  // ============================================
-  // PROJECT CATALOG (METADATA ONLY)
-  // ============================================
-  
-  /**
-   * Add role to project catalog
-   * POST /roles/projects/{project_hash}/catalog/roles/{role_hash}
-   */
   async addRoleToProjectCatalog(
     projectHash: string,
     roleHash: string,
-    metadata?: { catalog_purpose?: string; notes?: string }
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.postForm<void>(
-      `/roles/projects/${projectHash}/catalog/roles/${roleHash}`,
-      metadata || {}
+    metadata: CatalogMetadata = {}
+  ): Promise<void> {
+    await postFormJson(
+      `/roles/projects/${seg(projectHash)}/catalog/roles/${seg(roleHash)}`,
+      metadata
     );
   }
 
-  /**
-   * Get project's cataloged roles
-   * GET /roles/projects/{project_hash}/catalog/roles
-   */
-  async getProjectCatalogRoles(
-    projectHash: string
-  ): Promise<ApiResponse<GlobalRole[]>> {
-    return await apiClient.get<GlobalRole[]>(
-      `/roles/projects/${projectHash}/catalog/roles`
-    );
-  }
-
-  /**
-   * Remove role from project catalog
-   * DELETE /roles/projects/{project_hash}/catalog/roles/{role_hash}
-   */
   async removeRoleFromProjectCatalog(
     projectHash: string,
     roleHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(
-      `/roles/projects/${projectHash}/catalog/roles/${roleHash}`
+  ): Promise<void> {
+    await deleteJson(
+      `/roles/projects/${seg(projectHash)}/catalog/roles/${seg(roleHash)}`
     );
-  }
-
-  // ============================================
-  // UTILITY METHODS
-  // ============================================
-  
-  private cleanParams(params: Record<string, any>): Record<string, any> {
-    const cleaned: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        cleaned[key] = value;
-      }
-    });
-    return cleaned;
   }
 }
 

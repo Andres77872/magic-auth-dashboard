@@ -62,9 +62,7 @@ describe('apiClient cookie-backed auth', () => {
       .mockResolvedValueOnce(
         jsonResponse({ success: false, message: 'expired' }, 401)
       )
-      .mockResolvedValueOnce(
-        jsonResponse(refreshResponse())
-      )
+      .mockResolvedValueOnce(jsonResponse(refreshResponse()))
       .mockResolvedValueOnce(
         jsonResponse({ success: true, message: 'ok', data: { ok: true } })
       );
@@ -200,7 +198,9 @@ describe('apiClient cookie-backed auth', () => {
       .mockResolvedValueOnce(
         jsonResponse({ success: false, message: 'expired' }, 401)
       )
-      .mockResolvedValueOnce(jsonResponse({ success: true, message: 'missing metadata' }));
+      .mockResolvedValueOnce(
+        jsonResponse({ success: true, message: 'missing metadata' })
+      );
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(apiClient.get('/protected')).rejects.toThrow('expired');
@@ -216,7 +216,10 @@ describe('apiClient cookie-backed auth', () => {
         jsonResponse({ success: false, message: 'expired' }, 401)
       )
       .mockResolvedValueOnce(
-        jsonResponse({ success: false, message: 'temporarily unavailable' }, 503)
+        jsonResponse(
+          { success: false, message: 'temporarily unavailable' },
+          503
+        )
       );
     vi.stubGlobal('fetch', fetchMock);
 

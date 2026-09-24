@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method -- mock method refs in expect() assertions are not invoked. */
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { usePatreonEntitlements } from '../usePatreonEntitlements';
@@ -22,7 +23,9 @@ const sample: PatreonEntitlementList = {
       planCode: 'tier1',
       tierCode: 'gold',
       tierName: 'Gold',
+      nextRenewalAt: null,
       lastSyncedAt: '2026-06-20T00:00:00Z',
+      staleAfter: null,
       updatedAt: '2026-06-20T01:00:00Z',
     },
   ],

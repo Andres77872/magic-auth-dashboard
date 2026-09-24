@@ -7,7 +7,12 @@
  * `muted` instead of throwing or rendering misleading colors.
  */
 
-export type StatusTone = 'success' | 'warning' | 'destructive' | 'muted' | 'info';
+export type StatusTone =
+  | 'success'
+  | 'warning'
+  | 'destructive'
+  | 'muted'
+  | 'info';
 
 export function statusTone(status?: string): StatusTone {
   switch (String(status || '').toLowerCase()) {
@@ -18,11 +23,18 @@ export function statusTone(status?: string): StatusTone {
     case 'active':
     case 'linked':
     case 'processed':
+    case 'enabled':
       return 'success';
+    case 'queued':
+    case 'received':
+    case 'processing':
+      return 'info';
     case 'disabled':
     case 'free':
     case 'none':
     case 'ignored':
+    case 'unlinked':
+    case 'not_linked':
       return 'muted';
     case 'degraded':
     case 'stale':
@@ -35,6 +47,8 @@ export function statusTone(status?: string): StatusTone {
     case 'former':
     case 'replay':
     case 'warning':
+    case 'partially_disabled':
+    case 'rate_limited':
       return 'warning';
     case 'unhealthy':
     case 'critical':
@@ -42,6 +56,9 @@ export function statusTone(status?: string): StatusTone {
     case 'revoked':
     case 'rejected':
     case 'cancelled':
+    case 'blocked':
+    case 'refresh_failed':
+    case 'expired':
       return 'destructive';
     default:
       return 'muted';
@@ -51,7 +68,8 @@ export function statusTone(status?: string): StatusTone {
 export function toneClasses(tone: StatusTone): string {
   if (tone === 'success') return 'border-success/30 bg-success/10 text-success';
   if (tone === 'warning') return 'border-warning/30 bg-warning/10 text-warning';
-  if (tone === 'destructive') return 'border-destructive/30 bg-destructive/10 text-destructive';
+  if (tone === 'destructive')
+    return 'border-destructive/30 bg-destructive/10 text-destructive';
   if (tone === 'info') return 'border-info/30 bg-info/10 text-info';
   return 'border-border bg-muted text-muted-foreground';
 }
@@ -69,7 +87,9 @@ const TONE_SEVERITY: Record<StatusTone, number> = {
  * Roll a set of statuses up to the most severe one (by tone), returning the
  * original status string so a real label is shown. Ignores empty values.
  */
-export function rollupStatus(statuses: Array<string | undefined>): string | undefined {
+export function rollupStatus(
+  statuses: Array<string | undefined>
+): string | undefined {
   let worst: string | undefined;
   let worstRank = -1;
   for (const status of statuses) {

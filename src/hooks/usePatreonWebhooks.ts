@@ -1,13 +1,15 @@
 /**
  * usePatreonWebhooks
  *
- * ROOT-only paginated list hook for Patreon webhook deliveries.
+ * ROOT-only paginated list of recorded Patreon webhook deliveries, optionally
+ * filtered by delivery status.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import { patreonService } from '@/services/patreon.service';
 import type { PaginationResponse } from '@/types/api.types';
 import type { PatreonWebhookDelivery } from '@/types/patreon.types';
+import { usePatreonPagedList } from './usePatreonPagedList';
 
 export interface PatreonWebhooksFilters {
   limit: number;
@@ -26,54 +28,24 @@ interface UsePatreonWebhooksReturn {
 }
 
 export function usePatreonWebhooks(limit = 20): UsePatreonWebhooksReturn {
-  const [deliveries, setDeliveries] = useState<PatreonWebhookDelivery[]>([]);
-  const [pagination, setPagination] = useState<PaginationResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFiltersState] = useState<PatreonWebhooksFilters>({
-    limit,
-    offset: 0,
-    status: '',
-  });
-
-  const filtersRef = useRef(filters);
-  const isFetchingRef = useRef(false);
-  const hasFetchedRef = useRef(false);
-
-  useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
-
-  const fetchWebhooks = useCallback(async (params?: Partial<PatreonWebhooksFilters>) => {
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const query = { ...filtersRef.current, ...params };
-      const result = await patreonService.getWebhooks(query);
-      setDeliveries(result.items);
-      setPagination(result.pagination);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load Patreon webhooks');
-    } finally {
-      setIsLoading(false);
-      isFetchingRef.current = false;
-    }
-  }, []);
-
-  const setFilters = useCallback((newFilters: Partial<PatreonWebhooksFilters>) => {
-    setFiltersState((prev) => ({ ...prev, ...newFilters }));
-  }, []);
-
-  useEffect(() => {
-    if (!hasFetchedRef.current) {
-      hasFetchedRef.current = true;
-      void fetchWebhooks();
-    }
-  }, [fetchWebhooks]);
-
-  return { deliveries, pagination, isLoading, error, filters, fetchWebhooks, setFilters };
+  const load = useCallback(
+    (filters: PatreonWebhooksFilters) => patreonService.getWebhooks(filters),
+    []
+  );
+  const list = usePatreonPagedList(
+    load,
+    { limit, offset: 0, status: '' },
+    'Failed to load Patreon webhook deliveries'
+  );
+  return {
+    deliveries: list.items,
+    pagination: list.pagination,
+    isLoading: list.isLoading,
+    error: list.error,
+    filters: list.filters,
+    fetchWebhooks: list.refetch,
+    setFilters: list.setFilters,
+  };
 }
 
 export default usePatreonWebhooks;

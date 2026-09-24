@@ -3,41 +3,47 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BillingAttachProjectsModal } from '../BillingAttachProjectsModal';
 import { isAttachConflict } from '../billing-status';
-import { billingService, projectService } from '@/services';
-import { useToast } from '@/hooks';
-import type { ProjectListResponse } from '@/types/project.types';
+import { ApiError } from '@/utils/error-handler';
+import type {
+  ProjectListResponse,
+  ProjectSummary,
+} from '@/types/project.types';
 
-vi.mock('@/services', () => ({
-  projectService: { getProjects: vi.fn() },
-  billingService: { attachProject: vi.fn() },
-}));
+const projectService = vi.hoisted(() => ({ getProjects: vi.fn() }));
+const billingService = vi.hoisted(() => ({ attachProject: vi.fn() }));
+const showToast = vi.hoisted(() => vi.fn());
 
-vi.mock('@/hooks', () => ({
-  useToast: vi.fn(),
-}));
+vi.mock('@/services/project.service', () => ({ projectService }));
+vi.mock('@/services/billing.service', () => ({ billingService }));
+vi.mock('@/hooks/useToast', () => ({ useToast: () => ({ showToast }) }));
 
-const showToast = vi.fn();
-const mockedProjectService = vi.mocked(projectService);
-const mockedBillingService = vi.mocked(billingService);
+function project(hash: string, name: string): ProjectSummary {
+  return {
+    project_hash: hash,
+    project_name: name,
+    project_description: `${name} project`,
+    access_level: 'admin_access',
+    access_through: 'admin_access',
+  };
+}
 
 function projectsResponse(): ProjectListResponse {
-  const created_at = '2026-01-01T00:00:00Z';
   return {
     success: true,
     message: 'ok',
-    user_access_level: 'admin_access',
+    user_access_level: 'admin',
     projects: [
-      { project_hash: 'proj_a', project_name: 'Alpha', project_description: 'A', created_at },
-      { project_hash: 'proj_b', project_name: 'Bravo', project_description: 'B', created_at },
-      { project_hash: 'proj_c', project_name: 'Charlie', project_description: 'C', created_at },
-      { project_hash: 'proj_existing', project_name: 'Existing', project_description: 'E', created_at },
+      project('proj_a', 'Alpha'),
+      project('proj_b', 'Bravo'),
+      project('proj_c', 'Charlie'),
+      project('proj_existing', 'Existing'),
     ],
     pagination: { limit: 500, offset: 0, total: 4, has_more: false },
   };
 }
 
 function renderModal(
-  props: Partial<ComponentProps<typeof BillingAttachProjectsModal>> = {},
+  props: Partial<ComponentProps<typeof BillingAttachProjectsModal>> = {}
 ): ComponentProps<typeof BillingAttachProjectsModal> {
   const merged: ComponentProps<typeof BillingAttachProjectsModal> = {
     isOpen: true,
@@ -54,58 +60,73 @@ function renderModal(
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(useToast).mockReturnValue({ showToast });
-  mockedProjectService.getProjects.mockResolvedValue(projectsResponse());
+  projectService.getProjects.mockResolvedValue(projectsResponse());
 });
 
 describe('BillingAttachProjectsModal', () => {
-  it('excludes projects already attached to this group', async () => {
+  it('requests a full page of projects and hides the ones already attached', async () => {
     renderModal({ attachedProjectHashes: ['proj_existing'] });
 
     expect(await screen.findByText('Alpha')).toBeInTheDocument();
     expect(screen.queryByText('Existing')).not.toBeInTheDocument();
+    expect(projectService.getProjects).toHaveBeenCalledWith({
+      limit: 500,
+      search: undefined,
+    });
   });
 
   it('reports attached / conflict / failed per row and via summary toasts', async () => {
-    mockedBillingService.attachProject.mockImplementation((_group: string, hash: string) => {
-      if (hash === 'proj_b') {
-        return Promise.reject(new Error('Project is already attached to another billing group'));
+    billingService.attachProject.mockImplementation(
+      (_group: string, hash: string) => {
+        if (hash === 'proj_b') {
+          return Promise.reject(
+            new ApiError(
+              'Project is already attached to another billing group',
+              409,
+              'CONF_5003'
+            )
+          );
+        }
+        if (hash === 'proj_c')
+          return Promise.reject(new ApiError('Internal error', 500));
+        return Promise.resolve();
       }
-      if (hash === 'proj_c') {
-        return Promise.reject(new Error('Internal error'));
-      }
-      return Promise.resolve({ success: true, message: 'ok' });
-    });
+    );
     const { onSuccess, onClose } = renderModal();
 
     await screen.findByText('Alpha');
     fireEvent.click(screen.getByLabelText('Select Alpha'));
     fireEvent.click(screen.getByLabelText('Select Bravo'));
     fireEvent.click(screen.getByLabelText('Select Charlie'));
-
     fireEvent.click(screen.getByRole('button', { name: /attach \(3\)/i }));
 
-    await waitFor(() => expect(mockedBillingService.attachProject.mock.calls).toHaveLength(3));
+    await waitFor(() =>
+      expect(billingService.attachProject).toHaveBeenCalledTimes(3)
+    );
+    expect(billingService.attachProject).toHaveBeenCalledWith('bg_1', 'proj_a');
 
-    // Per-row outcome badges.
     expect(await screen.findByText('Attached')).toBeInTheDocument();
     expect(await screen.findByText('In another group')).toBeInTheDocument();
     expect(await screen.findByText('Failed')).toBeInTheDocument();
 
-    // Summary toasts (one per non-zero bucket).
     await waitFor(() => {
       expect(showToast).toHaveBeenCalledWith('Attached 1 project', 'success');
-      expect(showToast).toHaveBeenCalledWith('1 project already in another billing group', 'warning');
-      expect(showToast).toHaveBeenCalledWith('Failed to attach 1 project', 'error');
+      expect(showToast).toHaveBeenCalledWith(
+        '1 project already in another billing group',
+        'warning'
+      );
+      expect(showToast).toHaveBeenCalledWith(
+        'Failed to attach 1 project',
+        'error'
+      );
     });
-
-    // At least one attach succeeded -> parent refetches; modal stays open because some failed.
+    // One succeeded, so the parent refetches; the dialog stays open to explain the rest.
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
   });
 
   it('closes after a fully successful attach', async () => {
-    mockedBillingService.attachProject.mockResolvedValue({ success: true, message: 'ok' });
+    billingService.attachProject.mockResolvedValue(undefined);
     const { onSuccess, onClose } = renderModal();
 
     await screen.findByText('Alpha');
@@ -118,18 +139,36 @@ describe('BillingAttachProjectsModal', () => {
       expect(onClose).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('shows a retry when the project list cannot be loaded', async () => {
+    projectService.getProjects.mockRejectedValueOnce(new Error('Network down'));
+    renderModal();
+
+    expect(
+      await screen.findByText(/Projects could not be loaded/)
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Alpha')).toBeInTheDocument();
+  });
 });
 
 describe('isAttachConflict', () => {
-  it('matches the canonical 409 conflict phrase', () => {
-    expect(isAttachConflict(new Error('Project is already attached to another billing group'))).toBe(
-      true,
-    );
+  it('treats HTTP 409 as a conflict', () => {
+    expect(
+      isAttachConflict(
+        new ApiError(
+          'Project is already attached to another billing group',
+          409
+        )
+      )
+    ).toBe(true);
   });
 
-  it('returns false for unrelated errors', () => {
+  it('returns false for other errors', () => {
+    expect(isAttachConflict(new ApiError('Resource not found.', 404))).toBe(
+      false
+    );
     expect(isAttachConflict(new Error('Network request failed'))).toBe(false);
     expect(isAttachConflict(undefined)).toBe(false);
-    expect(isAttachConflict('Resource not found.')).toBe(false);
   });
 });

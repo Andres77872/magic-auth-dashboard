@@ -46,7 +46,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   title,
   message,
   onRetry,
-  retryLabel = 'Try Again',
+  retryLabel = 'Try again',
   isRetrying = false,
   variant = 'card',
   size = 'md',
@@ -94,10 +94,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
             disabled={isRetrying}
             className="gap-2"
           >
-            <RefreshCw
-              size={16}
-              className={cn(isRetrying && 'animate-spin')}
-            />
+            <RefreshCw size={16} className={cn(isRetrying && 'animate-spin')} />
             {isRetrying ? 'Retrying...' : retryLabel}
           </Button>
         </div>

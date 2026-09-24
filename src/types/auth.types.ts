@@ -5,7 +5,7 @@ export const UserType = {
   CONSUMER: 'consumer',
 } as const;
 
-export type UserType = typeof UserType[keyof typeof UserType];
+export type UserType = (typeof UserType)[keyof typeof UserType];
 
 // Authentication Interfaces
 
@@ -98,23 +98,30 @@ export interface UserTypeInfo {
   error?: string; // Handle database errors like missing tables
 }
 
-// User Group assignment information
+/** A user's group membership (`groups` on `/users/list` and `/users/{hash}`). */
 export interface UserGroupAssignment {
   group_hash: string;
   group_name: string;
-  group_description: string;
-  assigned_at: string;
-  assigned_by: string;
-  projects_count: number;
+  group_description?: string | null;
+  assigned_at?: string | null;
+  assigned_by?: string | null;
+  /** Present with `include_group_hierarchy=true`. */
+  projects_count?: number;
 }
 
-// User Project access information
+/**
+ * A project the user can reach. `/users/list` sends `project_group` and
+ * `permissions`; `/users/{hash}` sends `project_description` and, with
+ * `include_permission_details=true`, `effective_permissions`/`access_groups`.
+ */
 export interface UserProjectAccess {
   project_hash: string;
   project_name: string;
-  project_description: string;
-  effective_permissions: string[];
-  access_groups: {
+  project_description?: string | null;
+  project_group?: string | null;
+  permissions?: string[];
+  effective_permissions?: string[];
+  access_groups?: {
     group_hash: string;
     group_name: string;
     permissions: string[];
@@ -133,7 +140,8 @@ export interface UserStatistics {
 export interface User {
   user_hash: string;
   username: string;
-  email: string;
+  /** Primary verified email; `null` for accounts without one. */
+  email: string | null;
   user_type: UserType;
   user_type_info?: UserTypeInfo;
   created_at: string;
@@ -218,9 +226,10 @@ export const AuthActionType = {
   SESSION_EXPIRY_UPDATE: 'SESSION_EXPIRY_UPDATE',
 } as const;
 
-export type AuthActionType = typeof AuthActionType[keyof typeof AuthActionType];
+export type AuthActionType =
+  (typeof AuthActionType)[keyof typeof AuthActionType];
 
-export type AuthAction = 
+export type AuthAction =
   | { type: typeof AuthActionType.LOGIN_START }
   | { type: typeof AuthActionType.LOGIN_SUCCESS; payload: LoginResponse }
   | { type: typeof AuthActionType.LOGIN_FAILURE; payload: { error: string } }
@@ -238,9 +247,19 @@ export type AuthAction =
     }
   | { type: typeof AuthActionType.CLEAR_ERROR }
   | { type: typeof AuthActionType.LOAD_PERMISSIONS_START }
-  | { type: typeof AuthActionType.LOAD_PERMISSIONS_SUCCESS; payload: { permissions: string[] } }
-  | { type: typeof AuthActionType.LOAD_PERMISSIONS_FAILURE; payload: { error: string } }
+  | {
+      type: typeof AuthActionType.LOAD_PERMISSIONS_SUCCESS;
+      payload: { permissions: string[] };
+    }
+  | {
+      type: typeof AuthActionType.LOAD_PERMISSIONS_FAILURE;
+      payload: { error: string };
+    }
   | {
       type: typeof AuthActionType.SESSION_EXPIRY_UPDATE;
-      payload: { expires_at: string; refresh_expires_at?: string; remember_me?: boolean };
+      payload: {
+        expires_at: string;
+        refresh_expires_at?: string;
+        remember_me?: boolean;
+      };
     };

@@ -1,200 +1,145 @@
-/**
- * useApiKeys Hook
- *
- * Hook for admin-managed API key operations with loading/error/refetch states.
- * Supports listing all keys, filtering by user or project, and CRUD operations.
- * Admins manage tokens for user/service-account owners — this is NOT self-service.
- */
-
-import { useState, useCallback, useEffect } from 'react';
-import { apiKeyService } from '@/services';
+import { useCallback, useState } from 'react';
+import { apiKeyService } from '@/services/api-key.service';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import type {
   ApiKey,
+  ApiKeyListParams,
   CreateApiKeyRequest,
-  CreateApiKeyResponse,
+  CreatedApiKey,
+  RevokedApiKey,
   UpdateApiKeyRequest,
 } from '@/types/api-key.types';
 
-interface UseApiKeysOptions {
-  autoFetch?: boolean;
-  limit?: number;
-  offset?: number;
-  /** Filter by owner user hash */
-  userHash?: string;
-  /** Filter by project hash */
-  projectHash?: string;
-  /** Only return active keys (server-side filter) */
-  activeOnly?: boolean;
+export interface UseApiKeysOptions extends ApiKeyListParams {
   /**
-   * Gate auto-fetching. Admins can list all their projects' keys with no
-   * filter, but root users must supply a user/project filter — the caller
-   * sets `enabled` accordingly so we never fire an invalid unscoped request.
+   * Gate fetching. Root must name an owner or a project (the backend answers
+   * 400 otherwise), so the page disables the hook until one is chosen.
    */
   enabled?: boolean;
 }
 
-interface UseApiKeysReturn {
+export interface UseApiKeysReturn {
   keys: ApiKey[];
+  /** Total matching keys reported by the backend (0 before the first load). */
+  total: number;
   isLoading: boolean;
+  isRefreshing: boolean;
   error: string | null;
-  totalCount: number;
-  createKey: (request: CreateApiKeyRequest) => Promise<CreateApiKeyResponse>;
-  revokeKey: (publicId: string) => Promise<boolean>;
-  updateKey: (publicId: string, request: UpdateApiKeyRequest) => Promise<boolean>;
-  refetch: (params?: { limit?: number; offset?: number }) => Promise<void>;
+  refetch: () => Promise<void>;
 }
 
-export function useApiKeys(options?: UseApiKeysOptions): UseApiKeysReturn {
-  const {
-    autoFetch = true,
-    limit = 10,
-    offset = 0,
-    userHash,
-    projectHash,
-    activeOnly,
-    enabled = true,
-  } = options || {};
-
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(autoFetch && enabled);
-  const [error, setError] = useState<string | null>(null);
-
-  // Fetch keys — routes to correct admin endpoint based on filter
-  const fetchKeys = useCallback(async (fetchParams?: { limit?: number; offset?: number }) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const params: { limit: number; offset: number; active_only?: boolean } = {
-        limit: fetchParams?.limit ?? limit,
-        offset: fetchParams?.offset ?? offset,
-      };
-      if (activeOnly) params.active_only = true;
-
-      let response;
-      if (userHash) {
-        response = await apiKeyService.listKeysByUser(userHash, params);
-      } else if (projectHash) {
-        response = await apiKeyService.listKeysByProject(projectHash, params);
-      } else {
-        response = await apiKeyService.listKeys(params);
-      }
-
-      if (response.success && response.data) {
-        setKeys(response.data.keys);
-        setTotalCount(response.data.total);
-      } else {
-        setError(response.message || 'Failed to load API keys');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unable to load API keys';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [limit, offset, userHash, projectHash, activeOnly]);
-
-  // Auto-fetch on mount/dependency change, gated by `enabled`. Admins fetch
-  // their global list with no filter; root must pass a filter and the caller
-  // sets `enabled=false` until one is chosen so we never make an invalid call.
-  useEffect(() => {
-    if (autoFetch && enabled) {
-      void fetchKeys();
-    }
-  }, [autoFetch, enabled, fetchKeys]);
-
-  // Create key
-  const createKey = useCallback(async (request: CreateApiKeyRequest): Promise<CreateApiKeyResponse> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await apiKeyService.createKey(request);
-      if (response.success) {
-        // Don't add to keys list yet - user needs to see reveal modal first
-        // Will refetch after reveal modal confirmation
-        return response;
-      } else {
-        setError(response.message || 'Failed to create API key');
-        throw new Error(response.message || 'Failed to create API key');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unable to create API key';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Revoke key
-  const revokeKey = useCallback(async (publicId: string): Promise<boolean> => {
-    setError(null);
-
-    try {
-      const response = await apiKeyService.revokeKey(publicId);
-      if (response.success) {
-        // Optimistically update the key status to revoked
-        setKeys(prevKeys => 
-          prevKeys.map(key => 
-            key.public_id === publicId 
-              ? { ...key, is_active: false, revoked_at: new Date().toISOString() }
-              : key
-          )
-        );
-        return true;
-      } else {
-        setError(response.message || 'Failed to revoke API key');
-        return false;
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unable to revoke API key';
-      setError(errorMessage);
-      return false;
-    }
-  }, []);
-
-  // Update key
-  const updateKey = useCallback(async (publicId: string, request: UpdateApiKeyRequest): Promise<boolean> => {
-    setError(null);
-
-    try {
-      const response = await apiKeyService.updateKey(publicId, request);
-      if (response.success && response.data) {
-        // Update the key in the list
-        setKeys(prevKeys => 
-          prevKeys.map(key => 
-            key.public_id === publicId ? response.data : key
-          )
-        );
-        return true;
-      } else {
-        setError(response.message || 'Failed to update API key');
-        return false;
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unable to update API key';
-      setError(errorMessage);
-      return false;
-    }
-  }, []);
-
-  // Refetch
-  const refetch = useCallback(async (params?: { limit?: number; offset?: number }) => {
-    await fetchKeys(params);
-  }, [fetchKeys]);
-
+/** A page of API keys from `GET /api-keys` for the given filters. */
+export function useApiKeys({
+  userHash,
+  projectHash,
+  activeOnly,
+  limit,
+  offset,
+  enabled = true,
+}: UseApiKeysOptions = {}): UseApiKeysReturn {
+  const fetcher = useCallback(
+    () =>
+      apiKeyService.listKeys({
+        userHash,
+        projectHash,
+        activeOnly,
+        limit,
+        offset,
+      }),
+    [userHash, projectHash, activeOnly, limit, offset]
+  );
+  const { data, isLoading, isRefreshing, error, refetch } = useAsyncData(
+    fetcher,
+    { enabled }
+  );
   return {
-    keys,
+    keys: data?.keys ?? [],
+    total: data?.total ?? 0,
     isLoading,
+    isRefreshing,
     error,
-    totalCount,
-    createKey,
-    revokeKey,
-    updateKey,
     refetch,
   };
+}
+
+export interface UseApiKeyDetailsReturn {
+  apiKey: ApiKey | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+/**
+ * `GET /api-keys/{key_id}` — adds owner and project details that some
+ * listings omit (user listings carry no owner fields).
+ */
+export function useApiKeyDetails(keyId: string | null): UseApiKeyDetailsReturn {
+  const fetcher = useCallback(async (): Promise<ApiKey> => {
+    if (!keyId) throw new Error('No API key selected.');
+    return apiKeyService.getKey(keyId);
+  }, [keyId]);
+  const { data, isLoading, error, refetch } = useAsyncData(fetcher, {
+    enabled: Boolean(keyId),
+  });
+  return {
+    apiKey: data && data.public_id === keyId ? data : null,
+    isLoading,
+    error,
+    refetch,
+  };
+}
+
+export type ApiKeyMutation = 'create' | 'update' | 'revoke';
+
+export interface UseApiKeyMutationsReturn {
+  pending: ApiKeyMutation | null;
+  /** Resolves with the one-time token; callers must not store or log it. */
+  createKey: (request: CreateApiKeyRequest) => Promise<CreatedApiKey>;
+  updateKey: (keyId: string, request: UpdateApiKeyRequest) => Promise<ApiKey>;
+  revokeKey: (keyId: string, reason?: string) => Promise<RevokedApiKey>;
+}
+
+/**
+ * Create / update / revoke. Each call resolves only after the API confirms and
+ * rethrows failures (including `401 AUTH_1008`, "recent sign-in required") so
+ * the caller can explain them.
+ */
+export function useApiKeyMutations(): UseApiKeyMutationsReturn {
+  const [pending, setPending] = useState<ApiKeyMutation | null>(null);
+
+  const track = useCallback(
+    async <T>(kind: ApiKeyMutation, run: () => Promise<T>): Promise<T> => {
+      setPending(kind);
+      try {
+        return await run();
+      } finally {
+        setPending(null);
+      }
+    },
+    []
+  );
+
+  const createKey = useCallback(
+    (request: CreateApiKeyRequest) =>
+      track('create', () => apiKeyService.createKey(request)),
+    [track]
+  );
+  const updateKey = useCallback(
+    (keyId: string, request: UpdateApiKeyRequest) =>
+      track('update', () => apiKeyService.updateKey(keyId, request)),
+    [track]
+  );
+  const revokeKey = useCallback(
+    (keyId: string, reason?: string) =>
+      track('revoke', () =>
+        reason?.trim()
+          ? apiKeyService.revokeKey(keyId, reason)
+          : apiKeyService.revokeKey(keyId)
+      ),
+    [track]
+  );
+
+  return { pending, createKey, updateKey, revokeKey };
 }
 
 export default useApiKeys;

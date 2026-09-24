@@ -1,280 +1,206 @@
-import { apiClient } from './api.client';
-import type { ApiResponse } from '@/types/api.types';
+import { deleteJson, getJson, postFormJson, seg } from './request';
 import type {
-  PermissionGroupAssignment,
-  DirectPermissionAssignment,
-  PermissionSource,
-  CatalogEntry,
-  UserGroupPermissionGroupsResponse,
-  UserDirectPermissionGroupsResponse,
+  AssignedPermissionGroup,
+  BulkPermissionGroupAssignResult,
+  CatalogedPermissionGroup,
+  PermissionGroupCatalogProject,
+  PermissionGroupDirectUser,
+  PermissionGroupUserGroup,
+  PermissionSources,
 } from '@/types/permission-assignments.types';
+import type { CatalogMetadata } from '@/types/global-roles.types';
 
+/**
+ * Permission-group assignments (`/permissions/*`). These routes return bare
+ * objects with no `success` key, so a resolved promise means success and
+ * failures arrive as thrown errors from the transport.
+ */
 class PermissionAssignmentsService {
-  // ============================================
-  // USER GROUP PERMISSION ASSIGNMENTS (PRIMARY)
-  // ============================================
+  // User groups ---------------------------------------------------------
 
-  /**
-   * Assign permission group to user group
-   * POST /permissions/admin/user-groups/{group_hash}/permission-groups
-   */
+  async getUserGroupPermissionGroups(
+    groupHash: string
+  ): Promise<AssignedPermissionGroup[]> {
+    const res = await getJson<{
+      permission_groups?: AssignedPermissionGroup[];
+    }>(`/permissions/admin/user-groups/${seg(groupHash)}/permission-groups`);
+    return res.permission_groups ?? [];
+  }
+
   async assignPermissionGroupToUserGroup(
     groupHash: string,
     permissionGroupHash: string
-  ): Promise<ApiResponse<PermissionGroupAssignment>> {
-    return await apiClient.postForm<PermissionGroupAssignment>(
-      `/permissions/admin/user-groups/${groupHash}/permission-groups`,
-      { permission_group_hash: permissionGroupHash }
+  ): Promise<void> {
+    await postFormJson(
+      `/permissions/admin/user-groups/${seg(groupHash)}/permission-groups`,
+      {
+        permission_group_hash: permissionGroupHash,
+      }
     );
   }
 
-  /**
-   * Remove permission group from user group
-   * DELETE /permissions/admin/user-groups/{group_hash}/permission-groups/{pg_hash}
-   */
   async removePermissionGroupFromUserGroup(
     groupHash: string,
     permissionGroupHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(
-      `/permissions/admin/user-groups/${groupHash}/permission-groups/${permissionGroupHash}`
+  ): Promise<void> {
+    await deleteJson(
+      `/permissions/admin/user-groups/${seg(groupHash)}/permission-groups/${seg(permissionGroupHash)}`
     );
   }
 
-  /**
-   * Get user group's permission groups
-   * GET /permissions/admin/user-groups/{group_hash}/permission-groups
-   */
-  async getUserGroupPermissionGroups(
-    groupHash: string
-  ): Promise<ApiResponse<UserGroupPermissionGroupsResponse>> {
-    return await apiClient.get<UserGroupPermissionGroupsResponse>(
-      `/permissions/admin/user-groups/${groupHash}/permission-groups`
-    );
-  }
-
-  /**
-   * Bulk assign permission groups to user group
-   * POST /permissions/admin/user-groups/{group_hash}/permission-groups/bulk
-   * Uses form data with repeated permission_group_hashes parameters
-   */
+  /** Form field `permission_group_hashes` is repeated once per hash. */
   async bulkAssignPermissionGroupsToUserGroup(
     groupHash: string,
     permissionGroupHashes: string[]
-  ): Promise<
-    ApiResponse<{
-      success_count: number;
-      total_count: number;
-      results: Array<{
-        permission_group_hash: string;
-        permission_group_name?: string;
-        success: boolean;
-      }>;
-    }>
-  > {
-    return await apiClient.postForm<{
-      success_count: number;
-      total_count: number;
-      results: Array<{
-        permission_group_hash: string;
-        permission_group_name?: string;
-        success: boolean;
-      }>;
-    }>(`/permissions/admin/user-groups/${groupHash}/permission-groups/bulk`, {
-      permission_group_hashes: permissionGroupHashes,
-    });
+  ): Promise<BulkPermissionGroupAssignResult> {
+    const res = await postFormJson<Partial<BulkPermissionGroupAssignResult>>(
+      `/permissions/admin/user-groups/${seg(groupHash)}/permission-groups/bulk`,
+      { permission_group_hashes: permissionGroupHashes }
+    );
+    return {
+      results: res.results ?? [],
+      success_count: res.success_count ?? 0,
+      total_count: res.total_count ?? permissionGroupHashes.length,
+    };
   }
 
-  // ============================================
-  // DIRECT USER PERMISSIONS (SECONDARY)
-  // ============================================
+  // Direct user assignments -------------------------------------------------
 
-  /**
-   * Assign permission group directly to user
-   * POST /permissions/users/{user_hash}/permission-groups
-   */
+  async getUserDirectPermissionGroups(
+    userHash: string
+  ): Promise<AssignedPermissionGroup[]> {
+    const res = await getJson<{
+      direct_permission_groups?: AssignedPermissionGroup[];
+    }>(`/permissions/users/${seg(userHash)}/permission-groups`);
+    return res.direct_permission_groups ?? [];
+  }
+
   async assignPermissionGroupToUser(
     userHash: string,
     permissionGroupHash: string,
     notes?: string
-  ): Promise<ApiResponse<DirectPermissionAssignment>> {
-    const data: Record<string, string> = {
-      permission_group_hash: permissionGroupHash,
-    };
-    if (notes) {
-      data.notes = notes;
-    }
-    return await apiClient.postForm<DirectPermissionAssignment>(
-      `/permissions/users/${userHash}/permission-groups`,
-      data
+  ): Promise<void> {
+    await postFormJson(
+      `/permissions/users/${seg(userHash)}/permission-groups`,
+      {
+        permission_group_hash: permissionGroupHash,
+        notes: notes?.trim() || undefined,
+      }
     );
   }
 
-  /**
-   * Remove permission group from user
-   * DELETE /permissions/users/{user_hash}/permission-groups/{pg_hash}
-   */
   async removePermissionGroupFromUser(
     userHash: string,
     permissionGroupHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(
-      `/permissions/users/${userHash}/permission-groups/${permissionGroupHash}`
+  ): Promise<void> {
+    await deleteJson(
+      `/permissions/users/${seg(userHash)}/permission-groups/${seg(permissionGroupHash)}`
     );
   }
 
-  /**
-   * Get user's direct permission groups
-   * GET /permissions/users/{user_hash}/permission-groups
-   */
-  async getUserDirectPermissionGroups(
-    userHash: string
-  ): Promise<ApiResponse<UserDirectPermissionGroupsResponse>> {
-    return await apiClient.get<UserDirectPermissionGroupsResponse>(
-      `/permissions/users/${userHash}/permission-groups`
+  // Current user ------------------------------------------------------------
+
+  async getMyPermissionGroups(): Promise<AssignedPermissionGroup[]> {
+    const res = await getJson<{
+      direct_permission_groups?: AssignedPermissionGroup[];
+    }>('/permissions/users/me/permission-groups');
+    return res.direct_permission_groups ?? [];
+  }
+
+  /** Permission names from every source (role, user groups, direct). */
+  async getMyPermissions(): Promise<string[]> {
+    const res = await getJson<{ permissions?: string[] }>(
+      '/permissions/users/me/permissions'
     );
+    return Array.isArray(res.permissions) ? res.permissions : [];
   }
 
-  // ============================================
-  // CURRENT USER PERMISSION QUERIES
-  // ============================================
-
-  /**
-   * Get current user's all permissions
-   * GET /permissions/users/me/permissions
-   */
-  async getMyPermissions(): Promise<ApiResponse<string[]>> {
-    return await apiClient.get<string[]>('/permissions/users/me/permissions');
-  }
-
-  /**
-   * Check if current user has specific permission
-   * GET /permissions/users/me/permissions/check/{permission_name}
-   */
-  async checkMyPermission(permissionName: string): Promise<
-    ApiResponse<{
-      has_permission: boolean;
-      permission: string;
-    }>
-  > {
-    return await apiClient.get<{
-      has_permission: boolean;
-      permission: string;
-    }>(`/permissions/users/me/permissions/check/${permissionName}`);
-  }
-
-  /**
-   * Get current user's permission groups
-   * GET /permissions/users/me/permission-groups
-   */
-  async getMyPermissionGroups(): Promise<
-    ApiResponse<UserDirectPermissionGroupsResponse>
-  > {
-    return await apiClient.get<UserDirectPermissionGroupsResponse>(
-      '/permissions/users/me/permission-groups'
+  async checkMyPermission(permissionName: string): Promise<boolean> {
+    const res = await getJson<{ has_permission?: boolean }>(
+      `/permissions/users/me/permissions/check/${seg(permissionName)}`
     );
+    return res.has_permission === true;
   }
 
-  /**
-   * Get current user's permission sources
-   * GET /permissions/users/me/permission-sources
-   */
-  async getMyPermissionSources(): Promise<
-    ApiResponse<{
-      from_role: PermissionSource[];
-      from_user_groups: PermissionSource[];
-      from_direct_assignment: PermissionSource[];
-    }>
-  > {
-    return await apiClient.get<{
-      from_role: PermissionSource[];
-      from_user_groups: PermissionSource[];
-      from_direct_assignment: PermissionSource[];
-    }>('/permissions/users/me/permission-sources');
+  async getMyPermissionSources(): Promise<PermissionSources> {
+    const res = await getJson<Partial<PermissionSources>>(
+      '/permissions/users/me/permission-sources'
+    );
+    return {
+      sources: {
+        from_role: res.sources?.from_role ?? [],
+        from_user_groups: res.sources?.from_user_groups ?? [],
+        from_direct_assignment: res.sources?.from_direct_assignment ?? [],
+      },
+      summary: res.summary ?? {
+        role_count: 0,
+        user_group_count: 0,
+        direct_count: 0,
+        total_permission_groups: 0,
+      },
+    };
   }
 
-  // ============================================
-  // PROJECT CATALOG (METADATA ONLY)
-  // ============================================
+  // Project catalog (UI suggestions only) --------------------------------
 
-  /**
-   * Add permission group to project catalog
-   * POST /permissions/projects/{project_hash}/permission-group-catalog/{pg_hash}
-   */
+  async getProjectCatalogPermissionGroups(
+    projectHash: string
+  ): Promise<CatalogedPermissionGroup[]> {
+    const res = await getJson<{
+      cataloged_permission_groups?: CatalogedPermissionGroup[];
+    }>(`/permissions/projects/${seg(projectHash)}/permission-group-catalog`);
+    return res.cataloged_permission_groups ?? [];
+  }
+
   async addPermissionGroupToProjectCatalog(
     projectHash: string,
     permissionGroupHash: string,
-    metadata?: { catalog_purpose?: string; notes?: string }
-  ): Promise<ApiResponse<CatalogEntry>> {
-    return await apiClient.postForm<CatalogEntry>(
-      `/permissions/projects/${projectHash}/permission-group-catalog/${permissionGroupHash}`,
-      metadata || {}
+    metadata: CatalogMetadata = {}
+  ): Promise<void> {
+    await postFormJson(
+      `/permissions/projects/${seg(projectHash)}/permission-group-catalog/${seg(permissionGroupHash)}`,
+      metadata
     );
   }
 
-  /**
-   * Remove permission group from project catalog
-   * DELETE /permissions/projects/{project_hash}/permission-group-catalog/{pg_hash}
-   */
   async removePermissionGroupFromProjectCatalog(
     projectHash: string,
     permissionGroupHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(
-      `/permissions/projects/${projectHash}/permission-group-catalog/${permissionGroupHash}`
+  ): Promise<void> {
+    await deleteJson(
+      `/permissions/projects/${seg(projectHash)}/permission-group-catalog/${seg(permissionGroupHash)}`
     );
   }
 
-  /**
-   * Get project's cataloged permission groups
-   * GET /permissions/projects/{project_hash}/permission-group-catalog
-   */
-  async getProjectCatalogPermissionGroups(
-    projectHash: string
-  ): Promise<ApiResponse<CatalogEntry[]>> {
-    return await apiClient.get<CatalogEntry[]>(
-      `/permissions/projects/${projectHash}/permission-group-catalog`
-    );
-  }
+  // Permission-group usage ------------------------------------------------
 
-  /**
-   * Get projects that catalog a permission group
-   * GET /permissions/permissions/groups/{pg_hash}/project-catalog
-   */
   async getPermissionGroupProjectCatalog(
     permissionGroupHash: string
-  ): Promise<ApiResponse<CatalogEntry[]>> {
-    return await apiClient.get<CatalogEntry[]>(
-      `/permissions/permissions/groups/${permissionGroupHash}/project-catalog`
+  ): Promise<PermissionGroupCatalogProject[]> {
+    const res = await getJson<{
+      cataloged_in_projects?: PermissionGroupCatalogProject[];
+    }>(
+      `/permissions/permissions/groups/${seg(permissionGroupHash)}/project-catalog`
     );
+    return res.cataloged_in_projects ?? [];
   }
 
-  // ============================================
-  // USAGE ANALYTICS
-  // ============================================
-
-  /**
-   * Get user groups with permission group
-   * GET /permissions/permissions/groups/{pg_hash}/user-groups
-   */
   async getPermissionGroupUserGroups(
     permissionGroupHash: string
-  ): Promise<ApiResponse<any[]>> {
-    return await apiClient.get<any[]>(
-      `/permissions/permissions/groups/${permissionGroupHash}/user-groups`
+  ): Promise<PermissionGroupUserGroup[]> {
+    const res = await getJson<{ user_groups?: PermissionGroupUserGroup[] }>(
+      `/permissions/permissions/groups/${seg(permissionGroupHash)}/user-groups`
     );
+    return res.user_groups ?? [];
   }
 
-  /**
-   * Get users with direct permission group
-   * GET /permissions/permissions/groups/{pg_hash}/users
-   */
   async getPermissionGroupUsers(
     permissionGroupHash: string
-  ): Promise<ApiResponse<any[]>> {
-    return await apiClient.get<any[]>(
-      `/permissions/permissions/groups/${permissionGroupHash}/users`
-    );
+  ): Promise<PermissionGroupDirectUser[]> {
+    const res = await getJson<{
+      users_with_direct_assignment?: PermissionGroupDirectUser[];
+    }>(`/permissions/permissions/groups/${seg(permissionGroupHash)}/users`);
+    return res.users_with_direct_assignment ?? [];
   }
 }
 

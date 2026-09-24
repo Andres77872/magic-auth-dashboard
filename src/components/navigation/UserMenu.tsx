@@ -1,136 +1,101 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth, useUserType } from '@/hooks';
-import { User, Settings, LogOut, ChevronsUpDown } from 'lucide-react';
+import { ChevronsUpDown, LogOut, Settings, User } from 'lucide-react';
+import { useAuth, useToast } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
 import {
+  Avatar,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  Button,
-  Avatar,
-  Badge,
 } from '@/components/ui';
+import { UserTypeBadge } from '@/components/common/UserTypeBadge';
+import { getUserTypeLabel } from '@/utils/component-utils';
 
-export function UserMenu(): React.JSX.Element {
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+export function UserMenu(): React.JSX.Element | null {
   const { user, logout } = useAuth();
-  const { getUserTypeLabel } = useUserType();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const handleLogout = async () => {
+  if (!user) return null;
+
+  // Session validation does not return an email, so fall back to the role.
+  const secondaryLine =
+    user.email || `${getUserTypeLabel(user.user_type)} account`;
+
+  const handleSignOut = async (): Promise<void> => {
     try {
+      // Finish the server-side logout before leaving so the request isn't aborted.
       await logout();
-      navigate(ROUTES.LOGIN);
-    } catch (error) {
-      console.error('Logout failed:', error);
+      void navigate(ROUTES.LOGIN, { replace: true });
+    } catch {
+      showToast('Sign-out did not complete. Try again.', 'error');
     }
   };
 
-  const handleLogoutConfirm = () => {
-    setShowLogoutConfirm(false);
-    handleLogout();
-  };
-
-  if (!user) {
-    return <></>;
-  }
-
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent"
-            aria-label="User menu"
-          >
-            <Avatar name={user.username} size="md" />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-medium text-foreground">
-                {user.username}
-              </span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {user.email}
-              </span>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent"
+          aria-label={`Account menu for ${user.username}`}
+        >
+          <Avatar name={user.username} size="md" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[13px] font-medium text-foreground">
+              {user.username}
             </span>
-            <ChevronsUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-          </button>
-        </DropdownMenuTrigger>
+            <span className="block truncate text-xs text-muted-foreground">
+              {secondaryLine}
+            </span>
+          </span>
+          <ChevronsUpDown
+            className="h-4 w-4 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+        </button>
+      </DropdownMenuTrigger>
 
-        <DropdownMenuContent side="top" align="start" className="w-[232px]">
-          {/* User info header */}
-          <div className="flex items-center gap-3 px-2 pb-2 pt-1.5">
-            <Avatar name={user.username} size="lg" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold text-foreground">
-                {user.username}
-              </div>
-              <div className="mb-1.5 truncate text-xs text-muted-foreground">
-                {user.email}
-              </div>
-              <Badge variant="subtle" size="sm">
-                {getUserTypeLabel()}
-              </Badge>
+      <DropdownMenuContent side="top" align="start" className="w-[228px]">
+        <div className="flex items-center gap-3 px-2 pb-2 pt-1.5">
+          <Avatar name={user.username} size="lg" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-semibold text-foreground">
+              {user.username}
             </div>
+            <UserTypeBadge userType={user.user_type} className="mt-1" />
           </div>
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem asChild>
-            <Link to={ROUTES.PROFILE} className="cursor-pointer">
-              <User className="h-4 w-4" />
-              <span>Profile</span>
-            </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem asChild>
-            <Link to={ROUTES.SETTINGS} className="cursor-pointer">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </Link>
-          </DropdownMenuItem>
-
-          <DropdownMenuSeparator />
-
-          <DropdownMenuItem
-            destructive
-            className="cursor-pointer"
-            onClick={() => setShowLogoutConfirm(true)}
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Sign out</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Logout confirmation dialog */}
-      <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sign out</DialogTitle>
-            <DialogDescription>
-              You'll be returned to the sign-in screen.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowLogoutConfirm(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleLogoutConfirm}>Sign out</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+        </div>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to={ROUTES.PROFILE} className="cursor-pointer">
+            <User className="h-4 w-4" aria-hidden="true" />
+            <span>Your profile</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to={ROUTES.SETTINGS} className="cursor-pointer">
+            <Settings className="h-4 w-4" aria-hidden="true" />
+            <span>Session settings</span>
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          destructive
+          className="cursor-pointer"
+          onSelect={() => {
+            void handleSignOut();
+          }}
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          <span>Sign out</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
-export default UserMenu; 
+export default UserMenu;

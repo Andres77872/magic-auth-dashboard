@@ -1,66 +1,67 @@
-import { useState, useEffect, useCallback } from 'react';
-import { groupService } from '@/services';
+import { useCallback, useState } from 'react';
+import { groupService, GROUP_MEMBERS_PAGE_MAX } from '@/services/group.service';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import type { GroupMember } from '@/types/group.types';
 
-interface UseUsersByGroupReturn {
-  users: GroupMember[];
+export interface UseUsersByGroupOptions {
+  /** Page size, capped at 100 by the backend. Defaults to 25. */
+  limit?: number;
+}
+
+export interface UseUsersByGroupReturn {
+  members: GroupMember[];
+  /** Full member count. */
+  total: number | undefined;
+  offset: number;
+  limit: number;
+  setOffset: (offset: number) => void;
+  setLimit: (limit: number) => void;
   isLoading: boolean;
+  isRefreshing: boolean;
   error: string | null;
   refetch: () => Promise<void>;
 }
 
-export function useUsersByGroup(groupHash?: string): UseUsersByGroupReturn {
-  const [users, setUsers] = useState<GroupMember[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+/** One page of a user group's active members (`GET /admin/user-groups/{hash}/members`, sorted by username). */
+export function useUsersByGroup(
+  groupHash: string | undefined,
+  { limit: initialLimit = 25 }: UseUsersByGroupOptions = {}
+): UseUsersByGroupReturn {
+  const [limit, setLimitState] = useState(
+    Math.min(initialLimit, GROUP_MEMBERS_PAGE_MAX)
+  );
+  const [offset, setOffsetState] = useState(0);
 
-  const fetchGroupMembers = useCallback(async () => {
-    if (!groupHash) {
-      setUsers([]);
-      setIsLoading(false);
-      return;
-    }
+  const fetcher = useCallback(() => {
+    if (!groupHash) return Promise.reject(new Error('Missing user group id.'));
+    return groupService.getGroupMembers(groupHash, { limit, offset });
+  }, [groupHash, limit, offset]);
+  const { data, error, isLoading, isRefreshing, refetch } = useAsyncData(
+    fetcher,
+    { enabled: Boolean(groupHash) }
+  );
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response: any = await groupService.getGroupMembers(groupHash);
-      
-      if (response.success) {
-        // API returns members as a top-level array field, NOT in data
-        // Try multiple possible locations based on API structure
-        let membersData = [];
-        
-        // API returns members as a top-level array field per documentation
-        if (Array.isArray(response.members)) {
-          membersData = response.members;
-        } else if (Array.isArray(response.data)) {
-          membersData = response.data;
-        }
-        
-        setUsers(membersData);
-      } else {
-        setError(response.message || 'Failed to fetch group members');
-        setUsers([]);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      setUsers([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [groupHash]);
-
-  useEffect(() => {
-    fetchGroupMembers();
-  }, [fetchGroupMembers]);
+  const setOffset = useCallback(
+    (next: number) => setOffsetState(Math.max(0, next)),
+    []
+  );
+  const setLimit = useCallback((next: number) => {
+    setLimitState(Math.min(Math.max(1, next), GROUP_MEMBERS_PAGE_MAX));
+    setOffsetState(0);
+  }, []);
 
   return {
-    users,
+    members: data?.members ?? [],
+    total: data?.total,
+    offset,
+    limit,
+    setOffset,
+    setLimit,
     isLoading,
+    isRefreshing,
     error,
-    refetch: fetchGroupMembers,
+    refetch,
   };
 }
+
+export default useUsersByGroup;

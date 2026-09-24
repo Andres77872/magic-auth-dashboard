@@ -1,153 +1,126 @@
-import { useState, useCallback } from 'react';
-import { userService } from '@/services';
-import type { User } from '@/types/auth.types';
+import { useCallback, useState } from 'react';
+import { userService } from '@/services/user.service';
+import type { UserType } from '@/types/auth.types';
+import type { ResetPasswordResponse } from '@/types/user.types';
 
-interface ResetPasswordResult {
-  success: boolean;
-  message: string;
-  expiresAt?: string;
-}
+export type UserActionKind =
+  | 'deactivate'
+  | 'delete'
+  | 'hardDelete'
+  | 'resetPassword'
+  | 'changeType'
+  | 'bulkDeactivate'
+  | 'bulkDelete';
 
 interface UseUserActionsReturn {
+  /** The action currently in flight, if any. */
+  pending: UserActionKind | null;
   isLoading: boolean;
-  error: string | null;
+  deactivateUser: (userHash: string) => Promise<void>;
   deleteUser: (userHash: string) => Promise<void>;
   hardDeleteUser: (userHash: string) => Promise<void>;
-  toggleUserStatus: (userHash: string, isActive: boolean) => Promise<User>;
-  resetPassword: (userHash: string) => Promise<ResetPasswordResult>;
-  changeUserType: (userHash: string, newType: string) => Promise<User>;
+  resetPassword: (userHash: string) => Promise<ResetPasswordResponse>;
+  changeUserType: (userHash: string, userType: UserType) => Promise<void>;
+  bulkDeactivate: (
+    userHashes: string[]
+  ) => Promise<{ succeeded: number; failed: number }>;
+  bulkDelete: (
+    userHashes: string[]
+  ) => Promise<{ succeeded: number; failed: number }>;
 }
 
+/**
+ * Account mutations. Each call resolves only after the API confirms the
+ * change and rejects with the backend's message otherwise; callers own the
+ * toast and the refresh.
+ */
 export function useUserActions(): UseUserActionsReturn {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<UserActionKind | null>(null);
 
-  const deleteUser = useCallback(async (userHash: string) => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await userService.deleteUser(userHash);
-      
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to delete user');
+  const run = useCallback(
+    async <T>(kind: UserActionKind, action: () => Promise<T>): Promise<T> => {
+      setPending(kind);
+      try {
+        return await action();
+      } finally {
+        setPending(null);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
-  const hardDeleteUser = useCallback(async (userHash: string) => {
-    setIsLoading(true);
-    setError(null);
+  const deactivateUser = useCallback(
+    (userHash: string) =>
+      run('deactivate', async () => {
+        await userService.setUserActive(userHash, false);
+      }),
+    [run]
+  );
 
-    try {
-      const response = await userService.hardDeleteUser(userHash);
+  const deleteUser = useCallback(
+    (userHash: string) =>
+      run('delete', async () => {
+        await userService.deleteUser(userHash);
+      }),
+    [run]
+  );
 
-      if (!response.success) {
-        throw new Error(response.message || 'Failed to permanently delete user');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const hardDeleteUser = useCallback(
+    (userHash: string) =>
+      run('hardDelete', async () => {
+        await userService.hardDeleteUser(userHash);
+      }),
+    [run]
+  );
 
-  const toggleUserStatus = useCallback(async (userHash: string, isActive: boolean): Promise<User> => {
-    setIsLoading(true);
-    setError(null);
+  const resetPassword = useCallback(
+    (userHash: string) =>
+      run('resetPassword', () => userService.resetUserPassword(userHash)),
+    [run]
+  );
 
-    try {
-      const response = await userService.toggleUserStatus(userHash, isActive);
-      
-      if (response.success) {
-        // Backend returns {user_hash, is_active} - NOT a full User object
-        // Refetch to get the updated User with all fields
-        const userResponse = await userService.getUserByHash(userHash);
-        if (userResponse.success && userResponse.user) {
-          return userResponse.user;
-        }
-        throw new Error('Failed to fetch updated user details');
-      } else {
-        throw new Error(response.message || 'Failed to update user status');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const changeUserType = useCallback(
+    (userHash: string, userType: UserType) =>
+      run('changeType', async () => {
+        await userService.changeUserType(userHash, userType);
+      }),
+    [run]
+  );
 
-  const resetPassword = useCallback(async (userHash: string): Promise<ResetPasswordResult> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await userService.resetUserPassword(userHash);
-      
-      if (response.success) {
-        // Backend enqueues a secure reset-link email; no password is returned.
+  const bulkDeactivate = useCallback(
+    (userHashes: string[]) =>
+      run('bulkDeactivate', async () => {
+        const res = await userService.bulkDeactivateUsers(userHashes);
         return {
-          success: true,
-          message: 'A password reset link has been emailed to the user.',
-          expiresAt: response.reset_data?.expires_at
+          succeeded: res.summary?.success_count ?? 0,
+          failed: res.summary?.error_count ?? 0,
         };
-      } else {
-        throw new Error(response.message || 'Failed to reset password');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      }),
+    [run]
+  );
 
-  const changeUserType = useCallback(async (userHash: string, newType: string): Promise<User> => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await userService.changeUserType(userHash, newType);
-      
-      if (response.success) {
-        // Backend returns {user_hash, previous_type, new_type} - NOT a full User object
-        // Refetch to get the updated User with all fields
-        const userResponse = await userService.getUserByHash(userHash);
-        if (userResponse.success && userResponse.user) {
-          return userResponse.user;
-        }
-        throw new Error('Failed to fetch updated user details');
-      } else {
-        throw new Error(response.message || 'Failed to change user type');
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const bulkDelete = useCallback(
+    (userHashes: string[]) =>
+      run('bulkDelete', async () => {
+        const res = await userService.bulkDeleteUsers(userHashes);
+        return {
+          succeeded: res.summary?.success_count ?? 0,
+          failed: res.summary?.error_count ?? 0,
+        };
+      }),
+    [run]
+  );
 
   return {
-    isLoading,
-    error,
+    pending,
+    isLoading: pending !== null,
+    deactivateUser,
     deleteUser,
     hardDeleteUser,
-    toggleUserStatus,
     resetPassword,
     changeUserType,
+    bulkDeactivate,
+    bulkDelete,
   };
 }
 

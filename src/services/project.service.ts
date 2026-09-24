@@ -1,166 +1,249 @@
-import { apiClient } from './api.client';
+import { deleteJson, getJson, postFormJson, putFormJson, seg } from './request';
+import type { PaginationResponse } from '@/types/api.types';
 import type {
   CreateProjectRequest,
-  CreateProjectResponse,
+  DeleteProjectResult,
+  ProjectActivityActor,
+  ProjectActivityEntry,
+  ProjectActivityPage,
+  ProjectActivityParams,
+  ProjectDetailsData,
+  ProjectGroupInfo,
+  ProjectInfo,
   ProjectListParams,
   ProjectListResponse,
-  ProjectDetailsResponse,
-  ProjectMembersResponse,
-  ProjectGroupsResponse,
+  ProjectMember,
+  ProjectMembersPage,
+  ProjectMembersParams,
+  ProjectUserAccess,
+  ProjectUserGroupsPage,
+  ProjectUserGroupsParams,
+  UpdateProjectRequest,
 } from '@/types/project.types';
-import type { ApiResponse, PaginationParams } from '@/types/api.types';
+import type { UserGroup } from '@/types/group.types';
 
+/** api.auth's maximum `limit` for `GET /projects`. */
+export const PROJECT_LIST_MAX_LIMIT = 500;
+
+// Raw response shapes (api.auth `src/routes/projects.py`) -------------------------
+
+interface RawProjectDetailsResponse {
+  project?: ProjectInfo | null;
+  user_access?: ProjectUserAccess | null;
+  project_groups?: ProjectGroupInfo[] | null;
+}
+
+interface RawProjectInfoResponse {
+  project?: ProjectInfo | null;
+}
+
+interface RawDeleteProjectResponse {
+  deleted_project?: ProjectInfo | null;
+  warning?: string | null;
+}
+
+interface RawProjectMembersResponse {
+  members?: ProjectMember[];
+  pagination?: PaginationResponse | null;
+}
+
+interface RawProjectUserGroupsResponse {
+  user_groups?: UserGroup[];
+  pagination?: PaginationResponse | null;
+}
+
+/** A row of `sp_get_activity_logs` as the activity route returns it. */
+interface RawProjectActivityRow {
+  id: string | number;
+  activity_type: string;
+  details?: unknown;
+  created_at?: string | null;
+  username?: string | null;
+  user_hash?: string | null;
+  target_username?: string | null;
+  target_user_hash?: string | null;
+  user_group_name?: string | null;
+  activity_name?: string | null;
+}
+
+interface RawProjectActivityResponse {
+  activities?: RawProjectActivityRow[];
+  pagination?: PaginationResponse | null;
+  filters?: { days?: number | null } | null;
+}
+
+function actor(
+  username: string | null | undefined,
+  userHash: string | null | undefined
+): ProjectActivityActor | null {
+  return username && userHash ? { username, userHash } : null;
+}
+
+function mapActivityRow(row: RawProjectActivityRow): ProjectActivityEntry {
+  return {
+    id: String(row.id),
+    activityType: row.activity_type,
+    activityName: row.activity_name ?? null,
+    details: row.details ?? null,
+    createdAt: row.created_at ?? null,
+    actor: actor(row.username, row.user_hash),
+    target: actor(row.target_username, row.target_user_hash),
+    userGroupName: row.user_group_name ?? null,
+  };
+}
+
+/** Pagination is always present on these routes; a missing block is a contract break. */
+function requirePagination(
+  pagination: PaginationResponse | null | undefined,
+  route: string
+): PaginationResponse {
+  if (!pagination) throw new Error(`The ${route} response had no pagination.`);
+  return pagination;
+}
+
+/**
+ * Projects (`/projects/*`). Writes are form encoded. Methods return payloads;
+ * failures arrive as thrown `ApiError`s from the transport.
+ */
 class ProjectService {
-  // List projects
+  /**
+   * `GET /projects`. When `limit` is omitted the API maximum is requested,
+   * because callers are pickers that need the whole list (api.auth's own
+   * default is 10). Root pagination totals are page lengths; see the type.
+   */
   async getProjects(
     params: ProjectListParams = {}
   ): Promise<ProjectListResponse> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        (typeof value !== 'string' || value !== '')
-      ) {
-        cleanParams[key] = value;
-      }
+    const res = await getJson<ProjectListResponse>('/projects', {
+      limit: params.limit ?? PROJECT_LIST_MAX_LIMIT,
+      offset: params.offset,
+      // Whitespace-only search is a 400 for root/admin callers.
+      search: params.search?.trim(),
     });
+    return { ...res, projects: res.projects ?? [] };
+  }
 
-    const response = await apiClient.get<ProjectListResponse>(
-      '/projects',
-      cleanParams
+  /** `GET /projects/{hash}` for root, the project's admins, or users with group access. */
+  async getProject(projectHash: string): Promise<ProjectDetailsData> {
+    const res = await getJson<RawProjectDetailsResponse>(
+      `/projects/${seg(projectHash)}`
     );
-    return response as ProjectListResponse;
+    if (!res.project || !res.user_access) {
+      throw new Error('The project response was incomplete.');
+    }
+    return {
+      project: res.project,
+      user_access: {
+        permissions: res.user_access.permissions ?? [],
+        access_level: res.user_access.access_level,
+        user_groups: res.user_access.user_groups ?? [],
+      },
+      project_groups: res.project_groups ?? [],
+    };
   }
 
-  // Get project details
-  async getProject(projectHash: string): Promise<ProjectDetailsResponse> {
-    const response = await apiClient.get<any>(`/projects/${projectHash}`);
-    return response as ProjectDetailsResponse;
+  /**
+   * `POST /projects` (root only). Also creates the project's project group and
+   * its `admin_…`, `user_…` and `readonly_…` user groups.
+   */
+  async createProject(data: CreateProjectRequest): Promise<ProjectInfo> {
+    const res = await postFormJson<RawProjectInfoResponse>('/projects', {
+      project_name: data.project_name.trim(),
+      project_description: data.project_description?.trim() || undefined,
+    });
+    if (!res.project)
+      throw new Error(
+        'The project was created but the response had no project.'
+      );
+    return res.project;
   }
 
-  // Create new project - uses form data per API spec
-  async createProject(
-    projectData: CreateProjectRequest
-  ): Promise<CreateProjectResponse> {
-    const response = await apiClient.postForm<CreateProjectResponse>(
-      '/projects',
-      projectData
-    );
-    return response as CreateProjectResponse;
-  }
-
-  // Update project - uses form data per API spec
+  /** `PUT /projects/{hash}` (root or an assigned admin). Empty values keep the current text. */
   async updateProject(
     projectHash: string,
-    data: Partial<CreateProjectRequest>
-  ): Promise<CreateProjectResponse> {
-    const response = await apiClient.putForm<CreateProjectResponse>(
-      `/projects/${projectHash}`,
-      data
+    data: UpdateProjectRequest
+  ): Promise<ProjectInfo> {
+    const res = await putFormJson<RawProjectInfoResponse>(
+      `/projects/${seg(projectHash)}`,
+      {
+        project_name: data.project_name?.trim() || undefined,
+        project_description: data.project_description?.trim() || undefined,
+      }
     );
-    return response as CreateProjectResponse;
+    if (!res.project)
+      throw new Error(
+        'The project was updated but the response had no project.'
+      );
+    return res.project;
   }
 
-  // Delete project
-  async deleteProject(projectHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.delete<void>(`/projects/${projectHash}`);
+  /** `DELETE /projects/{hash}`: soft delete; revokes every user group's access. */
+  async deleteProject(projectHash: string): Promise<DeleteProjectResult> {
+    const res = await deleteJson<RawDeleteProjectResponse>(
+      `/projects/${seg(projectHash)}`
+    );
+    return {
+      deleted_project: res.deleted_project ?? null,
+      warning: res.warning ?? null,
+    };
   }
 
-  // Get project members
+  /** `GET /projects/{hash}/members` (root or an assigned admin). */
   async getProjectMembers(
     projectHash: string,
-    params: PaginationParams = {}
-  ): Promise<ProjectMembersResponse> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        (typeof value !== 'string' || value !== '')
-      ) {
-        cleanParams[key] = value;
+    params: ProjectMembersParams = {}
+  ): Promise<ProjectMembersPage> {
+    const res = await getJson<RawProjectMembersResponse>(
+      `/projects/${seg(projectHash)}/members`,
+      {
+        limit: params.limit,
+        offset: params.offset,
+        user_type: params.user_type,
       }
-    });
-
-    const response = await apiClient.get<ProjectMembersResponse>(
-      `/projects/${projectHash}/members`,
-      cleanParams
     );
-    return response as ProjectMembersResponse;
+    return {
+      members: res.members ?? [],
+      pagination: requirePagination(res.pagination, 'project members'),
+    };
   }
 
-  // NOTE: Users gain project access through the Groups-of-Groups architecture:
-  // User -> User Group -> Project Group -> Project
-  // Access is managed via:
-  // 1. POST /admin/project-groups/{hash}/projects - Add project to project group
-  // 2. POST /admin/user-groups/{hash}/project-groups - Grant user group access to project group
-  // Individual user membership is read-only - manage via group assignments.
-
-  // Get project activity
-  async getProjectActivity(
-    projectHash: string,
-    params: PaginationParams = {}
-  ): Promise<ApiResponse<any[]>> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        (typeof value !== 'string' || value !== '')
-      ) {
-        cleanParams[key] = value;
-      }
-    });
-
-    return await apiClient.get<any[]>(
-      `/projects/${projectHash}/activity`,
-      cleanParams
-    );
-  }
-
-  // Get project statistics
-  async getProjectStats(projectHash: string): Promise<ApiResponse<any>> {
-    return await apiClient.get<any>(`/projects/${projectHash}/stats`);
-  }
-
-  // Transfer project ownership. Backend route is PATCH /projects/{hash}/owner
-  // with a form-encoded new_owner_hash field.
-  async transferOwnership(
-    projectHash: string,
-    newOwnerHash: string
-  ): Promise<ApiResponse<void>> {
-    return await apiClient.patchForm<void>(`/projects/${projectHash}/owner`, {
-      new_owner_hash: newOwnerHash,
-    });
-  }
-
-  // Get user groups with access to project (via project groups)
-  // GET /projects/{hash}/groups
+  /** `GET /projects/{hash}/groups` (root or an assigned admin): user groups with access. */
   async getProjectGroups(
     projectHash: string,
-    params: PaginationParams = {}
-  ): Promise<ProjectGroupsResponse> {
-    // Filter out undefined values from params
-    const cleanParams: Record<string, any> = {};
-    Object.entries(params).forEach(([key, value]) => {
-      if (
-        value !== undefined &&
-        value !== null &&
-        (typeof value !== 'string' || value !== '')
-      ) {
-        cleanParams[key] = value;
+    params: ProjectUserGroupsParams = {}
+  ): Promise<ProjectUserGroupsPage> {
+    const res = await getJson<RawProjectUserGroupsResponse>(
+      `/projects/${seg(projectHash)}/groups`,
+      {
+        limit: params.limit,
+        offset: params.offset,
       }
-    });
-
-    const response = await apiClient.get<ProjectGroupsResponse>(
-      `/projects/${projectHash}/groups`,
-      cleanParams
     );
-    return response as ProjectGroupsResponse;
+    return {
+      user_groups: res.user_groups ?? [],
+      pagination: requirePagination(res.pagination, 'project user groups'),
+    };
+  }
+
+  /** `GET /projects/{hash}/activity`, newest first. */
+  async getProjectActivity(
+    projectHash: string,
+    params: ProjectActivityParams = {}
+  ): Promise<ProjectActivityPage> {
+    const res = await getJson<RawProjectActivityResponse>(
+      `/projects/${seg(projectHash)}/activity`,
+      {
+        limit: params.limit,
+        offset: params.offset,
+        days: params.days,
+        activity_type: params.activity_type,
+      }
+    );
+    return {
+      activities: (res.activities ?? []).map(mapActivityRow),
+      pagination: requirePagination(res.pagination, 'project activity'),
+      days: res.filters?.days ?? params.days ?? 30,
+    };
   }
 }
 

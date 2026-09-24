@@ -13,186 +13,124 @@ const makeUserGroup = (overrides: Partial<UserGroup> = {}): UserGroup => ({
   ...overrides,
 });
 
-const makeProjectGroup = (overrides: Partial<ProjectGroupInfo> = {}): ProjectGroupInfo => ({
+const makeProjectGroup = (
+  overrides: Partial<ProjectGroupInfo> = {}
+): ProjectGroupInfo => ({
   group_hash: 'PG-test',
   group_name: 'test-pg',
+  description: null,
   ...overrides,
 });
 
+function statuses(result: ReturnType<typeof useProjectWorkflow>): string[] {
+  return result.steps.map((step) => step.status);
+}
+
 describe('useProjectWorkflow', () => {
-  it('returns all steps incomplete when no project groups and no user groups', () => {
+  it('reports every step as to do for a project outside any project group', () => {
     const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [],
-        userGroups: [],
-      })
+      useProjectWorkflow({ projectGroups: [], userGroups: [] })
     );
 
-    expect(result.current.steps).toHaveLength(3);
-    expect(result.current.steps[0].isComplete).toBe(false);
-    expect(result.current.steps[1].isComplete).toBe(false);
-    expect(result.current.steps[2].isComplete).toBe(false);
+    expect(statuses(result.current)).toEqual([
+      'incomplete',
+      'incomplete',
+      'incomplete',
+    ]);
     expect(result.current.completedCount).toBe(0);
-    expect(result.current.completionPercentage).toBe(0);
     expect(result.current.isComplete).toBe(false);
-  });
-
-  it('marks step 1 complete when project groups exist', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [makeProjectGroup()],
-        userGroups: [],
-      })
-    );
-
-    expect(result.current.steps[0].isComplete).toBe(true);
-    expect(result.current.steps[1].isComplete).toBe(false);
-    expect(result.current.steps[2].isComplete).toBe(false);
-    expect(result.current.completedCount).toBe(1);
-    expect(result.current.completionPercentage).toBe(33);
-  });
-
-  it('marks steps 1-2 complete when project groups and user groups exist', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [makeProjectGroup()],
-        userGroups: [makeUserGroup()],
-      })
-    );
-
-    expect(result.current.steps[0].isComplete).toBe(true);
-    expect(result.current.steps[1].isComplete).toBe(true);
-    expect(result.current.steps[2].isComplete).toBe(false);
-    expect(result.current.completedCount).toBe(2);
-    expect(result.current.completionPercentage).toBe(67);
-  });
-
-  it('marks all steps complete when users are assigned', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [makeProjectGroup()],
-        userGroups: [makeUserGroup({ member_count: 5 })],
-      })
-    );
-
-    expect(result.current.steps[0].isComplete).toBe(true);
-    expect(result.current.steps[1].isComplete).toBe(true);
-    expect(result.current.steps[2].isComplete).toBe(true);
-    expect(result.current.completedCount).toBe(3);
-    expect(result.current.completionPercentage).toBe(100);
-    expect(result.current.isComplete).toBe(true);
-  });
-
-  it('provides CTA for "Add to Project Group" when step 1 incomplete', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [],
-        userGroups: [],
-      })
-    );
-
-    const cta = result.current.steps[0].cta;
-    expect(cta).toBeDefined();
-    expect(cta!.label).toBe('Add to Project Group');
-    expect(cta!.action).toBe('open-modal');
-    expect(cta!.target).toBe('add-to-project-group');
-  });
-
-  it('provides CTA for "Grant User Group Access" when step 2 incomplete', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [makeProjectGroup()],
-        userGroups: [],
-      })
-    );
-
-    const cta = result.current.steps[1].cta;
-    expect(cta).toBeDefined();
-    expect(cta!.label).toBe('Grant User Group Access');
-    expect(cta!.action).toBe('navigate');
-    expect(cta!.target).toBe('/groups');
-  });
-
-  it('provides CTA for "Add Users" when step 3 incomplete with firstUserGroupHash', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [makeProjectGroup()],
-        userGroups: [makeUserGroup({ group_hash: 'UG-abc' })],
-        firstUserGroupHash: 'UG-abc',
-      })
-    );
-
-    const cta = result.current.steps[2].cta;
-    expect(cta).toBeDefined();
-    expect(cta!.label).toBe('Add Users');
-    expect(cta!.action).toBe('navigate');
-    expect(cta!.target).toBe('/groups/UG-abc');
-  });
-
-  it('does not provide "Add Users" CTA when no user group hash is available', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [makeProjectGroup()],
-        userGroups: [makeUserGroup()],
-        // firstUserGroupHash not provided
-      })
-    );
-
-    expect(result.current.steps[2].cta).toBeUndefined();
-  });
-
-  it('does not provide CTAs for completed steps', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [makeProjectGroup()],
-        userGroups: [makeUserGroup({ member_count: 5 })],
-      })
-    );
-
-    result.current.steps.forEach((step) => {
-      expect(step.cta).toBeUndefined();
+    expect(result.current.steps[0].cta).toEqual({
+      label: 'Add to project group',
+      action: 'add-to-project-group',
     });
-  });
-
-  it('marks step 2 as unknown when userGroupsFetchError is true', () => {
-    const { result } = renderHook(() =>
-      useProjectWorkflow({
-        projectHash: 'proj-1',
-        projectGroups: [makeProjectGroup()],
-        userGroups: [],
-        userGroupsFetchError: true,
-      })
-    );
-
-    expect(result.current.steps[1].isComplete).toBe(false);
-    expect(result.current.steps[1].isUnknown).toBe(true);
-    expect(result.current.steps[1].description).toBe(
-      'Unable to determine which user groups have access.'
-    );
-    // No CTA when in error state
+    // No grant CTA before the project is in a project group.
     expect(result.current.steps[1].cta).toBeUndefined();
   });
 
-  it('still shows step 1 complete even when userGroupsFetchError is true', () => {
+  it('points to user groups once the project is in a project group', () => {
     const { result } = renderHook(() =>
       useProjectWorkflow({
-        projectHash: 'proj-1',
         projectGroups: [makeProjectGroup()],
         userGroups: [],
-        userGroupsFetchError: true,
       })
     );
 
-    expect(result.current.steps[0].isComplete).toBe(true);
-    expect(result.current.steps[0].isUnknown).toBeFalsy();
+    expect(statuses(result.current)).toEqual([
+      'complete',
+      'incomplete',
+      'incomplete',
+    ]);
+    expect(result.current.steps[1].cta).toEqual({
+      label: 'Open user groups',
+      action: 'navigate',
+      target: '/groups',
+    });
+  });
+
+  it('links to the first user group when none of the granted groups has members', () => {
+    const { result } = renderHook(() =>
+      useProjectWorkflow({
+        projectGroups: [makeProjectGroup()],
+        userGroups: [makeUserGroup({ group_hash: 'UG a/b', member_count: 0 })],
+      })
+    );
+
+    expect(statuses(result.current)).toEqual([
+      'complete',
+      'complete',
+      'incomplete',
+    ]);
+    // Hashes are opaque path segments and must be encoded.
+    expect(result.current.steps[2].cta).toEqual({
+      label: 'Add users',
+      action: 'navigate',
+      target: '/groups/UG%20a%2Fb',
+    });
+  });
+
+  it('is complete when a granted user group has members, with no calls to action', () => {
+    const { result } = renderHook(() =>
+      useProjectWorkflow({
+        projectGroups: [makeProjectGroup()],
+        userGroups: [
+          makeUserGroup({ member_count: 0 }),
+          makeUserGroup({ group_hash: 'UG-2', member_count: 3 }),
+        ],
+      })
+    );
+
+    expect(result.current.isComplete).toBe(true);
+    expect(result.current.completedCount).toBe(3);
+    result.current.steps.forEach((step) => expect(step.cta).toBeUndefined());
+  });
+
+  it('treats a null member count as no members', () => {
+    const { result } = renderHook(() =>
+      useProjectWorkflow({
+        projectGroups: [makeProjectGroup()],
+        userGroups: [makeUserGroup({ member_count: null })],
+      })
+    );
+
+    expect(result.current.steps[2].status).toBe('incomplete');
+  });
+
+  it('marks the user-group steps unknown when they could not be loaded', () => {
+    const { result } = renderHook(() =>
+      useProjectWorkflow({
+        projectGroups: [makeProjectGroup()],
+        userGroups: [],
+        userGroupsUnavailable: true,
+      })
+    );
+
+    expect(statuses(result.current)).toEqual([
+      'complete',
+      'unknown',
+      'unknown',
+    ]);
+    expect(result.current.steps[1].cta).toBeUndefined();
+    expect(result.current.steps[2].cta).toBeUndefined();
+    expect(result.current.isComplete).toBe(false);
   });
 });

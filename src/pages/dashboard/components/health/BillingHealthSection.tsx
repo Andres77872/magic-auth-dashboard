@@ -83,13 +83,17 @@ export function BillingHealthSection({
           </div>
           {Array.isArray(stripeMissing) && stripeMissing.length > 0 && (
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Missing env keys</span>
+              <span className="text-xs text-muted-foreground">
+                Missing env keys
+              </span>
               <ChipList items={stripeMissing} tone="warning" />
             </div>
           )}
           {Array.isArray(stripeCritical) && stripeCritical.length > 0 && (
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Critical mismatches</span>
+              <span className="text-xs text-muted-foreground">
+                Critical mismatches
+              </span>
               <ChipList items={stripeCritical} tone="destructive" />
             </div>
           )}
@@ -98,7 +102,9 @@ export function BillingHealthSection({
 
       {stripe?.capabilities ? (
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Stripe capabilities</span>
+          <span className="text-xs text-muted-foreground">
+            Stripe capabilities
+          </span>
           <FeatureFlagChips flags={asRecord(stripe.capabilities)} />
         </div>
       ) : null}
@@ -112,7 +118,9 @@ export function BillingHealthSection({
 
       {Array.isArray(degraded) && degraded.length > 0 && (
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Degraded reasons</span>
+          <span className="text-xs text-muted-foreground">
+            Degraded reasons
+          </span>
           <ChipList items={degraded} tone="warning" />
         </div>
       )}

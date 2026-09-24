@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState, useId } from 'react';
+import { forwardRef, useCallback, useEffect, useState, useId } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,24 +44,22 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
     const generatedId = useId();
     const toastId = id || generatedId;
 
-    useEffect(() => {
-      setTimeout(() => setIsVisible(true), 10);
-
-      if (duration > 0) {
-        const timer = setTimeout(() => {
-          handleClose();
-        }, duration);
-
-        return () => clearTimeout(timer);
-      }
-    }, [duration]);
-
-    const handleClose = () => {
+    const handleClose = useCallback((): void => {
       setIsExiting(true);
       setTimeout(() => {
         onClose?.(toastId);
-      }, 300);
-    };
+      }, 200);
+    }, [onClose, toastId]);
+
+    useEffect(() => {
+      const enter = setTimeout(() => setIsVisible(true), 10);
+      const timer =
+        duration > 0 ? setTimeout(handleClose, duration) : undefined;
+      return () => {
+        clearTimeout(enter);
+        if (timer) clearTimeout(timer);
+      };
+    }, [duration, handleClose]);
 
     const styles = variantStyles[variant];
     // Errors/warnings interrupt (assertive); success/info are announced politely.
@@ -71,7 +69,7 @@ export const Toast = forwardRef<HTMLDivElement, ToastProps>(
       <div
         ref={ref}
         className={cn(
-          'flex items-start gap-3 rounded-md border bg-popover p-3.5 shadow-lg transition-all duration-300',
+          'flex items-start gap-3 rounded-md border bg-popover p-3.5 shadow-lg transition-all duration-200',
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2',
           isExiting && 'opacity-0 translate-y-2',
           className

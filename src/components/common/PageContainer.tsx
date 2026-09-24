@@ -17,6 +17,10 @@ const maxWidthClasses = {
   full: 'max-w-full',
 };
 
+/**
+ * Page body wrapper. The dashboard layout already provides the page gutters,
+ * so this only optionally narrows reading-width pages.
+ */
 export function PageContainer({
   children,
   className = '',
@@ -25,11 +29,7 @@ export function PageContainer({
 }: PageContainerProps): React.JSX.Element {
   return (
     <Component
-      className={cn(
-        'mx-auto w-full px-4 py-6 sm:px-6 lg:px-8',
-        maxWidthClasses[maxWidth],
-        className
-      )}
+      className={cn('mx-auto w-full', maxWidthClasses[maxWidth], className)}
     >
       {children}
     </Component>
@@ -37,4 +37,3 @@ export function PageContainer({
 }
 
 export default PageContainer;
-

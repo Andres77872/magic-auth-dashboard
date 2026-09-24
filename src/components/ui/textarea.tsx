@@ -9,14 +9,21 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, error, helperText, label, validationState, id, ...props }, ref) => {
-    const textareaId = id || React.useId();
+  (
+    { className, error, helperText, label, validationState, id, ...props },
+    ref
+  ) => {
+    const generatedId = React.useId();
+    const textareaId = id || generatedId;
     const hasError = !!error || validationState === 'error';
 
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={textareaId} className="block text-sm font-medium text-foreground mb-1.5">
+          <label
+            htmlFor={textareaId}
+            className="block text-sm font-medium text-foreground mb-1.5"
+          >
             {label}
             {props.required && <span className="text-destructive ml-1">*</span>}
           </label>
@@ -25,9 +32,12 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={textareaId}
           className={cn(
             'flex min-h-[60px] w-full rounded-sm border border-input bg-card px-3 py-2 text-sm transition-[color,box-shadow,border-color] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-            hasError && 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/40',
-            validationState === 'success' && 'border-success focus-visible:border-success focus-visible:ring-success/40',
-            validationState === 'warning' && 'border-warning focus-visible:border-warning focus-visible:ring-warning/40',
+            hasError &&
+              'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/40',
+            validationState === 'success' &&
+              'border-success focus-visible:border-success focus-visible:ring-success/40',
+            validationState === 'warning' &&
+              'border-warning focus-visible:border-warning focus-visible:ring-warning/40',
             className
           )}
           ref={ref}
@@ -35,7 +45,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
         {error && <p className="text-sm text-destructive mt-1.5">{error}</p>}
-        {!error && helperText && <p className="text-sm text-muted-foreground mt-1.5">{helperText}</p>}
+        {!error && helperText && (
+          <p className="text-sm text-muted-foreground mt-1.5">{helperText}</p>
+        )}
       </div>
     );
   }

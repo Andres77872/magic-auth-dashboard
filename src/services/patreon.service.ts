@@ -1,42 +1,50 @@
 /**
- * Patreon admin status service.
+ * Patreon admin service.
  *
- * Read-only ROOT dashboard contract for Patreon entitlement/link operations.
+ * ROOT dashboard contract for Patreon entitlement/link operations
+ * (`/admin/patreon/*`). Responses are sanitized server-side; this module maps
+ * snake_case payloads to domain types and marks the API's zone-less UTC
+ * timestamps as UTC.
  */
 
 import { apiClient } from './api.client';
 import type { PaginationResponse } from '@/types/api.types';
-import type {
-  PatreonAdminStatus,
-  PatreonEntitlement,
-  PatreonEntitlementDetail,
-  PatreonEntitlementList,
-  PatreonFeatureFlags,
-  PatreonReadiness,
-  PatreonResyncRequest,
-  PatreonResyncResult,
-  PatreonStatusGroup,
-  PatreonSyncJob,
-  PatreonSyncJobList,
-  PatreonTierMap,
-  PatreonTierMapEntry,
-  PatreonWebhookDelivery,
-  PatreonWebhookList,
-  RawPatreonAdminStatusResponse,
-  RawPatreonEntitlement,
-  RawPatreonEntitlementDetail,
-  RawPatreonEntitlementListResponse,
-  RawPatreonFeatureFlags,
-  RawPatreonPagination,
-  RawPatreonReadiness,
-  RawPatreonResyncResponse,
-  RawPatreonStatusGroup,
-  RawPatreonSyncJob,
-  RawPatreonSyncJobListResponse,
-  RawPatreonTierMapEntry,
-  RawPatreonTierMapResponse,
-  RawPatreonWebhookDelivery,
-  RawPatreonWebhookListResponse,
+import {
+  normalizePatreonTimestamp,
+  type PatreonAdminStatus,
+  type PatreonEntitlement,
+  type PatreonEntitlementDetail,
+  type PatreonEntitlementList,
+  type PatreonEntitlementListParams,
+  type PatreonFeatureFlags,
+  type PatreonHistoryItem,
+  type PatreonReadiness,
+  type PatreonResyncRequest,
+  type PatreonResyncResult,
+  type PatreonStatusGroup,
+  type PatreonSyncJob,
+  type PatreonSyncJobList,
+  type PatreonTierMapEntry,
+  type PatreonTierMapList,
+  type PatreonWebhookDelivery,
+  type PatreonWebhookList,
+  type RawPatreonAdminStatusResponse,
+  type RawPatreonEntitlement,
+  type RawPatreonEntitlementDetail,
+  type RawPatreonEntitlementListResponse,
+  type RawPatreonFeatureFlags,
+  type RawPatreonHistoryItem,
+  type RawPatreonHistoryResponse,
+  type RawPatreonPagination,
+  type RawPatreonReadiness,
+  type RawPatreonResyncResponse,
+  type RawPatreonStatusGroup,
+  type RawPatreonSyncJob,
+  type RawPatreonSyncJobListResponse,
+  type RawPatreonTierMapEntry,
+  type RawPatreonTierMapResponse,
+  type RawPatreonWebhookDelivery,
+  type RawPatreonWebhookListResponse,
 } from '@/types/patreon.types';
 
 const BASE = '/admin/patreon';
@@ -47,100 +55,13 @@ interface ListParams {
   status?: string;
 }
 
+type QueryParams = Record<string, string | number>;
+
 function stringOrNull(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-function cleanListParams(params: ListParams): Record<string, string | number> {
-  const clean: Record<string, string | number> = {};
-  if (typeof params.limit === 'number') clean.limit = params.limit;
-  if (typeof params.offset === 'number') clean.offset = params.offset;
-  if (typeof params.status === 'string' && params.status !== '') clean.status = params.status;
-  return clean;
-}
-
-function mapPagination(raw: RawPatreonPagination | undefined, fallbackCount: number): PaginationResponse {
-  return {
-    limit: numberValue(raw?.limit) || 20,
-    offset: numberValue(raw?.offset),
-    total: typeof raw?.total === 'number' ? raw.total : fallbackCount,
-    has_more: bool(raw?.has_more),
-  };
-}
-
-function mapEntitlement(raw: RawPatreonEntitlement): PatreonEntitlement {
-  return {
-    userHash: String(raw.user_hash || ''),
-    displayName: stringOrNull(raw.display_name),
-    status: String(raw.status || 'free'),
-    linkStatus: String(raw.link_status || 'none'),
-    planCode: String(raw.plan_code || 'free'),
-    tierCode: stringOrNull(raw.tier_code),
-    tierName: stringOrNull(raw.tier_name),
-    lastSyncedAt: stringOrNull(raw.last_synced_at),
-    updatedAt: stringOrNull(raw.updated_at),
-  };
-}
-
-function mapTierMapEntry(raw: RawPatreonTierMapEntry): PatreonTierMapEntry {
-  return {
-    campaignFingerprint: stringOrNull(raw.campaign_fingerprint),
-    campaignName: stringOrNull(raw.campaign_name),
-    tierFingerprint: stringOrNull(raw.tier_fingerprint),
-    planCode: String(raw.plan_code || ''),
-    tierCode: String(raw.tier_code || ''),
-    tierName: stringOrNull(raw.tier_name),
-    priority: numberValue(raw.priority),
-    active: bool(raw.active),
-    effectiveFrom: stringOrNull(raw.effective_from),
-    effectiveUntil: stringOrNull(raw.effective_until),
-  };
-}
-
-function mapSyncJob(raw: RawPatreonSyncJob): PatreonSyncJob {
-  return {
-    jobId: String(raw.job_id || ''),
-    jobType: String(raw.job_type || ''),
-    status: String(raw.status || ''),
-    priority: numberValue(raw.priority),
-    attempts: numberValue(raw.attempts),
-    maxAttempts: numberValue(raw.max_attempts),
-    notBefore: stringOrNull(raw.not_before),
-    source: stringOrNull(raw.source),
-    createdAt: stringOrNull(raw.created_at),
-    updatedAt: stringOrNull(raw.updated_at),
-    completedAt: stringOrNull(raw.completed_at),
-    hasError: bool(raw.has_error),
-  };
-}
-
-function mapWebhookDelivery(raw: RawPatreonWebhookDelivery): PatreonWebhookDelivery {
-  return {
-    deliveryId: String(raw.delivery_id || ''),
-    eventType: String(raw.event_type || ''),
-    status: String(raw.status || ''),
-    signatureValid: bool(raw.signature_valid),
-    receivedAt: stringOrNull(raw.received_at),
-    processedAt: stringOrNull(raw.processed_at),
-  };
-}
-
-function mapEntitlementDetail(raw: RawPatreonEntitlementDetail): PatreonEntitlementDetail {
-  const ent = raw.entitlement || {};
-  return {
-    userHash: String(raw.user_hash || ''),
-    externalSource: stringOrNull(ent.external_source),
-    status: String(ent.status || 'free'),
-    planCode: String(ent.plan_code || 'free'),
-    tierCode: stringOrNull(ent.tier_code),
-    tierName: stringOrNull(ent.tier_name),
-    linkStatus: String(ent.link_status || 'none'),
-    nextRenewalAt: stringOrNull(ent.next_renewal_at),
-    gracePeriodUntil: stringOrNull(ent.grace_period_until),
-    lastSyncedAt: stringOrNull(ent.last_synced_at),
-    staleAfter: stringOrNull(ent.stale_after),
-  };
-}
+const timestamp = normalizePatreonTimestamp;
 
 function bool(value: unknown): boolean {
   return value === true;
@@ -160,6 +81,132 @@ function objectValue(value: unknown): Record<string, unknown> {
     : {};
 }
 
+/** Drop empty optional filters; keep meaningful `0`/`false`. */
+function cleanParams(
+  params: Record<string, string | number | boolean | undefined>
+): QueryParams {
+  const clean: QueryParams = {};
+  Object.entries(params).forEach(([key, value]) => {
+    if (typeof value === 'number' && Number.isFinite(value)) clean[key] = value;
+    else if (typeof value === 'boolean') clean[key] = String(value);
+    else if (typeof value === 'string' && value.trim() !== '')
+      clean[key] = value.trim();
+  });
+  return clean;
+}
+
+function mapPagination(
+  raw: RawPatreonPagination | undefined,
+  fallbackCount: number
+): PaginationResponse {
+  return {
+    limit: numberValue(raw?.limit) || 20,
+    offset: numberValue(raw?.offset),
+    total: typeof raw?.total === 'number' ? raw.total : fallbackCount,
+    has_more: bool(raw?.has_more),
+  };
+}
+
+function mapEntitlement(raw: RawPatreonEntitlement): PatreonEntitlement {
+  return {
+    userHash: String(raw.user_hash || ''),
+    displayName: stringOrNull(raw.display_name),
+    status: String(raw.status || 'free'),
+    linkStatus: String(raw.link_status || 'none'),
+    planCode: String(raw.plan_code || 'free'),
+    tierCode: stringOrNull(raw.tier_code),
+    tierName: stringOrNull(raw.tier_name),
+    nextRenewalAt: timestamp(raw.next_renewal_at),
+    lastSyncedAt: timestamp(raw.last_synced_at),
+    staleAfter: timestamp(raw.stale_after),
+    updatedAt: timestamp(raw.updated_at),
+  };
+}
+
+function mapTierMapEntry(raw: RawPatreonTierMapEntry): PatreonTierMapEntry {
+  return {
+    campaignFingerprint: stringOrNull(raw.campaign_fingerprint),
+    campaignName: stringOrNull(raw.campaign_name),
+    tierFingerprint: stringOrNull(raw.tier_fingerprint),
+    planCode: String(raw.plan_code || ''),
+    tierCode: String(raw.tier_code || ''),
+    tierName: stringOrNull(raw.tier_name),
+    priority: numberValue(raw.priority),
+    active: bool(raw.active),
+    effectiveFrom: timestamp(raw.effective_from),
+    effectiveUntil: timestamp(raw.effective_until),
+  };
+}
+
+function mapSyncJob(raw: RawPatreonSyncJob): PatreonSyncJob {
+  return {
+    jobId: String(raw.job_id || ''),
+    jobType: String(raw.job_type || ''),
+    status: String(raw.status || ''),
+    priority: numberValue(raw.priority),
+    attempts: numberValue(raw.attempts),
+    maxAttempts: numberValue(raw.max_attempts),
+    notBefore: timestamp(raw.not_before),
+    source: stringOrNull(raw.source),
+    createdAt: timestamp(raw.created_at),
+    updatedAt: timestamp(raw.updated_at),
+    completedAt: timestamp(raw.completed_at),
+    hasError: bool(raw.has_error),
+  };
+}
+
+function mapWebhookDelivery(
+  raw: RawPatreonWebhookDelivery
+): PatreonWebhookDelivery {
+  return {
+    deliveryId: String(raw.delivery_id || ''),
+    eventType: String(raw.event_type || ''),
+    status: String(raw.status || ''),
+    signatureValid: bool(raw.signature_valid),
+    receivedAt: timestamp(raw.received_at),
+    processedAt: timestamp(raw.processed_at),
+  };
+}
+
+function mapHistoryItem(raw: RawPatreonHistoryItem): PatreonHistoryItem {
+  return {
+    historyId: String(raw.history_id || ''),
+    previousStatus: stringOrNull(raw.previous_status),
+    newStatus: String(raw.new_status || 'free'),
+    previousPlanCode: stringOrNull(raw.previous_plan_code),
+    newPlanCode: String(raw.new_plan_code || 'free'),
+    previousTierCode: stringOrNull(raw.previous_tier_code),
+    newTierCode: stringOrNull(raw.new_tier_code),
+    linkStatus: stringOrNull(raw.link_status),
+    reason: String(raw.reason || 'unknown'),
+    syncSource: String(raw.sync_source || 'unknown'),
+    observedAt: timestamp(raw.observed_at),
+  };
+}
+
+function mapEntitlementDetail(
+  raw: RawPatreonEntitlementDetail
+): PatreonEntitlementDetail {
+  const ent = raw.entitlement || {};
+  return {
+    userHash: String(raw.user_hash || ''),
+    externalSource: stringOrNull(ent.external_source),
+    status: String(ent.status || 'free'),
+    planCode: String(ent.plan_code || 'free'),
+    tierCode: stringOrNull(ent.tier_code),
+    tierName: stringOrNull(ent.tier_name),
+    linkStatus: String(ent.link_status || 'none'),
+    nextRenewalAt: timestamp(ent.next_renewal_at),
+    gracePeriodUntil: timestamp(ent.grace_period_until),
+    lastSyncedAt: timestamp(ent.last_synced_at),
+    staleAfter: timestamp(ent.stale_after),
+    classificationVersion:
+      typeof ent.classification_version === 'number'
+        ? ent.classification_version
+        : null,
+  };
+}
+
 function mapFeatureFlags(raw?: RawPatreonFeatureFlags): PatreonFeatureFlags {
   return {
     linking: bool(raw?.linking),
@@ -176,13 +223,14 @@ function mapReadiness(raw?: RawPatreonReadiness): PatreonReadiness {
     status: raw?.status || 'unknown',
     ready: bool(raw?.ready),
     disabled: bool(raw?.disabled),
+    checkFailed: typeof raw?.error === 'string' && raw.error.length > 0,
     missing: listValue(raw?.missing),
     degraded: listValue(raw?.degraded),
     featureFlags: mapFeatureFlags(raw?.feature_flags),
     configuredCampaignCount: numberValue(raw?.configured_campaign_count),
     configuredTierMapEntries: numberValue(raw?.configured_tier_map_entries),
     retention: objectValue(raw?.retention),
-    lastCheck: raw?.last_check,
+    lastCheck: timestamp(raw?.last_check) ?? undefined,
   };
 }
 
@@ -201,12 +249,14 @@ function mapGroup(raw?: RawPatreonStatusGroup): PatreonStatusGroup {
 
 class PatreonService {
   async getStatus(): Promise<PatreonAdminStatus> {
-    const res = await apiClient.get<RawPatreonAdminStatusResponse>(`${BASE}/status`);
+    const res = await apiClient.get<RawPatreonAdminStatusResponse>(
+      `${BASE}/status`
+    );
     const data = res as unknown as RawPatreonAdminStatusResponse;
     return {
       success: bool(data.success),
       status: data.status || 'unknown',
-      generatedAt: data.generated_at,
+      generatedAt: timestamp(data.generated_at) ?? undefined,
       readiness: mapReadiness(data.readiness),
       creatorToken: mapGroup(data.creator_token),
       webhooks: mapGroup(data.webhooks),
@@ -216,14 +266,24 @@ class PatreonService {
       s2s: mapGroup(data.s2s),
       worker: mapGroup(data.worker),
       syncQueue: mapGroup(data.sync_queue),
+      databaseClock: mapGroup(data.database_clock),
       metrics: objectValue(data.metrics),
     };
   }
 
-  async getEntitlements(params: ListParams = {}): Promise<PatreonEntitlementList> {
+  async getEntitlements(
+    params: PatreonEntitlementListParams = {}
+  ): Promise<PatreonEntitlementList> {
     const res = await apiClient.get<RawPatreonEntitlementListResponse>(
       `${BASE}/entitlements`,
-      cleanListParams(params)
+      cleanParams({
+        limit: params.limit,
+        offset: params.offset,
+        status: params.status,
+        link_status: params.linkStatus,
+        plan_code: params.planCode,
+        search: params.search,
+      })
     );
     const data = res as unknown as RawPatreonEntitlementListResponse;
     const items = (data.items ?? []).map(mapEntitlement);
@@ -231,24 +291,49 @@ class PatreonService {
   }
 
   async getEntitlement(userHash: string): Promise<PatreonEntitlementDetail> {
-    // The admin endpoint returns the detail object directly (not ApiResponse-wrapped);
-    // RawPatreonEntitlementDetail's optional fields make a cast unnecessary.
+    // The admin endpoint returns the detail object directly (not ApiResponse-wrapped).
     const res = await apiClient.get<RawPatreonEntitlementDetail>(
       `${BASE}/entitlements/${encodeURIComponent(userHash)}`
     );
     return mapEntitlementDetail(res);
   }
 
-  async getTierMap(): Promise<PatreonTierMap> {
-    const res = await apiClient.get<RawPatreonTierMapResponse>(`${BASE}/tier-map`);
+  async getEntitlementHistory(
+    userHash: string,
+    limit = 50
+  ): Promise<PatreonHistoryItem[]> {
+    const res = await apiClient.get<RawPatreonHistoryResponse>(
+      `${BASE}/entitlements/${encodeURIComponent(userHash)}/history`,
+      { limit }
+    );
+    const data = res as unknown as RawPatreonHistoryResponse;
+    return (data.items ?? []).map(mapHistoryItem);
+  }
+
+  async getTierMap(
+    params: { limit?: number; offset?: number; active?: boolean } = {}
+  ): Promise<PatreonTierMapList> {
+    const res = await apiClient.get<RawPatreonTierMapResponse>(
+      `${BASE}/tier-map`,
+      cleanParams({
+        limit: params.limit,
+        offset: params.offset,
+        active: params.active,
+      })
+    );
     const data = res as unknown as RawPatreonTierMapResponse;
-    return (data.items ?? []).map(mapTierMapEntry);
+    const items = (data.items ?? []).map(mapTierMapEntry);
+    return { items, pagination: mapPagination(data.pagination, items.length) };
   }
 
   async getSyncJobs(params: ListParams = {}): Promise<PatreonSyncJobList> {
     const res = await apiClient.get<RawPatreonSyncJobListResponse>(
       `${BASE}/sync-jobs`,
-      cleanListParams(params)
+      cleanParams({
+        limit: params.limit,
+        offset: params.offset,
+        status: params.status,
+      })
     );
     const data = res as unknown as RawPatreonSyncJobListResponse;
     const items = (data.items ?? []).map(mapSyncJob);
@@ -258,7 +343,11 @@ class PatreonService {
   async getWebhooks(params: ListParams = {}): Promise<PatreonWebhookList> {
     const res = await apiClient.get<RawPatreonWebhookListResponse>(
       `${BASE}/webhooks`,
-      cleanListParams(params)
+      cleanParams({
+        limit: params.limit,
+        offset: params.offset,
+        status: params.status,
+      })
     );
     const data = res as unknown as RawPatreonWebhookListResponse;
     const items = (data.items ?? []).map(mapWebhookDelivery);
@@ -266,12 +355,15 @@ class PatreonService {
   }
 
   async resync(request: PatreonResyncRequest): Promise<PatreonResyncResult> {
-    const res = await apiClient.post<RawPatreonResyncResponse>(`${BASE}/resync`, {
-      scope: request.scope,
-      user_hash: request.userHash,
-      reason: request.reason,
-      force: request.force ?? false,
-    });
+    const res = await apiClient.post<RawPatreonResyncResponse>(
+      `${BASE}/resync`,
+      {
+        scope: request.scope,
+        user_hash: request.scope === 'user' ? request.userHash : undefined,
+        reason: request.reason?.trim() || undefined,
+        force: request.force ?? false,
+      }
+    );
     const data = res as unknown as RawPatreonResyncResponse;
     return {
       accepted: bool(data.accepted),

@@ -1,405 +1,255 @@
-import React, { useState, useCallback } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
-  PageContainer,
-  PageHeader,
-  Card,
-  CardContent,
-  Badge,
-  Button,
-  LoadingSpinner,
-  ConfirmDialog,
-  TabNavigation,
-  CopyableId,
-  StatsGrid,
-  ErrorState,
-  type Tab,
-} from '@/components/common';
-import { GroupMembersTable } from '@/components/features/groups/GroupMembersTable';
-import { GroupPermissionsTab } from '@/components/features/groups/GroupPermissionsTab';
-import { GroupProjectGroupsTab } from '@/components/features/groups/GroupProjectGroupsTab';
-import { BulkMemberAssignmentModal } from '@/components/features/groups/BulkMemberAssignmentModal';
-import { GroupFormModal } from '@/components/features/groups/GroupFormModal';
-import type { GroupMember } from '@/components/features/groups/GroupMembersTable';
-import { ROUTES } from '@/utils/routes';
+  Copy,
+  FolderTree,
+  FolderKanban,
+  Pencil,
+  Trash2,
+  Users,
+  UsersRound,
+} from 'lucide-react';
+import { ActionsMenu } from '@/components/common/ActionsMenu';
+import { ErrorState } from '@/components/common/ErrorState';
+import { PageContainer } from '@/components/common/PageContainer';
+import { PageHeader } from '@/components/common/PageHeader';
+import { StatCard } from '@/components/common/StatCard';
+import { TabNavigation, type Tab } from '@/components/common/TabNavigation';
+import { Button } from '@/components/ui/button';
+import {
+  AdminGroupBadge,
+  DefaultGroupBadge,
+  DeleteGroupDialog,
+  GroupFormModal,
+  GroupMembersTab,
+  GroupPermissionsTab,
+  GroupProjectGroupsTab,
+  RootOnlyNotice,
+  groupRoutes,
+} from '@/components/features/groups';
+import { useSetBreadcrumbLabel } from '@/contexts';
+import { useGroupDetails } from '@/hooks/useGroupDetails';
+import { useUserGroupMutations } from '@/hooks/useGroups';
+import { useTabParam } from '@/hooks/useTabParam';
+import { useToast } from '@/hooks/useToast';
+import { useUserType } from '@/hooks/useUserType';
+import { isProjectAdminGroupName } from '@/utils/default-groups';
+import { formatNumber } from '@/utils/formatters';
 import type { GroupFormData } from '@/types/group.types';
 import {
-  useGroupDetails,
-  useGroupMemberActions,
-  useToast,
-  useUsersByGroup,
-  useBackNavigation,
-} from '@/hooks';
-import { formatDate } from '@/utils/component-utils';
-import { useSetBreadcrumbLabel } from '@/contexts';
-import { Users, User, Lock, FolderOpen, Plus } from 'lucide-react';
+  GroupDetailsSkeleton,
+  GroupFacts,
+  GroupIconTile,
+} from './components/GroupDetailParts';
 
-type TabType = 'members' | 'project-groups' | 'permissions';
+const TABS = ['members', 'project-groups', 'permissions'] as const;
+type GroupTab = (typeof TABS)[number];
 
-const DEFAULT_TAB: TabType = 'members';
-const VALID_TABS: TabType[] = ['members', 'project-groups', 'permissions'];
-
-export const GroupDetailsPage: React.FC = () => {
+/** `/groups/:groupHash` — a user group, its members, project-group grants and permission groups. */
+export function GroupDetailsPage(): React.JSX.Element {
   const { groupHash } = useParams<{ groupHash: string }>();
-  const handleGoBack = useBackNavigation(ROUTES.GROUPS);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { showToast } = useToast();
-
-  // Derive active tab from URL query param, fallback to default if invalid
-  const tabFromUrl = searchParams.get('tab') as TabType;
-  const activeTab: TabType = VALID_TABS.includes(tabFromUrl) ? tabFromUrl : DEFAULT_TAB;
-
-  const handleTabChange = useCallback((tabId: string) => {
-    setSearchParams((prev) => {
-      prev.set('tab', tabId);
-      return prev;
-    });
-  }, [setSearchParams]);
-  const { group, statistics, isLoading, error, updateGroup } =
+  const { isRoot } = useUserType();
+  const [activeTab, setActiveTab] = useTabParam<GroupTab>(TABS, 'members');
+  const { details, isLoading, isRefreshing, error, refetch } =
     useGroupDetails(groupHash);
-  const { bulkAddMembers, removeMember } = useGroupMemberActions(groupHash);
+  const { updateGroup, deleteGroup } = useUserGroupMutations();
+  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null);
 
-  // Show the group name in the breadcrumb leaf once details load.
-  useSetBreadcrumbLabel(group?.group_name);
+  useSetBreadcrumbLabel(details?.group.group_name);
 
-  // Use the hook to fetch group members
-  const {
-    users: groupUsers,
-    refetch: refetchMembers,
-    error: membersError,
-  } = useUsersByGroup(groupHash);
+  if (!details) {
+    return (
+      <PageContainer>
+        {isLoading || !error ? (
+          <GroupDetailsSkeleton statCount={3} />
+        ) : (
+          <ErrorState
+            retryLabel="Try again"
+            title="This user group couldn't be loaded"
+            message={error}
+            onRetry={() => void refetch()}
+            isRetrying={isRefreshing}
+          />
+        )}
+      </PageContainer>
+    );
+  }
 
-  // Modal states
-  const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState<GroupMember | null>(null);
-  const [isRemoving, setIsRemoving] = useState<string | null>(null);
+  const { group, statistics } = details;
+  const canManage = isRoot || !isProjectAdminGroupName(group.group_name);
 
-  // Map users to GroupMember type for the table
-  // API returns joined_at for group membership date
-  const members: GroupMember[] = groupUsers.map((user: any) => ({
-    user_hash: user.user_hash,
-    username: user.username,
-    email: user.email,
-    user_type: user.user_type,
-    joined_at: user.joined_at || user.created_at,
-  }));
+  const handleEdit = async (data: GroupFormData): Promise<void> => {
+    const updated = await updateGroup(group.group_hash, data);
+    showToast(`Saved ${updated.group_name}.`, 'success');
+    void refetch();
+  };
 
-  const handleBulkAddMembers = async (userHashes: string[]) => {
+  const handleDelete = async (): Promise<void> => {
+    await deleteGroup(group.group_hash);
+    showToast(`Deleted user group ${group.group_name}.`, 'success');
+    void navigate(groupRoutes.userGroupList, { replace: true });
+  };
+
+  const copyId = async (): Promise<void> => {
     try {
-      await bulkAddMembers(userHashes);
-      showToast(
-        `Successfully added ${userHashes.length} member(s) to the group`,
-        'success'
-      );
-      await refetchMembers();
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : 'Failed to add members',
-        'error'
-      );
-      throw err;
+      await navigator.clipboard.writeText(group.group_hash);
+      showToast('Group ID copied.', 'success');
+    } catch {
+      showToast('The group ID could not be copied.', 'error');
     }
   };
 
-  const handleRemoveMember = async (member: GroupMember) => {
-    setIsRemoving(member.user_hash);
-    try {
-      await removeMember(member.user_hash);
-      showToast(
-        `Successfully removed ${member.username} from the group`,
-        'success'
-      );
-      await refetchMembers();
-      setConfirmRemove(null);
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : 'Failed to remove member',
-        'error'
-      );
-    } finally {
-      setIsRemoving(null);
-    }
-  };
-
-  const handleEditGroup = async (data: GroupFormData) => {
-    try {
-      await updateGroup(data);
-      showToast('Group updated successfully', 'success');
-    } catch (err) {
-      showToast(
-        err instanceof Error ? err.message : 'Failed to update group',
-        'error'
-      );
-      throw err;
-    }
-  };
-
-  // Define tabs
   const tabs: Tab[] = [
-    {
-      id: 'members',
-      label: 'Members',
-      icon: <User size={16} />,
-      count: members.length,
-    },
+    { id: 'members', label: 'Members', count: statistics.total_members },
     {
       id: 'project-groups',
-      label: 'Project Groups',
-      icon: <FolderOpen size={16} />,
+      label: 'Project groups',
+      count: statistics.total_project_groups,
     },
-    {
-      id: 'permissions',
-      label: 'Permission Groups',
-      icon: <Lock size={16} />,
-    },
+    { id: 'permissions', label: 'Permission groups' },
   ];
-
-  if (isLoading) {
-    return (
-      <PageContainer>
-        <div className="flex flex-col items-center justify-center gap-4 py-16">
-          <LoadingSpinner size="lg" />
-          <p className="text-sm text-muted-foreground">
-            Loading group details...
-          </p>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  if (error || !group) {
-    return (
-      <PageContainer>
-        <ErrorState
-          variant="fullpage"
-          title="Couldn't load group"
-          message={error || 'This group could not be found.'}
-        >
-          <Button variant="primary" onClick={handleGoBack}>
-            Back to Groups
-          </Button>
-        </ErrorState>
-      </PageContainer>
-    );
-  }
+  const refreshCounts = (): void => void refetch();
 
   return (
     <PageContainer>
       <PageHeader
         title={group.group_name}
-        subtitle={group.description || undefined}
-        icon={<Users size={28} />}
-        badge={<Badge variant="secondary">User Group</Badge>}
+        icon={
+          <GroupIconTile>
+            <UsersRound />
+          </GroupIconTile>
+        }
+        badge={
+          <>
+            <DefaultGroupBadge kind="user" name={group.group_name} />
+            <AdminGroupBadge name={group.group_name} canManage={canManage} />
+          </>
+        }
+        subtitle={group.description || 'No description'}
         actions={
           <>
             <Button
-              variant="outline"
+              variant="secondary"
               size="md"
-              onClick={handleGoBack}
+              leftIcon={<Pencil aria-hidden="true" />}
+              onClick={() => setDialog('edit')}
+              disabled={!canManage}
             >
-              Back to Groups
+              Edit
             </Button>
-            <Button
-              variant="primary"
-              size="md"
-              onClick={() => setIsEditModalOpen(true)}
-            >
-              Edit Group
-            </Button>
+            <ActionsMenu
+              ariaLabel="More actions"
+              triggerClassName="h-[34px] w-[34px] border border-input bg-card"
+              items={[
+                {
+                  key: 'copy',
+                  label: 'Copy group ID',
+                  icon: <Copy />,
+                  onClick: () => void copyId(),
+                },
+                {
+                  key: 'delete',
+                  label: canManage ? 'Delete user group' : 'Delete (root only)',
+                  icon: <Trash2 />,
+                  onClick: () => setDialog('delete'),
+                  disabled: !canManage,
+                  destructive: true,
+                },
+              ]}
+            />
           </>
         }
-/>
+      >
+        <GroupFacts groupHash={group.group_hash} createdAt={group.created_at} />
+      </PageHeader>
 
-      {/* Statistics Grid */}
-      <div className="mb-6">
-        <StatsGrid
-          stats={[
-            {
-              title: 'Members',
-              value: statistics?.total_members ?? group.member_count ?? 0,
-              icon: <User size={16} />,
-              variant: 'primary',
-              gradient: true,
-            },
-            {
-              title: 'Accessible Projects',
-              value: statistics?.total_projects ?? 0,
-              icon: <FolderOpen size={16} />,
-              variant: 'info',
-              gradient: true,
-              subValue: 'Through granted project groups',
-            },
-          ]}
-          columns={2}
-          loading={isLoading}
+      {!canManage && <RootOnlyNotice className="mb-5" />}
+
+      <section
+        aria-label="Summary"
+        className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3"
+      >
+        <StatCard
+          title="Members"
+          value={formatNumber(statistics.total_members)}
+          icon={<Users />}
+          subValue="Active users in this group"
+          onClick={() => setActiveTab('members')}
         />
-      </div>
+        <StatCard
+          title="Project groups"
+          value={formatNumber(statistics.total_project_groups)}
+          icon={<FolderTree />}
+          subValue="Granted to this group"
+          onClick={() => setActiveTab('project-groups')}
+        />
+        <StatCard
+          title="Reachable projects"
+          value={formatNumber(statistics.total_projects)}
+          icon={<FolderKanban />}
+          subValue="Active projects in those project groups"
+        />
+      </section>
 
-      {/* Group Information Card */}
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-semibold mb-4">Group Information</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Group Name</span>
-              <p className="font-medium">{group.group_name}</p>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Description</span>
-              <p className="font-medium">
-                {group.description || 'No description'}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Group Hash</span>
-              <CopyableId id={group.group_hash} />
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Members</span>
-              <div>
-                <Badge variant="secondary">
-                  {statistics?.total_members ?? group.member_count ?? 0} member
-                  {(statistics?.total_members ?? group.member_count ?? 0) !== 1
-                    ? 's'
-                    : ''}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Created</span>
-              <p className="font-medium">{formatDate(group.created_at)}</p>
-            </div>
-
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Projects</span>
-              <div>
-                <Badge variant="secondary">
-                  {statistics?.total_projects ?? 0} project
-                  {(statistics?.total_projects ?? 0) !== 1 ? 's' : ''}
-                </Badge>
-              </div>
-            </div>
-
-            {group.updated_at && (
-              <div className="space-y-1">
-                <span className="text-sm text-muted-foreground">
-                  Last Updated
-                </span>
-                <p className="font-medium">{formatDate(group.updated_at)}</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabs Section */}
       <TabNavigation
         tabs={tabs}
         activeTab={activeTab}
-        onChange={handleTabChange}
-        contained
+        onChange={setActiveTab}
+        ariaLabel="User group sections"
+        className="mb-5"
+      />
+
+      <div
+        role="tabpanel"
+        aria-label={tabs.find((tab) => tab.id === activeTab)?.label}
       >
         {activeTab === 'members' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                Group Members ({members.length})
-              </h3>
-              <Button
-                variant="primary"
-                size="md"
-                leftIcon={<Plus size={16} />}
-                onClick={() => setIsAddMembersModalOpen(true)}
-              >
-                Add Members
-              </Button>
-            </div>
-
-            {membersError && (
-              <div
-                className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive"
-                role="alert"
-              >
-                Error loading members: {membersError}
-              </div>
-            )}
-
-            {members.length === 0 && !membersError ? (
-              <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-                <User size={48} className="text-muted-foreground" />
-                <p className="text-muted-foreground">
-                  No members in this group yet.
-                </p>
-                <Button
-                  variant="primary"
-                  leftIcon={<Plus size={16} />}
-                  onClick={() => setIsAddMembersModalOpen(true)}
-                >
-                  Add Your First Member
-                </Button>
-              </div>
-            ) : (
-              <GroupMembersTable
-                members={members}
-                onRemove={setConfirmRemove}
-                removingMember={isRemoving}
-              />
-            )}
-          </div>
+          <GroupMembersTab
+            groupHash={group.group_hash}
+            groupName={group.group_name}
+            canManage={canManage}
+            onMembershipChange={refreshCounts}
+          />
         )}
-
-        {activeTab === 'project-groups' && group && (
+        {activeTab === 'project-groups' && (
           <GroupProjectGroupsTab
             groupHash={group.group_hash}
             groupName={group.group_name}
+            canManage={canManage}
+            onAccessChange={refreshCounts}
           />
         )}
-
-        {activeTab === 'permissions' && group && (
+        {activeTab === 'permissions' && (
           <GroupPermissionsTab
             groupHash={group.group_hash}
             groupName={group.group_name}
           />
         )}
-      </TabNavigation>
+      </div>
 
-      {/* Add Members Modal */}
-      <BulkMemberAssignmentModal
-        isOpen={isAddMembersModalOpen}
-        onClose={() => setIsAddMembersModalOpen(false)}
-        onAssign={handleBulkAddMembers}
-        groupName={group.group_name}
-        existingMemberHashes={members.map((m) => m.user_hash)}
-      />
-
-      {/* Edit Group Modal */}
       <GroupFormModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSubmit={handleEditGroup}
+        isOpen={dialog === 'edit'}
         mode="edit"
+        kind="user"
         group={group}
+        canUseAdminPrefix={isRoot}
+        onClose={() => setDialog(null)}
+        onSubmit={handleEdit}
       />
 
-      {/* Remove Member Confirmation */}
-      {confirmRemove && (
-        <ConfirmDialog
-          isOpen={true}
-          title="Remove Member"
-          message={`Are you sure you want to remove ${confirmRemove.username} from this group?`}
-          confirmText="Remove"
-          cancelText="Cancel"
-          variant="danger"
-          onConfirm={() => handleRemoveMember(confirmRemove)}
-          onClose={() => setConfirmRemove(null)}
-          isLoading={isRemoving === confirmRemove.user_hash}
+      {dialog === 'delete' && (
+        <DeleteGroupDialog
+          kind="user"
+          groupName={group.group_name}
+          count={statistics.total_members}
+          onClose={() => setDialog(null)}
+          onDelete={handleDelete}
         />
       )}
     </PageContainer>
   );
-};
+}
+
+export default GroupDetailsPage;

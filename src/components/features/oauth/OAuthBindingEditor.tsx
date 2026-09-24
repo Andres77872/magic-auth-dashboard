@@ -2,19 +2,17 @@
  * Per-project binding policy editor.
  *
  * Provisioning mode and existing-user policy change ACCOUNT behaviour, so both are
- * rendered as explained choices rather than bare enum labels. `auto_create` / `both`
- * are blocked client-side until a default user group is chosen, because the backend
- * rejects that combination anyway and the group must also reach this project.
+ * rendered as explained choices rather than bare enum labels. The account-creating
+ * modes and the "join default group" policy are blocked client-side until a default
+ * user group is chosen, because api.auth rejects those combinations anyway.
  *
- * The default-group options come from the existing `GET /projects/{hash}/groups`
- * endpoint via `projectService`, so the list can only contain groups that already
- * reach this project.
+ * Saves send only the fields that changed (api.auth keeps omitted fields), so a save
+ * never rewrites a value the operator did not touch.
  */
 
 import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -24,11 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks';
-import { oauthService } from '@/services/oauth.service';
+import { useToast } from '@/hooks/useToast';
 import { cn } from '@/lib/utils';
 import type {
   OAuthBindingInfo,
+  OAuthBindingUpsertRequest,
   OAuthExistingUserPolicy,
   OAuthProvisioningMode,
 } from '@/types/oauth.types';
@@ -36,7 +34,6 @@ import type { UserGroup } from '@/types/group.types';
 import {
   EXISTING_USER_POLICY_OPTIONS,
   PROVISIONING_MODE_OPTIONS,
-  bindingEffectiveState,
   provisioningModeRequiresGroup,
 } from './oauth-status';
 
@@ -48,50 +45,126 @@ export interface OAuthBindingEditorProps {
   /** User groups that already reach this project. */
   availableGroups: UserGroup[];
   groupsLoading?: boolean;
-  onChanged: () => void;
+  /** Resolves after the API saved the binding and it was refetched. */
+  onSave: (request: OAuthBindingUpsertRequest) => Promise<void>;
   disabled?: boolean;
 }
 
-function errorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error ? err.message : fallback;
+interface PolicyState {
+  enabled: boolean;
+  loginEnabled: boolean;
+  linkEnabled: boolean;
+  mode: OAuthProvisioningMode;
+  groupHash: string;
+  policy: OAuthExistingUserPolicy;
 }
+
+function policyFromBinding(binding: OAuthBindingInfo): PolicyState {
+  return {
+    enabled: binding.enabled,
+    loginEnabled: binding.login_enabled,
+    linkEnabled: binding.link_enabled,
+    mode: binding.provisioning_mode,
+    groupHash: binding.default_user_group_hash || NO_GROUP,
+    policy: binding.existing_user_policy,
+  };
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message ? err.message : fallback;
+}
+
+const SWITCHES: Array<{
+  key: 'enabled' | 'loginEnabled' | 'linkEnabled';
+  label: string;
+  description: string;
+}> = [
+  {
+    key: 'enabled',
+    label: 'Enabled',
+    description: 'Master switch for this project.',
+  },
+  {
+    key: 'loginEnabled',
+    label: 'Sign-in',
+    description: 'Allow signing in with this provider.',
+  },
+  {
+    key: 'linkEnabled',
+    label: 'Account linking',
+    description: 'Allow signed-in users to link this provider.',
+  },
+];
 
 export function OAuthBindingEditor({
   binding,
   availableGroups,
   groupsLoading = false,
-  onChanged,
+  onSave,
   disabled = false,
 }: OAuthBindingEditorProps): React.JSX.Element {
   const { showToast } = useToast();
+  const server = policyFromBinding(binding);
+  const serverKey = JSON.stringify(server);
 
-  const [enabled, setEnabled] = React.useState(binding.enabled);
-  const [loginEnabled, setLoginEnabled] = React.useState(binding.login_enabled);
-  const [linkEnabled, setLinkEnabled] = React.useState(binding.link_enabled);
-  const [mode, setMode] = React.useState<OAuthProvisioningMode>(
-    binding.provisioning_mode || 'disabled',
-  );
-  const [groupHash, setGroupHash] = React.useState<string>(
-    binding.default_user_group_hash || NO_GROUP,
-  );
-  const [policy, setPolicy] = React.useState<OAuthExistingUserPolicy>(
-    binding.existing_user_policy || 'deny',
-  );
+  const [state, setState] = React.useState<PolicyState>(server);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [saving, setSaving] = React.useState(false);
 
-  const hasGroup = groupHash !== NO_GROUP && groupHash !== '';
-  const effective = bindingEffectiveState(binding);
-  const radioName = `oauth-provisioning-${binding.connection_key}`;
+  // Follow the server whenever the stored binding changes (after a save or a refetch).
+  const [seenKey, setSeenKey] = React.useState(serverKey);
+  if (serverKey !== seenKey) {
+    setSeenKey(serverKey);
+    setState(server);
+    setFormError(null);
+  }
 
-  const handleModeChange = (next: OAuthProvisioningMode): void => {
-    setMode(next);
+  const hasGroup = state.groupHash !== NO_GROUP;
+  const fieldsDisabled = disabled || saving;
+  const idBase = `oauth-binding-${binding.connection_key}`;
+  const dirty = JSON.stringify(state) !== serverKey;
+
+  // The stored group may no longer reach the project; keep it selectable so the form
+  // shows the truth instead of silently switching to "No default group".
+  const groupOptions = React.useMemo(() => {
+    const options = availableGroups.map((group) => ({
+      value: group.group_hash,
+      label: group.group_name,
+    }));
+    if (
+      binding.default_user_group_hash &&
+      !options.some(
+        (option) => option.value === binding.default_user_group_hash
+      )
+    ) {
+      options.push({
+        value: binding.default_user_group_hash,
+        label: `${binding.default_user_group_name || binding.default_user_group_hash} (does not reach this project)`,
+      });
+    }
+    return options;
+  }, [
+    availableGroups,
+    binding.default_user_group_hash,
+    binding.default_user_group_name,
+  ]);
+
+  const update = (changes: Partial<PolicyState>): void => {
+    setState((previous) => ({ ...previous, ...changes }));
     if (formError) setFormError(null);
   };
 
-  const validateForm = (): boolean => {
-    if (provisioningModeRequiresGroup(mode) && !hasGroup) {
-      setFormError('Choose a default user group before allowing account creation.');
+  const validate = (): boolean => {
+    if (provisioningModeRequiresGroup(state.mode) && !hasGroup) {
+      setFormError(
+        'Choose a default user group before allowing account creation.'
+      );
+      return false;
+    }
+    if (state.policy === 'join_default_group' && !hasGroup) {
+      setFormError(
+        'Choose a default user group before letting existing users join it.'
+      );
       return false;
     }
     setFormError(null);
@@ -99,109 +172,132 @@ export function OAuthBindingEditor({
   };
 
   const save = async (): Promise<void> => {
-    if (!validateForm()) return;
+    if (!validate()) return;
+    const request: OAuthBindingUpsertRequest = {
+      connection_hash: binding.connection_hash,
+    };
+    if (state.enabled !== server.enabled) request.enabled = state.enabled;
+    if (state.loginEnabled !== server.loginEnabled)
+      request.login_enabled = state.loginEnabled;
+    if (state.linkEnabled !== server.linkEnabled)
+      request.link_enabled = state.linkEnabled;
+    if (state.mode !== server.mode) request.provisioning_mode = state.mode;
+    // An empty string clears the default group.
+    if (state.groupHash !== server.groupHash)
+      request.default_user_group_hash = hasGroup ? state.groupHash : '';
+    if (state.policy !== server.policy)
+      request.existing_user_policy = state.policy;
+
     setSaving(true);
     try {
-      await oauthService.upsertBinding(binding.project_hash, binding.connection_key, {
-        connection_hash: binding.connection_hash,
-        enabled,
-        login_enabled: loginEnabled,
-        link_enabled: linkEnabled,
-        provisioning_mode: mode,
-        default_user_group_hash: hasGroup ? groupHash : null,
-        existing_user_policy: policy,
-      });
-      showToast('Binding saved', 'success');
-      onChanged();
+      await onSave(request);
+      showToast('Sign-in policy saved', 'success');
     } catch (err) {
-      showToast(errorMessage(err, 'Failed to save binding'), 'error');
+      showToast(
+        errorMessage(err, 'The sign-in policy could not be saved.'),
+        'error'
+      );
     } finally {
       setSaving(false);
     }
   };
 
   const joinWarning = EXISTING_USER_POLICY_OPTIONS.find(
-    (option) => option.value === 'join_default_group',
+    (option) => option.value === 'join_default_group'
   )?.warning;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-muted-foreground">Effective state:</span>
-        <Badge variant={effective.variant}>{effective.label}</Badge>
-        {effective.blockedBy && (
-          <span className="text-xs text-muted-foreground">blocked by {effective.blockedBy}</span>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
-          <div>
-            <div className="font-medium">Enabled</div>
-            <div className="text-xs text-muted-foreground">Master switch for this project.</div>
-          </div>
-          <Switch
-            checked={enabled}
-            disabled={disabled || saving}
-            onCheckedChange={(checked) => setEnabled(Boolean(checked))}
-            aria-label="Enabled for this project"
-          />
-        </div>
-        <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
-          <div>
-            <div className="font-medium">Login</div>
-            <div className="text-xs text-muted-foreground">Allow sign-in with this provider.</div>
-          </div>
-          <Switch
-            checked={loginEnabled}
-            disabled={disabled || saving}
-            onCheckedChange={(checked) => setLoginEnabled(Boolean(checked))}
-            aria-label="Login enabled"
-          />
-        </div>
-        <div className="flex items-center justify-between gap-3 rounded-md border border-border p-3 text-sm">
-          <div>
-            <div className="font-medium">Link</div>
-            <div className="text-xs text-muted-foreground">
-              Allow signed-in users to link this provider.
+    <div className="space-y-5">
+      <ul className="m-0 list-none divide-y divide-border rounded-md border border-border p-0">
+        {SWITCHES.map((item) => (
+          <li
+            key={item.key}
+            className="flex items-center justify-between gap-3 px-3 py-2.5"
+          >
+            <div className="min-w-0">
+              <Label
+                htmlFor={`${idBase}-${item.key}`}
+                className="text-[13px] font-medium"
+              >
+                {item.label}
+              </Label>
+              <p className="m-0 text-xs text-muted-foreground">
+                {item.description}
+              </p>
             </div>
-          </div>
-          <Switch
-            checked={linkEnabled}
-            disabled={disabled || saving}
-            onCheckedChange={(checked) => setLinkEnabled(Boolean(checked))}
-            aria-label="Link enabled"
-          />
-        </div>
+            <Switch
+              id={`${idBase}-${item.key}`}
+              checked={state[item.key]}
+              disabled={fieldsDisabled}
+              onCheckedChange={(checked) =>
+                update({ [item.key]: checked === true })
+              }
+            />
+          </li>
+        ))}
+      </ul>
+
+      <div className="space-y-1.5">
+        <Label htmlFor={`${idBase}-group`}>Default user group</Label>
+        <Select
+          value={state.groupHash}
+          onValueChange={(next) => update({ groupHash: next })}
+          disabled={fieldsDisabled || groupsLoading}
+        >
+          <SelectTrigger id={`${idBase}-group`} className="w-full sm:w-80">
+            <SelectValue
+              placeholder={
+                groupsLoading ? 'Loading groups…' : 'No default group'
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={NO_GROUP}>No default group</SelectItem>
+            {groupOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="m-0 text-xs text-muted-foreground">
+          Only user groups that already reach this project can be used. New
+          accounts join this group.
+        </p>
       </div>
 
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Provisioning mode</legend>
+      <fieldset className="m-0 space-y-2 border-0 p-0">
+        <legend className="mb-2 text-[13px] font-medium">
+          Provisioning mode
+        </legend>
         {PROVISIONING_MODE_OPTIONS.map((option) => {
           const blocked = option.requiresDefaultGroup && !hasGroup;
+          const optionId = `${idBase}-mode-${option.value}`;
           return (
             <label
               key={option.value}
-              htmlFor={`${radioName}-${option.value}`}
+              htmlFor={optionId}
               className={cn(
-                'flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm transition-colors',
-                mode === option.value && 'border-primary bg-primary/5',
-                (blocked || disabled) && 'cursor-not-allowed opacity-70',
+                'flex cursor-pointer items-start gap-3 rounded-md border border-border px-3 py-2.5 text-[13px] transition-colors',
+                state.mode === option.value && 'border-primary bg-primary/5',
+                (blocked || disabled) && 'cursor-not-allowed opacity-70'
               )}
             >
               <input
-                id={`${radioName}-${option.value}`}
+                id={optionId}
                 type="radio"
-                name={radioName}
+                name={`${idBase}-mode`}
                 value={option.value}
-                checked={mode === option.value}
-                disabled={disabled || saving || blocked}
-                onChange={() => handleModeChange(option.value)}
-                className="mt-1 h-4 w-4 accent-primary"
+                checked={state.mode === option.value}
+                disabled={fieldsDisabled || blocked}
+                onChange={() => update({ mode: option.value })}
+                className="mt-0.5 h-4 w-4 accent-primary"
               />
               <span className="min-w-0">
                 <span className="block font-medium">{option.label}</span>
-                <span className="block text-xs text-muted-foreground">{option.description}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {option.description}
+                </span>
                 {blocked && (
                   <span className="mt-1 block text-xs text-warning">
                     Choose a default user group first.
@@ -213,86 +309,85 @@ export function OAuthBindingEditor({
         })}
       </fieldset>
 
-      <div className="space-y-1.5">
-        <Label htmlFor={`${radioName}-group`}>Default user group</Label>
-        <Select
-          value={groupHash}
-          onValueChange={(next) => {
-            setGroupHash(next);
-            if (formError) setFormError(null);
-          }}
-          disabled={disabled || saving || groupsLoading}
-        >
-          <SelectTrigger id={`${radioName}-group`} className="w-full sm:w-80">
-            <SelectValue placeholder={groupsLoading ? 'Loading groups…' : 'No default group'} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NO_GROUP}>No default group</SelectItem>
-            {availableGroups.map((group) => (
-              <SelectItem key={group.group_hash} value={group.group_hash}>
-                {group.group_name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground">
-          Only groups that already reach this project can be used. Auto-created accounts join
-          this group.
-        </p>
-      </div>
-
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">Existing-user policy</legend>
-        {EXISTING_USER_POLICY_OPTIONS.map((option) => (
-          <label
-            key={option.value}
-            htmlFor={`${radioName}-policy-${option.value}`}
-            className={cn(
-              'flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm transition-colors',
-              policy === option.value && 'border-primary bg-primary/5',
-              disabled && 'cursor-not-allowed opacity-70',
-            )}
-          >
-            <input
-              id={`${radioName}-policy-${option.value}`}
-              type="radio"
-              name={`${radioName}-policy`}
-              value={option.value}
-              checked={policy === option.value}
-              disabled={disabled || saving}
-              onChange={() => setPolicy(option.value)}
-              className="mt-1 h-4 w-4 accent-primary"
-            />
-            <span className="min-w-0">
-              <span className="block font-medium">{option.label}</span>
-              <span className="block text-xs text-muted-foreground">{option.description}</span>
-            </span>
-          </label>
-        ))}
-        {policy === 'join_default_group' && joinWarning && (
+      <fieldset className="m-0 space-y-2 border-0 p-0">
+        <legend className="mb-2 text-[13px] font-medium">
+          Existing-user policy
+        </legend>
+        {EXISTING_USER_POLICY_OPTIONS.map((option) => {
+          const blocked = option.value === 'join_default_group' && !hasGroup;
+          const optionId = `${idBase}-policy-${option.value}`;
+          return (
+            <label
+              key={option.value}
+              htmlFor={optionId}
+              className={cn(
+                'flex cursor-pointer items-start gap-3 rounded-md border border-border px-3 py-2.5 text-[13px] transition-colors',
+                state.policy === option.value && 'border-primary bg-primary/5',
+                (blocked || disabled) && 'cursor-not-allowed opacity-70'
+              )}
+            >
+              <input
+                id={optionId}
+                type="radio"
+                name={`${idBase}-policy`}
+                value={option.value}
+                checked={state.policy === option.value}
+                disabled={fieldsDisabled || blocked}
+                onChange={() => update({ policy: option.value })}
+                className="mt-0.5 h-4 w-4 accent-primary"
+              />
+              <span className="min-w-0">
+                <span className="block font-medium">{option.label}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {option.description}
+                </span>
+                {blocked && (
+                  <span className="mt-1 block text-xs text-warning">
+                    Choose a default user group first.
+                  </span>
+                )}
+              </span>
+            </label>
+          );
+        })}
+        {state.policy === 'join_default_group' && joinWarning && (
           <div
             role="alert"
-            className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 p-3 text-sm text-warning"
+            className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/5 px-3 py-2.5 text-xs text-warning"
           >
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <AlertTriangle
+              className="mt-0.5 h-4 w-4 shrink-0"
+              aria-hidden="true"
+            />
             <span>{joinWarning}</span>
           </div>
         )}
       </fieldset>
 
       {formError && (
-        <div
-          role="alert"
-          className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
-        >
+        <p role="alert" className="m-0 text-xs text-destructive">
           {formError}
-        </div>
+        </p>
       )}
 
-      <div className="flex gap-2">
-        <Button onClick={() => void save()} loading={saving} disabled={disabled}>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="secondary"
+          onClick={() => void save()}
+          loading={saving}
+          disabled={disabled || !dirty}
+        >
           Save policy
         </Button>
+        {dirty && !saving && (
+          <Button
+            variant="ghost"
+            onClick={() => update(server)}
+            disabled={disabled}
+          >
+            Discard changes
+          </Button>
+        )}
       </div>
     </div>
   );

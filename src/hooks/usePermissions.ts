@@ -1,5 +1,6 @@
 import { useAuth } from './useAuth';
 import { PERMISSIONS } from '@/utils/permissions';
+import type { UserType } from '@/types/auth.types';
 
 interface UsePermissionsReturn {
   // Auth-based Permission Checking
@@ -14,12 +15,12 @@ interface UsePermissionsReturn {
   canViewSystemHealth: boolean;
   canManageSystem: boolean;
   isAuthenticated: boolean;
-  userType: any;
+  userType: UserType | null;
 }
 
 /**
  * Hook for checking user permissions based on their authentication status.
- * 
+ *
  * Note: This hook previously included RBAC management functionality (CRUD operations
  * for project-scoped permissions via `/rbac/projects/{hash}/permissions` endpoints).
  * That functionality was removed because those backend endpoints never existed.
@@ -27,7 +28,7 @@ interface UsePermissionsReturn {
  */
 export function usePermissions(): UsePermissionsReturn {
   const { hasPermission, userType, isAuthenticated } = useAuth();
-  
+
   return {
     hasPermission,
     isRoot: userType === 'root',

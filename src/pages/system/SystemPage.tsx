@@ -1,110 +1,116 @@
 /**
- * System landing page (ROOT only).
- *
- * Acts as a launcher for the root-level tools that exist today. Each tile links
- * to a real, working page — no placeholders — and is built from design-system
- * primitives rather than hand-rolled markup.
+ * System (root only): the detailed service-health monitor, integration
+ * summaries and entry points to the other root-level tools.
  */
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { CreditCard, KeyRound, Mail, HeartHandshake, Settings, ShieldCheck } from 'lucide-react';
 import {
-  Card,
-  IconContainer,
-  PageContainer,
-  PageHeader,
-  type IconContainerVariant,
-} from '@/components/common';
+  ArrowRight,
+  CreditCard,
+  HeartHandshake,
+  KeyRound,
+  Mail,
+} from 'lucide-react';
+import { PageContainer, PageHeader, Panel } from '@/components/common';
 import { BillingSummaryPanel } from '@/components/features/billing';
 import { OAuthProviderCatalogPanel } from '@/components/features/oauth';
+import { SystemHealthPanel } from '@/pages/dashboard/components';
+import { useSystemHealth } from '@/hooks';
 import { ROUTES } from '@/utils/routes';
 
-interface SystemTile {
+interface SystemTool {
   to: string;
-  icon: React.ReactNode;
-  iconVariant: IconContainerVariant;
+  icon: typeof Mail;
   title: string;
   description: string;
 }
 
-const SYSTEM_TILES: SystemTile[] = [
-  {
-    to: ROUTES.BILLING,
-    icon: <CreditCard className="h-5 w-5" />,
-    iconVariant: 'primary',
-    title: 'Billing & plans',
-    description:
-      'Manage billing groups, the catalog of plans & packages, and per-account Stripe credentials.',
-  },
-  {
-    to: ROUTES.OAUTH,
-    icon: <KeyRound className="h-5 w-5" />,
-    iconVariant: 'info',
-    title: 'OAuth connections',
-    description:
-      'Register OAuth clients, store their credentials, and bind them to the projects that sign in through them.',
-  },
+const SYSTEM_TOOLS: SystemTool[] = [
   {
     to: ROUTES.EMAIL_TEMPLATES,
-    icon: <Mail className="h-5 w-5" />,
-    iconVariant: 'info',
+    icon: Mail,
     title: 'Email templates',
-    description: 'Edit and preview the transactional emails the platform sends.',
+    description: 'Edit, preview and roll back transactional emails.',
   },
   {
     to: ROUTES.PATREON,
-    icon: <HeartHandshake className="h-5 w-5" />,
-    iconVariant: 'warning',
+    icon: HeartHandshake,
     title: 'Patreon',
-    description: 'Review entitlements, tier mappings, sync jobs, and webhooks.',
+    description: 'Entitlements, tier mappings, sync jobs and webhooks.',
+  },
+  {
+    to: ROUTES.BILLING,
+    icon: CreditCard,
+    title: 'Billing',
+    description: 'Billing groups, catalog and Stripe credentials.',
+  },
+  {
+    to: ROUTES.OAUTH,
+    icon: KeyRound,
+    title: 'OAuth',
+    description: 'Provider connections and project bindings.',
   },
 ];
 
 export function SystemPage(): React.JSX.Element {
+  const { health, isLoading, error, refetch } = useSystemHealth({
+    pollIntervalMs: 15_000,
+  });
+
   return (
     <PageContainer>
-      <div className="space-y-6">
-        <PageHeader
-          title="System"
-          subtitle="Root-level system configuration and administration"
-          icon={<Settings size={24} />}
-        />
+      <PageHeader
+        title="System"
+        subtitle="Service health, integrations and root-level tools"
+      />
 
-        <Card padding="lg" className="border-success/30 bg-success/5">
-          <div className="flex items-center gap-3">
-            <IconContainer
-              variant="success"
-              size="md"
-              icon={<ShieldCheck className="h-4 w-4" />}
-            />
-            <div>
-              <h3 className="font-semibold text-foreground">Root access verified</h3>
-              <p className="text-sm text-muted-foreground">
-                You have full system administrator privileges.
-              </p>
-            </div>
-          </div>
-        </Card>
+      <div className="space-y-6">
+        <SystemHealthPanel
+          health={health}
+          isLoading={isLoading}
+          error={error}
+          onRefresh={() => void refetch()}
+        />
 
         <BillingSummaryPanel />
 
         <OAuthProviderCatalogPanel />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {SYSTEM_TILES.map((tile) => (
-            <Link key={tile.title} to={tile.to} className="no-underline">
-              <Card
-                padding="lg"
-                className="h-full space-y-3 transition-colors hover:border-input"
-              >
-                <IconContainer variant={tile.iconVariant} size="lg" icon={tile.icon} />
-                <h3 className="font-semibold text-foreground">{tile.title}</h3>
-                <p className="text-sm text-muted-foreground">{tile.description}</p>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <Panel title="Root tools" padding="none">
+          <ul className="m-0 grid list-none grid-cols-1 divide-y divide-border p-0 md:grid-cols-2 md:divide-y-0">
+            {SYSTEM_TOOLS.map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <li
+                  key={tool.title}
+                  className="md:border-b md:border-border md:odd:border-r"
+                >
+                  <Link
+                    to={tool.to}
+                    className="group flex items-center gap-3 px-5 py-4 no-underline transition-colors hover:bg-accent/40"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary-subtle text-primary-subtle-foreground">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-medium text-foreground">
+                        {tool.title}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {tool.description}
+                      </span>
+                    </span>
+                    <ArrowRight
+                      className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </Panel>
       </div>
     </PageContainer>
   );

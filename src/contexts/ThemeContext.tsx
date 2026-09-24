@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 export type Theme = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
@@ -11,86 +19,58 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+const STORAGE_KEY = 'theme';
 
-function getSystemTheme(): ResolvedTheme {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function resolveTheme(theme: Theme): ResolvedTheme {
-  return theme === 'system' ? getSystemTheme() : theme;
-}
-
-function applyTheme(resolved: ResolvedTheme) {
-  const root = document.documentElement;
-  if (resolved === 'dark') {
-    root.classList.add('dark');
-  } else {
-    root.classList.remove('dark');
+function readStoredTheme(): Theme {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === 'light' || stored === 'dark' || stored === 'system'
+      ? stored
+      : 'dark';
+  } catch {
+    return 'dark';
   }
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Meridian is dark-first: with no stored preference, default to the dark
-  // "ink" theme rather than following the OS. Operators can switch to light
-  // (or "system") and that choice is persisted.
-  const [theme, setThemeState] = useState<Theme>(() => {
-    try {
-      return (localStorage.getItem('theme') as Theme) ?? 'dark';
-    } catch {
-      return 'dark';
-    }
-  });
+/**
+ * Light / dark / system theme. Meridian is dark-first: with no stored
+ * preference the "ink" theme is used. `index.html` applies the stored theme
+ * before React mounts to avoid a flash; this provider keeps it in sync.
+ */
+export function ThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
+  const [theme, setThemeState] = useState<Theme>(readStoredTheme);
+  const systemPrefersDark = useMediaQuery('(prefers-color-scheme: dark)');
+  const resolvedTheme: ResolvedTheme =
+    theme === 'system' ? (systemPrefersDark ? 'dark' : 'light') : theme;
 
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => {
-    const stored = (() => {
-      try {
-        return (localStorage.getItem('theme') as Theme) ?? 'dark';
-      } catch {
-        return 'dark' as Theme;
-      }
-    })();
-    return resolveTheme(stored);
-  });
-
-  // Apply theme class whenever resolved theme changes
   useEffect(() => {
-    const resolved = resolveTheme(theme);
-    setResolvedTheme(resolved);
-    applyTheme(resolved);
-  }, [theme]);
+    document.documentElement.classList.toggle('dark', resolvedTheme === 'dark');
+  }, [resolvedTheme]);
 
-  // Listen for system preference changes (only when theme is 'system')
-  useEffect(() => {
-    if (theme !== 'system') return;
-
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => {
-      const resolved: ResolvedTheme = e.matches ? 'dark' : 'light';
-      setResolvedTheme(resolved);
-      applyTheme(resolved);
-    };
-
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, [theme]);
-
-  const setTheme = (t: Theme) => {
-    setThemeState(t);
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next);
     try {
-      localStorage.setItem('theme', t);
+      localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // ignore storage errors
+      // Storage can be unavailable (private mode); the choice still applies to this session.
     }
-  };
+  }, []);
 
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
-  };
+  }, [resolvedTheme, setTheme]);
+
+  const value = useMemo(
+    () => ({ theme, resolvedTheme, setTheme, toggleTheme }),
+    [theme, resolvedTheme, setTheme, toggleTheme]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
 

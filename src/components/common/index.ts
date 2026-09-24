@@ -39,7 +39,6 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { ErrorState } from './ErrorState';
 export { EmptyState } from './EmptyState';
 export { ToastContainer } from './ToastContainer';
-export { TableSkeleton } from './TableSkeleton';
 export { CopyableId } from './CopyableId';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as DataView } from './DataView';
@@ -49,19 +48,24 @@ export { DataViewBulkActionsBar } from './DataViewBulkActionsBar';
 export { default as DataViewCard } from './DataViewCard';
 export { DataViewToolbar } from './DataViewToolbar';
 export { default as Pagination } from './Pagination';
+export { TablePager } from './TablePager';
+export { ActivityIcon } from './ActivityIcon';
 export { ActionsMenu } from './ActionsMenu';
 export { CopyButton } from './CopyButton';
 export { IconContainer } from './IconContainer';
+export { UserTypeBadge } from './UserTypeBadge';
 
 // Layout components
 export { FilterBar } from './FilterBar';
 export { PageContainer } from './PageContainer';
 export { PageHeader } from './PageHeader';
+export { Panel } from './Panel';
+export { FactList } from './FactList';
+export { DetailSheet } from './DetailSheet';
 export { SearchBar } from './SearchBar';
 export { default as StatCard } from './StatCard';
 export { default as StatsGrid } from './StatsGrid';
 export { TabNavigation } from './TabNavigation';
-export { EntityFilter } from './EntityFilter';
 
 // Types
 export type { ConfirmDialogProps } from './ConfirmDialog';
@@ -89,11 +93,15 @@ export type { CopyButtonProps } from './CopyButton';
 export type { FilterBarProps, Filter, FilterOption } from './FilterBar';
 export type { PageContainerProps } from './PageContainer';
 export type { PageHeaderProps } from './PageHeader';
+export type { PanelProps } from './Panel';
+export type { FactListProps, Fact } from './FactList';
+export type { DetailSheetProps } from './DetailSheet';
+export type { TablePagerProps } from './TablePager';
 export type { SearchBarProps } from './SearchBar';
 export type { StatCardProps } from './StatCard';
 export type { StatsGridProps } from './StatsGrid';
 export type { TabNavigationProps, Tab } from './TabNavigation';
-export type { EntityFilterProps, EntityFilterConfig } from './EntityFilter';
+export type { UserTypeBadgeProps } from './UserTypeBadge';
 export type {
   IconContainerProps,
   IconContainerVariant,

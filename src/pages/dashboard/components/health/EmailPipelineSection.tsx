@@ -7,11 +7,7 @@ import React from 'react';
 import { AlertTriangle, Gauge, Inbox, Mail, Send } from 'lucide-react';
 import type { HealthComponent } from '@/types/system.types';
 import { rollupStatus, statusTone } from '@/lib/status-tone';
-import {
-  asNumber,
-  asString,
-  formatHealthValue,
-} from '@/lib/health-format';
+import { asNumber, asString, formatHealthValue } from '@/lib/health-format';
 import { SubsystemPanel } from './SubsystemPanel';
 import { MetricTile } from './MetricTile';
 
@@ -32,7 +28,11 @@ export function EmailPipelineSection({
   const queueDepth = asNumber(outbox?.queue_depth);
   const successRatio = asNumber(outbox?.success_ratio);
 
-  const rolled = rollupStatus([provider?.status, outbox?.status, worker?.status]);
+  const rolled = rollupStatus([
+    provider?.status,
+    outbox?.status,
+    worker?.status,
+  ]);
 
   const successTone =
     successRatio === undefined
@@ -96,7 +96,10 @@ export function EmailPipelineSection({
         {worker && (
           <MetricTile
             label="Worker heartbeat"
-            value={formatHealthValue('latest_heartbeat', worker.latest_heartbeat)}
+            value={formatHealthValue(
+              'latest_heartbeat',
+              worker.latest_heartbeat
+            )}
             icon={<Send className="h-3.5 w-3.5" />}
             tone={statusTone(worker.status)}
             hint={asString(worker.status)}

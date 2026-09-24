@@ -36,7 +36,9 @@ export function MetricTile({
         {icon}
         <span className="truncate">{label}</span>
       </div>
-      <p className={cn('text-xl font-semibold', toneTextClass[tone])}>{value}</p>
+      <p className={cn('text-xl font-semibold', toneTextClass[tone])}>
+        {value}
+      </p>
       {hint && <p className="mt-1 text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );

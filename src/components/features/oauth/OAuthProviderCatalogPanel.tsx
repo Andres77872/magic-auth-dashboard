@@ -1,25 +1,29 @@
 /**
- * Provider catalog panel for the System page (root only) — the global kill switch.
+ * OAuth provider catalog — the deployment-wide kill switch per provider type.
  *
- * One row per provider type: code, display name, protocol, whether the RUNNING
- * backend has an adapter registered, catalog status and the login/link capability
- * flags. A type that is enabled in the catalog with no registered adapter renders as
- * an ERROR state, because that data/code drift is exactly what the backend's start-up
- * assertion guards against.
+ * One row per provider type: name, protocol, whether the RUNNING backend has an adapter,
+ * catalog status and the catalog-level sign-in / linking gates. A type that is enabled
+ * with no registered adapter is flagged, because that data/code drift breaks sign-in.
+ * Admins can read the catalog; only root can change it (api.auth enforces this too).
  */
 
 import React from 'react';
-import { AlertTriangle, KeyRound } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { ErrorState } from '@/components/common/ErrorState';
+import { Panel } from '@/components/common/Panel';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
-  Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  ErrorState,
-  LoadingSpinner,
-} from '@/components/common';
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -28,185 +32,265 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useOAuthProviders } from '@/hooks/useOAuthConnections';
+import { useToast } from '@/hooks/useToast';
+import { useUserType } from '@/hooks/useUserType';
+import { cn } from '@/lib/utils';
+import { formatNumber } from '@/utils/formatters';
+import type {
+  OAuthCatalogStatus,
+  OAuthProviderCatalogEntry,
+  OAuthProviderCatalogUpdateRequest,
+} from '@/types/oauth.types';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { useAuth, useToast } from '@/hooks';
-import { oauthService } from '@/services/oauth.service';
-import type { OAuthCatalogStatus, OAuthProviderCatalogEntry } from '@/types/oauth.types';
-import { catalogStatusVariant, isCatalogDrift, providerTypeLabel } from './oauth-status';
+  catalogStatusPresentation,
+  isCatalogDrift,
+  providerTypeLabel,
+} from './oauth-status';
 
-function errorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error ? err.message : fallback;
+const CATALOG_STATUSES: Array<{ value: OAuthCatalogStatus; label: string }> = [
+  { value: 'enabled', label: 'Enabled' },
+  { value: 'degraded', label: 'Degraded' },
+  { value: 'disabled', label: 'Disabled' },
+  { value: 'archived', label: 'Archived' },
+];
+
+function isCatalogStatus(value: string): value is OAuthCatalogStatus {
+  return CATALOG_STATUSES.some((status) => status.value === value);
+}
+
+interface PendingStop {
+  entry: OAuthProviderCatalogEntry;
+  status: OAuthCatalogStatus;
 }
 
 export function OAuthProviderCatalogPanel(): React.JSX.Element {
-  const { userType } = useAuth();
-  const isRoot = userType === 'root';
+  const { isRoot } = useUserType();
   const { showToast } = useToast();
+  const {
+    providers,
+    oauthEnabled,
+    isLoading,
+    isRefreshing,
+    error,
+    refetch,
+    pendingProvider,
+    updateProvider,
+  } = useOAuthProviders();
+  const [pendingStop, setPendingStop] = React.useState<PendingStop | null>(
+    null
+  );
 
-  const [providers, setProviders] = React.useState<OAuthProviderCatalogEntry[]>([]);
-  const [oauthEnabled, setOauthEnabled] = React.useState(true);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [version, setVersion] = React.useState(0);
-  const [pending, setPending] = React.useState<string | null>(null);
-
-  const reload = React.useCallback((): void => setVersion((value) => value + 1), []);
-
-  React.useEffect(() => {
-    let active = true;
-    void (async (): Promise<void> => {
-      try {
-        const response = await oauthService.listProviders();
-        if (active) {
-          setProviders(response.providers || []);
-          setOauthEnabled(response.oauth_enabled !== false);
-          setError(null);
-        }
-      } catch (err) {
-        if (active) setError(errorMessage(err, 'Failed to load the OAuth provider catalog'));
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return (): void => {
-      active = false;
-    };
-  }, [version]);
-
-  const update = async (
+  const apply = async (
     entry: OAuthProviderCatalogEntry,
-    changes: { status?: OAuthCatalogStatus; login_enabled?: boolean; link_enabled?: boolean },
+    changes: OAuthProviderCatalogUpdateRequest
   ): Promise<void> => {
-    setPending(entry.provider_type);
     try {
-      await oauthService.updateProvider(entry.provider_type, changes);
-      showToast(`${providerTypeLabel(entry.provider_type)} updated`, 'success');
-      reload();
+      await updateProvider(entry.provider_type, changes);
+      showToast(
+        `${entry.display_name || providerTypeLabel(entry.provider_type)} updated`,
+        'success'
+      );
     } catch (err) {
-      showToast(errorMessage(err, 'Provider update failed'), 'error');
-    } finally {
-      setPending(null);
+      showToast(
+        err instanceof Error && err.message
+          ? err.message
+          : 'The provider could not be updated.',
+        'error'
+      );
     }
+  };
+
+  const requestStatus = (
+    entry: OAuthProviderCatalogEntry,
+    status: OAuthCatalogStatus
+  ): void => {
+    if (status === entry.status) return;
+    // Disabling or archiving stops every connection of the type: confirm first.
+    if (status === 'disabled' || status === 'archived') {
+      setPendingStop({ entry, status });
+      return;
+    }
+    void apply(entry, { status });
   };
 
   const drift = providers.filter(isCatalogDrift);
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-        <CardTitle>OAuth providers</CardTitle>
-        <div className="flex items-center gap-2">
-          <Badge variant={oauthEnabled ? 'success' : 'warning'}>
-            {oauthEnabled ? 'OAUTH_ENABLED' : 'OAuth disabled deployment-wide'}
-          </Badge>
-          <Button variant="outline" size="sm" onClick={reload} disabled={loading}>
-            Refresh
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <LoadingSpinner />
-          </div>
-        ) : error ? (
-          <ErrorState title="Couldn’t load the provider catalog" message={error} onRetry={reload} />
-        ) : providers.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            The provider catalog is empty — no OAuth provider type is registered in the database.
-          </p>
-        ) : (
-          <>
-            {drift.length > 0 && (
-              <div
-                role="alert"
-                className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
-              >
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>
-                  {drift.map((entry) => entry.provider_type).join(', ')} enabled in the catalog
-                  with no adapter in the running backend. Sign-in through
-                  {drift.length === 1 ? ' it' : ' them'} will fail — disable the type or deploy a
-                  backend that registers the adapter.
-                </span>
-              </div>
-            )}
+  const statusCell = (entry: OAuthProviderCatalogEntry): React.ReactNode => {
+    if (!isRoot) {
+      const status = catalogStatusPresentation(entry.status);
+      return (
+        <Badge variant={status.variant} size="sm">
+          {status.label}
+        </Badge>
+      );
+    }
+    return (
+      <Select
+        value={entry.status}
+        onValueChange={(next) => {
+          if (isCatalogStatus(next)) requestStatus(entry, next);
+        }}
+        disabled={pendingProvider === entry.provider_type}
+      >
+        <SelectTrigger
+          className="h-8 w-32 text-[13px]"
+          aria-label={`${providerTypeLabel(entry.provider_type)} status`}
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {CATALOG_STATUSES.map((status) => (
+            <SelectItem key={status.value} value={status.value}>
+              {status.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Protocol</TableHead>
-                  <TableHead>Adapter</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Login</TableHead>
-                  <TableHead>Link</TableHead>
-                  <TableHead>Connections</TableHead>
+  return (
+    <Panel
+      title="OAuth providers"
+      description="Deployment-wide switch per provider type. Changes reach every instance within 30 seconds."
+      padding="none"
+      actions={
+        <>
+          {oauthEnabled !== null && (
+            <Badge variant={oauthEnabled ? 'success' : 'warning'} size="sm">
+              {oauthEnabled ? 'OAuth on' : 'OAuth off for this deployment'}
+            </Badge>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => void refetch()}
+            disabled={isRefreshing}
+            aria-label="Refresh OAuth providers"
+          >
+            <RefreshCw
+              className={cn(isRefreshing && 'animate-spin')}
+              aria-hidden="true"
+            />
+          </Button>
+        </>
+      }
+    >
+      {error && providers.length === 0 ? (
+        <ErrorState
+          variant="inline"
+          size="sm"
+          title="The provider catalog could not be loaded"
+          message={error}
+          onRetry={() => void refetch()}
+          isRetrying={isRefreshing}
+        />
+      ) : (
+        <>
+          {drift.length > 0 && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 border-b border-border bg-destructive/5 px-5 py-3 text-xs text-destructive"
+            >
+              <AlertTriangle
+                className="mt-0.5 h-4 w-4 shrink-0"
+                aria-hidden="true"
+              />
+              <span>
+                {drift
+                  .map((entry) => providerTypeLabel(entry.provider_type))
+                  .join(', ')}{' '}
+                {drift.length === 1 ? 'is' : 'are'} enabled but the running
+                backend has no adapter, so sign-in through{' '}
+                {drift.length === 1 ? 'it' : 'them'} fails. Disable the type or
+                deploy a backend that registers the adapter.
+              </span>
+            </div>
+          )}
+          <Table aria-busy={isLoading || undefined}>
+            <TableCaption className="sr-only">
+              OAuth provider catalog
+            </TableCaption>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="pl-5">Provider</TableHead>
+                <TableHead className="hidden md:table-cell">Protocol</TableHead>
+                <TableHead>Adapter</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Sign-in</TableHead>
+                <TableHead>Linking</TableHead>
+                <TableHead className="pr-5 text-right">Connections</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading && providers.length === 0 ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <TableRow key={index} className="hover:bg-transparent">
+                    <TableCell colSpan={7} className="px-5">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : providers.length === 0 ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell
+                    colSpan={7}
+                    className="px-5 py-6 text-center text-[13px] text-muted-foreground"
+                  >
+                    The provider catalog is empty: no OAuth provider type is
+                    registered in the database.
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {providers.map((entry) => {
-                  const busy = pending === entry.provider_type;
-                  const driftRow = isCatalogDrift(entry);
+              ) : (
+                providers.map((entry) => {
+                  const busy = pendingProvider === entry.provider_type;
+                  const label = providerTypeLabel(entry.provider_type);
                   return (
                     <TableRow key={entry.provider_type}>
-                      <TableCell className="font-medium">
-                        {entry.display_name || providerTypeLabel(entry.provider_type)}
+                      <TableCell className="pl-5">
+                        <div className="text-[13px] font-medium text-foreground">
+                          {entry.display_name || label}
+                        </div>
                         <div className="font-mono text-xs text-muted-foreground">
                           {entry.provider_type}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm">{entry.protocol}</TableCell>
+                      <TableCell className="hidden text-xs uppercase text-muted-foreground md:table-cell">
+                        {entry.protocol}
+                      </TableCell>
                       <TableCell>
                         {entry.adapter_registered ? (
-                          <Badge variant="success">registered</Badge>
+                          <Badge variant="success" size="sm">
+                            Registered
+                          </Badge>
                         ) : (
-                          <Badge variant={driftRow ? 'destructive' : 'secondary'}>
-                            not registered
+                          <Badge
+                            variant={
+                              isCatalogDrift(entry)
+                                ? 'destructive'
+                                : 'secondary'
+                            }
+                            size="sm"
+                          >
+                            Not registered
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {isRoot ? (
-                          <Select
-                            value={String(entry.status)}
-                            onValueChange={(next) =>
-                              void update(entry, { status: next as OAuthCatalogStatus })
-                            }
-                            disabled={busy}
-                          >
-                            <SelectTrigger
-                              className="w-36"
-                              aria-label={`${entry.provider_type} status`}
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="enabled">enabled</SelectItem>
-                              <SelectItem value="degraded">degraded</SelectItem>
-                              <SelectItem value="disabled">disabled</SelectItem>
-                              <SelectItem value="archived">archived</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Badge variant={catalogStatusVariant(entry.status)}>{entry.status}</Badge>
-                        )}
-                      </TableCell>
+                      <TableCell>{statusCell(entry)}</TableCell>
                       <TableCell>
                         <Switch
                           checked={entry.login_enabled}
-                          disabled={!isRoot || busy}
-                          onCheckedChange={(checked) =>
-                            void update(entry, { login_enabled: Boolean(checked) })
+                          // Patreon is link-only; api.auth refuses to enable it for sign-in.
+                          disabled={
+                            !isRoot || busy || entry.provider_type === 'patreon'
                           }
-                          aria-label={`${entry.provider_type} login enabled`}
+                          onCheckedChange={(checked) =>
+                            void apply(entry, {
+                              login_enabled: checked === true,
+                            })
+                          }
+                          aria-label={`${label} sign-in allowed`}
                         />
                       </TableCell>
                       <TableCell>
@@ -214,27 +298,60 @@ export function OAuthProviderCatalogPanel(): React.JSX.Element {
                           checked={entry.link_enabled}
                           disabled={!isRoot || busy}
                           onCheckedChange={(checked) =>
-                            void update(entry, { link_enabled: Boolean(checked) })
+                            void apply(entry, {
+                              link_enabled: checked === true,
+                            })
                           }
-                          aria-label={`${entry.provider_type} link enabled`}
+                          aria-label={`${label} account linking allowed`}
                         />
                       </TableCell>
-                      <TableCell>{entry.connection_count}</TableCell>
+                      <TableCell className="pr-5 text-right tabular-nums">
+                        {formatNumber(entry.connection_count)}
+                      </TableCell>
                     </TableRow>
                   );
-                })}
-              </TableBody>
-            </Table>
+                })
+              )}
+            </TableBody>
+          </Table>
+        </>
+      )}
 
-            <p className="flex items-start gap-2 text-xs text-muted-foreground">
-              <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              This is the deployment-wide kill switch. Disabling a type stops every connection of
-              that type in every project, including in-flight sign-ins at the callback re-check.
-            </p>
+      <ConfirmDialog
+        isOpen={pendingStop !== null}
+        onClose={() => setPendingStop(null)}
+        onConfirm={() => {
+          if (!pendingStop) return;
+          const { entry, status } = pendingStop;
+          setPendingStop(null);
+          void apply(entry, { status });
+        }}
+        variant="warning"
+        title={`${pendingStop?.status === 'archived' ? 'Archive' : 'Disable'} ${
+          pendingStop
+            ? providerTypeLabel(pendingStop.entry.provider_type)
+            : 'provider'
+        }?`}
+        message={
+          <>
+            Every{' '}
+            {pendingStop
+              ? providerTypeLabel(pendingStop.entry.provider_type)
+              : ''}{' '}
+            connection stops serving sign-in in every project, including
+            sign-ins already in progress.
+            {pendingStop &&
+              pendingStop.entry.connection_count > 0 &&
+              ` ${formatNumber(pendingStop.entry.connection_count)} connection${pendingStop.entry.connection_count === 1 ? ' is' : 's are'} affected.`}
           </>
-        )}
-      </CardContent>
-    </Card>
+        }
+        confirmText={
+          pendingStop?.status === 'archived'
+            ? 'Archive provider'
+            : 'Disable provider'
+        }
+      />
+    </Panel>
   );
 }
 

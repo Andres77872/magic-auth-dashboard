@@ -9,7 +9,7 @@ export const API_CONFIG = {
 // User Type Constants
 export const USER_TYPES = {
   ROOT: 'root',
-  ADMIN: 'admin', 
+  ADMIN: 'admin',
   CONSUMER: 'consumer',
 } as const;
 
@@ -51,4 +51,4 @@ export const ERROR_MESSAGES = {
   VALIDATION_ERROR: 'Please check your input and try again.',
   INTERNAL_ERROR: 'An internal error occurred. Please try again later.',
   SESSION_EXPIRED: 'Your session has expired. Please log in again.',
-} as const; 
+} as const;

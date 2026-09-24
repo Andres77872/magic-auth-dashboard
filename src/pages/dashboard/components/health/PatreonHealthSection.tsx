@@ -14,7 +14,12 @@ import {
 } from 'lucide-react';
 import type { HealthComponent } from '@/types/system.types';
 import { statusTone } from '@/lib/status-tone';
-import { asNumber, asRecord, asString, formatDuration } from '@/lib/health-format';
+import {
+  asNumber,
+  asRecord,
+  asString,
+  formatDuration,
+} from '@/lib/health-format';
 import { SubsystemPanel } from './SubsystemPanel';
 import { MetricTile } from './MetricTile';
 import { FeatureFlagChips } from './FeatureFlagChips';
@@ -48,7 +53,7 @@ export function PatreonHealthSection({
 
   return (
     <SubsystemPanel
-      title="Patreon Integration"
+      title="Patreon integration"
       icon={<HeartHandshake className="h-4 w-4 text-primary" />}
       status={asString(data.status)}
       lastCheck={asString(data.last_check) ?? asString(readiness?.last_check)}
@@ -80,7 +85,9 @@ export function PatreonHealthSection({
         />
         <MetricTile
           label="Worker heartbeat"
-          value={heartbeatAge === undefined ? '—' : formatDuration(heartbeatAge)}
+          value={
+            heartbeatAge === undefined ? '—' : formatDuration(heartbeatAge)
+          }
           icon={<Activity className="h-3.5 w-3.5" />}
           tone={statusTone(asString(worker?.status))}
           hint={asString(worker?.latest_mode)}
@@ -112,7 +119,9 @@ export function PatreonHealthSection({
 
       {Array.isArray(degraded) && degraded.length > 0 && (
         <div className="space-y-1">
-          <span className="text-xs text-muted-foreground">Degraded reasons</span>
+          <span className="text-xs text-muted-foreground">
+            Degraded reasons
+          </span>
           <ChipList items={degraded} tone="warning" />
         </div>
       )}

@@ -6,7 +6,14 @@ import tseslint from 'typescript-eslint'
 import { globalIgnores } from 'eslint/config'
 
 export default tseslint.config([
-  globalIgnores(['dist']),
+  globalIgnores([
+    'dist',
+    'ds-bundle',
+    '.ds-sync',
+    '.design-sync',
+    'Meridian Admin Design System',
+    'node_modules',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -27,10 +34,26 @@ export default tseslint.config([
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/no-unused-vars': 'error',
-      '@typescript-eslint/explicit-function-return-type': 'warn',
+      '@typescript-eslint/explicit-function-return-type': [
+        'warn',
+        {
+          allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
+          allowDirectConstAssertionInArrowFunctions: true,
+        },
+      ],
       '@typescript-eslint/no-explicit-any': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
+    },
+  },
+  {
+    // shadcn primitives export their cva variants next to the component, and
+    // contexts export their provider together with the consuming hook.
+    files: ['src/components/ui/**/*.tsx', 'src/contexts/**/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])

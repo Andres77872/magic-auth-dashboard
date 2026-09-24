@@ -1,687 +1,415 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Spinner } from '@/components/ui/spinner';
-import { Progress } from '@/components/ui/progress';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { DataView, Pagination, ErrorState, EmptyState, ConfirmDialog } from '@/components/common';
-import type { DataViewColumn } from '@/components/common';
-import { projectService, projectGroupService } from '@/services';
-import type { ProjectGroup } from '@/services/project-group.service';
-import type { ProjectDetails, ProjectGroupInfo } from '@/types/project.types';
-import type { UserGroup } from '@/types/group.types';
-import { useToast } from '@/hooks';
-import { useProjectWorkflow } from '@/hooks/useProjectWorkflow';
-import { isDefaultUserGroup } from '@/utils/default-groups';
-import { formatDate } from '@/utils/component-utils';
-import { 
-  Users, 
-  FolderTree, 
-  Plus, 
-  Trash2, 
-  ExternalLink, 
   ArrowRight,
-  FolderOpen,
   CheckCircle2,
   Circle,
-  AlertCircle,
-  ChevronDown,
-  ChevronUp
+  FolderTree,
+  HelpCircle,
+  Plus,
+  Trash2,
+  UsersRound,
 } from 'lucide-react';
+import { DataView, type DataViewColumn } from '@/components/common';
+import { Panel } from '@/components/common/Panel';
+import { ConfirmDialog } from '@/components/common/ConfirmDialog';
+import { EmptyState } from '@/components/common/EmptyState';
+import { TablePager } from '@/components/common/TablePager';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  useProjectGroupMembership,
+  useProjectUserGroups,
+} from '@/hooks/useProjectDetails';
+import {
+  useProjectWorkflow,
+  type WorkflowStep,
+} from '@/hooks/useProjectWorkflow';
+import { useToast } from '@/hooks/useToast';
+import { getDefaultGroupRole } from '@/utils/default-groups';
+import { formatDate, formatNumber } from '@/utils/formatters';
 import { ROUTES } from '@/utils/routes';
+import { cn } from '@/lib/utils';
+import type { ProjectGroupInfo } from '@/types/project.types';
+import type { UserGroup } from '@/types/group.types';
+import { AddToProjectGroupsDialog } from './AddToProjectGroupsDialog';
 
 interface ProjectGroupsTabProps {
-  project: ProjectDetails;
-  projectGroups?: ProjectGroupInfo[];
-  onProjectGroupsChange?: () => void;
+  projectHash: string;
+  projectName: string;
+  projectGroups: ProjectGroupInfo[];
+  /** Reload the project details (its project groups) after a change. */
+  onProjectGroupsChange: () => Promise<void>;
 }
 
-export const ProjectGroupsTab: React.FC<ProjectGroupsTabProps> = ({ 
-  project,
-  projectGroups = [],
-  onProjectGroupsChange
-}) => {
-  // User Groups state
-  const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
-  const [isLoadingUserGroups, setIsLoadingUserGroups] = useState(true);
-  const [userGroupsError, setUserGroupsError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+const PAGE_SIZE = 25;
 
-  // Project Groups management state
-  const [assignedProjectGroups, setAssignedProjectGroups] = useState<ProjectGroupInfo[]>(projectGroups);
-  const [availableProjectGroups, setAvailableProjectGroups] = useState<ProjectGroup[]>([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState<ProjectGroupInfo | null>(null);
-  const [isRemoving, setIsRemoving] = useState(false);
-  const [isLoadingProjectGroups, setIsLoadingProjectGroups] = useState(false);
+function StepIcon({ step }: { step: WorkflowStep }): React.JSX.Element {
+  if (step.status === 'complete')
+    return <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />;
+  if (step.status === 'unknown')
+    return <HelpCircle className="h-4 w-4 text-warning" aria-hidden="true" />;
+  return (
+    <Circle className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+  );
+}
 
-  const { showToast } = useToast();
+const STEP_STATUS_LABEL = {
+  complete: 'Done',
+  incomplete: 'To do',
+  unknown: 'Unknown',
+} as const;
+
+/**
+ * Where the project sits in USER → USER_GROUP → PROJECT_GROUP → PROJECT: the
+ * project groups that contain it (editable) and the user groups those
+ * project groups are granted to (read-only here; grants live on user groups).
+ */
+export function ProjectGroupsTab({
+  projectHash,
+  projectName,
+  projectGroups,
+  onProjectGroupsChange,
+}: ProjectGroupsTabProps): React.JSX.Element {
   const navigate = useNavigate();
-
-  // Workflow progress state
-  const [workflowCollapsed, setWorkflowCollapsed] = useState(false);
-
-  // Compute workflow state
+  const { showToast } = useToast();
+  const userGroups = useProjectUserGroups(projectHash);
+  const membership = useProjectGroupMembership(projectHash);
   const workflow = useProjectWorkflow({
-    projectHash: project.project_hash,
-    projectGroups: assignedProjectGroups,
-    userGroups,
-    userGroupsFetchError: !!userGroupsError,
-    firstUserGroupHash: userGroups.length > 0 ? userGroups[0].group_hash : undefined,
-    onOpenAddToGroupModal: () => setShowAddModal(true),
+    projectGroups,
+    userGroups: userGroups.userGroups,
+    userGroupsUnavailable:
+      Boolean(userGroups.error) && userGroups.userGroups.length === 0,
   });
+  const [adding, setAdding] = useState(false);
+  const [removing, setRemoving] = useState<ProjectGroupInfo | null>(null);
+  const [offset, setOffset] = useState(0);
 
-  // Handle workflow CTA actions
-  const handleWorkflowCta = useCallback(
-    (action: string, target?: string) => {
-      if (action === 'open-modal') {
-        setShowAddModal(true);
-      } else if (action === 'navigate' && target) {
-        navigate(target);
-      }
-    },
-    [navigate]
+  const refreshAll = async (): Promise<void> => {
+    await Promise.all([onProjectGroupsChange(), userGroups.refetch()]);
+  };
+
+  const handleAdd = async (groupHashes: string[]): Promise<void> => {
+    const result = await membership.addToProjectGroups(groupHashes);
+    if (result.added.length > 0) {
+      showToast(
+        `Added to ${result.added.length} project group${result.added.length === 1 ? '' : 's'}.`,
+        result.failed.length > 0 ? 'warning' : 'success'
+      );
+      await refreshAll();
+    }
+    if (result.failed.length > 0) {
+      showToast(
+        result.failed.map((failure) => failure.message).join(' '),
+        'error'
+      );
+      throw new Error('Some project groups could not be updated.');
+    }
+    setAdding(false);
+  };
+
+  const confirmRemove = async (): Promise<void> => {
+    if (!removing) return;
+    try {
+      await membership.removeFromProjectGroup(removing.group_hash);
+      showToast(`Removed from ${removing.group_name}.`, 'success');
+      setRemoving(null);
+      await refreshAll();
+    } catch (err) {
+      showToast(
+        err instanceof Error
+          ? err.message
+          : 'The project could not be removed from the group.',
+        'error'
+      );
+    }
+  };
+
+  const columns = useMemo<DataViewColumn<UserGroup>[]>(
+    () => [
+      {
+        key: 'group_name',
+        header: 'User group',
+        render: (_value, group) => {
+          const role = getDefaultGroupRole(group.group_name);
+          return (
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-2">
+                <Link
+                  to={`${ROUTES.GROUPS}/${encodeURIComponent(group.group_hash)}`}
+                  onClick={(event) => event.stopPropagation()}
+                  className="truncate text-[13px] font-medium text-foreground no-underline hover:underline"
+                >
+                  {group.group_name}
+                </Link>
+                {role && (
+                  <Badge
+                    variant={role === 'admin' ? 'info' : 'secondary'}
+                    size="sm"
+                    title="Named like the groups api.auth creates with a project"
+                  >
+                    {role === 'admin' ? 'Admin group' : 'Default'}
+                  </Badge>
+                )}
+              </div>
+              <span className="block truncate text-xs text-muted-foreground">
+                {group.description || 'No description'}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        key: 'member_count',
+        header: 'Members',
+        width: '110px',
+        align: 'right',
+        render: (_value, group) => (
+          <span className="font-mono text-xs tabular-nums text-foreground">
+            {formatNumber(group.member_count)}
+          </span>
+        ),
+      },
+      {
+        key: 'created_at',
+        header: 'Created',
+        width: '120px',
+        hideOnMobile: true,
+        render: (_value, group) => (
+          <span className="whitespace-nowrap text-xs text-muted-foreground">
+            {formatDate(group.created_at)}
+          </span>
+        ),
+      },
+    ],
+    []
   );
 
-  // Update assigned project groups when prop changes
-  useEffect(() => {
-    setAssignedProjectGroups(projectGroups);
-  }, [projectGroups]);
-
-  // Fetch user groups with access
-  const fetchUserGroups = useCallback(async (page = 1) => {
-    try {
-      setIsLoadingUserGroups(true);
-      setUserGroupsError(null);
-      const response = await projectService.getProjectGroups(project.project_hash, {
-        limit: 10,
-        offset: (page - 1) * 10,
-      });
-      
-      if (response.success && response.user_groups) {
-        setUserGroups(response.user_groups);
-        if (response.pagination) {
-          setTotalPages(Math.ceil(response.pagination.total / 10));
-          setTotalItems(response.pagination.total);
-        } else {
-          setTotalItems(response.user_groups.length);
-        }
-      } else {
-        setUserGroupsError(response.message || 'Failed to load user groups');
-      }
-    } catch (err) {
-      console.error('Error fetching user groups:', err);
-      setUserGroupsError('Failed to load user groups. Please try again.');
-    } finally {
-      setIsLoadingUserGroups(false);
-    }
-  }, [project.project_hash]);
-
-  useEffect(() => {
-    fetchUserGroups(currentPage);
-  }, [fetchUserGroups, currentPage]);
-
-  // Fetch available project groups for the add modal
-  const fetchAvailableProjectGroups = async () => {
-    try {
-      setIsLoadingProjectGroups(true);
-      const response = await projectGroupService.getProjectGroups({ limit: 500 });
-      if (response.success && response.project_groups) {
-        const assignedHashes = new Set(assignedProjectGroups.map(pg => pg.group_hash));
-        const available = response.project_groups.filter(
-          pg => !assignedHashes.has(pg.group_hash)
-        );
-        setAvailableProjectGroups(available);
-      }
-    } catch (error) {
-      console.error('Failed to fetch available project groups:', error);
-    } finally {
-      setIsLoadingProjectGroups(false);
-    }
-  };
-
-  useEffect(() => {
-    if (showAddModal) {
-      fetchAvailableProjectGroups();
-    }
-  }, [showAddModal, assignedProjectGroups]);
-
-  // Handle adding project to project groups
-  const handleAssignToGroups = async () => {
-    if (selectedGroups.length === 0) {
-      showToast('Please select at least one project group', 'warning');
-      return;
-    }
-
-    setIsAssigning(true);
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (const projectGroupHash of selectedGroups) {
-      try {
-        const response = await projectGroupService.assignProjectToGroup(
-          projectGroupHash,
-          project.project_hash
-        );
-        if (response.success) {
-          successCount++;
-        } else {
-          errorCount++;
-        }
-      } catch {
-        errorCount++;
-      }
-    }
-
-    if (successCount > 0) {
-      showToast(`Successfully added to ${successCount} project group(s)`, 'success');
-      onProjectGroupsChange?.();
-      await fetchUserGroups(currentPage);
-    }
-    if (errorCount > 0) {
-      showToast(`Failed to add to ${errorCount} project group(s)`, 'error');
-    }
-
-    setShowAddModal(false);
-    setSelectedGroups([]);
-    setIsAssigning(false);
-  };
-
-  // Handle removing project from a project group
-  const handleRemoveFromGroup = async () => {
-    if (!confirmRemove) return;
-
-    setIsRemoving(true);
-    try {
-      const response = await projectGroupService.removeProjectFromGroup(
-        confirmRemove.group_hash,
-        project.project_hash
-      );
-
-      if (response.success) {
-        showToast('Removed from project group successfully', 'success');
-        setConfirmRemove(null);
-        onProjectGroupsChange?.();
-        await fetchUserGroups(currentPage);
-      } else {
-        throw new Error(response.message || 'Failed to remove from project group');
-      }
-    } catch (error) {
-      console.error('Failed to remove from project group:', error);
-      showToast('Failed to remove from project group', 'error');
-    } finally {
-      setIsRemoving(false);
-    }
-  };
-
-  const toggleGroupSelection = (projectGroupHash: string) => {
-    setSelectedGroups(prev =>
-      prev.includes(projectGroupHash)
-        ? prev.filter(h => h !== projectGroupHash)
-        : [...prev, projectGroupHash]
-    );
-  };
-
-  const userGroupColumns: DataViewColumn<UserGroup>[] = [
-    { 
-      key: 'group_name', 
-      header: 'User Group', 
-      sortable: true,
-      render: (value, group) => {
-        const isDefault = isDefaultUserGroup(group.group_name);
-        return (
-          <div className="flex items-center gap-2">
-            <Link 
-              to={`${ROUTES.GROUPS}/${group.group_hash}`}
-              className="font-medium text-primary hover:underline inline-flex items-center gap-1"
-            >
-              {String(value)}
-              <ExternalLink className="h-3 w-3" />
-            </Link>
-            {isDefault && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="subtleInfo" size="sm" className="cursor-help">
-                      Default
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    Auto-created when the project was created. Can be deleted like any other group.
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-        );
-      }
-    },
-    { 
-      key: 'description', 
-      header: 'Description', 
-      sortable: false,
-      render: (value) => (
-        <span className="text-muted-foreground">
-          {String(value || 'No description')}
-        </span>
-      )
-    },
-    { 
-      key: 'member_count', 
-      header: 'Members', 
-      sortable: true,
-      render: (value) => (
-        <Badge variant="secondary">{String(value || 0)} members</Badge>
-      )
-    },
-    { 
-      key: 'created_at', 
-      header: 'Added', 
-      sortable: true,
-      render: (value) => value ? formatDate(value as string) : 'N/A'
-    },
-  ];
+  const pageRows = userGroups.userGroups.slice(offset, offset + PAGE_SIZE);
+  const isDefaultProjectGroup = removing
+    ? removing.group_name.trim().toLowerCase().startsWith('default_')
+    : false;
 
   return (
     <div className="space-y-6">
-      {/* Architecture Info Banner */}
-      <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 border text-sm">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>User</span>
-        </div>
-        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>User Group</span>
-        </div>
-        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <FolderTree className="h-4 w-4" />
-          <span>Project Group</span>
-        </div>
-        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-        <div className="flex items-center gap-2 text-primary font-semibold">
-          <FolderOpen className="h-4 w-4" />
-          <span>{project.project_name}</span>
-        </div>
-      </div>
+      <Panel
+        title="Access chain"
+        description="Users reach a project through a user group that is granted a project group containing it."
+        padding="none"
+      >
+        <ol className="m-0 grid list-none grid-cols-1 divide-y divide-border p-0 md:grid-cols-3 md:divide-x md:divide-y-0">
+          {workflow.steps.map((step) => (
+            <li key={step.id} className="flex gap-3 px-5 py-4">
+              <span className="mt-0.5">
+                <StepIcon step={step} />
+              </span>
+              <div className="min-w-0 space-y-1">
+                <p className="m-0 text-[13px] font-medium text-foreground">
+                  {step.label}
+                  <span className="sr-only">
+                    {' '}
+                    ({STEP_STATUS_LABEL[step.status]})
+                  </span>
+                </p>
+                <p className="m-0 text-xs text-muted-foreground">
+                  {step.description}
+                </p>
+                {step.cta && (
+                  <Button
+                    variant="link"
+                    size="xs"
+                    className="h-auto px-0"
+                    onClick={() => {
+                      const cta = step.cta;
+                      if (!cta) return;
+                      if (cta.action === 'add-to-project-group')
+                        setAdding(true);
+                      else void navigate(cta.target);
+                    }}
+                  >
+                    {step.cta.label}
+                    <ArrowRight aria-hidden="true" />
+                  </Button>
+                )}
+              </div>
+            </li>
+          ))}
+        </ol>
+      </Panel>
 
-      {/* Workflow Progress Indicator */}
-      {!workflow.isComplete || !workflowCollapsed ? (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CheckCircle2 className="h-4 w-4" />
-                Access Chain Progress
-              </CardTitle>
-              {workflow.isComplete && (
+      <Panel
+        title="Project groups"
+        description="Groups of projects this project belongs to."
+        actions={
+          <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
+            <Plus aria-hidden="true" />
+            Add to project group
+          </Button>
+        }
+        padding="none"
+      >
+        {projectGroups.length === 0 ? (
+          <EmptyState
+            icon={<FolderTree />}
+            title="Not in any project group"
+            description="Add the project to a project group, then grant that group to user groups."
+            size="sm"
+          />
+        ) : (
+          <ul className="m-0 list-none divide-y divide-border p-0">
+            {projectGroups.map((group) => (
+              <li
+                key={group.group_hash}
+                className="flex items-center gap-3 px-5 py-2.5"
+              >
+                <FolderTree
+                  className="h-4 w-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to={`${ROUTES.PROJECT_GROUPS}/${encodeURIComponent(group.group_hash)}`}
+                    className="block truncate text-[13px] font-medium text-foreground no-underline hover:underline"
+                  >
+                    {group.group_name}
+                  </Link>
+                  {group.description && (
+                    <p className="m-0 truncate text-xs text-muted-foreground">
+                      {group.description}
+                    </p>
+                  )}
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setWorkflowCollapsed(!workflowCollapsed)}
-                  className="h-7 px-2"
+                  onClick={() => setRemoving(group)}
+                  disabled={membership.pending === group.group_hash}
+                  aria-label={`Remove from ${group.group_name}`}
                 >
-                  {workflowCollapsed ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronUp className="h-4 w-4" />
-                  )}
+                  <Trash2 aria-hidden="true" />
                 </Button>
-              )}
-            </div>
-            {!workflowCollapsed && (
-              <Progress
-                value={workflow.completionPercentage}
-                variant={workflow.isComplete ? 'success' : workflow.completionPercentage > 50 ? 'primary' : 'warning'}
-                size="sm"
-                showLabel
-                className="mt-2"
-              />
-            )}
-          </CardHeader>
-          {!workflowCollapsed && (
-            <CardContent className="pt-0">
-              <div className="space-y-3">
-                {workflow.steps.map((step) => (
-                  <div
-                    key={step.id}
-                    className={`flex items-start gap-3 rounded-lg p-3 transition-colors ${
-                      step.isComplete ? 'bg-success/5' : 'bg-muted/20'
-                    }`}
-                  >
-                    <div className="mt-0.5 flex-shrink-0">
-                      {step.isComplete ? (
-                        <CheckCircle2 className="h-5 w-5 text-success" />
-                      ) : step.isUnknown ? (
-                        <AlertCircle className="h-5 w-5 text-destructive" />
-                      ) : step.cta ? (
-                        <Circle className="h-5 w-5 text-muted-foreground" />
-                      ) : (
-                        <AlertCircle className="h-5 w-5 text-warning" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-sm font-medium ${
-                            step.isComplete ? 'text-success-foreground' : ''
-                          }`}
-                        >
-                          {step.label}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {step.description}
-                      </p>
-                      {step.cta && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-2 h-7 text-xs"
-                          onClick={() =>
-                            handleWorkflowCta(step.cta!.action, step.cta!.target)
-                          }
-                        >
-                          <Plus className="h-3 w-3 mr-1" />
-                          {step.cta.label}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          )}
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="pt-4">
-            <button
-              onClick={() => setWorkflowCollapsed(false)}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full"
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
+      <Panel
+        title="User groups with access"
+        description={
+          userGroups.isLoading
+            ? 'Granted one of the project groups above. Manage grants and members on each user group.'
+            : `${formatNumber(userGroups.total)} granted one of the project groups above. Manage grants and members on each user group.`
+        }
+        padding="none"
+      >
+        {userGroups.error && userGroups.userGroups.length === 0 ? (
+          <div
+            className="flex flex-col items-center gap-3 px-5 py-8 text-center"
+            role="alert"
+          >
+            <p className="m-0 text-[13px] text-muted-foreground">
+              User groups could not be loaded. {userGroups.error}
+            </p>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => void userGroups.refetch()}
+              disabled={userGroups.isRefreshing}
             >
-              <CheckCircle2 className="h-4 w-4 text-success" />
-              <span>Access chain complete — all steps done</span>
-              <ChevronDown className="h-3 w-3 ml-auto" />
-            </button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Project Groups Section - Manageable */}
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2">
-              <FolderTree className="h-5 w-5" />
-              Project Groups ({assignedProjectGroups.length})
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Project groups this project belongs to. Add to a project group to grant access to user groups.
-            </p>
+              Try again
+            </Button>
           </div>
-          <Button onClick={() => setShowAddModal(true)} size="sm">
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Add to Group
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {assignedProjectGroups.length === 0 ? (
-            <EmptyState
-              icon={<FolderTree className="h-10 w-10" aria-hidden="true" />}
-              title="Not in Any Project Groups"
-              description="This project hasn't been added to any project groups yet. Add it to a project group to manage access."
-              size="sm"
-              action={
-                <Button onClick={() => setShowAddModal(true)} variant="outline" size="sm">
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                  Add to Project Group
-                </Button>
-              }
-            />
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {assignedProjectGroups.map(pg => (
-                <div 
-                  key={pg.group_hash} 
-                  className="group flex items-start justify-between gap-3 p-4 rounded-lg border bg-card hover:bg-accent/30 transition-colors"
-                >
-                  <div className="flex items-start gap-3 min-w-0 flex-1">
-                    <div className="p-2 rounded-md bg-primary/10 flex-shrink-0">
-                      <FolderTree className="h-4 w-4 text-primary" aria-hidden="true" />
-                    </div>
-                    <div className="min-w-0 space-y-1">
-                      <Link
-                        to={`${ROUTES.PROJECT_GROUPS}/${pg.group_hash}`}
-                        className="font-medium text-sm hover:underline flex items-center gap-1"
-                      >
-                        <span className="truncate">{pg.group_name}</span>
-                        <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </Link>
-                      {pg.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {pg.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setConfirmRemove(pg)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                    aria-label={`Remove from ${pg.group_name}`}
-                  >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* User Groups Section - Read Only */}
-      <Card>
-        <CardHeader>
-          <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              User Groups with Access ({totalItems})
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              User groups that can access this project through the project groups above.
-            </p>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {userGroupsError ? (
-            <ErrorState
-              icon={<Users size={24} />}
-              title="Failed to load user groups"
-              message={userGroupsError}
-              onRetry={() => fetchUserGroups(currentPage)}
-              retryLabel="Retry"
-              variant="inline"
-              size="sm"
-            />
-          ) : isLoadingUserGroups ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <Spinner size="lg" />
-              <p className="text-sm text-muted-foreground mt-2">Loading user groups...</p>
-            </div>
-          ) : userGroups.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-10 w-10" aria-hidden="true" />}
-              title="No User Groups Have Access"
-              description={
-                assignedProjectGroups.length === 0
-                  ? "Add this project to a project group first, then grant user groups access to that project group."
-                  : "Grant user groups access to the project groups above to give them access to this project."
-              }
-              size="sm"
-              action={
-                assignedProjectGroups.length > 0 && (
-                  <Link to={ROUTES.GROUPS}>
-                    <Button variant="outline" size="sm">
-                      Manage User Groups
-                    </Button>
-                  </Link>
+        ) : (
+          <div
+            className={cn(
+              'px-5 pb-3 transition-opacity',
+              userGroups.isRefreshing && 'opacity-70'
+            )}
+          >
+            <DataView<UserGroup>
+              data={pageRows}
+              columns={columns}
+              keyExtractor={(group) => group.group_hash}
+              onRowClick={(group) =>
+                void navigate(
+                  `${ROUTES.GROUPS}/${encodeURIComponent(group.group_hash)}`
                 )
               }
+              isLoading={userGroups.isLoading}
+              skeletonRows={4}
+              emptyIcon={<UsersRound className="h-8 w-8" />}
+              emptyMessage="No user group can reach this project"
+              emptyDescription={
+                projectGroups.length === 0
+                  ? 'Add the project to a project group first.'
+                  : 'Grant one of the project groups above to a user group.'
+              }
+              emptyAction={
+                projectGroups.length > 0 ? (
+                  <Button asChild variant="secondary" size="sm">
+                    <Link to={ROUTES.GROUPS}>Open user groups</Link>
+                  </Button>
+                ) : undefined
+              }
+              caption="User groups with access"
             />
-          ) : (
-            <>
-              <DataView
-                data={userGroups}
-                columns={userGroupColumns}
-                viewMode="table"
-                showViewToggle={false}
-                isLoading={isLoadingUserGroups}
-                emptyMessage="No user groups found"
+            {userGroups.userGroups.length > PAGE_SIZE && (
+              <TablePager
+                offset={offset}
+                limit={PAGE_SIZE}
+                pageCount={pageRows.length}
+                total={userGroups.userGroups.length}
+                onOffsetChange={setOffset}
+                itemLabel="user groups"
               />
-              
-              {totalPages > 1 && (
-                <div className="mt-4">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                    totalItems={totalItems}
-                    itemsPerPage={10}
-                  />
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Add to Project Group Modal */}
-      <Dialog open={showAddModal} onOpenChange={(open) => !isAssigning && !open && setShowAddModal(false)}>
-        <DialogContent size="lg">
-          <DialogHeader>
-            <DialogTitle>Add to Project Group</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Select project groups to add this project to. User groups with access to the selected 
-              project groups will be able to access this project.
-            </p>
-
-            {isLoadingProjectGroups ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner size="lg" />
-              </div>
-            ) : availableProjectGroups.length === 0 ? (
-              <EmptyState
-                icon={<FolderTree className="h-10 w-10" aria-hidden="true" />}
-                title="No Available Project Groups"
-                description="This project is already in all project groups, or no project groups exist yet."
-                size="sm"
-                action={
-                  <Link to={ROUTES.PROJECT_GROUPS_CREATE}>
-                    <Button variant="outline" size="sm">
-                      <Plus className="h-4 w-4" aria-hidden="true" />
-                      Create Project Group
-                    </Button>
-                  </Link>
-                }
-              />
-            ) : (
-              <>
-                <div className="flex items-center justify-between">
-                  <Badge variant="info">
-                    {selectedGroups.length} selected
-                  </Badge>
-                </div>
-
-                <div className="max-h-[400px] overflow-y-auto border rounded-md divide-y">
-                  {availableProjectGroups.map(pg => (
-                    <div
-                      key={pg.group_hash}
-                      className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
-                        selectedGroups.includes(pg.group_hash)
-                          ? 'bg-primary/5'
-                          : 'hover:bg-accent/50'
-                      }`}
-                      onClick={() => toggleGroupSelection(pg.group_hash)}
-                    >
-                      <Checkbox
-                        checked={selectedGroups.includes(pg.group_hash)}
-                        onCheckedChange={() => toggleGroupSelection(pg.group_hash)}
-                      />
-                      <FolderTree className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm">{pg.group_name}</h4>
-                        {pg.description && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {pg.description}
-                          </p>
-                        )}
-                      </div>
-                      <Badge variant="secondary" className="flex-shrink-0">
-                        {pg.project_count} project{pg.project_count !== 1 ? 's' : ''}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </>
+            )}
+            {userGroups.total > userGroups.userGroups.length && (
+              <p className="m-0 pt-2 text-xs text-muted-foreground">
+                Showing the first {formatNumber(userGroups.userGroups.length)}{' '}
+                of {formatNumber(userGroups.total)}.
+              </p>
             )}
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowAddModal(false)}
-              disabled={isAssigning}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAssignToGroups}
-              disabled={selectedGroups.length === 0 || isAssigning}
-              loading={isAssigning}
-            >
-              Add to Group{selectedGroups.length > 1 ? 's' : ''} {selectedGroups.length > 0 ? `(${selectedGroups.length})` : ''}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+      </Panel>
 
-      {/* Remove from Project Group Confirmation */}
-      {confirmRemove && (
-        <ConfirmDialog
-          isOpen={true}
-          title="Remove from Project Group"
-          message={`Are you sure you want to remove this project from "${confirmRemove.group_name}"? User groups that only have access through this project group will lose access to this project.`}
-          confirmText="Remove"
-          cancelText="Cancel"
-          onConfirm={handleRemoveFromGroup}
-          onClose={() => setConfirmRemove(null)}
-          isLoading={isRemoving}
-        />
-      )}
+      <AddToProjectGroupsDialog
+        open={adding}
+        onOpenChange={setAdding}
+        projectName={projectName}
+        assignedGroupHashes={projectGroups.map((group) => group.group_hash)}
+        onAdd={handleAdd}
+        isAdding={membership.pending === 'bulk'}
+      />
+
+      <ConfirmDialog
+        isOpen={removing !== null}
+        onClose={() => setRemoving(null)}
+        onConfirm={() => void confirmRemove()}
+        variant="warning"
+        title="Remove from project group?"
+        message={
+          removing ? (
+            <>
+              User groups that reach {projectName} only through{' '}
+              <span className="font-mono">{removing.group_name}</span> lose
+              access, and their users&apos; sessions for this project are
+              revoked.
+              {isDefaultProjectGroup &&
+                ' This looks like the project’s default group: its admin_, user_ and readonly_ groups reach the project through it, so its administrators would lose admin scope.'}
+            </>
+          ) : (
+            ''
+          )
+        }
+        confirmText="Remove"
+        isLoading={
+          removing !== null && membership.pending === removing.group_hash
+        }
+      />
     </div>
   );
-}; 
+}
+
+export default ProjectGroupsTab;

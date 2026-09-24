@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import type { ReactNode } from 'react';
 
 export interface Toast {
@@ -26,16 +33,16 @@ interface ToastProviderProps {
 
 /**
  * ToastProvider Component
- * 
+ *
  * Manages a queue of toast notifications with automatic dismissal.
  * Supports up to maxToasts visible at once (default: 3).
- * 
+ *
  * Features:
  * - Auto-dismiss after duration
  * - Pause on hover
  * - Stack from top-right
  * - Queue management
- * 
+ *
  * @example
  * ```tsx
  * <ToastProvider maxToasts={3}>
@@ -52,7 +59,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
   // Auto-dismiss timers live in a ref, not state: keeping them out of the
   // render cycle avoids re-running effects (and cancelling other toasts'
   // timers) every time the set of pending timers changes.
-  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map()
+  );
 
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
@@ -115,25 +124,27 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
     clearAllToasts,
   };
 
-  return <ToastContext.Provider value={value}>{children}</ToastContext.Provider>;
+  return (
+    <ToastContext.Provider value={value}>{children}</ToastContext.Provider>
+  );
 };
 
 /**
  * useToast Hook
- * 
+ *
  * Access the toast notification system.
- * 
+ *
  * @example
  * ```tsx
  * const { addToast, removeToast } = useToast();
- * 
+ *
  * // Success notification
  * addToast({
  *   message: 'Project created successfully',
  *   variant: 'success',
  *   duration: 3000,
  * });
- * 
+ *
  * // Error notification
  * addToast({
  *   message: 'Failed to save changes',
