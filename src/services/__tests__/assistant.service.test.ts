@@ -169,6 +169,24 @@ describe('assistant WebSocket transport', () => {
     await vi.advanceTimersByTimeAsync(31000);
     expect(Socket.all).toHaveLength(1);
   });
+  it('reports actionable setup guidance when the server rejects the WebSocket handshake', () => {
+    const failure = vi.fn<(error: Error) => void>();
+    connection.onError(failure);
+    connection.start();
+    Socket.all[0].close(1006);
+    expect(failure).toHaveBeenCalledOnce();
+    expect(failure.mock.calls[0]?.[0].message).toContain(
+      'API server supports WebSockets'
+    );
+  });
+  it('allows an explicit connection retry after a rejection without replaying commands', () => {
+    connection.start();
+    Socket.all[0].open();
+    Socket.all[0].close(4403);
+    connection.retry();
+    expect(Socket.all).toHaveLength(2);
+    expect(Socket.all[1].sent).toEqual([]);
+  });
   it('sends a heartbeat while the panel is idle', async () => {
     connection.start();
     Socket.all[0].open();

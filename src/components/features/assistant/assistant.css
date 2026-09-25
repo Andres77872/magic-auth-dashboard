@@ -1,6 +1,46 @@
 .assistant-panel {
   isolation: isolate;
 }
+.assistant-panel .assistant-spin {
+  animation: assistant-rotate 0.9s linear infinite;
+}
+@keyframes assistant-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Trailing "…" that fills in, so a long step still reads as alive. */
+.assistant-ellipsis::after {
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  content: '…';
+  animation: assistant-ellipsis 1.4s steps(4, end) infinite;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+@keyframes assistant-ellipsis {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 1.2em;
+  }
+}
+/* Phones: the floating window becomes a full-screen sheet. */
+@media (max-width: 640px) {
+  .assistant-panel {
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+  }
+  .assistant-panel .assistant-resize,
+  .assistant-panel .assistant-maximize {
+    display: none;
+  }
+}
 .assistant-panel button:focus-visible,
 .assistant-panel select:focus-visible,
 .assistant-panel summary:focus-visible {
@@ -127,7 +167,9 @@
   .analytics-assistant-stream-cursor {
     animation: none;
   }
-  .assistant-panel .animate-pulse {
+  .assistant-panel .animate-pulse,
+  .assistant-panel .assistant-spin,
+  .assistant-ellipsis::after {
     animation: none;
   }
 }

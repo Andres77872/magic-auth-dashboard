@@ -34,7 +34,7 @@ export function useAssistant(
   loadOlderSessions: () => Promise<void>;
   loadOlderMessages: () => Promise<void>;
   hasOlderSessions: boolean;
-  deleteSession: () => Promise<void>;
+  deleteSession: () => Promise<boolean>;
   send: (message: string, profileId?: string) => Promise<boolean>;
   cancel: () => Promise<void>;
   resume: (
@@ -44,8 +44,9 @@ export function useAssistant(
   ) => Promise<void>;
   updateSettings: (settings: Partial<AssistantSettings>) => Promise<boolean>;
   saveProfile: (profile: AssistantProfileInput) => Promise<boolean>;
-  deleteProfile: (id: string) => Promise<void>;
+  deleteProfile: (id: string) => Promise<boolean>;
   dismissError: () => void;
+  retryConnection: () => void;
 } {
   const [connectionState, setConnectionState] =
     useState<AssistantConnectionState>('connecting');
@@ -378,10 +379,10 @@ export function useAssistant(
       });
     });
   }, [action, request]);
-  const deleteSession = useCallback(async (): Promise<void> => {
-    await action(async () => {
+  const deleteSession = useCallback(async (): Promise<boolean> => {
+    const result = await action(async () => {
       const id = selected.current;
-      if (!id) return;
+      if (!id) return false;
       await request('sessions.unsubscribe', { session_id: id });
       subscribed.current = null;
       await request('sessions.delete', { session_id: id });
@@ -400,7 +401,9 @@ export function useAssistant(
       await reload();
       const next = bootstrapRef.current?.sessions[0];
       if (next) await loadSession(next.id);
+      return true;
     });
+    return result === true;
   }, [action, loadSession, reload, request, storageKey]);
   const send = useCallback(
     async (message: string, profileId?: string): Promise<boolean> => {
@@ -480,12 +483,12 @@ export function useAssistant(
     [action, reload, request]
   );
   const deleteProfile = useCallback(
-    async (id: string): Promise<void> => {
-      await action(async () => {
+    async (id: string): Promise<boolean> =>
+      (await action(async () => {
         await request('profiles.delete', { id });
         await reload();
-      });
-    },
+        return true;
+      })) === true,
     [action, reload, request]
   );
   return {
@@ -508,5 +511,9 @@ export function useAssistant(
     saveProfile,
     deleteProfile,
     dismissError: () => setError(null),
+    retryConnection: () => {
+      setError(null);
+      connection.current?.retry();
+    },
   };
 }

@@ -22,11 +22,11 @@ export function mergeAssistantEvents(
     (left, right) => left.seq - right.seq
   );
 }
+export function isActiveStatus(status: string): boolean {
+  return ['queued', 'running', 'cancelling', 'waiting_input'].includes(status);
+}
 export function activeRun(run: AssistantRun | null): boolean {
-  return (
-    !!run &&
-    ['queued', 'running', 'cancelling', 'waiting_input'].includes(run.status)
-  );
+  return !!run && isActiveStatus(run.status);
 }
 export function transcript(
   snapshot: AssistantSnapshot | null,

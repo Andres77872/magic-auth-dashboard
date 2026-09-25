@@ -95,9 +95,11 @@ export class AssistantConnection {
     if (this.stopped || this.socket) return;
     this.setState(this.attempt ? 'reconnecting' : 'connecting');
     const socket = new WebSocket(this.url);
+    let opened = false;
     this.socket = socket;
     socket.onopen = () => {
       if (this.socket !== socket || this.stopped) return;
+      opened = true;
       this.attempt = 0;
       this.setState('connected');
       clearInterval(this.heartbeatTimer);
@@ -170,10 +172,25 @@ export class AssistantConnection {
       );
       if (this.stopped) return;
       if (event.code === 4403 || event.code === 1008) {
+        this.errorListeners.forEach((listener) =>
+          listener(
+            new Error(
+              'The assistant connection was rejected. Check your root sign-in and the dashboard origin allowed by the API server.'
+            )
+          )
+        );
         this.stopped = true;
         this.setState('disconnected');
         return;
       }
+      if (!opened)
+        this.errorListeners.forEach((listener) =>
+          listener(
+            new Error(
+              'Unable to open the assistant connection. Check that the API server supports WebSockets and that any proxy allows connection upgrades.'
+            )
+          )
+        );
       this.setState('reconnecting');
       const backoff =
         event.code === 4401 ? this.authFailures++ : this.attempt++;
@@ -239,17 +256,23 @@ export class AssistantConnection {
     });
     this.pending.clear();
   }
-  reconnect(): void {
+  reconnect(reason = 'Session credentials refreshed'): void {
     if (this.stopped) return;
     clearTimeout(this.reconnectTimer);
     clearInterval(this.heartbeatTimer);
     const socket = this.socket;
     this.socket = null;
-    socket?.close(1000, 'Session credentials refreshed');
+    socket?.close(1000, reason);
     this.rejectPending(
-      'Session credentials refreshed. The connection is restoring; inspect the session before retrying a change.'
+      `${reason}. The connection is restoring; inspect the session before retrying a change.`
     );
     this.connect();
+  }
+  retry(): void {
+    this.stopped = false;
+    this.attempt = 0;
+    this.authFailures = 0;
+    this.reconnect('Connection retry requested');
   }
   stop(): void {
     this.stopped = true;

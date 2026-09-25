@@ -47,6 +47,13 @@ The client reconnects using an atomic snapshot and durable event cursor. An inte
 never automatically resends a command. Stop requests cancel a run explicitly. Server process failures
 are surfaced for review rather than replaying potentially completed changes.
 
+While a run is active the chat shows a live progress card (current step, plan checklist, tool steps,
+elapsed time and tokens) and the send button becomes **Stop**. Approvals show the tool's method, path
+and arguments, and can be approved or rejected with an optional reason in one step. Failed runs
+offer Retry, Edit message, and a shortcut to connection settings. The launcher shows **Working**,
+**Needs input**, or **New reply** while the panel is closed. The transcript stays pinned to the
+latest output until you scroll up; a **Jump to latest** button re-pins it.
+
 The assistant uses the cookie-authenticated `/admin/assistant/ws` endpoint derived from
 `VITE_API_BASE_URL`. The deployment must forward WebSocket upgrades, allow the dashboard's exact
 origin, and install the backend's `requirements-assistant.txt`. Local Ollama must be reachable from
