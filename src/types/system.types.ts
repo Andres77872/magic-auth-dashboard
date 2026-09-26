@@ -15,6 +15,11 @@ export interface SystemStatistics {
   authentication_type: string;
 }
 
+/** `GET /system/ping`: public liveness probe with the server's UTC time. */
+export interface PingResponse extends ApiResponse {
+  timestamp: string;
+}
+
 export interface SystemInfoResponse extends ApiResponse {
   system: SystemInfo;
   statistics: SystemStatistics;

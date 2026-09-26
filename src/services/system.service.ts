@@ -1,5 +1,6 @@
 import { apiClient } from './api.client';
 import type {
+  PingResponse,
   SystemInfoResponse,
   SystemHealthResponse,
 } from '@/types/system.types';
@@ -49,6 +50,20 @@ class SystemService {
       );
     }
     return statistics;
+  }
+
+  /**
+   * GET /system/ping — public liveness probe. Needs no session and never
+   * touches the database or Redis, so the signed-out overview page can use it.
+   */
+  async ping(): Promise<PingResponse> {
+    const response = (await apiClient.get<PingResponse>(
+      '/system/ping'
+    )) as PingResponse;
+    if (response?.success !== true || typeof response.timestamp !== 'string') {
+      throw new Error('The API ping response was not in the expected format.');
+    }
+    return response;
   }
 
   /** GET /system/info */

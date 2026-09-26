@@ -3,6 +3,7 @@ export const ROUTES = {
   // Public Routes
   LOGIN: '/login',
   UNAUTHORIZED: '/unauthorized',
+  ABOUT: '/about', // public overview; also shown at `/` while signed out
 
   // Landing / Home (canonical root)
   HOME: '/',

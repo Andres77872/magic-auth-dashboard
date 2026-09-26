@@ -4,6 +4,9 @@ Admin console for the [Magic Auth](https://github.com/Andres77872/api.auth) plat
 operators use it to manage users, user groups, projects, project groups, global roles, permission
 groups, API keys, billing, OAuth connections and the audit trail. Consumers never sign in here.
 
+Signed-out visitors to `/` see a public overview of the platform (also at `/about`) with a live API
+status check; sign-in lives at `/login`.
+
 ## Stack
 
 - **React 19** + **TypeScript 6** (strict)
@@ -109,7 +112,7 @@ src/
 │   └── ui/            # Radix/shadcn primitives
 ├── contexts/          # Auth, theme, toast, breadcrumb label
 ├── hooks/             # Data hooks (useAsyncData, useTabParam, domain hooks)
-├── pages/             # Route-level pages
+├── pages/             # Route-level pages (public overview in pages/landing)
 ├── services/          # api.auth clients (request.ts helpers over api.client.ts)
 ├── styles/            # Tailwind 4 theme + globals
 ├── types/             # API contract types

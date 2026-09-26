@@ -12,6 +12,7 @@ vi.mock('@/pages/auth', () => ({
   LoginPage: stub('login'),
   UnauthorizedPage: stub('unauthorized'),
 }));
+vi.mock('@/pages/landing', () => ({ LandingPage: stub('landing') }));
 vi.mock('@/pages/dashboard', () => ({
   DashboardOverview: stub('overview'),
   ProfilePage: stub('profile'),
@@ -208,8 +209,42 @@ describe('AppRoutes', () => {
     });
   });
 
+  describe('public overview', () => {
+    beforeEach(() => {
+      authState.isAuthenticated = false;
+      authState.userType = null;
+    });
+
+    it('shows signed-out visitors the overview at / instead of redirecting', async () => {
+      renderAt('/');
+      expect(await page()).toBe('landing');
+      expect(location()).toBe('/');
+      expect(screen.queryByTestId('shell')).not.toBeInTheDocument();
+    });
+
+    it('waits for session validation before choosing between overview and console', () => {
+      authState.isLoading = true;
+      renderAt('/');
+      expect(screen.queryByTestId('page')).not.toBeInTheDocument();
+      expect(location()).toBe('/');
+    });
+
+    it('keeps /about reachable while signed in, outside the shell', async () => {
+      authState.isAuthenticated = true;
+      authState.userType = UserType.ADMIN;
+      renderAt('/about');
+      expect(await page()).toBe('landing');
+      expect(screen.queryByTestId('shell')).not.toBeInTheDocument();
+    });
+
+    it('serves /about to signed-out visitors too', async () => {
+      renderAt('/about');
+      expect(await page()).toBe('landing');
+    });
+  });
+
   describe('guards', () => {
-    it('sends signed-out visitors to sign in', () => {
+    it('sends signed-out visitors on console URLs to sign in', () => {
       authState.isAuthenticated = false;
       authState.userType = null;
       renderAt('/users');

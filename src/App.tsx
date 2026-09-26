@@ -4,6 +4,7 @@ import {
   Navigate,
   Route,
   Routes,
+  useLocation,
   useParams,
   useSearchParams,
 } from 'react-router-dom';
@@ -27,6 +28,8 @@ function lazyPage<K extends string, M extends Record<K, React.ComponentType>>(
 ): React.LazyExoticComponent<React.ComponentType> {
   return lazy(() => load().then((module) => ({ default: module[name] })));
 }
+
+const LandingPage = lazyPage(() => import('@/pages/landing'), 'LandingPage');
 
 const AssistantPanel = lazy(
   () => import('@/components/features/assistant/AssistantPanel')
@@ -174,6 +177,39 @@ const LEGACY_REDIRECTS: Array<[path: string, to: string]> = [
   ['dashboard/settings', ROUTES.SETTINGS],
 ];
 
+/** Public pages render outside the shell, so they bring their own Suspense boundary. */
+function PublicLazyPage({
+  page: Page,
+}: {
+  page: React.ComponentType;
+}): React.JSX.Element {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <Page />
+    </Suspense>
+  );
+}
+
+/**
+ * The console shell. Signed-out visitors to `/` see the public overview page
+ * instead of being sent to sign in; every other console URL (and `/` once
+ * signed in) goes through AdminRoute.
+ */
+function ConsoleEntry(): React.JSX.Element {
+  const { isAuthenticated, isLoading } = useAuth();
+  const { pathname } = useLocation();
+
+  if (!isLoading && !isAuthenticated && pathname === ROUTES.HOME) {
+    return <PublicLazyPage page={LandingPage} />;
+  }
+
+  return (
+    <AdminRoute>
+      <DashboardLayout />
+    </AdminRoute>
+  );
+}
+
 export function AppRoutes(): React.JSX.Element {
   return (
     <Routes>
@@ -186,15 +222,14 @@ export function AppRoutes(): React.JSX.Element {
         }
       />
       <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
+      {/* The public overview stays reachable while signed in. */}
+      <Route
+        path={ROUTES.ABOUT}
+        element={<PublicLazyPage page={LandingPage} />}
+      />
 
       {/* Everything below requires a root or admin session and renders inside the app shell. */}
-      <Route
-        element={
-          <AdminRoute>
-            <DashboardLayout />
-          </AdminRoute>
-        }
-      >
+      <Route element={<ConsoleEntry />}>
         <Route path="/" element={<DashboardOverview />} />
 
         {/* Access management */}

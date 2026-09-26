@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   BookOpen,
   FolderKanban,
@@ -9,6 +10,7 @@ import {
 import { SignInForm } from '@/components/auth/SignInForm';
 import { useTheme } from '@/contexts/ThemeContext';
 import { API_CONFIG } from '@/utils/constants';
+import { ROUTES } from '@/utils/routes';
 
 const HIGHLIGHTS = [
   { icon: Users, text: 'Users, user groups and the projects they can reach' },
@@ -27,14 +29,17 @@ export function LoginPage(): React.JSX.Element {
   return (
     <div className="grid min-h-screen grid-cols-1 bg-background lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <aside className="relative hidden flex-col justify-between border-r border-border bg-card px-12 py-10 lg:flex">
-        <div className="flex items-center gap-2.5">
+        <Link
+          to={ROUTES.HOME}
+          className="flex w-fit items-center gap-2.5 no-underline"
+        >
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
             <ShieldCheck className="h-[18px] w-[18px]" aria-hidden="true" />
           </span>
           <span className="text-[15px] font-semibold tracking-[-0.01em] text-foreground">
             Magic Auth
           </span>
-        </div>
+        </Link>
 
         <div className="max-w-md">
           <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.07em] text-muted-foreground">
@@ -71,14 +76,17 @@ export function LoginPage(): React.JSX.Element {
 
       <main className="flex flex-col px-6 py-8 sm:px-10">
         <div className="flex items-center justify-between lg:justify-end">
-          <span className="flex items-center gap-2 lg:hidden">
+          <Link
+            to={ROUTES.HOME}
+            className="flex items-center gap-2 no-underline lg:hidden"
+          >
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <ShieldCheck className="h-4 w-4" aria-hidden="true" />
             </span>
             <span className="text-sm font-semibold text-foreground">
               Magic Auth
             </span>
-          </span>
+          </Link>
           <button
             type="button"
             onClick={toggleTheme}

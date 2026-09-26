@@ -54,4 +54,5 @@ export { useUserGroupsWithAccess } from './useUserGroupsWithAccess';
 export { useBackNavigation } from './useBackNavigation';
 export { useTabParam } from './useTabParam';
 export { useAsyncData } from './useAsyncData';
+export { useApiStatus } from './useApiStatus';
 export { useMediaQuery } from './useMediaQuery';
