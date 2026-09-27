@@ -124,6 +124,9 @@ src/
 - [docs/UI_CONVENTIONS.md](docs/UI_CONVENTIONS.md): how pages, primitives and the data layer fit together.
 - [docs/README.md](docs/README.md): documentation index, API usage guides and archived material.
 - [AGENTS.md](AGENTS.md): working agreement for contributors and coding agents.
+- [public/llms.txt](public/llms.txt): product overview for LLMs and agents in the [llms.txt](https://llmstxt.org)
+  format, served at `/llms.txt`. Update it when a console area changes;
+  `src/routes/__tests__/llms-txt.test.ts` fails when a sidebar page is missing from it.
 
 ---
 

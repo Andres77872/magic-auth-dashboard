@@ -1,0 +1,107 @@
+# Magic Auth Dashboard
+
+> Magic Auth Dashboard is the browser-based admin console for Magic Auth, a multi-project authentication and authorization platform whose backend is the api.auth service. Root and admin operators use it to manage users, user groups, projects, project groups, roles and permissions, API keys, billing, OAuth sign-in providers, transactional email, Patreon entitlements, and the audit trail. End users of the products built on Magic Auth never sign in here.
+
+Before using this file:
+
+- The console runs at https://auth-ui.arz.ai and talks to the api.auth API at https://auth-v2.arz.ai.
+- This file describes the product and its features. For API endpoints, request formats, and curl examples, read the [api.auth llms.txt](https://auth-v2.arz.ai/llms.txt). For exact contracts, read the [OpenAPI document](https://auth-v2.arz.ai/openapi.json).
+- The console is a single-page app. Its pages render with JavaScript, and every page except the public overview needs a root or admin session, so fetching them returns an empty HTML shell. Use this file and the Markdown it links to instead.
+- The console has no backend of its own. It calls the api.auth API directly from the browser, so everything it does can also be done through the API. The API is the security boundary: the console hides actions a user cannot perform, but the API enforces the rules.
+- It is not a sign-in page for end users and not an SDK. Products sign their users in through the API, directly or with the magic_auth_client Python client.
+
+## The platform
+
+- **Sign-in and sessions**: root and admin operators sign in to the platform; everyone else signs in to a project. Access tokens last 15 minutes and refresh tokens rotate on every use.
+- **OAuth sign-in**: Google, GitHub, Discord, Microsoft, and generic OIDC. Provider connections are bound per project, use PKCE, a nonce, and single-use state, and keep client secrets encrypted and write-only.
+- **Roles and permissions**: global roles bundle permission groups, and each project keeps a catalog of suggested roles and permission groups. The API can explain where every effective permission came from.
+- **API keys**: project-scoped keys for server-to-server calls. The secret is shown once and stored only as a peppered HMAC-SHA-256 digest. Expired keys are switched off automatically.
+- **Billing**: Stripe billing groups, each with its own encrypted credentials, a product catalog, and signature-checked webhooks.
+- **Transactional email**: versioned templates with preview, test sends, and rollback, delivered through a durable outbox.
+- **Patreon entitlements**: linked Patreon memberships map to internal plans and tiers, kept current by verified webhooks and a background sync worker.
+- **Audit trail**: request middleware and database triggers record activity and security events, which can be filtered and exported as CSV or JSON.
+
+## Who can use it
+
+- `root`: global administrators. They can use every page, including System, Email templates, Patreon, and Stripe credentials, and they are the only users who can create users (root accounts only), projects, and OAuth connections. Only root users get the AI assistant.
+- `admin`: platform and project administrators. They use the management console within the projects assigned to them, and the API enforces that scope.
+- `consumer`: regular users of the products. The console's sign-in rejects consumer accounts, and a consumer session that reaches the console is sent to `/unauthorized`, which points them to their project's own app.
+
+## Access model
+
+Two separate chains decide what a person can do:
+
+- **Reach**, which projects a person can sign in to: user → user group → project group → project.
+- **Rights**, what a person can do once inside: user or user group → global role → permission group → permission. Users and user groups can also receive permission groups directly.
+
+The console keeps these concepts separate: user groups, project groups, roles, and permission groups each have their own pages.
+
+## Public pages and sign-in
+
+- `/` for signed-out visitors, and `/about` at any time: a public overview of the platform (capabilities, access model, sessions, and stack) with a live API status check.
+- `/login`: sign in with a username or email and password. The page is for root and admin accounts only. "Remember me for 30 days" keeps the session for up to 30 days; otherwise it lasts up to 72 hours. There is no self-service password reset; a root administrator sends a reset link from the Users page.
+- `/unauthorized`: shown to consumers, and to admins who open a root-only page.
+
+## Console areas
+
+- **Overview** (`/`): headline counts (users, active sessions, projects, user groups), users by type with 30-day new and active counts, service health for the database, Redis, email pipeline, billing, and Patreon with items that need attention, recent activity, and a diagram of how access works.
+- **Users** (`/users`, `/users/:userHash`): search, filter by user type, include deactivated accounts, sort, and page through accounts. Bulk deactivate or delete (up to 50 users, confirmed by typing a phrase). Per user: edit details, change type, send a password reset, deactivate, delete, or delete permanently. The profile has Overview, Groups & projects, Roles & permissions (global role, direct permission groups, and effective permissions per project), and Activity tabs. Only root can change user types, delete permanently, or act on root accounts, and nobody can act on their own account.
+- **User groups** (`/groups`, `/groups/:groupHash`): create, edit, and delete groups. Manage members (one or many at a time), grant or revoke project groups, assign or remove permission groups, and see the projects the group reaches. Groups named `admin_...` are managed by root only.
+- **Project groups** (`/groups?tab=project-groups`, `/groups/project-groups/:groupHash`): bundles of projects. Add or remove projects, and see or revoke the user groups that have access.
+- **Projects** (`/projects`, `/projects/:projectHash`): every project with your own access to it. Root creates projects. A project has Overview (including its administrators, which only root can change), Members, Groups (the access chain), Sign-in (the project's OAuth providers: readiness, allowed redirect URIs and return origins, sign-in and account-linking policy, and the default user group for new accounts), Catalog (suggested roles and permission groups), and Settings (details and deletion) tabs. Members, Groups, Sign-in, and Settings are available to root and to the project's assigned admins.
+- **Roles & permissions** (`/permissions`): Roles, Permission groups, Permissions, and User group grants tabs. Create, edit, and delete each item in a side panel. A permission group's panel shows its permissions, roles, user groups, directly assigned users, and the projects that suggest it.
+- **API keys** (`/tokens`): filter by owner, project, and active state. Create a key for an owner and project with an optional expiry, or a delegation key for backend-to-backend delegated auth: a key scoped to the target service's project, shown with ready-made settings for the calling and target services. The secret is shown once. Keys show their fingerprint, last use, and expiry, and can be edited or revoked with a reason.
+- **Audit log** (`/audit`): the Activity tab is available to admins and root. API requests, Security events, and Statistics are root only. Filter by activity type, user, project, and time range (24 hours to 12 months), and export up to 10,000 rows as CSV or JSON. Statistics cover request volume, success rate, latency, status codes, and the busiest endpoints.
+- **Billing** (`/billing`, `/billing/:groupHash`): billing groups with their status, readiness, and capabilities (Checkout, Customer portal, provisioning, and webhooks). Attach projects (a project belongs to one billing group at most). Manage the catalog of subscription plans and credit packages, compare it with Stripe, and sync it. Connecting or replacing Stripe credentials is root only, and only fingerprints are ever shown.
+- **OAuth** (`/oauth`, `/oauth/:connectionHash`): sign-in provider connections, filtered by provider and status, with their configuration, assigned projects, and credentials (save, rotate, and test; secrets are write-only). Root creates, edits, activates, disables, and deletes connections. Admins can assign their projects to shared connections.
+- **System** (`/system`, root only): live service health refreshed every 15 seconds, cache contents, the email pipeline, billing and Patreon status, and the switch that turns OAuth sign-in on or off for the whole deployment.
+- **Email templates** (`/email-templates`, `/email-templates/:templateCode`, root only): create templates and edit their subject, HTML, and plain text with variables, desktop and mobile previews in light and dark mode, and sample data. Send a test to yourself, restore an earlier version, load the built-in default, and enable or disable a template.
+- **Patreon** (`/system/patreon`, root only): integration overview, members' entitlements, the tier map, sync jobs, and webhook deliveries. Resync one user, or run a full sweep.
+- **Profile** (`/profile`): your account, groups and projects, access, and effective permissions, read-only.
+- **Settings** (`/settings`): your session (when it ends, whether "remember me" is on, renew it now, or sign out of every tab), password change (which signs out your other sessions), and appearance (dark by default, light, or follow the system).
+
+## Everywhere in the console
+
+- Press ⌘K or Ctrl K to jump to any page or search users, projects, user groups, and project groups.
+- Filters and tabs are kept in the URL, so a view can be bookmarked or shared.
+- The interface is dark by default, with light and system themes.
+- If the session can no longer be renewed, the console warns that it is ending and offers to sign in again.
+
+## Session security
+
+- Tokens live only in HttpOnly, Secure, SameSite=Strict cookies. The console never keeps a token in JavaScript, browser storage, URLs, or the page.
+- Every refresh issues a new refresh token. Presenting a spent one after a short grace window revokes the whole session family.
+- Only one tab refreshes the session at a time, so parallel requests in several tabs never look like token reuse.
+- A request that fails because the access token expired is retried once after a refresh. Other automatic retries are limited to read-only requests.
+
+## Root AI assistant
+
+- Root users get a floating assistant. It connects to Ollama, OpenAI-compatible, or Anthropic-compatible models that support tool calling. Several saved connections can be enabled, with a default and a per-conversation choice. Provider keys stay on the server.
+- It can read users, groups, projects, security settings, audit data, analytics, billing, Patreon, email, and system state. Write access is off until a master switch and individual change tools are enabled. A warning shows while write access is on, and every proposed change must be approved or rejected.
+- While it works, a progress card shows the plan, each tool step, elapsed time, and tokens. A run can be stopped, retried, or restarted from an edited message.
+- Conversations and runs are stored by the API. They keep going when the panel is closed or the browser restarts, and the panel reconnects without ever resending a command.
+
+## Related projects
+
+- **api.auth**: the backend API (Python 3.12, FastAPI, MySQL 8, Redis 7, Stripe, Resend), with workers for the email outbox, Patreon sync, and billing sync.
+- **magic-auth-dashboard**: this console (React 19, TypeScript, Vite, Tailwind CSS 4, Radix UI).
+- **magic_auth_client**: an async, typed Python client that other services use to sign users in, validate sessions, refresh tokens, and check API keys.
+
+## Docs
+
+- [api.auth llms.txt](https://auth-v2.arz.ai/llms.txt): the API guide for LLMs, with credentials, request conventions, curl examples, error codes, and how to query the OpenAPI document.
+- [OpenAPI document](https://auth-v2.arz.ai/openapi.json): the authoritative contract for every endpoint the console calls.
+- [Dashboard README](https://raw.githubusercontent.com/Andres77872/magic-auth-dashboard/master/README.md): the console's stack, local setup, scripts, areas, and AI assistant.
+- [api.auth README](https://raw.githubusercontent.com/Andres77872/api.auth/master/README.md): the platform's features, access model, session contract, configuration, and deployment.
+- [Groups guide](https://auth-v2.arz.ai/documentation/USAGE/groups/README.md?format=raw): user groups, project groups, and how they grant project access.
+- [Permissions guide](https://auth-v2.arz.ai/documentation/USAGE/permissions/README.md?format=raw): permission groups and how effective permissions are resolved.
+- [Admin usage cases](https://auth-v2.arz.ai/documentation/USAGE/admin-usage-cases.md?format=raw): dashboard statistics, bulk operations, and cache management from the API side.
+
+## Optional
+
+- [magic-auth-dashboard on GitHub](https://github.com/Andres77872/magic-auth-dashboard): the console's source code.
+- [api.auth on GitHub](https://github.com/Andres77872/api.auth): the backend's source code.
+- [magic_auth_client README](https://raw.githubusercontent.com/Andres77872/magic_auth_client/master/README.md): the Python client that services use to call api.auth.
+- [Client authentication guide](https://auth-v2.arz.ai/documentation/USAGE/client-authentication-guide.md?format=raw): how browser, mobile, and backend apps sign their users in through api.auth.
+- [Swagger UI](https://auth-v2.arz.ai/docs): an interactive HTML view of the API.
+- [ReDoc](https://auth-v2.arz.ai/redoc): a grouped HTML reference of the API.
