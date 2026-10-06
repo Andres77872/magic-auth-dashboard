@@ -252,7 +252,7 @@ class PatreonService {
     const res = await apiClient.get<RawPatreonAdminStatusResponse>(
       `${BASE}/status`
     );
-    const data = res as unknown as RawPatreonAdminStatusResponse;
+    const data = res;
     return {
       success: bool(data.success),
       status: data.status || 'unknown',
@@ -285,13 +285,12 @@ class PatreonService {
         search: params.search,
       })
     );
-    const data = res as unknown as RawPatreonEntitlementListResponse;
+    const data = res;
     const items = (data.items ?? []).map(mapEntitlement);
     return { items, pagination: mapPagination(data.pagination, items.length) };
   }
 
   async getEntitlement(userHash: string): Promise<PatreonEntitlementDetail> {
-    // The admin endpoint returns the detail object directly (not ApiResponse-wrapped).
     const res = await apiClient.get<RawPatreonEntitlementDetail>(
       `${BASE}/entitlements/${encodeURIComponent(userHash)}`
     );
@@ -306,7 +305,7 @@ class PatreonService {
       `${BASE}/entitlements/${encodeURIComponent(userHash)}/history`,
       { limit }
     );
-    const data = res as unknown as RawPatreonHistoryResponse;
+    const data = res;
     return (data.items ?? []).map(mapHistoryItem);
   }
 
@@ -321,7 +320,7 @@ class PatreonService {
         active: params.active,
       })
     );
-    const data = res as unknown as RawPatreonTierMapResponse;
+    const data = res;
     const items = (data.items ?? []).map(mapTierMapEntry);
     return { items, pagination: mapPagination(data.pagination, items.length) };
   }
@@ -335,7 +334,7 @@ class PatreonService {
         status: params.status,
       })
     );
-    const data = res as unknown as RawPatreonSyncJobListResponse;
+    const data = res;
     const items = (data.items ?? []).map(mapSyncJob);
     return { items, pagination: mapPagination(data.pagination, items.length) };
   }
@@ -349,7 +348,7 @@ class PatreonService {
         status: params.status,
       })
     );
-    const data = res as unknown as RawPatreonWebhookListResponse;
+    const data = res;
     const items = (data.items ?? []).map(mapWebhookDelivery);
     return { items, pagination: mapPagination(data.pagination, items.length) };
   }
@@ -364,7 +363,7 @@ class PatreonService {
         force: request.force ?? false,
       }
     );
-    const data = res as unknown as RawPatreonResyncResponse;
+    const data = res;
     return {
       accepted: bool(data.accepted),
       status: String(data.status || (data.accepted ? 'queued' : 'unknown')),

@@ -242,9 +242,13 @@ describe('GroupListPage — project groups tab', () => {
   });
 });
 
-describe('ProjectGroupCreatePage (legacy /groups/project-groups/create)', () => {
+describe('Project group creation from the list', () => {
   it('opens the create dialog over the list and returns to the list when dismissed', async () => {
-    renderGroupRoutes('/groups/project-groups/create');
+    renderGroupRoutes('/groups?tab=project-groups');
+    await screen.findByText('mobile');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Create project group' })
+    );
 
     const dialog = await screen.findByRole('dialog');
     expect(
@@ -276,7 +280,11 @@ describe('ProjectGroupCreatePage (legacy /groups/project-groups/create)', () => 
       projectGroupService,
       'getUserGroupsForProjectGroup'
     ).mockReturnValue(new Promise(() => undefined));
-    renderGroupRoutes('/groups/project-groups/create');
+    renderGroupRoutes('/groups?tab=project-groups');
+    await screen.findByText('mobile');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Create project group' })
+    );
 
     const dialog = await screen.findByRole('dialog');
     fireEvent.change(within(dialog).getByLabelText('Name'), {

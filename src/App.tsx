@@ -1,13 +1,5 @@
 import React, { lazy, Suspense } from 'react';
-import {
-  BrowserRouter,
-  Navigate,
-  Route,
-  Routes,
-  useLocation,
-  useParams,
-  useSearchParams,
-} from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, ThemeProvider, ToastProvider } from '@/contexts';
 import { useAuth } from '@/hooks';
 import { ErrorBoundary, ToastContainer } from '@/components/common';
@@ -53,14 +45,6 @@ const GroupListPage = lazyPage(() => import('@/pages/groups'), 'GroupListPage');
 const GroupDetailsPage = lazyPage(
   () => import('@/pages/groups'),
   'GroupDetailsPage'
-);
-const ProjectGroupCreatePage = lazyPage(
-  () => import('@/pages/groups'),
-  'ProjectGroupCreatePage'
-);
-const ProjectGroupEditPage = lazyPage(
-  () => import('@/pages/groups'),
-  'ProjectGroupEditPage'
 );
 const ProjectGroupDetailsPage = lazyPage(
   () => import('@/pages/groups'),
@@ -112,70 +96,6 @@ const EmailTemplateEditorPage = lazyPage(
   () => import('@/pages/system'),
   'EmailTemplateEditorPage'
 );
-
-/**
- * Redirect an old `/dashboard/...` URL to its canonical flat route, keeping the
- * query string. `to` may reference route params as `:name`.
- */
-function LegacyRedirect({ to }: { to: string }): React.JSX.Element {
-  const params = useParams();
-  const [searchParams] = useSearchParams();
-  const target = to.replace(/:(\w+)/g, (_match, name: string) =>
-    encodeURIComponent(params[name] ?? '')
-  );
-  const query = searchParams.toString();
-  return (
-    <Navigate
-      to={
-        query ? `${target}${target.includes('?') ? '&' : '?'}${query}` : target
-      }
-      replace
-    />
-  );
-}
-
-/** `/roles?tab=groups|assignments` → the matching Roles & permissions tab. */
-function LegacyRolesPageRedirect(): React.JSX.Element {
-  const [searchParams] = useSearchParams();
-  const legacyTab = searchParams.get('tab');
-  const tab =
-    legacyTab === 'groups'
-      ? 'permission-groups'
-      : legacyTab === 'assignments'
-        ? 'assignments'
-        : 'roles';
-  return <Navigate to={`${ROUTES.PERMISSIONS}?tab=${tab}`} replace />;
-}
-
-const LEGACY_REDIRECTS: Array<[path: string, to: string]> = [
-  ['dashboard', '/'],
-  ['dashboard/overview', '/'],
-  ['dashboard/users', ROUTES.USERS],
-  ['dashboard/users/profile/:userHash', '/users/:userHash'],
-  ['dashboard/projects', ROUTES.PROJECTS],
-  ['dashboard/projects/details/:projectHash', '/projects/:projectHash'],
-  ['dashboard/groups', ROUTES.GROUPS],
-  ['dashboard/groups/project-groups', '/groups?tab=project-groups'],
-  ['dashboard/groups/project-groups/create', ROUTES.PROJECT_GROUPS_CREATE],
-  [
-    'dashboard/groups/project-groups/edit/:groupHash',
-    '/groups/project-groups/edit/:groupHash',
-  ],
-  [
-    'dashboard/groups/project-groups/:groupHash',
-    '/groups/project-groups/:groupHash',
-  ],
-  ['dashboard/groups/:groupHash', '/groups/:groupHash'],
-  ['dashboard/permissions/management', ROUTES.PERMISSIONS],
-  ['dashboard/permissions/global-roles', '/permissions?tab=roles'],
-  ['dashboard/permissions/role-management', ROUTES.ROLES],
-  ['dashboard/tokens', ROUTES.TOKENS],
-  ['dashboard/audit', ROUTES.AUDIT],
-  ['dashboard/system', ROUTES.SYSTEM],
-  ['dashboard/system/patreon', ROUTES.PATREON],
-  ['dashboard/profile', ROUTES.PROFILE],
-  ['dashboard/settings', ROUTES.SETTINGS],
-];
 
 /** Public pages render outside the shell, so they bring their own Suspense boundary. */
 function PublicLazyPage({
@@ -237,18 +157,8 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="users/:userHash" element={<UserProfilePage />} />
         <Route path="groups" element={<GroupListPage />} />
         <Route path="groups/:groupHash" element={<GroupDetailsPage />} />
-        <Route
-          path="groups/project-groups"
-          element={<Navigate to="/groups?tab=project-groups" replace />}
-        />
-        <Route
-          path="groups/project-groups/create"
-          element={<ProjectGroupCreatePage />}
-        />
-        <Route
-          path="groups/project-groups/edit/:groupHash"
-          element={<ProjectGroupEditPage />}
-        />
+        <Route path="groups/project-groups" element={<NotFoundPage />} />
+        <Route path="groups/project-groups/create" element={<NotFoundPage />} />
         <Route
           path="groups/project-groups/:groupHash"
           element={<ProjectGroupDetailsPage />}
@@ -256,11 +166,6 @@ export function AppRoutes(): React.JSX.Element {
         <Route path="projects" element={<ProjectListPage />} />
         <Route path="projects/:projectHash" element={<ProjectDetailsPage />} />
         <Route path="permissions" element={<PermissionManagementPage />} />
-        <Route
-          path="permissions/global-roles"
-          element={<Navigate to="/permissions?tab=roles" replace />}
-        />
-        <Route path="roles" element={<LegacyRolesPageRedirect />} />
 
         {/* Operations */}
         <Route path="tokens" element={<TokenManagementPage />} />
@@ -313,11 +218,6 @@ export function AppRoutes(): React.JSX.Element {
         {/* Personal */}
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<SettingsPage />} />
-
-        {/* Old /dashboard/... bookmarks */}
-        {LEGACY_REDIRECTS.map(([path, to]) => (
-          <Route key={path} path={path} element={<LegacyRedirect to={to} />} />
-        ))}
 
         {/* Unknown console URLs render inside the shell; signed-out visitors are sent to sign in. */}
         <Route path="*" element={<NotFoundPage />} />

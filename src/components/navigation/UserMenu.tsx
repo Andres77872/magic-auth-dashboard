@@ -23,7 +23,7 @@ export function UserMenu(): React.JSX.Element | null {
 
   // Session validation does not return an email, so fall back to the role.
   const secondaryLine =
-    user.email || `${getUserTypeLabel(user.user_type)} account`;
+    user.email || `${getUserTypeLabel(user.user_type ?? 'unknown')} account`;
 
   const handleSignOut = async (): Promise<void> => {
     try {

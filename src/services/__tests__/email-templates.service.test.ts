@@ -19,12 +19,12 @@ vi.mock('../api.client', () => ({
 
 const mockApi = vi.mocked(apiClient);
 
-/** The transport is typed as ApiResponse<T>; the email-template routes return bare objects. */
+/** Mock each endpoint with its actual JSON response body. */
 function resolveWith(
   method: 'get' | 'put' | 'post' | 'delete',
   payload: object
 ): void {
-  mockApi[method].mockResolvedValue(payload as never);
+  mockApi[method].mockResolvedValue(payload);
 }
 
 const RAW_SUMMARY: RawEmailTemplateSummary = {

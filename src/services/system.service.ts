@@ -3,13 +3,14 @@ import type {
   PingResponse,
   SystemInfoResponse,
   SystemHealthResponse,
+  CacheStatsResponse,
+  InvalidateCacheResponse,
 } from '@/types/system.types';
 import type {
   AdminDashboardStats,
   AdminUserStatistics,
   AdminUserStatisticsResponse,
 } from '@/types/dashboard.types';
-import type { ApiResponse } from '@/types/api.types';
 
 /**
  * Platform statistics and system operations (api.auth `system.py` under
@@ -21,7 +22,7 @@ class SystemService {
     const response = await apiClient.get<AdminDashboardStats>(
       '/admin/dashboard/stats'
     );
-    const stats = response as unknown as AdminDashboardStats;
+    const stats = response;
     if (!stats || typeof stats !== 'object' || !stats.totals) {
       throw new Error(
         'The dashboard statistics response was not in the expected format.'
@@ -35,12 +36,12 @@ class SystemService {
    * The backend reports query failures as `statistics.error`; surface those as errors.
    */
   async getUserStatistics(days = 30): Promise<AdminUserStatistics> {
-    const response = (await apiClient.get<AdminUserStatisticsResponse>(
+    const response = await apiClient.get<AdminUserStatisticsResponse>(
       '/admin/users/statistics',
       {
         days,
       }
-    )) as unknown as AdminUserStatisticsResponse;
+    );
     const statistics = response?.statistics;
     if (!statistics || 'error' in statistics) {
       throw new Error(
@@ -57,9 +58,7 @@ class SystemService {
    * touches the database or Redis, so the signed-out overview page can use it.
    */
   async ping(): Promise<PingResponse> {
-    const response = (await apiClient.get<PingResponse>(
-      '/system/ping'
-    )) as PingResponse;
+    const response = await apiClient.get<PingResponse>('/system/ping');
     if (response?.success !== true || typeof response.timestamp !== 'string') {
       throw new Error('The API ping response was not in the expected format.');
     }
@@ -68,26 +67,24 @@ class SystemService {
 
   /** GET /system/info */
   async getSystemInfo(): Promise<SystemInfoResponse> {
-    return (await apiClient.get<SystemInfoResponse>(
-      '/system/info'
-    )) as SystemInfoResponse;
+    return apiClient.get<SystemInfoResponse>('/system/info');
   }
 
   /** GET /system/health — any authenticated user. */
   async getSystemHealth(): Promise<SystemHealthResponse> {
-    return (await apiClient.get<SystemHealthResponse>(
-      '/system/health'
-    )) as SystemHealthResponse;
+    return apiClient.get<SystemHealthResponse>('/system/health');
   }
 
   /** GET /system/cache/stats */
-  async getCacheStats(): Promise<ApiResponse<unknown>> {
-    return await apiClient.get<unknown>('/system/cache/stats');
+  async getCacheStats(): Promise<CacheStatsResponse> {
+    return await apiClient.get<CacheStatsResponse>('/system/cache/stats');
   }
 
   /** POST /system/cache/invalidate/user/{user_hash} */
-  async invalidateUserCache(userHash: string): Promise<ApiResponse<void>> {
-    return await apiClient.post<void>(
+  async invalidateUserCache(
+    userHash: string
+  ): Promise<InvalidateCacheResponse> {
+    return await apiClient.post<InvalidateCacheResponse>(
       `/system/cache/invalidate/user/${encodeURIComponent(userHash)}`
     );
   }

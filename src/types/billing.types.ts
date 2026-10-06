@@ -7,7 +7,7 @@
  * Credentials are write-only — responses expose only presence flags + non-secret fingerprints.
  */
 
-import type { ApiResponse } from '@/types/api.types';
+import type { BaseResponse } from '@/types/api.types';
 
 export type BillingGroupStatus = 'active' | 'suspended' | 'archived';
 export type CredentialStatus = 'absent' | 'active' | 'rotating' | 'revoked';
@@ -159,7 +159,7 @@ export type CatalogItemUpdateRequest = Partial<
   Omit<CatalogItemCreateRequest, 'item_type' | 'plan_code'>
 >;
 
-export interface CredentialValidationResponse extends ApiResponse {
+export interface CredentialValidationResponse extends BaseResponse {
   valid: boolean;
   secret_key_valid: boolean;
   portal_configuration_valid?: boolean | null;
@@ -202,7 +202,7 @@ export interface CatalogReconcileResult {
   synced_at?: string | null;
 }
 
-export interface CatalogReconcileResponse extends ApiResponse {
+export interface CatalogReconcileResponse extends BaseResponse {
   result?: CatalogReconcileResult | null;
 }
 
@@ -211,7 +211,7 @@ export interface CatalogImportRequest {
   plan_code_overrides?: Record<string, string>;
 }
 
-export interface CatalogImportResponse extends ApiResponse {
+export interface CatalogImportResponse extends BaseResponse {
   imported: string[];
   skipped: string[];
   conflicts: string[];
@@ -243,8 +243,8 @@ export type BillingCapability =
   | 'provisioning'
   | 'webhooks';
 
-// --- response envelopes (extend ApiResponse; fields are top-level per api.auth) ----------
-export interface ListBillingGroupsResponse extends ApiResponse {
+// --- response envelopes (extend BaseResponse; fields are top-level per api.auth) ----------
+export interface ListBillingGroupsResponse extends BaseResponse {
   billing_groups: BillingGroup[];
   pagination?: {
     limit: number;
@@ -254,11 +254,11 @@ export interface ListBillingGroupsResponse extends ApiResponse {
   };
 }
 
-export interface BillingGroupResponse extends ApiResponse {
+export interface BillingGroupResponse extends BaseResponse {
   billing_group?: BillingGroup | null;
 }
 
-export interface BillingGroupDetailsResponse extends ApiResponse {
+export interface BillingGroupDetailsResponse extends BaseResponse {
   billing_group?: BillingGroup | null;
   projects: BillingGroupProject[];
   catalog: CatalogItem[];
@@ -266,14 +266,14 @@ export interface BillingGroupDetailsResponse extends ApiResponse {
   readiness?: BillingGroupReadiness | null;
 }
 
-export interface CatalogItemResponse extends ApiResponse {
+export interface CatalogItemResponse extends BaseResponse {
   item?: CatalogItem | null;
 }
 
-export interface BillingCredentialsStatusResponse extends ApiResponse {
+export interface BillingCredentialsStatusResponse extends BaseResponse {
   credentials?: BillingCredentialsStatus | null;
 }
 
-export interface BillingMetricsResponse extends ApiResponse {
+export interface BillingMetricsResponse extends BaseResponse {
   metrics?: BillingMetrics | null;
 }

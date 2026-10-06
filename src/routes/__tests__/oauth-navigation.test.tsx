@@ -12,8 +12,8 @@ import {
 import { canAccessRoute } from '@/utils/permissions';
 import { UserType } from '@/types/auth.types';
 
-vi.mock('@/hooks', () => ({
-  usePermissions: vi.fn(() => ({
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: vi.fn(() => ({
     isAuthenticated: true,
   })),
 }));
@@ -42,7 +42,7 @@ describe('OAuth navigation', () => {
     expect(ROUTES.OAUTH).toBe('/oauth');
   });
 
-  it('also appears in the legacy flat navigation list, as Billing does', () => {
+  it('also appears in the flat navigation list, as Billing does', () => {
     expect(NAVIGATION_ITEMS.some((item) => item.id === 'billing')).toBe(true);
     expect(NAVIGATION_ITEMS.find((item) => item.id === 'oauth')).toMatchObject({
       path: ROUTES.OAUTH,

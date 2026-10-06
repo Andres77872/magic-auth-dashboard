@@ -76,6 +76,37 @@ describe('apiClient error messages', () => {
     ).rejects.toThrow('user_hash is required');
   });
 
+  it.each([
+    {
+      status: 'error',
+      error: { code: 'VAL_4001', message: 'Invalid username.' },
+    },
+    {
+      detail: [
+        { loc: ['body', 'username'], msg: 'Field required', type: 'missing' },
+      ],
+    },
+  ])(
+    'rejects HTTP 422 mutations without dispatching unauthorized',
+    async (body) => {
+      const unauthorized = vi.fn();
+      window.addEventListener('magic-auth-unauthorized', unauthorized);
+      try {
+        const fetchMock = vi.fn().mockResolvedValue(jsonResponse(body, 422));
+        vi.stubGlobal('fetch', fetchMock);
+        const error = await apiClient
+          .put('/users/usr-1', {})
+          .catch((err: unknown) => err);
+        expect(error).toBeInstanceOf(ApiError);
+        expect(error).toMatchObject({ status: 422 });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(unauthorized).not.toHaveBeenCalled();
+      } finally {
+        window.removeEventListener('magic-auth-unauthorized', unauthorized);
+      }
+    }
+  );
+
   it('keeps the generic fallback when the body carries no message', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 404)));
     await expect(apiClient.post('/somewhere', {})).rejects.toThrow(

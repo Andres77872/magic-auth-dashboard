@@ -24,7 +24,6 @@ interface CreateUserModalProps {
 
 interface FormState {
   username: string;
-  email: string;
   password: string;
   confirmPassword: string;
   acknowledged: boolean;
@@ -32,12 +31,10 @@ interface FormState {
 
 const EMPTY: FormState = {
   username: '',
-  email: '',
   password: '',
   confirmPassword: '',
   acknowledged: false,
 };
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Errors = Partial<Record<keyof FormState, string>>;
 
@@ -45,8 +42,6 @@ function validate(form: FormState): Errors {
   const errors: Errors = {};
   if (form.username.trim().length < 3)
     errors.username = 'Use at least 3 characters.';
-  if (form.email.trim() && !EMAIL_PATTERN.test(form.email.trim()))
-    errors.email = 'Enter a valid email address.';
   if (form.password.length < 8) errors.password = 'Use at least 8 characters.';
   if (form.confirmPassword !== form.password)
     errors.confirmPassword = 'Passwords don’t match.';
@@ -70,9 +65,7 @@ export function CreateUserModal({
   const { showToast } = useToast();
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Errors>({});
-  const [taken, setTaken] = useState<{ username?: boolean; email?: boolean }>(
-    {}
-  );
+  const [taken, setTaken] = useState<{ username?: boolean }>({});
   const [saving, setSaving] = useState(false);
 
   const [wasOpen, setWasOpen] = useState(open);
@@ -91,22 +84,17 @@ export function CreateUserModal({
   ): void => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
-    if (key === 'username' || key === 'email')
-      setTaken((prev) => ({ ...prev, [key]: undefined }));
+    if (key === 'username') setTaken((prev) => ({ ...prev, [key]: undefined }));
   };
 
-  const checkAvailability = async (
-    field: 'username' | 'email'
-  ): Promise<void> => {
-    const value = form[field].trim();
-    if (!value || (field === 'email' && !EMAIL_PATTERN.test(value))) return;
+  const checkAvailability = async (): Promise<void> => {
+    const username = form.username.trim();
+    if (username.length < 3) return;
     try {
-      const res = await authService.checkAvailability({ [field]: value });
-      const available =
-        field === 'username' ? res.username_available : res.email_available;
-      if (available === false) setTaken((prev) => ({ ...prev, [field]: true }));
+      const res = await authService.checkUsernameAvailability(username);
+      if (res.username_available === false) setTaken({ username: true });
     } catch {
-      // Availability is a convenience; the create call still validates uniqueness.
+      // The create call still validates uniqueness.
     }
   };
 
@@ -114,7 +102,6 @@ export function CreateUserModal({
     event.preventDefault();
     const nextErrors = validate(form);
     if (taken.username) nextErrors.username = 'That username is already taken.';
-    if (taken.email) nextErrors.email = 'That email is already in use.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
@@ -123,7 +110,6 @@ export function CreateUserModal({
       const res = await userService.createRootUser({
         username: form.username.trim(),
         password: form.password,
-        email: form.email.trim() || undefined,
       });
       showToast(`Root user ${form.username.trim()} created.`, 'success');
       onCreated(res.user?.user_hash);
@@ -141,7 +127,7 @@ export function CreateUserModal({
   };
 
   const field = (
-    key: 'username' | 'email' | 'password' | 'confirmPassword',
+    key: 'username' | 'password' | 'confirmPassword',
     label: string,
     props: Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     hint?: string
@@ -193,18 +179,8 @@ export function CreateUserModal({
           <div className="grid gap-4 sm:grid-cols-2">
             {field('username', 'Username', {
               autoComplete: 'off',
-              onBlur: () => void checkAvailability('username'),
+              onBlur: () => void checkAvailability(),
             })}
-            {field(
-              'email',
-              'Email (optional)',
-              {
-                type: 'email',
-                autoComplete: 'off',
-                onBlur: () => void checkAvailability('email'),
-              },
-              'Used for password resets.'
-            )}
             {field(
               'password',
               'Password',

@@ -1,5 +1,5 @@
 import { useAuth } from './useAuth';
-import { UserType, type User } from '@/types/auth.types';
+import { UserType, type UserIdentity } from '@/types/auth.types';
 import { getUserTypeLabel } from '@/utils/component-utils';
 
 const RANK: Record<UserType, number> = {
@@ -9,7 +9,7 @@ const RANK: Record<UserType, number> = {
 };
 
 interface UseUserTypeReturn {
-  user: User | null;
+  user: UserIdentity | null;
   userType: UserType | null;
   isRoot: boolean;
   isAdmin: boolean;

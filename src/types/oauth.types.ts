@@ -182,9 +182,6 @@ export interface OAuthBindingInfo {
   default_user_group_hash?: string | null;
   default_user_group_name?: string | null;
   existing_user_policy: OAuthExistingUserPolicy;
-  /** ``api`` or ``legacy_redeem``. */
-  init_mode: string;
-  has_legacy_redeem: boolean;
   delivery_mode: string;
   state_ttl_seconds?: number | null;
   urls: OAuthAllowedUrl[];
@@ -234,9 +231,8 @@ export interface OAuthConnectionCreateRequest {
 
 /**
  * Partial update: omitted fields keep their stored value. The dashboard clears an
- * optional text field with ``''`` and a JSON field with ``{}`` — the transport turns a
- * top-level ``null`` into ``''`` (see ``api.client.ts`` ``cleanRequestData``), which the
- * backend rejects for the dict-typed fields.
+ * optional text field with an empty string and a JSON field with an empty object.
+ * JSON null values are preserved by the transport.
  */
 export interface OAuthConnectionUpdateRequest {
   display_name?: string;

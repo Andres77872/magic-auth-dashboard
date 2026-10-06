@@ -24,8 +24,6 @@ export interface UseUsersReturn {
   isRefreshing: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  /** Alias of `refetch`, kept for older callers. */
-  fetchUsers: () => Promise<void>;
 }
 
 /** One page of `GET /users/list` for the given filters. */
@@ -65,7 +63,6 @@ export function useUsers({
     isRefreshing,
     error,
     refetch,
-    fetchUsers: refetch,
   };
 }
 

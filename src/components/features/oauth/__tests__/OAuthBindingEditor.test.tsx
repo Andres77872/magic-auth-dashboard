@@ -36,8 +36,6 @@ function binding(overrides: Partial<OAuthBindingInfo> = {}): OAuthBindingInfo {
     default_user_group_hash: null,
     default_user_group_name: null,
     existing_user_policy: 'deny',
-    init_mode: 'api',
-    has_legacy_redeem: false,
     delivery_mode: 'bff',
     state_ttl_seconds: null,
     urls: [],

@@ -1,8 +1,7 @@
 import { API_CONFIG, ERROR_MESSAGES, HTTP_STATUS } from '@/utils/constants';
 import { ApiError } from '@/utils/error-handler';
-import type { ApiResponse } from '@/types/api.types';
 import { HttpMethod } from '@/types/api.types';
-import type { LoginResponse, ValidationResponse } from '@/types/auth.types';
+import type { SessionResponse, ValidationResponse } from '@/types/auth.types';
 import {
   sessionRefreshCoordinator,
   type SessionRefreshResult,
@@ -27,7 +26,7 @@ class AuthGenerationChangedError extends Error {}
 
 /**
  * The backend reports failures as `{status: "error", error: {code, message}}`;
- * older routes use a top-level `message` or FastAPI's `detail` string.
+ * route responses and FastAPI errors may carry `message` or `detail` instead.
  */
 function readBackendError(data: unknown): { message?: string; code?: string } {
   if (!data || typeof data !== 'object') return {};
@@ -48,7 +47,7 @@ function readBackendError(data: unknown): { message?: string; code?: string } {
 /**
  * 401s that mean "your session is fine, but this action needs more proof".
  * Refreshing can't help and they must never sign the operator out:
- * - `AUTH_1008`: a recent sign-in is required (API key changes, project switch);
+ * - `AUTH_1008`: a recent sign-in is required (API key changes);
  * - `AUTH_1001` on the password-change route: the current password was wrong.
  * (`AUTH_1001` is the backend's default auth code elsewhere, so it is scoped.)
  */
@@ -193,7 +192,7 @@ class ApiClient {
   }
 
   private isLoginEndpoint(endpoint: string): boolean {
-    return endpoint === '/auth/login' || endpoint === '/auth/platform/login';
+    return endpoint === '/auth/platform/login';
   }
 
   private isRefreshEndpoint(endpoint: string): boolean {
@@ -205,17 +204,12 @@ class ApiClient {
   }
 
   private isSessionMutationEndpoint(endpoint: string): boolean {
-    return (
-      this.isLoginEndpoint(endpoint) ||
-      endpoint === '/auth/register' ||
-      endpoint === '/auth/switch-project' ||
-      endpoint === '/auth/logout'
-    );
+    return this.isLoginEndpoint(endpoint) || endpoint === '/auth/logout';
   }
 
   private isTokenPairPayload(
-    payload: LoginResponse | undefined
-  ): payload is LoginResponse {
+    payload: SessionResponse | undefined
+  ): payload is SessionResponse {
     return (
       payload?.success === true &&
       typeof payload.expires_at === 'string' &&
@@ -258,9 +252,9 @@ class ApiClient {
         retries: 0,
       });
 
-      let payload: LoginResponse | undefined;
+      let payload: SessionResponse | undefined;
       try {
-        payload = (await response.json()) as LoginResponse;
+        payload = (await response.json()) as SessionResponse;
       } catch {
         // A successful refresh must satisfy the documented token-pair contract.
       }
@@ -283,34 +277,31 @@ class ApiClient {
       return this.requestRawWithRetry(endpoint, config);
     }
 
-    return sessionRefreshCoordinator.runSessionMutation(
-      async () => {
-        const response = await this.requestRawWithRetry(endpoint, config);
+    return sessionRefreshCoordinator.runSessionMutation(async () => {
+      const response = await this.requestRawWithRetry(endpoint, config);
 
-        if (!response.ok) {
-          return { value: response };
-        }
+      if (!response.ok) {
+        return { value: response };
+      }
 
-        if (endpoint === '/auth/logout') {
-          return { value: response, signedOut: true };
-        }
+      if (endpoint === '/auth/logout') {
+        return { value: response, signedOut: true };
+      }
 
-        let payload: LoginResponse | undefined;
-        try {
-          payload = (await response.clone().json()) as LoginResponse;
-        } catch {
-          // Registration may legitimately return no token pair.
-        }
+      let payload: SessionResponse | undefined;
+      try {
+        payload = (await response.clone().json()) as SessionResponse;
+      } catch {
+        // Malformed login responses do not publish session metadata.
+      }
 
-        return {
-          value: response,
-          completion: this.isTokenPairPayload(payload)
-            ? { success: true, response: payload }
-            : undefined,
-        };
-      },
-      { requiresCrossTabLock: endpoint === '/auth/switch-project' }
-    );
+      return {
+        value: response,
+        completion: this.isTokenPairPayload(payload)
+          ? { success: true, response: payload }
+          : undefined,
+      };
+    });
   }
 
   private async reconcileValidationResponse(
@@ -373,14 +364,14 @@ class ApiClient {
     endpoint: string,
     requestGeneration: string | null,
     allowUnauthorizedDispatch: boolean
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const contentType = response.headers.get('content-type');
 
     if (!contentType?.includes('application/json')) {
       throw new Error(`Unexpected response type: ${contentType || 'unknown'}`);
     }
 
-    const data = (await response.json()) as ApiResponse<T>;
+    const data = (await response.json()) as T;
 
     if (!response.ok) {
       const backendError = readBackendError(data);
@@ -426,8 +417,11 @@ class ApiClient {
             backendError.code
           );
         case HTTP_STATUS.UNPROCESSABLE_ENTITY:
-          // Return validation errors as-is
-          return data;
+          throw new ApiError(
+            backendError.message || ERROR_MESSAGES.VALIDATION_ERROR,
+            response.status,
+            backendError.code
+          );
         default: {
           const error = new ApiError(
             backendError.message || `HTTP Error: ${response.status}`,
@@ -536,7 +530,7 @@ class ApiClient {
   private async requestWithRetry<T>(
     endpoint: string,
     config: RequestConfig
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const observedRefreshGeneration = sessionRefreshCoordinator.getGeneration();
     let requestGeneration = observedRefreshGeneration;
     let allowUnauthorizedDispatch = true;
@@ -569,7 +563,7 @@ class ApiClient {
     response = reconciledValidation.response;
     requestGeneration = reconciledValidation.generation;
 
-    let data: ApiResponse<T>;
+    let data: T;
     try {
       data = await this.handleResponse<T>(
         response,
@@ -600,7 +594,7 @@ class ApiClient {
   private retryValidationAfterGenerationChange<T>(
     endpoint: string,
     config: RequestConfig
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     const validationRechecks = config.validationRechecks ?? 0;
     if (validationRechecks >= 2) {
       return Promise.reject(
@@ -615,10 +609,10 @@ class ApiClient {
   }
 
   // Public HTTP methods
-  async get<T>(
+  async get<T = unknown>(
     endpoint: string,
     params?: Record<string, string | number>
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.GET,
       params,
@@ -637,11 +631,11 @@ class ApiClient {
     });
   }
 
-  async post<T>(
+  async post<T = unknown>(
     endpoint: string,
     data?: unknown,
     skipAuth = false
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.POST,
       body: data,
@@ -649,11 +643,11 @@ class ApiClient {
     });
   }
 
-  async postForm<T>(
+  async postForm<T = unknown>(
     endpoint: string,
     data?: unknown,
     skipAuth = false
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.POST,
       body: data,
@@ -662,11 +656,11 @@ class ApiClient {
     });
   }
 
-  async upload<T>(
+  async upload<T = unknown>(
     endpoint: string,
     formData: FormData,
     skipAuth = false
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.POST,
       body: formData,
@@ -741,14 +735,14 @@ class ApiClient {
     return response.blob();
   }
 
-  async put<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+  async put<T = unknown>(endpoint: string, data?: unknown): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.PUT,
       body: data,
     });
   }
 
-  async putForm<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+  async putForm<T = unknown>(endpoint: string, data?: unknown): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.PUT,
       body: data,
@@ -760,45 +754,29 @@ class ApiClient {
    * DELETE with no body by default. Pass `formData` for the few routes that
    * read optional `Form(...)` fields on delete (e.g. an API key's `revoke_reason`).
    */
-  async delete<T>(
+  async delete<T = unknown>(
     endpoint: string,
     formData?: Record<string, unknown>
-  ): Promise<ApiResponse<T>> {
+  ): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.DELETE,
       ...(formData ? { body: formData, isFormData: true } : {}),
     });
   }
 
-  async patch<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
+  async patch<T = unknown>(endpoint: string, data?: unknown): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.PATCH,
       body: data,
     });
   }
 
-  async patchForm<T>(
-    endpoint: string,
-    data?: unknown
-  ): Promise<ApiResponse<T>> {
+  async patchForm<T = unknown>(endpoint: string, data?: unknown): Promise<T> {
     return this.requestWithRetry<T>(endpoint, {
       method: HttpMethod.PATCH,
       body: data,
       isFormData: true,
     });
-  }
-
-  // Utility methods
-  setAuthToken(token: string): void {
-    void token;
-  }
-
-  clearAuthToken(): void {
-    // Auth credentials are stored in HttpOnly cookies by the API.
-  }
-
-  isAuthenticated(): boolean {
-    return false;
   }
 }
 

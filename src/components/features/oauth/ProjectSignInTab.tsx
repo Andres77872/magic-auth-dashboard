@@ -134,7 +134,7 @@ function BindingPanel({
           />
           <Button asChild variant="ghost" size="sm">
             <Link
-              to={`${ROUTES.OAUTH_CONNECTION}/${encodeURIComponent(binding.connection_hash)}`}
+              to={`${ROUTES.OAUTH}/${encodeURIComponent(binding.connection_hash)}`}
             >
               Open connection
               <ExternalLink aria-hidden="true" />

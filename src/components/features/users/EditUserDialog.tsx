@@ -15,15 +15,13 @@ import { userService } from '@/services/user.service';
 import type { User } from '@/types/auth.types';
 
 interface EditUserDialogProps {
-  user: Pick<User, 'user_hash' | 'username' | 'email'>;
+  user: Pick<User, 'user_hash' | 'username'>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Rename a user or change their contact email (`PUT /users/{hash}`). */
+/** Rename a user (`PUT /users/{hash}`). */
 export function EditUserDialog({
   user,
   open,
@@ -32,10 +30,7 @@ export function EditUserDialog({
 }: EditUserDialogProps): React.JSX.Element {
   const { showToast } = useToast();
   const [username, setUsername] = useState(user.username);
-  const [email, setEmail] = useState(user.email ?? '');
-  const [errors, setErrors] = useState<{ username?: string; email?: string }>(
-    {}
-  );
+  const [errors, setErrors] = useState<{ username?: string }>({});
   const [saving, setSaving] = useState(false);
 
   // Re-seed the form each time the dialog opens.
@@ -44,14 +39,12 @@ export function EditUserDialog({
     setWasOpen(open);
     if (open) {
       setUsername(user.username);
-      setEmail(user.email ?? '');
       setErrors({});
     }
   }
 
-  const changes: { username?: string; email?: string } = {};
+  const changes: { username?: string } = {};
   if (username.trim() !== user.username) changes.username = username.trim();
-  if (email.trim() !== (user.email ?? '')) changes.email = email.trim();
   const hasChanges = Object.keys(changes).length > 0;
 
   const handleSubmit = async (event: React.FormEvent): Promise<void> => {
@@ -59,8 +52,6 @@ export function EditUserDialog({
     const nextErrors: typeof errors = {};
     if (username.trim().length < 3)
       nextErrors.username = 'Use at least 3 characters.';
-    if (email.trim() && !EMAIL_PATTERN.test(email.trim()))
-      nextErrors.email = 'Enter a valid email address.';
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 || !hasChanges) return;
 
@@ -94,7 +85,8 @@ export function EditUserDialog({
           <DialogHeader>
             <DialogTitle>Edit details</DialogTitle>
             <DialogDescription>
-              Update the username or contact email for this account.
+              Update the username for this account. Email identities are added
+              and activated by the account owner.
             </DialogDescription>
           </DialogHeader>
 
@@ -118,30 +110,6 @@ export function EditUserDialog({
                 {errors.username}
               </p>
             )}
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="edit-user-email">Email</Label>
-            <Input
-              id="edit-user-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="name@example.com"
-              aria-invalid={Boolean(errors.email)}
-              aria-describedby="edit-user-email-hint"
-            />
-            <p
-              id="edit-user-email-hint"
-              className={
-                errors.email
-                  ? 'm-0 text-xs text-destructive'
-                  : 'm-0 text-xs text-muted-foreground'
-              }
-            >
-              {errors.email ??
-                'Verified sign-in emails are managed by the user.'}
-            </p>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">

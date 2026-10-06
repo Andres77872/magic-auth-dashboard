@@ -9,93 +9,48 @@ export type UserType = (typeof UserType)[keyof typeof UserType];
 
 // Authentication Interfaces
 
-/**
- * Project-scoped login request (for consumer users in project apps).
- * Used by the public auth API: POST /auth/login
- */
-export interface LoginRequest {
-  username: string;
-  password: string;
-  project_hash: string; // Required for project-scoped sessions
-  remember_me?: boolean;
-}
-
-/**
- * Platform login request (for root/admin users in admin dashboard).
- * Used by the platform auth API: POST /auth/platform/login
- * No project_hash required — creates a platform-scoped session.
- */
+/** Platform sign-in creates the root/admin dashboard's cookie session. */
 export interface PlatformLoginRequest {
   username: string;
   password: string;
   remember_me?: boolean;
 }
 
-/**
- * Project-scoped login response (from POST /auth/login).
- * Includes the user's bound project context.
- */
-export interface LoginResponse {
-  success: boolean;
-  message: string;
-  access_token?: string;
-  refresh_token?: string;
-  session_token: string;
-  token_type?: string;
-  expires_in?: number;
-  refresh_expires_in?: number;
-  remember_me: boolean;
-  user: User;
-  project?: Project;
-  accessible_projects: Project[];
-  expires_at: string;
-  refresh_expires_at?: string;
-}
-
-/**
- * Platform login response (from POST /auth/platform/login).
- * For root/admin dashboard sessions — no project binding.
- */
-export interface PlatformLoginResponse {
-  success: boolean;
-  message: string;
-  access_token?: string;
-  refresh_token?: string;
-  session_token: string;
-  token_type?: string;
-  expires_in?: number;
-  refresh_expires_in?: number;
-  remember_me: boolean;
-  user: User;
-  accessible_projects: Project[]; // Admin may have multiple projects to manage
-  expires_at: string;
-  refresh_expires_at?: string;
-}
-
-export interface RegisterRequest {
+/** Identity returned by login and validation; directory fields are fetched separately. */
+export interface UserIdentity {
+  user_hash: string;
   username: string;
-  password: string;
-  user_group_hash: string;
-  email?: string;
-}
-
-export interface RegisterResponse {
-  success: boolean;
-  message: string;
-  user: User;
-  project: Project;
-}
-
-// User Type Info for enhanced user details - Updated to handle full API response
-export interface UserTypeInfo {
-  user_id?: string;
-  user_hash?: string;
-  username?: string;
+  email: string | null;
   user_type: UserType | null;
-  capabilities?: string[];
-  accessible_projects?: string[];
-  user_groups?: string[];
-  error?: string; // Handle database errors like missing tables
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+/** Current token-pair response from platform login and cookie refresh. */
+export interface SessionResponse {
+  success: boolean;
+  message?: string | null;
+  access_token?: string | null;
+  refresh_token?: string | null;
+  token_type?: string;
+  expires_in?: number | null;
+  refresh_expires_in?: number | null;
+  remember_me: boolean;
+  user?: UserIdentity | null;
+  expires_at?: string | null;
+  refresh_expires_at?: string | null;
+}
+
+export interface UserTypeInfo {
+  user_id: string;
+  user_hash: string;
+  username: string;
+  user_type: UserType;
+  capabilities: string[];
+  assigned_projects?: UserProjectAccess[] | null;
+  total_assigned_projects?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 /** A user's group membership (`groups` on `/users/list` and `/users/{hash}`). */
@@ -158,8 +113,8 @@ export interface UserProfileResponse {
   message: string | null;
   user: User;
   permissions: string[];
-  groups: unknown[]; // Legacy field, usually empty
-  accessible_projects: unknown[]; // Legacy field, usually empty
+  groups: string[];
+  accessible_projects: Project[];
   statistics: UserStatistics | null;
 }
 
@@ -171,45 +126,33 @@ export interface Project {
 
 export interface ValidationResponse {
   success: boolean;
-  message: string;
+  message?: string | null;
   valid: boolean;
-  user: User;
-  project?: Project;
-  session: {
-    session_id?: string;
+  auth_method?: string;
+  user?: UserIdentity | null;
+  session?: {
+    created_at?: string | null;
     expires_at?: string;
     refresh_expires_at?: string;
     remember_me?: boolean;
     scope?: string;
-  };
-}
-
-export interface AvailabilityRequest {
-  username?: string;
-  email?: string;
+  } | null;
 }
 
 export interface AvailabilityResponse {
   success: boolean;
   message: string;
   username_available?: boolean | null;
-  email_available?: boolean | null;
 }
 
 export interface AuthState {
   isAuthenticated: boolean;
-  user: User | null;
-  token: string | null;
-  currentProject: Project | null;
-  accessibleProjects: Project[];
+  user: UserIdentity | null;
   isLoading: boolean;
   error: string | null;
-  // RBAC Integration
-  effectivePermissions: string[]; // List of permission names user has through roles
-  permissionsLoading: boolean;
   // Session expiry tracking
-  sessionExpiresAt: string | null; // ISO 8601 from LoginResponse.expires_at
-  refreshExpiresAt: string | null; // ISO 8601 from LoginResponse.refresh_expires_at
+  sessionExpiresAt: string | null; // ISO 8601 from SessionResponse.expires_at
+  refreshExpiresAt: string | null; // ISO 8601 from SessionResponse.refresh_expires_at
   rememberMe: boolean;
 }
 
@@ -218,11 +161,8 @@ export const AuthActionType = {
   LOGIN_SUCCESS: 'LOGIN_SUCCESS',
   LOGIN_FAILURE: 'LOGIN_FAILURE',
   LOGOUT: 'LOGOUT',
-  VALIDATE_TOKEN: 'VALIDATE_TOKEN',
+  SESSION_VALIDATED: 'SESSION_VALIDATED',
   CLEAR_ERROR: 'CLEAR_ERROR',
-  LOAD_PERMISSIONS_START: 'LOAD_PERMISSIONS_START',
-  LOAD_PERMISSIONS_SUCCESS: 'LOAD_PERMISSIONS_SUCCESS',
-  LOAD_PERMISSIONS_FAILURE: 'LOAD_PERMISSIONS_FAILURE',
   SESSION_EXPIRY_UPDATE: 'SESSION_EXPIRY_UPDATE',
 } as const;
 
@@ -231,30 +171,20 @@ export type AuthActionType =
 
 export type AuthAction =
   | { type: typeof AuthActionType.LOGIN_START }
-  | { type: typeof AuthActionType.LOGIN_SUCCESS; payload: LoginResponse }
+  | { type: typeof AuthActionType.LOGIN_SUCCESS; payload: SessionResponse }
   | { type: typeof AuthActionType.LOGIN_FAILURE; payload: { error: string } }
   | { type: typeof AuthActionType.LOGOUT }
   | {
-      type: typeof AuthActionType.VALIDATE_TOKEN;
+      type: typeof AuthActionType.SESSION_VALIDATED;
       payload: {
         valid: boolean;
-        user?: User;
-        project?: Project;
+        user?: UserIdentity | null;
         expires_at?: string;
         refresh_expires_at?: string;
         remember_me?: boolean;
       };
     }
   | { type: typeof AuthActionType.CLEAR_ERROR }
-  | { type: typeof AuthActionType.LOAD_PERMISSIONS_START }
-  | {
-      type: typeof AuthActionType.LOAD_PERMISSIONS_SUCCESS;
-      payload: { permissions: string[] };
-    }
-  | {
-      type: typeof AuthActionType.LOAD_PERMISSIONS_FAILURE;
-      payload: { error: string };
-    }
   | {
       type: typeof AuthActionType.SESSION_EXPIRY_UPDATE;
       payload: {

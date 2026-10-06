@@ -133,8 +133,8 @@ export function CommandPalette({
         search: debouncedQuery,
         limit: SEARCH_LIMIT,
       }),
-      groupService.getGroups({ search: debouncedQuery, limit: SEARCH_LIMIT }),
-      projectGroupService.getProjectGroups({
+      groupService.listGroups({ search: debouncedQuery, limit: SEARCH_LIMIT }),
+      projectGroupService.listProjectGroups({
         search: debouncedQuery,
         limit: SEARCH_LIMIT,
       }),
@@ -171,7 +171,7 @@ export function CommandPalette({
         }
       }
       if (groups.status === 'fulfilled') {
-        for (const group of groups.value.user_groups ?? []) {
+        for (const group of groups.value.groups ?? []) {
           next.push({
             id: `user-group-${group.group_hash}`,
             kind: 'user-group',
@@ -183,7 +183,7 @@ export function CommandPalette({
         }
       }
       if (projectGroups.status === 'fulfilled') {
-        for (const group of projectGroups.value.project_groups ?? []) {
+        for (const group of projectGroups.value.projectGroups ?? []) {
           next.push({
             id: `project-group-${group.group_hash}`,
             kind: 'project-group',

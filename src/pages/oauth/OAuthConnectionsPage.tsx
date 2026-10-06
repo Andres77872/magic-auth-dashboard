@@ -62,7 +62,7 @@ function readStatus(value: string | null): OAuthConnectionStatus | undefined {
 }
 
 function connectionHref(connectionHash: string): string {
-  return `${ROUTES.OAUTH_CONNECTION}/${encodeURIComponent(connectionHash)}`;
+  return `${ROUTES.OAUTH}/${encodeURIComponent(connectionHash)}`;
 }
 
 export function OAuthConnectionsPage(): React.JSX.Element {

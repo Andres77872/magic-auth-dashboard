@@ -5,7 +5,6 @@ import { globalRolesService } from '../global-roles.service';
 import { permissionAssignmentsService } from '../permission-assignments.service';
 import { userService } from '../user.service';
 import { systemService } from '../system.service';
-import type { ApiResponse } from '@/types/api.types';
 
 vi.mock('../api.client', () => ({
   apiClient: {
@@ -20,9 +19,8 @@ vi.mock('../api.client', () => ({
 }));
 
 const api = vi.mocked(apiClient);
-/** The transport resolves with the raw JSON body; cast route-shaped payloads to its declared type. */
-const raw = (payload: Record<string, unknown>): ApiResponse =>
-  payload as unknown as ApiResponse;
+const raw = (payload: Record<string, unknown>): Record<string, unknown> =>
+  payload;
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -38,7 +36,7 @@ describe('globalRolesService', () => {
     await expect(globalRolesService.getRoles()).resolves.toEqual([
       { role_hash: 'role-1' },
     ]);
-    expect(api.get).toHaveBeenCalledWith('/roles/roles', { limit: 100 });
+    expect(api.get).toHaveBeenCalledWith('/roles', { limit: 100 });
   });
 
   it('returns null when a user has no global role', async () => {

@@ -306,7 +306,7 @@ export function BillingGroupsPage(): React.JSX.Element {
             searchPlaceholder="Search by name or group hash"
             onRowClick={(group) =>
               void navigate(
-                `${ROUTES.BILLING_GROUP}/${encodeURIComponent(group.group_hash)}`
+                `${ROUTES.BILLING}/${encodeURIComponent(group.group_hash)}`
               )
             }
             rowClassName={(group) =>
@@ -370,7 +370,7 @@ export function BillingGroupsPage(): React.JSX.Element {
         onSaved={(group) => {
           setCreateOpen(false);
           void navigate(
-            `${ROUTES.BILLING_GROUP}/${encodeURIComponent(group.group_hash)}`
+            `${ROUTES.BILLING}/${encodeURIComponent(group.group_hash)}`
           );
         }}
       />

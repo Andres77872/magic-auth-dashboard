@@ -440,7 +440,7 @@ export function DataView<T extends object>({
 
 export default DataView;
 
-// Re-export types for backward compatibility with barrel exports
+// Public component types for direct and barrel imports
 export type {
   DataViewProps,
   DataViewColumn,

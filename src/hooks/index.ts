@@ -2,7 +2,6 @@ export { useAuth } from './useAuth';
 export { useUsers } from './useUsers';
 export { useProjects } from './useProjects';
 export { useUserType } from './useUserType';
-export { usePermissions } from './usePermissions';
 
 export { useGroups } from './useGroups';
 export { useProjectGroups } from './useProjectGroups';

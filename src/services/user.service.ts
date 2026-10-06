@@ -28,7 +28,7 @@ import type {
   UserSearchResponse,
 } from '@/types/user.types';
 import type { User, UserProfileResponse, UserType } from '@/types/auth.types';
-import type { ApiResponse } from '@/types/api.types';
+import type { BaseResponse } from '@/types/api.types';
 
 /**
  * User management (`/users/*`, `/user-types/*`, `/admin/users/*`). All writes
@@ -103,20 +103,17 @@ class UserService {
   async createRootUser(
     data: CreateRootUserRequest
   ): Promise<CreateRootUserResponse> {
-    return await postFormJson<CreateRootUserResponse>('/user-types/root', {
-      ...data,
-      email: data.email?.trim() || undefined,
-    });
+    return await postFormJson<CreateRootUserResponse>('/user-types/root', data);
   }
 
   /** Requires internal project ids, which no list endpoint exposes yet. */
   async createAdminUser(
     data: CreateAdminUserRequest
   ): Promise<CreateAdminUserResponse> {
-    return await postFormJson<CreateAdminUserResponse>('/user-types/admin', {
-      ...data,
-      email: data.email?.trim() || undefined,
-    });
+    return await postFormJson<CreateAdminUserResponse>(
+      '/user-types/admin',
+      data
+    );
   }
 
   // Account changes ---------------------------------------------------------
@@ -214,8 +211,8 @@ class UserService {
   async removeAdminFromProject(
     userHash: string,
     projectId: string
-  ): Promise<ApiResponse<void>> {
-    return await deleteJson<ApiResponse<void>>(
+  ): Promise<BaseResponse> {
+    return await deleteJson<BaseResponse>(
       `/user-types/admin/${seg(userHash)}/projects/${seg(projectId)}`
     );
   }

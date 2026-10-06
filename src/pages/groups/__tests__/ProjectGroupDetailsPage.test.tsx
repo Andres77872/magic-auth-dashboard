@@ -167,12 +167,14 @@ describe('ProjectGroupDetailsPage', () => {
   });
 });
 
-describe('ProjectGroupEditPage (legacy /groups/project-groups/edit/:hash)', () => {
+describe('Project group editing from its details', () => {
   it('opens the edit dialog on the details page and surfaces a failing update', async () => {
     const update = vi
       .spyOn(projectGroupService, 'updateProjectGroup')
       .mockRejectedValue(new Error('Update failed'));
-    renderGroupRoutes('/groups/project-groups/edit/PG-1');
+    renderGroupRoutes('/groups/project-groups/PG-1');
+    await screen.findByRole('heading', { level: 1, name: 'mobile' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByLabelText('Name')).toHaveValue('mobile');
@@ -190,11 +192,13 @@ describe('ProjectGroupEditPage (legacy /groups/project-groups/edit/:hash)', () =
       group_name: 'mobile-apps',
       description: 'Phone apps',
     });
-    expect(currentLocation()).toBe('/groups/project-groups/edit/PG-1');
+    expect(currentLocation()).toBe('/groups/project-groups/PG-1');
   });
 
   it('returns to the details URL when the dialog is closed', async () => {
-    renderGroupRoutes('/groups/project-groups/edit/PG-1');
+    renderGroupRoutes('/groups/project-groups/PG-1');
+    await screen.findByRole('heading', { level: 1, name: 'mobile' });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
 
     fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', {

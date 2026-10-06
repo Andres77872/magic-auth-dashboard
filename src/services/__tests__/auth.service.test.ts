@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authService } from '../auth.service';
 import { apiClient } from '../api.client';
-import type { LoginResponse } from '@/types/auth.types';
+import type { SessionResponse } from '@/types/auth.types';
 
 vi.mock('../api.client', () => ({
   apiClient: {
@@ -18,10 +18,10 @@ describe('authService remember-me contract', () => {
   });
 
   it('passes remember_me to platform login', async () => {
-    const loginResponse: LoginResponse = {
+    const loginResponse: SessionResponse = {
       success: true,
       message: 'ok',
-      session_token: 'access-token',
+      access_token: 'access-token',
       remember_me: true,
       user: {
         user_hash: 'usr-1',
@@ -29,9 +29,7 @@ describe('authService remember-me contract', () => {
         email: '',
         user_type: 'admin',
         created_at: '',
-        is_active: true,
       },
-      accessible_projects: [],
       expires_at: '2026-06-13T12:15:00Z',
       refresh_expires_at: '2026-07-13T12:00:00Z',
     };

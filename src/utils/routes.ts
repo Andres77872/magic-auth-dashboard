@@ -10,36 +10,24 @@ export const ROUTES = {
 
   // User Management
   USERS: '/users',
-  USER: '/users', // base path for /users/:hash
 
   // Project Management
   PROJECTS: '/projects',
-  PROJECT: '/projects', // base path for /projects/:hash
 
   // Billing (groups, catalog, per-account Stripe credentials)
   BILLING: '/billing',
-  BILLING_GROUP: '/billing', // base path for /billing/:groupHash
 
   // OAuth (connections, per-project bindings, write-only provider credentials)
   OAUTH: '/oauth',
-  OAUTH_CONNECTION: '/oauth', // base path for /oauth/:connectionHash
 
   // Group Management
   GROUPS: '/groups',
-  GROUP: '/groups', // base path for /groups/:hash
 
   // Project Group Management (route-based, under groups)
   PROJECT_GROUPS: '/groups/project-groups',
-  PROJECT_GROUPS_CREATE: '/groups/project-groups/create',
-  PROJECT_GROUPS_EDIT: '/groups/project-groups/edit',
-  PROJECT_GROUPS_DETAILS: '/groups/project-groups',
 
   // Permission Management (top-level)
   PERMISSIONS: '/permissions',
-  PERMISSIONS_GLOBAL_ROLES: '/permissions/global-roles',
-
-  // Role Management (top-level, separate)
-  ROLES: '/roles',
 
   // Audit Log
   AUDIT: '/audit',
@@ -76,7 +64,6 @@ export interface NavItem {
    * any nested path, with the most specific sibling winning.
    */
   isActive?: (pathname: string, searchParams: URLSearchParams) => boolean;
-  children?: NavItem[];
 }
 
 export interface NavSection {
@@ -166,8 +153,7 @@ export const NAVIGATION_SECTIONS: NavSection[] = [
         allowedUserTypes: ['root', 'admin'],
         isActive: (pathname) =>
           pathname === ROUTES.PERMISSIONS ||
-          pathname.startsWith(`${ROUTES.PERMISSIONS}/`) ||
-          pathname === ROUTES.ROLES,
+          pathname.startsWith(`${ROUTES.PERMISSIONS}/`),
       },
     ],
   },

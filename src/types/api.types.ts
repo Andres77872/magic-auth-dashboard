@@ -1,16 +1,7 @@
-// Generic API Response
-export interface ApiResponse<T = unknown> {
+/** Shared fields of api.auth's BaseResponse; route payloads use their own top-level keys. */
+export interface BaseResponse {
   success: boolean;
-  message: string;
-  data?: T;
-  error_code?: string;
-  detail?: ValidationError[];
-}
-
-export interface ValidationError {
-  loc: string[];
-  msg: string;
-  type: string;
+  message?: string | null;
 }
 
 // Pagination
@@ -29,10 +20,6 @@ export interface PaginationResponse {
   has_more: boolean;
 }
 
-export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-  pagination: PaginationResponse;
-}
-
 // HTTP Methods
 export const HttpMethod = {
   GET: 'GET',
@@ -44,22 +31,3 @@ export const HttpMethod = {
 } as const;
 
 export type HttpMethod = (typeof HttpMethod)[keyof typeof HttpMethod];
-
-// Loading States
-export interface LoadingState {
-  isLoading: boolean;
-  error: string | null;
-}
-
-export interface AsyncState<T> extends LoadingState {
-  data: T | null;
-}
-
-// Error Response Types
-export interface ErrorResponse {
-  success: false;
-  message: string;
-  error_code?: string;
-  required_access_level?: string;
-  detail?: ValidationError[];
-}

@@ -1,15 +1,6 @@
 import { apiClient } from './api.client';
 
-/**
- * Typed wrappers over `apiClient`.
- *
- * `apiClient` types every body as `ApiResponse<T>` (`{success, message, data}`),
- * but many api.auth routes return bare objects (`/admin/dashboard/stats`,
- * `/permissions/*`) or put their payload under a route-specific key
- * (`roles`, `user_groups`, …). Services use these helpers to state the real
- * response shape once, at the transport boundary, and then normalise it.
- * Transport behaviour (credentials, refresh, retries, errors) is unchanged.
- */
+/** JSON requests and query/path encoding for each endpoint's actual response type. */
 
 type Params = Record<string, string | number | boolean | null | undefined>;
 
@@ -33,39 +24,39 @@ export async function getJson<T>(
   endpoint: string,
   params?: Params
 ): Promise<T> {
-  return (await apiClient.get<T>(endpoint, toQuery(params))) as unknown as T;
+  return apiClient.get<T>(endpoint, toQuery(params));
 }
 
 export async function postJson<T>(
   endpoint: string,
   body?: unknown
 ): Promise<T> {
-  return (await apiClient.post<T>(endpoint, body)) as unknown as T;
+  return apiClient.post<T>(endpoint, body);
 }
 
 export async function postFormJson<T>(
   endpoint: string,
   body?: unknown
 ): Promise<T> {
-  return (await apiClient.postForm<T>(endpoint, body)) as unknown as T;
+  return apiClient.postForm<T>(endpoint, body);
 }
 
 export async function putJson<T>(endpoint: string, body?: unknown): Promise<T> {
-  return (await apiClient.put<T>(endpoint, body)) as unknown as T;
+  return apiClient.put<T>(endpoint, body);
 }
 
 export async function putFormJson<T>(
   endpoint: string,
   body?: unknown
 ): Promise<T> {
-  return (await apiClient.putForm<T>(endpoint, body)) as unknown as T;
+  return apiClient.putForm<T>(endpoint, body);
 }
 
 export async function patchFormJson<T>(
   endpoint: string,
   body?: unknown
 ): Promise<T> {
-  return (await apiClient.patchForm<T>(endpoint, body)) as unknown as T;
+  return apiClient.patchForm<T>(endpoint, body);
 }
 
 /** DELETE; pass `formBody` only for routes that read optional `Form(...)` fields. */
@@ -76,7 +67,7 @@ export async function deleteJson<T>(
   const response = formBody
     ? await apiClient.delete<T>(endpoint, formBody)
     : await apiClient.delete<T>(endpoint);
-  return response as unknown as T;
+  return response;
 }
 
 /** Page size used when the dashboard needs a complete catalogue (backend max). */

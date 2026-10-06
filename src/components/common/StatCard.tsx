@@ -19,8 +19,6 @@ export interface StatCardProps {
   href?: string;
   loading?: boolean;
   className?: string;
-  /** @deprecated Meridian cards are flat; kept so existing callers compile. */
-  gradient?: boolean;
   progress?: {
     value: number;
     max?: number;

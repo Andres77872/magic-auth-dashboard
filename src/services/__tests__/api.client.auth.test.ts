@@ -68,9 +68,11 @@ describe('apiClient cookie-backed auth', () => {
       );
 
     vi.stubGlobal('fetch', fetchMock);
-    localStorage.setItem('magic_auth_token', 'stale-token');
 
-    const response = await apiClient.get<{ ok: boolean }>('/protected');
+    const response = await apiClient.get<{
+      success: boolean;
+      data: { ok: boolean };
+    }>('/protected');
 
     expect(response.success).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -114,8 +116,12 @@ describe('apiClient cookie-backed auth', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
 
-    const first = apiClient.get<{ ok: boolean }>('/protected/first');
-    const second = apiClient.get<{ ok: boolean }>('/protected/second');
+    const first = apiClient.get<{ success: boolean; data: { ok: boolean } }>(
+      '/protected/first'
+    );
+    const second = apiClient.get<{ success: boolean; data: { ok: boolean } }>(
+      '/protected/second'
+    );
 
     await vi.waitFor(() => {
       expect(
@@ -135,7 +141,7 @@ describe('apiClient cookie-backed auth', () => {
     ).toHaveLength(1);
   });
 
-  it('serializes project switching behind an in-flight refresh rotation', async () => {
+  it('serializes platform sign-in behind an in-flight refresh rotation', async () => {
     let sessionRefreshed = false;
     let finishRefresh = (): void => undefined;
     const refreshGate = new Promise<void>((resolve) => {
@@ -149,11 +155,10 @@ describe('apiClient cookie-backed auth', () => {
           sessionRefreshed = true;
           return jsonResponse(refreshResponse());
         }
-        if (url.includes('/auth/switch-project')) {
+        if (url.includes('/auth/platform/login')) {
           return jsonResponse({
             ...refreshResponse(),
-            message: 'switched',
-            project: { project_hash: 'project-2', project_name: 'Project 2' },
+            message: 'signed in',
           });
         }
         if (!sessionRefreshed) {
@@ -172,19 +177,24 @@ describe('apiClient cookie-backed auth', () => {
         )
       ).toBe(true)
     );
-    const switchRequest = apiClient.postForm('/auth/switch-project', {
-      project_hash: 'project-2',
-    });
+    const loginRequest = apiClient.postForm(
+      '/auth/platform/login',
+      {
+        username: 'admin',
+        password: 'password123',
+      },
+      true
+    );
     await Promise.resolve();
     expect(
       fetchMock.mock.calls.some(([input]) =>
-        requestUrl(input).includes('/auth/switch-project')
+        requestUrl(input).includes('/auth/platform/login')
       )
     ).toBe(false);
 
     finishRefresh();
     await expect(protectedRequest).resolves.toMatchObject({ success: true });
-    await expect(switchRequest).resolves.toMatchObject({ success: true });
+    await expect(loginRequest).resolves.toMatchObject({ success: true });
     expect(
       fetchMock.mock.calls.filter(([input]) =>
         requestUrl(input).includes('/auth/refresh')

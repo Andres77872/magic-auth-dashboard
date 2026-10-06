@@ -6,8 +6,8 @@ import { NAVIGATION_ITEMS } from '@/utils/routes';
 import { getVisibleSections, resolveActiveItemId } from '../nav-utils';
 import { NavigationMenu } from '../NavigationMenu';
 
-vi.mock('@/hooks', () => ({
-  usePermissions: () => ({ isAuthenticated: true }),
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ isAuthenticated: true }),
 }));
 
 const active = (path: string): string | null => {
@@ -63,7 +63,7 @@ describe('active item resolution', () => {
     ['/groups/project-groups/create', 'project-groups'],
     ['/projects/proj-1', 'projects'],
     ['/permissions?tab=permissions', 'permissions'],
-    ['/roles', 'permissions'],
+
     ['/audit?tab=security', 'audit'],
     ['/system', 'system'],
     ['/system/patreon', 'patreon'],

@@ -43,7 +43,7 @@ export interface GlobalPermission {
   updated_at?: string | null;
 }
 
-/** `GET /roles/roles/{hash}` */
+/** `GET /roles/{hash}` */
 export interface GlobalRoleDetails {
   role: GlobalRole;
   permission_groups: GlobalPermissionGroup[];

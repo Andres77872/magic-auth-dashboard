@@ -65,7 +65,7 @@ describe('patreonService', () => {
         patreon_stale_snapshot_count: 3,
         patreon_webhook_retrying_deliveries: 1,
       },
-    } as never);
+    });
 
     const result = await patreonService.getStatus();
 
@@ -99,7 +99,7 @@ describe('patreonService', () => {
         },
       ],
       pagination: { limit: 20, offset: 0, total: 5, has_more: false },
-    } as never);
+    });
 
     const result = await patreonService.getEntitlements({
       limit: 20,
@@ -138,7 +138,7 @@ describe('patreonService', () => {
       success: true,
       items: [],
       pagination: {},
-    } as never);
+    });
     await patreonService.getEntitlements({
       limit: 20,
       offset: 40,
@@ -164,7 +164,7 @@ describe('patreonService', () => {
         },
       ],
       pagination: {},
-    } as never);
+    });
     const result = await patreonService.getEntitlements();
     expect(result.items[0].lastSyncedAt).toBe('2026-06-20T08:30:00Z');
     expect(result.items[0].staleAfter).toBe('2026-06-21T08:30:00Z');
@@ -186,7 +186,7 @@ describe('patreonService', () => {
           observed_at: '2026-06-20T00:00:00',
         },
       ],
-    } as never);
+    });
     const items = await patreonService.getEntitlementHistory('usr aaa', 25);
     expect(mockApi.get).toHaveBeenCalledWith(
       '/admin/patreon/entitlements/usr%20aaa/history',
@@ -206,7 +206,7 @@ describe('patreonService', () => {
       success: true,
       items: [],
       pagination: {},
-    } as never);
+    });
     await patreonService.getEntitlements({ limit: 20, offset: 0, status: '' });
     expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/entitlements', {
       limit: 20,
@@ -229,7 +229,7 @@ describe('patreonService', () => {
         classification_version: 1,
       },
       contract_version: 1,
-    } as never);
+    });
 
     const detail = await patreonService.getEntitlement('usr-bbb');
     expect(mockApi.get).toHaveBeenCalledWith(
@@ -258,7 +258,7 @@ describe('patreonService', () => {
           effective_until: null,
         },
       ],
-    } as never);
+    });
 
     const { items, pagination } = await patreonService.getTierMap({
       limit: 100,
@@ -293,7 +293,7 @@ describe('patreonService', () => {
         },
       ],
       pagination: { limit: 20, offset: 0, total: 1, has_more: false },
-    } as never);
+    });
 
     const result = await patreonService.getSyncJobs({ limit: 20, offset: 0 });
     expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/sync-jobs', {
@@ -319,7 +319,7 @@ describe('patreonService', () => {
         },
       ],
       pagination: { limit: 20, offset: 0, total: 1, has_more: false },
-    } as never);
+    });
 
     const result = await patreonService.getWebhooks({ limit: 20, offset: 0 });
     expect(mockApi.get).toHaveBeenCalledWith('/admin/patreon/webhooks', {
@@ -337,7 +337,7 @@ describe('patreonService', () => {
       status: 'queued',
       correlation_id: 'psj-xyz',
       message: 'Patreon entitlement resync request accepted.',
-    } as never);
+    });
 
     const result = await patreonService.resync({
       scope: 'user',
@@ -362,7 +362,7 @@ describe('patreonService', () => {
       accepted: false,
       status: 'not_linked',
       message: 'This user has no linked Patreon membership to resync.',
-    } as never);
+    });
 
     const result = await patreonService.resync({
       scope: 'all',

@@ -3,8 +3,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthProvider } from '../AuthContext';
 import { useAuth } from '@/hooks/useAuth';
 import type {
-  PlatformLoginResponse,
-  User,
+  SessionResponse,
+  UserIdentity,
   ValidationResponse,
 } from '@/types/auth.types';
 
@@ -16,7 +16,6 @@ const authMocks = vi.hoisted(() => ({
 
 vi.mock('@/services/auth.service', () => ({
   authService: {
-    login: vi.fn(),
     platformLogin: authMocks.platformLogin,
     logout: vi.fn(),
     refreshToken: authMocks.refreshToken,
@@ -24,13 +23,12 @@ vi.mock('@/services/auth.service', () => ({
   },
 }));
 
-const user: User = {
+const user: UserIdentity = {
   user_hash: 'usr-1',
   username: 'admin',
   email: 'admin@example.com',
   user_type: 'admin',
   created_at: '2026-06-01T00:00:00Z',
-  is_active: true,
 };
 
 const validationResponse: ValidationResponse = {
@@ -47,14 +45,13 @@ const validationResponse: ValidationResponse = {
 const loginResponse = (
   rememberMe: boolean,
   refreshExpiresIn: number
-): PlatformLoginResponse => ({
+): SessionResponse => ({
   success: true,
   message: 'ok',
-  session_token: 'session-token',
+  access_token: 'session-token',
   refresh_expires_in: refreshExpiresIn,
   remember_me: rememberMe,
   user,
-  accessible_projects: [],
   expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
   refresh_expires_at: new Date(
     Date.now() + refreshExpiresIn * 1000

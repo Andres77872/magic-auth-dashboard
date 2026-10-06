@@ -43,9 +43,7 @@ vi.mock('@/pages/system', () => ({
 vi.mock('@/pages/groups', () => ({
   GroupDetailsPage: stub('user-group'),
   GroupListPage: stub('groups'),
-  ProjectGroupCreatePage: stub('project-group-create'),
   ProjectGroupDetailsPage: stub('project-group'),
-  ProjectGroupEditPage: stub('project-group-edit'),
 }));
 vi.mock('@/pages/permissions', () => ({
   PermissionManagementPage: stub('permissions'),
@@ -142,7 +140,6 @@ describe('AppRoutes', () => {
     ['/groups', 'groups'],
     ['/groups/ug-1', 'user-group'],
     ['/groups/project-groups/pg-1', 'project-group'],
-    ['/groups/project-groups/create', 'project-group-create'],
     ['/projects', 'projects'],
     ['/projects/proj-1', 'project'],
     ['/permissions', 'permissions'],
@@ -164,49 +161,20 @@ describe('AppRoutes', () => {
     expect(await page()).toBe('not-found');
   });
 
-  describe('consolidated role pages', () => {
-    it('sends /roles to the roles tab', async () => {
-      renderAt('/roles');
-      expect(location()).toBe('/permissions?tab=roles');
-      expect(await page()).toBe('permissions');
-    });
-
-    it('maps the old /roles?tab=groups to permission groups', () => {
-      renderAt('/roles?tab=groups');
-      expect(location()).toBe('/permissions?tab=permission-groups');
-    });
-
-    it('maps the old global roles page to the roles tab', () => {
-      renderAt('/permissions/global-roles');
-      expect(location()).toBe('/permissions?tab=roles');
-    });
-  });
-
-  describe('legacy /dashboard URLs', () => {
-    it.each([
-      ['/dashboard', '/'],
-      ['/dashboard/users', '/users'],
-      ['/dashboard/users/profile/usr-9', '/users/usr-9'],
-      ['/dashboard/projects/details/proj-9', '/projects/proj-9'],
-      ['/dashboard/groups/project-groups', '/groups?tab=project-groups'],
-      ['/dashboard/groups/project-groups/pg-9', '/groups/project-groups/pg-9'],
-      ['/dashboard/groups/ug-9', '/groups/ug-9'],
-      ['/dashboard/permissions/role-management', '/permissions?tab=roles'],
-      ['/dashboard/settings', '/settings'],
-    ])('redirects %s to %s', (from, to) => {
-      renderAt(from);
-      expect(location()).toBe(to);
-    });
-
-    it('keeps the query string when redirecting', () => {
-      renderAt('/dashboard/audit?tab=security&days=7');
-      expect(location()).toBe('/audit?tab=security&days=7');
-    });
-
-    it('appends the query string to targets that already have one', () => {
-      renderAt('/dashboard/groups/project-groups?q=atlas');
-      expect(location()).toBe('/groups?tab=project-groups&q=atlas');
-    });
+  it.each([
+    '/dashboard',
+    '/dashboard/users/profile/usr-9',
+    '/dashboard/audit?tab=security&days=7',
+    '/roles',
+    '/roles?tab=groups',
+    '/permissions/global-roles',
+    '/groups/project-groups',
+    '/groups/project-groups/create',
+    '/groups/project-groups/edit/pg-1',
+  ])('does not expose retired console flow %s', async (path) => {
+    renderAt(path);
+    expect(await page()).toBe('not-found');
+    expect(location()).toBe(path);
   });
 
   describe('public overview', () => {

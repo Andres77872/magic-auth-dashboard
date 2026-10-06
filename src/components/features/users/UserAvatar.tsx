@@ -1,12 +1,9 @@
 import React from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import type { UserType } from '@/types/auth.types';
 
 interface UserAvatarProps {
   username: string;
-  /** Kept for API compatibility; the tint is derived from the name. */
-  userType?: UserType;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }

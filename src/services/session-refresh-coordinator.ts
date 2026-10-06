@@ -1,4 +1,4 @@
-import type { LoginResponse } from '@/types/auth.types';
+import type { SessionResponse } from '@/types/auth.types';
 
 const REFRESH_LOCK_NAME = 'magic-auth-session-refresh';
 export const SESSION_REFRESH_GENERATION_KEY = 'magic-auth-refresh-generation';
@@ -25,7 +25,7 @@ interface StoredRefreshMarker extends SessionRefreshMetadata {
 export interface RefreshExecutionResult {
   success: boolean;
   terminal?: boolean;
-  response?: LoginResponse;
+  response?: SessionResponse;
 }
 
 export interface SessionRefreshResult extends RefreshExecutionResult {
@@ -92,10 +92,10 @@ const defaultGeneration = (): string => {
 };
 
 const metadataFromResponse = (
-  response: LoginResponse | undefined
+  response: SessionResponse | undefined
 ): SessionRefreshMetadata => ({
-  expiresAt: response?.expires_at,
-  refreshExpiresAt: response?.refresh_expires_at,
+  expiresAt: response?.expires_at ?? undefined,
+  refreshExpiresAt: response?.refresh_expires_at ?? undefined,
   rememberMe: response?.remember_me,
 });
 

@@ -27,19 +27,11 @@ describe('SignInForm', () => {
     vi.mocked(useAuth).mockReturnValue({
       canAccessRoute: vi.fn<() => boolean>().mockReturnValue(false),
       clearError: vi.fn<() => void>(),
-      currentProject: null,
       dismissSessionExpiryWarning: vi.fn<() => void>(),
-      effectivePermissions: [],
-      hasPermission: vi.fn<() => boolean>().mockReturnValue(false),
       isAuthenticated: false,
       platformLogin,
       isLoading: false,
-      loadUserPermissions: vi
-        .fn<() => Promise<void>>()
-        .mockResolvedValue(undefined),
-      login: vi.fn<AuthContextValue['login']>(),
       logout: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
-      permissionsLoading: false,
       refreshExpiresAt: null,
       refreshRetryCount: 0,
       refreshSession: vi.fn<() => Promise<boolean>>().mockResolvedValue(false),
@@ -49,20 +41,17 @@ describe('SignInForm', () => {
       state: {
         isAuthenticated: false,
         user: null,
-        token: null,
-        currentProject: null,
-        accessibleProjects: [],
         isLoading: false,
         error: null,
-        effectivePermissions: [],
-        permissionsLoading: false,
         sessionExpiresAt: null,
         refreshExpiresAt: null,
         rememberMe: false,
       },
       user: null,
       userType: null,
-      validateToken: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+      validateSession: vi
+        .fn<() => Promise<void>>()
+        .mockResolvedValue(undefined),
     });
   });
 

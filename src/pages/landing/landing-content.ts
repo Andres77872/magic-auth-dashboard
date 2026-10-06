@@ -204,7 +204,7 @@ export const SESSION_TRACE: TraceStep[] = [
     path: '/auth/platform/login',
     status: 200,
     tone: 'success',
-    note: 'session_token (15 min) + refresh_token (path /auth), HttpOnly',
+    note: 'access_token (15 min) + refresh_token (path /auth), HttpOnly',
   },
   {
     method: 'GET',
@@ -250,7 +250,7 @@ export interface SessionCookie {
 }
 
 export const SESSION_COOKIES: SessionCookie[] = [
-  { name: 'session_token', path: '/', lifetime: '15 min' },
+  { name: 'access_token', path: '/', lifetime: '15 min' },
   { name: 'refresh_token', path: '/auth', lifetime: 'rotates' },
 ];
 

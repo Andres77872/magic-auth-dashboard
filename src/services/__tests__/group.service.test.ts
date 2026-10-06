@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { groupService, runGroupBatch } from '../group.service';
 import { projectGroupService } from '../project-group.service';
 import { apiClient } from '../api.client';
-import type { ApiResponse } from '@/types/api.types';
+import type { BaseResponse } from '@/types/api.types';
 
 vi.mock('../api.client', () => ({
   apiClient: {
@@ -18,7 +18,7 @@ vi.mock('../api.client', () => ({
 const api = vi.mocked(apiClient);
 
 /** The transport resolves with the raw JSON body; tests hand it route-shaped payloads. */
-function body(payload: Record<string, unknown>): ApiResponse {
+function body(payload: Record<string, unknown>): BaseResponse {
   return { success: true, message: 'ok', ...payload };
 }
 
@@ -74,7 +74,7 @@ describe('groupService (user groups)', () => {
   });
 
   it('pages through every group in chunks of 1000', async () => {
-    const page = (count: number, offset: number): ApiResponse =>
+    const page = (count: number, offset: number): BaseResponse =>
       body({
         success: true,
         user_groups: Array.from({ length: count }, (_, i) => ({

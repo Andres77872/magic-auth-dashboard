@@ -60,8 +60,6 @@ function binding(overrides: Partial<OAuthBindingInfo>): OAuthBindingInfo {
     link_enabled: true,
     provisioning_mode: 'disabled',
     existing_user_policy: 'deny',
-    init_mode: 'api',
-    has_legacy_redeem: false,
     delivery_mode: 'bff',
     urls: [],
     ready: true,

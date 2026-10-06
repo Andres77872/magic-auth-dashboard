@@ -136,8 +136,8 @@ describe('ProjectDetailsPage', () => {
     );
   });
 
-  it('opens the catalog for the legacy ?tab=permissions link', () => {
-    renderPage('/projects/proj-1?tab=permissions');
+  it('opens the catalog for its canonical tab link', () => {
+    renderPage('/projects/proj-1?tab=catalog');
 
     expect(screen.getByTestId('tab-catalog')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Catalog' })).toHaveAttribute(

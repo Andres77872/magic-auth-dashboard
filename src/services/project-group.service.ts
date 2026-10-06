@@ -17,15 +17,6 @@ import type {
   UserGroupWithAccess,
 } from '@/types/group.types';
 
-// Kept so existing `import type { ProjectGroup } from '@/services/project-group.service'` keeps working.
-export type {
-  AssignedProject,
-  CreateProjectGroupRequest,
-  CreateProjectGroupResponse,
-  ProjectGroup,
-  ProjectGroupListResponse,
-} from '@/types/group.types';
-
 interface ProjectGroupDetailsBody {
   project_group?: ProjectGroup | null;
   assigned_projects?: AssignedProject[];
@@ -46,23 +37,19 @@ function unexpected(what: string): Error {
  * route: a group's projects come with its details.
  */
 class ProjectGroupService {
-  /** Route body of the list (kept for existing callers; prefer {@link listProjectGroups}). */
-  async getProjectGroups(
-    params: GroupListParams = {}
-  ): Promise<ProjectGroupListResponse> {
-    return await getJson<ProjectGroupListResponse>('/admin/project-groups', {
-      limit: params.limit,
-      offset: params.offset,
-      search: params.search?.trim(),
-      sort_by: params.sort_by,
-      sort_order: params.sort_order,
-    });
-  }
-
   async listProjectGroups(
     params: GroupListParams = {}
   ): Promise<ProjectGroupPage> {
-    const res = await this.getProjectGroups(params);
+    const res = await getJson<ProjectGroupListResponse>(
+      '/admin/project-groups',
+      {
+        limit: params.limit,
+        offset: params.offset,
+        search: params.search?.trim(),
+        sort_by: params.sort_by,
+        sort_order: params.sort_order,
+      }
+    );
     if (!Array.isArray(res.project_groups)) throw unexpected('project groups');
     const total = res.pagination?.total;
     if (typeof total !== 'number') throw unexpected('project groups');
@@ -95,8 +82,6 @@ class ProjectGroupService {
 
   /**
    * Empty values keep the current value (a description can't be cleared).
-   * Note: api.auth currently calls `sp_update_project_group` with one argument
-   * too many, so this route may fail server-side; the error is surfaced as is.
    */
   async updateProjectGroup(
     groupHash: string,

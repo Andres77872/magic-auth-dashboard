@@ -35,8 +35,6 @@ const PROJECT_TABS = [
   'settings',
 ] as const;
 type ProjectTab = (typeof PROJECT_TABS)[number];
-/** `?tab=permissions` is the old name of the catalog tab; keep old links working. */
-const TAB_PARAM_VALUES = [...PROJECT_TABS, 'permissions'] as const;
 /** Tabs backed by routes that only root and the project's assigned admins may call. */
 const MANAGE_ONLY_TABS: readonly ProjectTab[] = [
   'members',
@@ -92,9 +90,7 @@ function ProjectDetailsView({
   } = useProjectDetails(projectHash);
   useSetBreadcrumbLabel(project?.project_name);
 
-  const [rawTab, setTab] = useTabParam(TAB_PARAM_VALUES, 'overview');
-  const requestedTab: ProjectTab =
-    rawTab === 'permissions' ? 'catalog' : rawTab;
+  const [requestedTab, setTab] = useTabParam(PROJECT_TABS, 'overview');
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 

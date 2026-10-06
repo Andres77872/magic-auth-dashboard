@@ -32,8 +32,8 @@ export function UserGroupAssignmentsPanel({
   onSelectGroup,
 }: UserGroupAssignmentsPanelProps): React.JSX.Element {
   const fetchGroups = useCallback(async () => {
-    const res = await groupService.getGroups({ limit: 1000 });
-    return [...(res.user_groups ?? [])].sort((a, b) =>
+    const res = await groupService.listGroups({ limit: 1000 });
+    return [...res.groups].sort((a, b) =>
       a.group_name.localeCompare(b.group_name)
     );
   }, []);

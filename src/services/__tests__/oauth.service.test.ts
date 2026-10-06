@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { oauthService } from '../oauth.service';
 import { apiClient } from '../api.client';
-import type { ApiResponse } from '@/types/api.types';
+import type { BaseResponse } from '@/types/api.types';
 import type {
   OAuthBindingInfo,
   OAuthConnectionInfo,
@@ -26,7 +26,7 @@ function respond(
   method: 'get' | 'post' | 'put' | 'delete',
   body: Record<string, unknown>
 ): void {
-  const response: ApiResponse = { success: true, message: 'ok', ...body };
+  const response: BaseResponse = { success: true, message: 'ok', ...body };
   mockedApiClient[method].mockResolvedValueOnce(response);
 }
 
@@ -59,8 +59,6 @@ const BINDING: OAuthBindingInfo = {
   link_enabled: true,
   provisioning_mode: 'disabled',
   existing_user_policy: 'deny',
-  init_mode: 'api',
-  has_legacy_redeem: false,
   delivery_mode: 'bff',
   urls: [],
   ready: false,

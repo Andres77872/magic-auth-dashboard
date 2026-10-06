@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import type { UserType } from '@/types/auth.types';
 import { NavigationItem } from './NavigationItem';
 import { getVisibleSections, resolveActiveItemId } from './nav-utils';
-import { usePermissions } from '@/hooks';
+import { useAuth } from '@/hooks/useAuth';
 
 interface NavigationMenuProps {
   userType: UserType | null;
@@ -16,7 +16,7 @@ export function NavigationMenu({
   onNavigate,
 }: NavigationMenuProps): React.JSX.Element {
   const location = useLocation();
-  const { isAuthenticated } = usePermissions();
+  const { isAuthenticated } = useAuth();
 
   const visibleSections = useMemo(
     () => (isAuthenticated ? getVisibleSections(userType) : []),

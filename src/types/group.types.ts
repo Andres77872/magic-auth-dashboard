@@ -7,7 +7,7 @@
  * project group lets its members sign in to those projects.
  *
  * Route bodies (`…Response`) describe the JSON exactly as the backend sends it
- * and are kept for callers that still read them. Feature code should use the
+ * at the service boundary. Feature code uses the
  * normalised payloads (`UserGroupPage`, `UserGroupDetails`, …) returned by the
  * services' `list…`/`get…` methods.
  */

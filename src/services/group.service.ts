@@ -112,19 +112,14 @@ function toUpdateForm(data: UpdateGroupRequest): UpdateGroupRequest {
 class GroupService {
   // Groups ------------------------------------------------------------------
 
-  /** Route body of the list (kept for existing callers; prefer {@link listGroups}). */
-  async getGroups(params: GroupListParams = {}): Promise<GroupListResponse> {
-    return await getJson<GroupListResponse>('/admin/user-groups', {
+  async listGroups(params: GroupListParams = {}): Promise<UserGroupPage> {
+    const res = await getJson<GroupListResponse>('/admin/user-groups', {
       limit: params.limit,
       offset: params.offset,
       search: params.search?.trim(),
       sort_by: params.sort_by,
       sort_order: params.sort_order,
     });
-  }
-
-  async listGroups(params: GroupListParams = {}): Promise<UserGroupPage> {
-    const res = await this.getGroups(params);
     if (!Array.isArray(res.user_groups)) throw unexpected('user groups');
     return { groups: res.user_groups, total: res.pagination?.total ?? null };
   }
@@ -166,16 +161,11 @@ class GroupService {
     };
   }
 
-  /** Route body of the create call (kept for existing callers; prefer {@link createUserGroup}). */
-  async createGroup(data: GroupFormData): Promise<CreateGroupResponse> {
-    return await postFormJson<CreateGroupResponse>('/admin/user-groups', {
+  async createUserGroup(data: GroupFormData): Promise<UserGroup> {
+    const res = await postFormJson<CreateGroupResponse>('/admin/user-groups', {
       group_name: data.group_name.trim(),
       description: data.description.trim() || undefined,
     });
-  }
-
-  async createUserGroup(data: GroupFormData): Promise<UserGroup> {
-    const res = await this.createGroup(data);
     if (!res.user_group) throw unexpected('the new user group');
     return res.user_group;
   }
@@ -296,20 +286,13 @@ class GroupService {
 
   // Project-group grants ------------------------------------------------------
 
-  /** Route body of the grants list (kept for existing callers; prefer {@link listProjectGroupGrants}). */
-  async getGroupProjectGroups(
-    groupHash: string
-  ): Promise<UserGroupProjectGroupsResponse> {
-    return await getJson<UserGroupProjectGroupsResponse>(
-      `/admin/user-groups/${seg(groupHash)}/project-groups`
-    );
-  }
-
-  /** Project groups granted to the user group, sorted by name. The rows carry no project counts. */
+  /** Project groups granted to the user group, sorted by name. */
   async listProjectGroupGrants(
     groupHash: string
   ): Promise<ProjectGroupGrant[]> {
-    const res = await this.getGroupProjectGroups(groupHash);
+    const res = await getJson<UserGroupProjectGroupsResponse>(
+      `/admin/user-groups/${seg(groupHash)}/project-groups`
+    );
     if (!Array.isArray(res.project_groups))
       throw unexpected('project group grants');
     return res.project_groups;

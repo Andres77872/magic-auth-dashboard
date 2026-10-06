@@ -13,14 +13,6 @@ export const USER_TYPES = {
   CONSUMER: 'consumer',
 } as const;
 
-// Storage Keys
-export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'magic_auth_token',
-  USER_DATA: 'magic_auth_user',
-  CURRENT_PROJECT: 'magic_auth_current_project',
-  THEME_PREFERENCE: 'magic_auth_theme',
-} as const;
-
 // HTTP Status Codes
 export const HTTP_STATUS = {
   OK: 200,

@@ -106,14 +106,17 @@ describe('PermissionManagementPage', () => {
   });
 
   it.each([
-    ['groups', 'permission-groups'],
+    ['groups', 'roles'],
     ['my-permissions', 'roles'],
     ['analytics', 'roles'],
     ['nonsense', 'roles'],
-  ])('maps the old ?tab=%s to the %s panel', (legacy, expected) => {
-    renderAt(`/permissions?tab=${legacy}`);
-    expect(screen.getByTestId('panel')).toHaveTextContent(expected);
-  });
+  ])(
+    'uses the default %s tab for unsupported values (%s)',
+    (value, expected) => {
+      renderAt(`/permissions?tab=${value}`);
+      expect(screen.getByTestId('panel')).toHaveTextContent(expected);
+    }
+  );
 
   it('updates the URL when switching tabs and clears item selection', () => {
     renderAt('/permissions?tab=roles&role=r1');

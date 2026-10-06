@@ -1,4 +1,4 @@
-import type { ApiResponse } from './api.types';
+import type { BaseResponse } from './api.types';
 
 export interface SystemInfo {
   name: string;
@@ -16,11 +16,11 @@ export interface SystemStatistics {
 }
 
 /** `GET /system/ping`: public liveness probe with the server's UTC time. */
-export interface PingResponse extends ApiResponse {
+export interface PingResponse extends BaseResponse {
   timestamp: string;
 }
 
-export interface SystemInfoResponse extends ApiResponse {
+export interface SystemInfoResponse extends BaseResponse {
   system: SystemInfo;
   statistics: SystemStatistics;
   features: string[];
@@ -63,8 +63,21 @@ export interface HealthComponent {
   [key: string]: unknown;
 }
 
-export interface SystemHealthResponse extends ApiResponse {
+export interface SystemHealthResponse extends BaseResponse {
   status: string;
   timestamp: string;
   components: Record<string, HealthComponent>;
+}
+
+/** GET /system/cache/stats. */
+export interface CacheStatsResponse extends BaseResponse {
+  cache_statistics: Record<string, unknown> | null;
+  cache_configuration: Record<string, unknown> | null;
+  timestamp: string;
+}
+
+/** POST /system/cache/invalidate/user/{hash}. */
+export interface InvalidateCacheResponse extends BaseResponse {
+  invalidated_by: string | null;
+  timestamp: string;
 }

@@ -2,7 +2,6 @@
 export * from './constants';
 export * from './routes';
 export * from './permissions';
-export * from './cache';
 export * from './error-handler';
 export * from './component-utils';
 export * from './validators';

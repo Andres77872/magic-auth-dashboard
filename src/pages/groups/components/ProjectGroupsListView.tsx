@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, FolderTree, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { ActionsMenu } from '@/components/common/ActionsMenu';
@@ -30,43 +30,20 @@ type Dialog =
   | { type: 'delete'; group: ProjectGroup }
   | null;
 
-export interface ProjectGroupsListViewProps {
-  /** Open the create dialog on mount (used by `/groups/project-groups/create`). */
-  startWithCreate?: boolean;
-  /** Called when that initial create dialog is dismissed without creating. */
-  onCreateDismiss?: () => void;
-}
-
 /** `/groups?tab=project-groups`: every project group, searchable and sortable on the server. */
-export function ProjectGroupsListView({
-  startWithCreate = false,
-  onCreateDismiss,
-}: ProjectGroupsListViewProps): React.JSX.Element {
+export function ProjectGroupsListView(): React.JSX.Element {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const list = useProjectGroups();
   const { createProjectGroup, updateProjectGroup, deleteProjectGroup } =
     useProjectGroupMutations();
-  const [dialog, setDialog] = useState<Dialog>(
-    startWithCreate ? { type: 'create' } : null
-  );
-  // Set when a create succeeds, so closing the dialog afterwards isn't treated as a dismissal.
-  const createdRef = useRef(false);
-
-  const closeForm = (): void => {
-    const wasInitialCreate =
-      startWithCreate && dialog?.type === 'create' && !createdRef.current;
-    setDialog(null);
-    if (wasInitialCreate) onCreateDismiss?.();
-  };
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const closeForm = (): void => setDialog(null);
 
   const handleCreate = async (data: GroupFormData): Promise<void> => {
     const group = await createProjectGroup(data);
-    createdRef.current = true;
     showToast(`Created project group ${group.group_name}.`, 'success');
-    void navigate(groupRoutes.projectGroup(group.group_hash), {
-      replace: startWithCreate,
-    });
+    void navigate(groupRoutes.projectGroup(group.group_hash));
   };
 
   const handleEdit = async (

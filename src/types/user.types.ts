@@ -1,5 +1,5 @@
-import type { UserType, User } from './auth.types';
-import type { ApiResponse, PaginationResponse } from './api.types';
+import type { UserType, User, UserIdentity } from './auth.types';
+import type { BaseResponse, PaginationResponse } from './api.types';
 
 /**
  * User management contracts (api.auth `users.py`, `user_types_auth.py`,
@@ -10,30 +10,30 @@ import type { ApiResponse, PaginationResponse } from './api.types';
 export interface CreateRootUserRequest {
   username: string;
   password: string;
-  email?: string;
 }
 
 /** `assigned_project_ids` are INTERNAL project ids (not hashes) — at least one is required. */
 export interface CreateAdminUserRequest {
   username: string;
   password: string;
-  email?: string;
   assigned_project_ids: string[];
 }
 
-export interface CreateRootUserResponse extends ApiResponse {
-  user: User;
+export interface CreateRootUserResponse extends BaseResponse {
+  user?: UserIdentity | null;
 }
 
-export interface CreateAdminUserResponse extends ApiResponse {
-  user: User & {
-    assigned_project_ids?: string[];
-    assigned_projects?: Array<{
-      project_id: string;
-      project_hash: string;
-      project_name: string;
-    }>;
-  };
+export interface CreateAdminUserResponse extends BaseResponse {
+  user?:
+    | (UserIdentity & {
+        assigned_project_ids?: string[];
+        assigned_projects?: Array<{
+          project_id: string;
+          project_hash: string;
+          project_name: string;
+        }>;
+      })
+    | null;
 }
 
 export interface UserListParams {
@@ -55,7 +55,7 @@ export interface UserListParams {
  * `include_inactive` only — it ignores `search`, group/project filters and
  * admin scoping.
  */
-export interface UserListResponse extends ApiResponse {
+export interface UserListResponse extends BaseResponse {
   users: User[];
   pagination: PaginationResponse;
   filters?: {
@@ -73,7 +73,7 @@ export interface UserSearchParams {
   user_type_filter?: UserType;
 }
 
-export interface UserSearchResponse extends ApiResponse {
+export interface UserSearchResponse extends BaseResponse {
   users: User[];
   search_term: string;
   total_results: number;
@@ -83,31 +83,30 @@ export interface UserSearchResponse extends ApiResponse {
   };
 }
 
-/** `PUT /users/{hash}` (form `username`, `email`; root may also send `user_type`). */
+/** `PUT /users/{hash}` accepts a JSON or form username; type changes have their own route. */
 export interface UpdateUserRequest {
   username?: string;
-  email?: string;
 }
 
-export interface UpdateUserResponse extends ApiResponse {
+export interface UpdateUserResponse extends BaseResponse {
   user: Pick<User, 'user_hash' | 'username' | 'email' | 'user_type'>;
   updated_at?: string;
 }
 
 /** `PATCH /users/{hash}/type` (root only; promoting to admin assigns no project). */
-export interface ChangeUserTypeResponse extends ApiResponse {
+export interface ChangeUserTypeResponse extends BaseResponse {
   user_hash: string;
   previous_type: UserType;
   new_type: UserType;
 }
 
-export interface UpdateUserStatusResponse extends ApiResponse {
+export interface UpdateUserStatusResponse extends BaseResponse {
   user_hash: string;
   is_active: boolean;
 }
 
 /** The reset enqueues an emailed link; no password is ever returned. */
-export interface ResetPasswordResponse extends ApiResponse {
+export interface ResetPasswordResponse extends BaseResponse {
   user: {
     user_hash: string;
     username: string;
@@ -120,14 +119,14 @@ export interface ResetPasswordResponse extends ApiResponse {
   instructions: string;
 }
 
-export interface DeleteUserResponse extends ApiResponse {
+export interface DeleteUserResponse extends BaseResponse {
   user_hash: string;
   username: string;
   deleted_at: string;
 }
 
 /** `DELETE /users/{hash}/hard` (root only, irreversible). */
-export interface HardDeleteUserResponse extends ApiResponse {
+export interface HardDeleteUserResponse extends BaseResponse {
   user_hash: string;
   username: string;
   removed?: {
@@ -150,13 +149,13 @@ export interface UserEmail {
   last_activation_sent_at?: string | null;
 }
 
-export interface UserEmailsResponse extends ApiResponse {
+export interface UserEmailsResponse extends BaseResponse {
   user_hash: string;
   emails: UserEmail[];
 }
 
 /** `POST /admin/users/bulk-update` / `bulk-delete` */
-export interface BulkUserOperationResponse extends ApiResponse {
+export interface BulkUserOperationResponse extends BaseResponse {
   summary: {
     total_requested: number;
     success_count: number;
@@ -181,7 +180,7 @@ export interface AdminAssignedProject {
   assigned_by?: string | null;
 }
 
-export interface AdminProjectsResponse extends ApiResponse {
+export interface AdminProjectsResponse extends BaseResponse {
   user_hash: string;
   assigned_projects: AdminAssignedProject[];
 }

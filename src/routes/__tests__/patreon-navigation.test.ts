@@ -6,8 +6,8 @@ import { NavigationMenu } from '@/components/navigation';
 import { NAVIGATION_SECTIONS, ROUTES, type NavItem } from '@/utils/routes';
 import { UserType } from '@/types/auth.types';
 
-vi.mock('@/hooks', () => ({
-  usePermissions: vi.fn(() => ({
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: vi.fn(() => ({
     isAuthenticated: true,
   })),
 }));

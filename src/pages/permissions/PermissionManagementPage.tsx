@@ -18,14 +18,6 @@ const TABS = [
 ] as const;
 type AccessTab = (typeof TABS)[number];
 
-/** Older `?tab=` values from the previous pages, mapped to their new home. */
-const TAB_ALIASES: Record<string, AccessTab> = {
-  groups: 'permission-groups',
-  'my-permissions': 'roles',
-  analytics: 'roles',
-  catalog: 'roles',
-};
-
 const CREATE_LABELS: Partial<Record<AccessTab, string>> = {
   roles: 'Create role',
   'permission-groups': 'Create permission group',
@@ -45,7 +37,6 @@ const SUBTITLES: Record<AccessTab, string> = {
 function readTab(value: string | null): AccessTab {
   if (value && (TABS as readonly string[]).includes(value))
     return value as AccessTab;
-  if (value && TAB_ALIASES[value]) return TAB_ALIASES[value];
   return 'roles';
 }
 

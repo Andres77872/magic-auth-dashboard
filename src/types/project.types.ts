@@ -27,11 +27,6 @@ export interface ProjectSummary {
   access_through: string;
 }
 
-/**
- * @deprecated Name kept for existing pickers (tokens, users). Use `ProjectSummary`.
- */
-export type ProjectDetails = ProjectSummary;
-
 export interface ProjectListParams {
   /** 1–500; api.auth defaults to 10. */
   limit?: number;

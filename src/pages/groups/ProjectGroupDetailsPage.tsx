@@ -43,18 +43,8 @@ import {
 const TABS = ['projects', 'user-groups'] as const;
 type ProjectGroupTab = (typeof TABS)[number];
 
-export interface ProjectGroupDetailsPageProps {
-  /** Open the edit dialog once the group has loaded (used by `/groups/project-groups/edit/:groupHash`). */
-  startEditing?: boolean;
-  /** Called when the dialog opened by `startEditing` closes. */
-  onEditDismiss?: () => void;
-}
-
 /** `/groups/project-groups/:groupHash` — a project group, its projects and the user groups granted it. */
-export function ProjectGroupDetailsPage({
-  startEditing = false,
-  onEditDismiss,
-}: ProjectGroupDetailsPageProps = {}): React.JSX.Element {
+export function ProjectGroupDetailsPage(): React.JSX.Element {
   const { groupHash } = useParams<{ groupHash: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -67,9 +57,7 @@ export function ProjectGroupDetailsPage({
     useProjectGroupDetails(groupHash);
   const access = useUserGroupsWithAccess(groupHash);
   const { updateProjectGroup, deleteProjectGroup } = useProjectGroupMutations();
-  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(
-    startEditing ? 'edit' : null
-  );
+  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null);
 
   useSetBreadcrumbLabel(details?.projectGroup.group_name);
 
@@ -94,9 +82,7 @@ export function ProjectGroupDetailsPage({
   const { projectGroup, projects } = details;
 
   const closeDialog = (): void => {
-    const wasStartEdit = startEditing && dialog === 'edit';
     setDialog(null);
-    if (wasStartEdit) onEditDismiss?.();
   };
 
   const handleEdit = async (data: GroupFormData): Promise<void> => {

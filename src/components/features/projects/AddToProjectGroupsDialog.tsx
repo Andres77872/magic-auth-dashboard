@@ -128,10 +128,10 @@ export function AddToProjectGroupsDialog({
                   : 'The project is already in every project group.'}
               </p>
               <Link
-                to={ROUTES.PROJECT_GROUPS_CREATE}
+                to={`${ROUTES.GROUPS}?tab=project-groups`}
                 className="text-xs font-medium text-primary"
               >
-                Create a project group
+                Open project groups
               </Link>
             </div>
           ) : (

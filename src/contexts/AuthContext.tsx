@@ -7,44 +7,30 @@ import {
   useState,
 } from 'react';
 import type { ReactNode, JSX } from 'react';
-import type { AuthState, AuthAction, User, UserType } from '@/types/auth.types';
+import type {
+  AuthState,
+  AuthAction,
+  UserIdentity,
+  UserType,
+} from '@/types/auth.types';
 import { AuthActionType } from '@/types/auth.types';
 import { authService } from '@/services/auth.service';
-import { permissionAssignmentsService } from '@/services/permission-assignments.service';
 import {
   sessionRefreshCoordinator,
   type SessionRefreshResult,
 } from '@/services/session-refresh-coordinator';
-import { STORAGE_KEYS } from '@/utils/constants';
 import { handleApiError } from '@/utils/error-handler';
-import {
-  hasPermission as checkPermission,
-  canAccessRoute as checkRoute,
-} from '@/utils/permissions';
-import { cache } from '@/utils/cache';
+import { canAccessRoute as checkRoute } from '@/utils/permissions';
 
-const SESSION_EXPIRES_AT_KEY = 'session_expires_at';
 const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
 const REFRESH_RETRY_DELAY_MS = 30 * 1000;
 const MAX_REFRESH_RETRIES = 3;
 
-const clearStoredAuthState = (): void => {
-  localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-  localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-  localStorage.removeItem(STORAGE_KEYS.CURRENT_PROJECT);
-  localStorage.removeItem(SESSION_EXPIRES_AT_KEY);
-};
-
 const initialAuthState: AuthState = {
   isAuthenticated: false,
   user: null,
-  token: null,
-  currentProject: null,
-  accessibleProjects: [],
   isLoading: true,
   error: null,
-  effectivePermissions: [],
-  permissionsLoading: false,
   sessionExpiresAt: null,
   refreshExpiresAt: null,
   rememberMe: false,
@@ -63,10 +49,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         isAuthenticated: true,
-        user: action.payload.user,
-        token: null,
-        currentProject: action.payload.project || null,
-        accessibleProjects: action.payload.accessible_projects || [],
+        user: action.payload.user ?? null,
         isLoading: false,
         error: null,
         sessionExpiresAt: action.payload.expires_at || null,
@@ -79,9 +62,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         ...state,
         isAuthenticated: false,
         user: null,
-        token: null,
-        currentProject: null,
-        accessibleProjects: [],
         isLoading: false,
         error: action.payload.error,
         sessionExpiresAt: null,
@@ -93,20 +73,17 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...initialAuthState,
         isLoading: false,
-        effectivePermissions: [],
-        permissionsLoading: false,
         sessionExpiresAt: null,
         refreshExpiresAt: null,
         rememberMe: false,
       };
 
-    case AuthActionType.VALIDATE_TOKEN:
+    case AuthActionType.SESSION_VALIDATED:
       if (action.payload.valid) {
         return {
           ...state,
           isAuthenticated: true,
           user: action.payload.user || null,
-          currentProject: action.payload.project || null,
           isLoading: false,
           error: null,
           sessionExpiresAt: action.payload.expires_at || state.sessionExpiresAt,
@@ -127,26 +104,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         error: null,
       };
 
-    case AuthActionType.LOAD_PERMISSIONS_START:
-      return {
-        ...state,
-        permissionsLoading: true,
-      };
-
-    case AuthActionType.LOAD_PERMISSIONS_SUCCESS:
-      return {
-        ...state,
-        effectivePermissions: action.payload.permissions,
-        permissionsLoading: false,
-      };
-
-    case AuthActionType.LOAD_PERMISSIONS_FAILURE:
-      return {
-        ...state,
-        permissionsLoading: false,
-        error: action.payload.error,
-      };
-
     case AuthActionType.SESSION_EXPIRY_UPDATE:
       return {
         ...state,
@@ -163,30 +120,19 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 
 interface AuthContextType {
   state: AuthState;
-  login: (
-    username: string,
-    password: string,
-    projectHash?: string,
-    rememberMe?: boolean
-  ) => Promise<boolean>;
   platformLogin: (
     username: string,
     password: string,
     rememberMe?: boolean
   ) => Promise<boolean>;
   logout: () => Promise<void>;
-  validateToken: () => Promise<void>;
+  validateSession: () => Promise<void>;
   clearError: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
-  user: User | null;
+  user: UserIdentity | null;
   userType: UserType | null;
-  currentProject: AuthState['currentProject'];
-  hasPermission: (permission: string) => boolean;
   canAccessRoute: (routePath: string) => boolean;
-  loadUserPermissions: () => Promise<void>;
-  effectivePermissions: string[];
-  permissionsLoading: boolean;
   sessionExpiresAt: string | null;
   refreshExpiresAt: string | null;
   rememberMe: boolean;
@@ -204,8 +150,7 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
-  const tokenValidationRef = useRef(false);
-  const permissionsLoadedRef = useRef(false);
+  const sessionValidationRef = useRef(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const refreshRetryCountRef = useRef(0);
   const lastHydratedRefreshGenerationRef = useRef<string | null>(null);
@@ -232,10 +177,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   }, [updateRefreshRetryCount]);
 
   const clearClientAuthState = useCallback(() => {
-    clearStoredAuthState();
-    cache.clearAll();
-    tokenValidationRef.current = false;
-    permissionsLoadedRef.current = false;
+    sessionValidationRef.current = false;
     updateRefreshRetryCount(0);
   }, [updateRefreshRetryCount]);
 
@@ -381,42 +323,6 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     startRefreshTimer,
     stopRefreshTimer,
   ]);
-  const login = async (
-    username: string,
-    password: string,
-    projectHash?: string,
-    rememberMe = false
-  ): Promise<boolean> => {
-    try {
-      dispatch({ type: AuthActionType.LOGIN_START });
-
-      const response = await authService.login({
-        username,
-        password,
-        project_hash: projectHash ?? '',
-        remember_me: rememberMe,
-      });
-
-      if (response.success) {
-        clearStoredAuthState();
-        dispatch({
-          type: AuthActionType.LOGIN_SUCCESS,
-          payload: response,
-        });
-        return true;
-      }
-
-      throw new Error(response.message || 'Login failed');
-    } catch (error) {
-      const errorMessage = handleApiError(error);
-      dispatch({
-        type: AuthActionType.LOGIN_FAILURE,
-        payload: { error: errorMessage },
-      });
-      return false;
-    }
-  };
-
   const platformLogin = async (
     username: string,
     password: string,
@@ -431,14 +337,10 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
         remember_me: rememberMe,
       });
 
-      if (response.success) {
-        clearStoredAuthState();
+      if (response.success && response.user) {
         dispatch({
           type: AuthActionType.LOGIN_SUCCESS,
-          payload: {
-            ...response,
-            project: undefined,
-          },
+          payload: response,
         });
         return true;
       }
@@ -467,24 +369,22 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     }
   };
 
-  const validateToken = useCallback(async (): Promise<void> => {
-    if (tokenValidationRef.current) {
+  const validateSession = useCallback(async (): Promise<void> => {
+    if (sessionValidationRef.current) {
       return;
     }
 
-    tokenValidationRef.current = true;
+    sessionValidationRef.current = true;
 
     try {
       const response = await authService.validateSession();
 
-      if (response.success && response.valid) {
-        clearStoredAuthState();
+      if (response.success && response.valid && response.user) {
         dispatch({
-          type: AuthActionType.VALIDATE_TOKEN,
+          type: AuthActionType.SESSION_VALIDATED,
           payload: {
             valid: true,
             user: response.user,
-            project: response.project,
             expires_at: response.session?.expires_at,
             refresh_expires_at: response.session?.refresh_expires_at,
             remember_me: response.session?.remember_me,
@@ -495,14 +395,14 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
 
       throw new Error(response.message || 'Invalid session');
     } catch (error) {
-      console.warn('Token validation failed:', error);
+      console.warn('Session validation failed:', error);
       clearClientAuthState();
       dispatch({
-        type: AuthActionType.VALIDATE_TOKEN,
+        type: AuthActionType.SESSION_VALIDATED,
         payload: { valid: false },
       });
     } finally {
-      tokenValidationRef.current = false;
+      sessionValidationRef.current = false;
     }
   }, [clearClientAuthState]);
 
@@ -510,77 +410,25 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     dispatch({ type: AuthActionType.CLEAR_ERROR });
   };
 
-  const loadUserPermissions = useCallback(async (): Promise<void> => {
-    if (!state.user || !state.currentProject) {
-      return;
-    }
-
-    if (state.user.user_type === 'root') {
-      return;
-    }
-
-    if (permissionsLoadedRef.current) {
-      return;
-    }
-
-    const cacheKey = `permissions:${state.user.user_hash}:${state.currentProject.project_hash}`;
-    const cachedPermissions = cache.get<string[]>(cacheKey);
-    if (cachedPermissions) {
-      dispatch({
-        type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
-        payload: { permissions: cachedPermissions },
-      });
-      return;
-    }
-
-    permissionsLoadedRef.current = true;
-    dispatch({ type: AuthActionType.LOAD_PERMISSIONS_START });
-
-    try {
-      const permissionNames =
-        await permissionAssignmentsService.getMyPermissions();
-      cache.set(cacheKey, permissionNames, 5 * 60 * 1000);
-      dispatch({
-        type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
-        payload: { permissions: permissionNames },
-      });
-    } catch (error) {
-      console.warn('Failed to load user permissions:', error);
-      dispatch({
-        type: AuthActionType.LOAD_PERMISSIONS_SUCCESS,
-        payload: { permissions: [] },
-      });
-    } finally {
-      permissionsLoadedRef.current = false;
-    }
-  }, [state.user, state.currentProject]);
-
-  const hasPermission = (permission: string): boolean => {
-    if (!state.user) return false;
-
-    if (state.user.user_type === 'root') {
-      return true;
-    }
-
-    if (state.effectivePermissions.includes(permission)) {
-      return true;
-    }
-
-    return checkPermission(state.user.user_type, permission);
-  };
-
   const canAccessRoute = (routePath: string): boolean => {
-    if (!state.user) return false;
+    if (!state.user?.user_type) return false;
     return checkRoute(state.user.user_type, routePath);
   };
 
   useEffect(() => {
+    for (const key of [
+      'magic_auth_token',
+      'magic_auth_user',
+      'magic_auth_current_project',
+    ]) {
+      localStorage.removeItem(key);
+    }
     const timerId = window.setTimeout(() => {
-      void validateToken();
+      void validateSession();
     }, 0);
 
     return (): void => window.clearTimeout(timerId);
-  }, [validateToken]);
+  }, [validateSession]);
 
   useEffect(() => {
     const handleUnauthorized = (): void => {
@@ -594,34 +442,17 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       window.removeEventListener('magic-auth-unauthorized', handleUnauthorized);
   }, [clearClientAuthState, stopRefreshTimer]);
 
-  useEffect(() => {
-    if (state.isAuthenticated && state.user && state.currentProject) {
-      void loadUserPermissions();
-    }
-  }, [
-    state.isAuthenticated,
-    state.user,
-    state.currentProject,
-    loadUserPermissions,
-  ]);
-
   const contextValue: AuthContextType = {
     state,
-    login,
     platformLogin,
     logout,
-    validateToken,
+    validateSession,
     clearError,
     isLoading: state.isLoading,
     isAuthenticated: state.isAuthenticated,
     user: state.user,
     userType: state.user?.user_type || null,
-    currentProject: state.currentProject,
-    hasPermission,
     canAccessRoute,
-    loadUserPermissions,
-    effectivePermissions: state.effectivePermissions,
-    permissionsLoading: state.permissionsLoading,
     sessionExpiresAt: state.sessionExpiresAt,
     refreshExpiresAt: state.refreshExpiresAt,
     rememberMe: state.rememberMe,

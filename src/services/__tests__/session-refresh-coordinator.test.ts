@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { LoginResponse } from '@/types/auth.types';
+import type { SessionResponse } from '@/types/auth.types';
 import {
   SessionRefreshCoordinator,
   SESSION_REFRESH_GENERATION_KEY,
@@ -83,10 +83,10 @@ const deferred = <T>(): Deferred<T> => {
   return { promise, resolve: resolvePromise };
 };
 
-const loginResponse = (): LoginResponse => ({
+const loginResponse = (): SessionResponse => ({
   success: true,
   message: 'refreshed',
-  session_token: 'must-not-be-persisted',
+  access_token: 'must-not-be-persisted',
   remember_me: true,
   user: {
     user_hash: 'usr-1',
@@ -94,9 +94,7 @@ const loginResponse = (): LoginResponse => ({
     email: 'admin@example.com',
     user_type: 'admin',
     created_at: '2026-01-01T00:00:00Z',
-    is_active: true,
   },
-  accessible_projects: [],
   expires_at: '2026-07-11T20:00:00Z',
   refresh_expires_at: '2026-08-10T19:55:00Z',
 });
@@ -143,10 +141,10 @@ describe('SessionRefreshCoordinator', () => {
 
     const firstCompletion = deferred<{
       success: boolean;
-      response: LoginResponse;
+      response: SessionResponse;
     }>();
     const firstExecutor = vi.fn(
-      (): Promise<{ success: boolean; response: LoginResponse }> =>
+      (): Promise<{ success: boolean; response: SessionResponse }> =>
         firstCompletion.promise
     );
     const secondExecutor = vi.fn().mockResolvedValue({ success: true });
@@ -252,7 +250,7 @@ describe('SessionRefreshCoordinator', () => {
     });
 
     await coordinator.refresh(
-      (): Promise<{ success: boolean; response: LoginResponse }> =>
+      (): Promise<{ success: boolean; response: SessionResponse }> =>
         Promise.resolve({ success: true, response: loginResponse() })
     );
 
@@ -271,7 +269,7 @@ describe('SessionRefreshCoordinator', () => {
     });
     const refreshCompletion = deferred<{
       success: boolean;
-      response: LoginResponse;
+      response: SessionResponse;
     }>();
     const refreshExecutor = vi.fn(() => refreshCompletion.promise);
     const mutationExecutor = vi.fn(() =>

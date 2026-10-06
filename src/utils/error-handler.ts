@@ -1,4 +1,3 @@
-import type { ApiResponse } from '@/types/api.types';
 import { ERROR_MESSAGES } from './constants';
 
 export class ApiError extends Error {
@@ -35,32 +34,4 @@ export function handleApiError(error: unknown): string {
   }
 
   return ERROR_MESSAGES.INTERNAL_ERROR;
-}
-
-export function isApiResponse<T>(
-  response: unknown
-): response is ApiResponse<T> {
-  return (
-    typeof response === 'object' &&
-    response !== null &&
-    'success' in response &&
-    typeof (response as Record<string, unknown>).success === 'boolean' &&
-    'message' in response &&
-    typeof (response as Record<string, unknown>).message === 'string'
-  );
-}
-
-export function extractErrorMessage(response: ApiResponse<unknown>): string {
-  if (response.success) {
-    return '';
-  }
-
-  // Handle validation errors
-  if (response.detail && Array.isArray(response.detail)) {
-    return response.detail
-      .map((err) => `${err.loc.join('.')}: ${err.msg}`)
-      .join(', ');
-  }
-
-  return response.message || ERROR_MESSAGES.INTERNAL_ERROR;
 }

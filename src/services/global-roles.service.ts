@@ -41,7 +41,7 @@ class GlobalRolesService {
   // Roles ---------------------------------------------------------------
 
   async getRoles(params: ListParams = {}): Promise<GlobalRole[]> {
-    const res = await getJson<{ roles?: GlobalRole[] }>('/roles/roles', {
+    const res = await getJson<{ roles?: GlobalRole[] }>('/roles', {
       limit: params.limit ?? CATALOG_PAGE_SIZE,
       offset: params.offset,
     });
@@ -50,14 +50,14 @@ class GlobalRolesService {
 
   async getRole(roleHash: string): Promise<GlobalRoleDetails> {
     const res = await getJson<Partial<GlobalRoleDetails>>(
-      `/roles/roles/${seg(roleHash)}`
+      `/roles/${seg(roleHash)}`
     );
     if (!res.role) throw new Error('Role not found.');
     return { role: res.role, permission_groups: res.permission_groups ?? [] };
   }
 
   async createRole(data: CreateGlobalRoleRequest): Promise<GlobalRole> {
-    const res = await postFormJson<{ role: GlobalRole }>('/roles/roles', data);
+    const res = await postFormJson<{ role: GlobalRole }>('/roles', data);
     return res.role;
   }
 
@@ -66,21 +66,21 @@ class GlobalRolesService {
     data: UpdateGlobalRoleRequest
   ): Promise<GlobalRole> {
     const res = await putFormJson<{ role: GlobalRole }>(
-      `/roles/roles/${seg(roleHash)}`,
+      `/roles/${seg(roleHash)}`,
       data
     );
     return res.role;
   }
 
   async deleteRole(roleHash: string): Promise<void> {
-    await deleteJson(`/roles/roles/${seg(roleHash)}`);
+    await deleteJson(`/roles/${seg(roleHash)}`);
   }
 
   async getRolePermissionGroups(
     roleHash: string
   ): Promise<GlobalPermissionGroup[]> {
     const res = await getJson<{ permission_groups?: GlobalPermissionGroup[] }>(
-      `/roles/roles/${seg(roleHash)}/permission-groups`
+      `/roles/${seg(roleHash)}/permission-groups`
     );
     return res.permission_groups ?? [];
   }
@@ -90,7 +90,7 @@ class GlobalRolesService {
     groupHash: string
   ): Promise<void> {
     await postJson(
-      `/roles/roles/${seg(roleHash)}/permission-groups/${seg(groupHash)}`
+      `/roles/${seg(roleHash)}/permission-groups/${seg(groupHash)}`
     );
   }
 
@@ -99,7 +99,7 @@ class GlobalRolesService {
     groupHash: string
   ): Promise<void> {
     await deleteJson(
-      `/roles/roles/${seg(roleHash)}/permission-groups/${seg(groupHash)}`
+      `/roles/${seg(roleHash)}/permission-groups/${seg(groupHash)}`
     );
   }
 

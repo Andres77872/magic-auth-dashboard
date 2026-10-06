@@ -5,11 +5,11 @@ export const groupRoutes = {
   userGroupList: `${ROUTES.GROUPS}?tab=user-groups`,
   projectGroupList: `${ROUTES.GROUPS}?tab=project-groups`,
   userGroup: (groupHash: string): string =>
-    `${ROUTES.GROUP}/${encodeURIComponent(groupHash)}`,
+    `${ROUTES.GROUPS}/${encodeURIComponent(groupHash)}`,
   projectGroup: (groupHash: string): string =>
-    `${ROUTES.PROJECT_GROUPS_DETAILS}/${encodeURIComponent(groupHash)}`,
+    `${ROUTES.PROJECT_GROUPS}/${encodeURIComponent(groupHash)}`,
   user: (userHash: string): string =>
-    `${ROUTES.USER}/${encodeURIComponent(userHash)}`,
+    `${ROUTES.USERS}/${encodeURIComponent(userHash)}`,
   project: (projectHash: string): string =>
-    `${ROUTES.PROJECT}/${encodeURIComponent(projectHash)}`,
+    `${ROUTES.PROJECTS}/${encodeURIComponent(projectHash)}`,
 };

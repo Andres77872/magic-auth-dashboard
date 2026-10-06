@@ -77,7 +77,7 @@ export function DashboardOverview(): React.JSX.Element {
             <span className="font-medium text-foreground">
               {user?.username}
             </span>
-            {user && ` · ${getUserTypeLabel(user.user_type)}`}
+            {user && ` · ${getUserTypeLabel(user.user_type ?? 'unknown')}`}
             {updatedAt && <> · Updated {formatRelativeTime(updatedAt)}</>}
           </>
         }
